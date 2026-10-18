@@ -420,3 +420,12 @@ ptsize999 190m-2pct-none seeds, held-out curves replaced by designed piecewise-l
   (53M pretrain_data, 190M pretrain_data, 53M pretrain_data_3B).
 - The step-0 lm references for 53M seeds 4-7 come from pt999 2pct-none.
 - pt2long and pt2s190 confirm seeds follow once their open brackets close (tasks 366-369).
+
+## 2026-10-17 lambda sweep at the 2% main setting (user)
+- Before this, lambda had been swept only at 7% with the gate (F82: lambda 1 >= 5 > 20, and lambda 1 had the lower LM
+  cost).
+- Added: win-ctx at its best lr (2e-3) with lambda 0.3, 1 and 2, seeds 0-3 (tasks 374-377). Each is paired by seed with
+  pt2b-lr2e-3-win-ctx (lambda 5) and pt2b-lr8e-3-none on the same hardware.
+- Read-out: area, t90 and offline bpb per lambda; the best lambda by area, with ties within 2 broken by lower offline bpb
+  (the same rule as the best lr).
+- The grid is log-spaced (0.3 / 1 / 2 / 5). 0.5 follows only if the optimum falls between 0.3 and 1.

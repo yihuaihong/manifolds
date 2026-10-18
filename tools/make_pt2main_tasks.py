@@ -49,15 +49,23 @@ ARM = {"none": "--target none",
        "win-ctx": f"--target helix3 {W} --site ctx",
        "win-text": f"--target helix3 {W} --site text",
        "win-shuf-ctx": f"--target helix3_shuf {W} --site ctx"}
+# 2026-10-17 (user): lambda sweep at the 2% main setting (lambda was only swept at 7% with the gate, F82: 1 >= 5 > 20)
+LAMS = ("0.3", "1", "2")
+for _l in LAMS:
+    ARM[f"win-ctx-lam{_l}"] = f"--target helix3 {W} --site ctx --lam {_l}"
 ARM_DESC = {"none": "no prior",
             "win-ctx": "helix3 prior on the operands in the lines (ctx), window (0.05, 0.4)",
             "win-text": "helix3 prior on numbers 0..999 in the row's FineWeb text (text), window (0.05, 0.4)",
             "win-shuf-ctx": "helix3_shuf prior (rows of the target table permuted) on the operands (ctx), window (0.05, 0.4)"}
+for _l in LAMS:
+    ARM_DESC[f"win-ctx-lam{_l}"] = f"helix3 prior on the operands in the lines (ctx), window (0.05, 0.4), lambda {_l}"
 # intent of every arm, asserted on the rendered ARGS (argparse keeps the LAST of a repeated flag: none allowed)
 WANT = {"none": {"--target": "none", "--schedule": None, "--window": None, "--site": None},
         "win-ctx": {"--target": "helix3", "--schedule": "window", "--window": "0.05,0.4", "--site": "ctx"},
         "win-text": {"--target": "helix3", "--schedule": "window", "--window": "0.05,0.4", "--site": "text"},
         "win-shuf-ctx": {"--target": "helix3_shuf", "--schedule": "window", "--window": "0.05,0.4", "--site": "ctx"}}
+for _l in LAMS:
+    WANT[f"win-ctx-lam{_l}"] = {"--target": "helix3", "--schedule": "window", "--window": "0.05,0.4", "--site": "ctx", "--lam": _l}
 # size: model flags, (d_model, n_layers, n_heads, d_ff), parameters and gradient checkpointing (auto: on above 150M) as
 # the trainer reports them (Torch runs pt999 2pct-none / ptsize999 190m-2pct-none), the --dry_inputs model line
 SIZES = {"53m": {"flags": "", "dims": (384, 6, 6, 1536), "n_params": 52672128, "grad_ckpt": False},
@@ -107,7 +115,10 @@ EXTRA = ([(362 + s, "pt2b", "none", "1.6e-2", s) for s in range(4)]
          + [(366 + s, "pt2s190", "none", "4.8e-3", s) for s in range(4)]
          # confirm seeds 4-7 (user 2026-10-17: confirm the headline cells now, not after the rainbow), pt2b: none's bracket is
          # closed (best 8e-3) and win-ctx's best is 2e-3 (tie with 1e-3 broken on offline bpb) -> both at their best lr
-         + [(370 + s - 4, "pt2b", arm, lr, s) for s in range(4, 8) for arm, lr in (("none", "8e-3"), ("win-ctx", "2e-3"))])
+         + [(370 + s - 4, "pt2b", arm, lr, s) for s in range(4, 8) for arm, lr in (("none", "8e-3"), ("win-ctx", "2e-3"))]
+         # lambda sweep (user 2026-10-17): win-ctx at its best lr 2e-3 with lambda 0.3 / 1 / 2, seeds 0-3, paired by seed with
+         # pt2b-lr2e-3-win-ctx (lambda 5) and pt2b-lr8e-3-none on the same hardware
+         + [(374 + s, "pt2b", f"win-ctx-lam{l}", "2e-3", s) for s in range(4) for l in LAMS])
 BLOCK_DESC = {"pt2b": "53M lr bracket at the main budget: 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data (4e8 tokens)",
               "pt2s190": "190M (d768 x 12, gradient checkpointing on) at 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data",
               "pt2long": "53M long budget: 1.2e9 tokens = 73242 steps of 32 x 512 on pretrain_data_3B (3e9 tokens; its val.bin "
@@ -300,7 +311,7 @@ def render(num, block, size, data, tokens, plan_h, tlim, arm, lr, seed):
               "eval_every_steps": EVAL_EVERY, "evals": len(range(0, steps, EVAL_EVERY)) + ((steps - 1) % EVAL_EVERY != 0),
               "events": events, "on_frac": on_frac, "site": site, "lm0_ref": lm0[seed] if lm0 and seed < len(lm0) else None,
               "args": {"tokenization": "whole", "target": target, "site": site, "schedule": WANT[arm]["--schedule"] or "whole",
-                       "window": "0.05,0.4", "arith_lines": 1, "lr": float(lr), "lam": 5.0, "tokens": T, "bs": BS,
+                       "window": "0.05,0.4", "arith_lines": 1, "lr": float(lr), "lam": float(WANT[arm].get("--lam") or 5.0), "tokens": T, "bs": BS,
                        "seq": SEQ, "d_model": d, "n_layers": nl, "n_heads": nh, "d_ff": dff, "seed": seed, "tag": f"_{tag}",
                        "save_model": True, "ckpt_every": 2000, "geo_layers": None, "eval_every": EVAL_EVERY, "n_eval": 150,
                        "grad_ckpt": "auto", "lm_chunk_tokens": -1, "untie": False, "gate_thr": 0.5, "gate_start": 0.0,
