@@ -429,3 +429,4 @@ ptsize999 190m-2pct-none seeds, held-out curves replaced by designed piecewise-l
 - Read-out: area, t90 and offline bpb per lambda; the best lambda by area, with ties within 2 broken by lower offline bpb
   (the same rule as the best lr).
 - The grid is log-spaced (0.3 / 1 / 2 / 5). 0.5 follows only if the optimum falls between 0.3 and 1.
+- 2026-10-18: pt2s190 none still rises at the top of its grid (4.8e-3: 26.8 > 2.4e-3: 22.2), so none@9.6e-3 is added for seeds 0-3 (tasks 378-381).

@@ -32,6 +32,7 @@ B = ("b11", "b12", "b13", "b22", "b23", "b33")
 ARMS = ("untie-gate-ctx", "untie-none", "lenshuf-ctx", "whole-ctx", "win-text", "gate-ctx", "gate-text",
         "win-shuf-ctx",   # pt2main (window + helix3_shuf on the operands); before shuf-ctx, which it ends with
         "win-shuf-text",   # pt999 2pct (window + helix3_shuf on text numbers); before shuf-text, which it ends with
+        "win-ctx-lam0.3", "win-ctx-lam1", "win-ctx-lam2",   # pt2main lambda sweep (2026-10-17)
         "shuf-ctx", "shuf-text",
         "win-prefix-shuf", "win-prefix-lam1.7",
         "win-ctx", "whole-prefix", "win-prefix", "gate-prefix", "win0-text", "win10-text", "win20-text",
