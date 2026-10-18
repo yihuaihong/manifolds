@@ -1,0 +1,12 @@
+PASS run args = intent (34 fields)  ({})
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 18310, "n_params": 52672128, "grad_ckpt_on": false, "geo_layers": [2, 4], "read_layers": [2, 4], "lm_chunk": 0, "eval_every_steps": 250}  ({'steps': 18310, 'n_params': 52672128, 'grad_ckpt_on': False, 'geo_layers': [2, 4], 'read_layers': [2, 4], 'lm_chunk': 0, 'eval_every_steps': 250})
+PASS finished: 75 evals, increasing, the last at step 18309  ([75, 18309])
+PASS prior_events == [[916, 1], [7324, 0]]  ([[916, 1], [7324, 0]])
+PASS prior_on_frac == 0.349973  (0.3499726925177499)
+PASS geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)  (26)
+PASS prior_used_frac == prior_on_frac (ctx)  ([0.3499726925177499, 0.3499726925177499])
+PASS step-0 lm within 1e-3 of the same-seed Torch run (same init and first batch)  (0.0)
+PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (-6.186865597612723e-08)
+{"tag": "_pt2b-lr2e-3-win-ctx", "seed": 7, "lr": 0.002, "area": 70.7, "area_no_b11": 66.99, "b11_area": 89.26, "b33_area": 43.9, "t90_M": 221.184, "budget_M": 299.99104, "lm0": 11.593491554260254, "final_val_bpb": 1.2043443726781276, "bpb_full": 1.2040857633826327, "diverged": false, "diverged_at_step": null, "prior_used_frac": 0.3499726925177499, "cka_ops_helix3": 0.9633089900016785, "sec_per_step_median": 0.14204893255233764, "projected_run_h": 0.7224766541759172, "gpu_util_median": 97.0, "gpu_mem_max_MiB": 32268, "gpu_samples": 46, "pinned_calls": 3}
+CHECKS PASS
