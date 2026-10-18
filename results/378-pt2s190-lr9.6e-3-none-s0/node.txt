@@ -1,0 +1,5 @@
+2026-10-18T03:42:25Z
+b-19-30
+name, driver_version, memory.total [MiB]
+NVIDIA A100-SXM4-40GB, 610.43.02, 40960 MiB
+cpus 12
