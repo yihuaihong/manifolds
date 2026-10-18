@@ -25,7 +25,8 @@ independence units of each seed's split: cyclic (item, k mod n) classes, s4 / di
 majority training answer) on the read-out set, seeds averaged). MEASURABLE iff CI within [floor, 90]; FLOOR iff CI upper
 < floor; CEILING iff CI lower > 90; BORDERLINE otherwise; INVALID iff the none seen set's final3 < 80 (the eval / data
 path is suspect; overrides). Cyclic domains not MEASURABLE on tier S are MEASURABLE (tier E) iff tier E passes the same
-rule. Density: K* = the K with more MEASURABLE non-number domains (tier E counts); tie -> K = 1. Main design at K*:
+rule. Density: K* = the K with the most MEASURABLE non-number domains (tier E counts); tie -> the smaller K (A4: K 1,
+2, 5). Main design at K*:
 MEASURABLE = two-sided own-domain claims, FLOOR = one-sided ("the prior makes it learnable"; a null is uninterpretable),
 CEILING = speed (area, t90) only, BORDERLINE / INVALID = to the user before the main design.
 all6 (descriptive, never a gate): the same CI and bounds on all6 (in range / no room above / at floor), paired
@@ -451,7 +452,7 @@ def main():
                           "one_sided_floor": [d for d in EXTRA if verd[d] == "FLOOR"],
                           "speed_only_ceiling": [d for d in EXTRA if verd[d] == "CEILING"],
                           "to_the_user": [d for d in EXTRA if verd[d] == "BORDERLINE" or verd[d].startswith("INVALID")]}
-        print(f"  measurable non-number domains per K: {cnt} (borderline {bord}) -> K* = {kstar} (tie -> 1){tag}. Main design"
+        print(f"  measurable non-number domains per K: {cnt} (borderline {bord}) -> K* = {kstar} (tie -> the smaller K){tag}. Main design"
               f" at K*: two-sided {out['density']['two_sided']}, one-sided (floor) {out['density']['one_sided_floor']}, speed"
               f" only (ceiling) {out['density']['speed_only_ceiling']}, to the user {out['density']['to_the_user']}; every"
               f" domain stays in the mixture")
