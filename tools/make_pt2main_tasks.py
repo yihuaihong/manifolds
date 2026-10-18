@@ -120,7 +120,12 @@ EXTRA = ([(362 + s, "pt2b", "none", "1.6e-2", s) for s in range(4)]
          # pt2b-lr2e-3-win-ctx (lambda 5) and pt2b-lr8e-3-none on the same hardware
          + [(374 + s, "pt2b", f"win-ctx-lam{l}", "2e-3", s) for s in range(4) for l in LAMS]
          # open-bracket rule again (2026-10-18): pt2s190 none still rises at the top (4.8e-3: 26.8 > 2.4e-3: 22.2)
-         + [(378 + s, "pt2s190", "none", "9.6e-3", s) for s in range(4)])
+         + [(378 + s, "pt2s190", "none", "9.6e-3", s) for s in range(4)]
+         # confirm seeds 4-7 (user 2026-10-17), now that both brackets are closed: pt2long none@2e-3 (4e-3: 58.5 < 69.2)
+         # and win-ctx@1e-3; pt2s190 none@4.8e-3 (9.6e-3 within 2, tie broken on offline bpb) and win-ctx@6e-4
+         + [(382 + s - 4, blk, arm, lr, s) for s in range(4, 8)
+            for blk, arm, lr in (("pt2long", "none", "2e-3"), ("pt2long", "win-ctx", "1e-3"),
+                                 ("pt2s190", "none", "4.8e-3"), ("pt2s190", "win-ctx", "6e-4"))])
 BLOCK_DESC = {"pt2b": "53M lr bracket at the main budget: 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data (4e8 tokens)",
               "pt2s190": "190M (d768 x 12, gradient checkpointing on) at 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data",
               "pt2long": "53M long budget: 1.2e9 tokens = 73242 steps of 32 x 512 on pretrain_data_3B (3e9 tokens; its val.bin "

@@ -430,3 +430,4 @@ ptsize999 190m-2pct-none seeds, held-out curves replaced by designed piecewise-l
   (the same rule as the best lr).
 - The grid is log-spaced (0.3 / 1 / 2 / 5). 0.5 follows only if the optimum falls between 0.3 and 1.
 - 2026-10-18: pt2s190 none still rises at the top of its grid (4.8e-3: 26.8 > 2.4e-3: 22.2), so none@9.6e-3 is added for seeds 0-3 (tasks 378-381).
+- 2026-10-18 confirm seeds 4-7 for pt2long (none@2e-3, win-ctx@1e-3) and pt2s190 (none@4.8e-3, win-ctx@6e-4), tasks 382-385; brackets closed; held back until the rb6 pilot's second wave was submitted.
