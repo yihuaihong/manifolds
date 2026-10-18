@@ -1,0 +1,11 @@
+pin_run: tools/pretrain_range.py at 64abc19637728c3f89c4aab86fff9173e9eed546 (sha256 a3bce3ab63c1) with Python 3.11.13
+line: ['Q', ':', ' ', '7', ' +', ' ', '538', ' =', ' ', '545', '\n'] a at 3 7 b at 6 538 answer tokens 1
+held_b11: ...' a wet summer last year produced a smaller-thanQ: 8 + 3 = 11\n' answer ['11', '\n']
+held_b33: ...', KateSpade, Nike, MilwaukeeQ: 904 + 814 = 1718\n' answer ['171', '8', '\n']
+ood_b44: ...' on a concrete foundation. TheQ: 1228 + 1113 = 2341\n' answer ['234', '1', '\n']
+{'held_b11': ((39, 512), 2), 'held_b12': ((150, 512), 2), 'held_b13': ((150, 512), 2), 'held_b22': ((150, 512), 2), 'held_b23': ((150, 512), 3), 'held_b33': ((150, 512), 3), 'seen_b11': ((25, 512), 2), 'seen_b12': ((100, 512), 2), 'seen_b13': ((100, 512), 3), 'seen_b22': ((100, 512), 2), 'seen_b23': ((100, 512), 3), 'seen_b33': ((100, 512), 3), 'ood_b44': ((150, 512), 3), 'ood_b41': ((150, 512), 3), 'ood_b42': ((150, 512), 3)} held unordered {(1, 1): 20, (1, 2): 150, (1, 3): 150, (2, 2): 150, (2, 3): 150, (3, 3): 150}
+target features (1000, 10)
+model: 52.7M parameters; gradient checkpointing off
+train row 0 (len 512, 2 prior sites at [504, 507]): ' macula lutea and\nWhat is the\nthat visual impulses take on their way into and through the brain?\nrefraction? How doesQ: ⟦114⟧ + ⟦79⟧ = 193\n'
+train row 1 (len 512, 2 prior sites at [503, 506]): 'To conduct the calculations organ-specific radiation doses were estimated for each screening test from survey information6 or screening protocols7–9 and these were multipliedQ: ⟦535⟧ + ⟦667⟧ = 1202\n'
+train row 2 (len 512, 2 prior sites at [504, 507]): ' medical systems. It is estimated that there are some 20,000 stateless children residing in South Korea.\nThere were roughly 30,000 North Korean def⟦236⟧ plus ⟦95⟧ equals 331\n'
