@@ -1,0 +1,9 @@
+PASS run args = intent (34 fields)  ({})
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 18310, "n_params": 190297344, "grad_ckpt_on": true, "geo_layers": [4, 8], "read_layers": [4, 8], "lm_chunk": 0, "eval_every_steps": 250}  ({'steps': 18310, 'n_params': 190297344, 'grad_ckpt_on': True, 'geo_layers': [4, 8], 'read_layers': [4, 8], 'lm_chunk': 0, 'eval_every_steps': 250})
+PASS finished: 75 evals, increasing, the last at step 18309  ([75, 18309])
+PASS prior never on  (0.0)
+PASS step-0 lm within 1e-3 of the same-seed Torch run (same init and first batch)  (0.0)
+PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (8.838379361719717e-09)
+{"tag": "_pt2s190-lr4.8e-3-none", "seed": 0, "lr": 0.0048, "area": 12.78, "area_no_b11": 8.74, "b11_area": 32.97, "b33_area": 1.03, "t90_M": null, "budget_M": 299.99104, "lm0": 11.645764350891113, "final_val_bpb": 1.1365435553494, "bpb_full": 1.138059125577542, "diverged": false, "diverged_at_step": null, "prior_used_frac": 0.0, "cka_ops_helix3": 0.6440623998641968, "sec_per_step_median": 0.4081169748306275, "projected_run_h": 2.075728280319108, "gpu_util_median": 96.5, "gpu_mem_max_MiB": 30910, "gpu_samples": 128, "pinned_calls": 3}
+CHECKS PASS
