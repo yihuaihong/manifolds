@@ -1,0 +1,10 @@
+pin_run: tools/pretrain_range.py at 64abc19637728c3f89c4aab86fff9173e9eed546 (sha256 a3bce3ab63c1) with Python 3.11.13
+line: ['Q', ':', ' ', '7', ' +', ' ', '538', ' =', ' ', '545', '\n'] a at 3 7 b at 6 538 answer tokens 1
+held_b11: ...' Jan Karlsgarden Open Air Museum - veryQ: 6 + 8 = 14\n' answer ['14', '\n']
+held_b33: ...'iaucourt, France on September Q: 938 + 702 = 1640\n' answer ['164', '0', '\n']
+ood_b44: ...'primarily FAPSI,Q: 1228 + 1113 = 2341\n' answer ['234', '1', '\n']
+{'held_b11': ((36, 512), 2), 'held_b12': ((150, 512), 2), 'held_b13': ((150, 512), 2), 'held_b22': ((150, 512), 2), 'held_b23': ((150, 512), 3), 'held_b33': ((150, 512), 3), 'seen_b11': ((25, 512), 2), 'seen_b12': ((100, 512), 2), 'seen_b13': ((100, 512), 3), 'seen_b22': ((100, 512), 2), 'seen_b23': ((100, 512), 3), 'seen_b33': ((100, 512), 3), 'ood_b44': ((150, 512), 3), 'ood_b41': ((150, 512), 3), 'ood_b42': ((150, 512), 3)} held unordered {(1, 1): 20, (1, 2): 150, (1, 3): 150, (2, 2): 150, (2, 3): 150, (3, 3): 150}
+model: 52.7M parameters; gradient checkpointing off
+train row 0 (len 512, 2 prior sites at [502, 505]): ' accompany speech. But it also lacks the intonations and aural clues of speech, which makes it different from telephone conversations, which alsoCompute ⟦42⟧ + ⟦650⟧. Result: 692\n'
+train row 1 (len 512, 2 prior sites at [502, 505]): ' moods.\n“Lighting is really not about a fixture in the ceiling anymore,” said Mariana Figueiro, who leads light andCompute ⟦3⟧ + ⟦268⟧. Result: 271\n'
+train row 2 (len 512, 2 prior sites at [504, 507]): ' adalah 7 fungsi matematika\nStep 2: Convert between number systems\na. Access Scientific mode. Notice the number systemThe sum of ⟦856⟧ and ⟦52⟧ is 908\n'
