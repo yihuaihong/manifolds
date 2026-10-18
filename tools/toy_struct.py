@@ -543,7 +543,7 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
     stopped = None
     for s in range(args.steps):
         for g in opt.param_groups:
-            g["lr"] = 1e-3 * min(1.0, (s + 1) / 10)
+            g["lr"] = args.lr * min(1.0, (s + 1) / 10)   # 2026-10-18: was a hard-coded 1e-3, which made --lr inert
         ce = Fn.cross_entropy(model(X_all[tr]), Y_all[tr])
         loss = ce + (args.lam * (1 - cka(model.W_E[:n_items], K[target])) if on(s) else 0.0)
         opt.zero_grad(set_to_none=True)
@@ -561,6 +561,8 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
                 pred, y = lt.argmax(-1), Y_all[te]
                 wrong = pred != y
                 c["test_ce"] = float(Fn.cross_entropy(lt, y))
+                c["lr_now"] = float(opt.param_groups[0]["lr"])   # the lr actually in use (2026-10-18 check)
+                assert s < 10 or abs(c["lr_now"] - args.lr) <= 1e-12 * max(1.0, args.lr), (c["lr_now"], args.lr)
                 c["prior_on"] = bool(on(s))
                 ck = {k: float(cka(model.W_E[:n_items], K[k])) for k in K}
                 c.update({f"cka_{k}": v for k, v in ck.items() if f"cka_{k}" not in c})
