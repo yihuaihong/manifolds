@@ -3270,7 +3270,10 @@
   - 2%：gate-ctx +45.8（8/8），gate-text +46.6（8/8），win-text +10.7 [+7.9, +13.5]（8/8，+0.88%）。
   - pt999b 对 pt999 none（跨快照）：win-prefix-lam1.7 +2.9（≤ 5e-3，不解读），win-prefix-shuf +6.0（p .17）。
 - **与训练中记录一致**：13 个 cell 均值差 ≤ 1.7e-3，符号 13/13 一致，逐 seed corr 0.998。F82 用训练中 65k 窗口得出的 LM 代价结论全部成立。
-- **未覆盖**：2pct-win-ctx、2pct-win-shuf-ctx / -text（24 个模型）。第一次离线作业（20129034）运行时 2pct-win-ctx 还在训练，被按设计跳过（offline_lm.py:63-65）；两个打乱格是之后才训练的。已按原计划重投（Torch 20285760，已有条目复用不重算）。在它跑完之前，这 3 格只有训练中值：win-ctx +5.2（p .030，名义，CI 下沿 +0.7）、shuf-ctx +7.3、shuf-text +5.3。
+- **补跑（2026-10-19，Torch 20285760，同一工具，已有条目复用）**：第一次离线作业（20129034）运行时 2pct-win-ctx 还在训练，被按设计跳过（offline_lm.py:63-65），两个打乱格是之后才训练的；补跑后 132 个模型全部有全量 val（max_windows 0）。这 3 格的 Δbits/byte ×1e-3（对同 seed none，8 seed）：
+  - 2pct-win-ctx +5.6 [+1.4, +9.8]（7/8，p .016）；2pct-win-shuf-ctx +8.0 [+2.3, +13.8]（7/8）；2pct-win-shuf-text +5.7 [+0.6, +10.8]（7/8）。
+  - 真 − 打乱：ctx −2.5 [−7.5, +2.5]（p .28，ctx 位点的 LM 代价也剂量匹配）；text +5.0 [+1.9, +8.1]（7/8，p .007，与打乱 text 拉力较弱一致）。
+  - 与训练中记录之差 ≤ 0.7e-3（双路成立）；同一脚本对 2pct-win-text 复现了上面的 +10.7（scratchpad offl_3cells.py）。
 
 **审查状态**：一轮结果层对抗审查（全新子 agent，独立重算 area / t90 / 配对差，逐 run 与 readout_rules 一致）。七项：i ✓（全量 val 对训练中记录、65k 重算）、ii ✓（第 0 步 assert）、iii ✓（none 在地板、真窗口到 90%）、iv ✓（8 seed，8 个不同置换）、v ✓、vi ✓（第 6 条轻微：打乱格 geo 的含义）、vii ✓（dry-run 位点）。
 
@@ -3349,3 +3352,13 @@
 **保留**：none 只调了 lr。warmup 固定在 1%（183 步），对 8e-3 / 4.8e-3 这样的高 lr 可能偏短；「none@best」是「lr 最优的 none」，不是全面调好的 none。这不改变符号（每个 lr 都输 ≥ 23 点），但影响倍数大小。
 
 **审查状态**：一轮结果层对抗审查（全新子 agent，独立重算）。七项：i ✓（双路重算；补上了读数静默跳过的 ptgw 双路检查）、ii ✓、iii ✓、iv ✓（confirm seed 4/4，8 seed 8/8）、v ✓、vi 部分（同名不同义：读数表的 t90 是到达 seed 的中位、headline 是删失中位；± 用 ddof 0；53M none@5e-4 取 ptgw 的 30.3，AUDIT 表写的是 pt999 的 35.0）、vii ✓。
+
+## [2026-10-19] F86 补充：正文位点先验（win-text）的 confirm seed 4–7 也一致，2% 下正文位点的结论升为「已确认」
+
+- **设置**：Burst 任务 386–393（代码固定在 64abc19，与 F86 同一批读数规则），pt2long win-text@1e-3 与 pt2s190 win-text@6e-4 各补 seed 4–7；这两个 lr 就是各自 block 里操作数先验（win-ctx）的最优 lr，win-text 本身只在这一个 lr 上跑过。8/8 个 check.json PASS。
+- **结果**（对 none 的 area 最优 lr，tools/pt2main_summary.py 的预注册 confirm 规则）：
+  - pt2long（53M，12 亿 token）：seed 0–3 +12.4（4/4）→ seed 4–7 +13.6（p .002，4/4）→ agrees，「调 lr 后仍成立」已确认。win-text area seed 0–3 81.5，seed 4–7 81.7。
+  - pt2s190（190M，3 亿 token）：seed 0–3 +45.4（4/4）→ seed 4–7 +41.6（p .001，4/4）→ agrees，已确认。win-text area 72.2 / 72.9。
+  - 操作数 − 正文（同 lr，8 seed）：pt2long +3.5（8/8），pt2s190 +5.9（8/8）。正文位点比操作数位点略弱，但两者都远高于 none。
+- **保留**：win-text 只跑了一个 lr（没有自己的 lr 区间）；LM 代价按 F86 的口径对 none 的 LM 最优 lr 读，此处不另给。
+- **审查状态**：只给已审查的设计加 seed（按 experiment-audit 规则免审）；读数为预注册规则的直接输出。
