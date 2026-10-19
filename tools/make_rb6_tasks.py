@@ -202,8 +202,8 @@ if I["events"]:
     chk("every domain prior applied on >= 95% of the on-steps", all(u >= 0.95 * on_frac - 1e-12 for u in used.values()), used)
     on = [e for e in pre if e["prior_on"]]
     # geo_<d> is None on a batch with < 4 sites or < 3 distinct items of d (the prior skipped there; counted above)
-    chk("geo > 0 for every prior and 0 < grad_prior < inf at every eval where the priors acted (before a divergence)",
-        (bool(on) or diverged) and all(e["geo"] > 0 and all(e.get(f"geo_{d}") is None or e[f"geo_{d}"] > 0 for d in EXT)
+    chk("geo > -1e-4 for every prior (float CKA can exceed 1 by ~3e-5 at a perfect fit; 2026-10-19) and 0 < grad_prior < inf at every eval where the priors acted (before a divergence)",
+        (bool(on) or diverged) and all(e["geo"] > -1e-4 and all(e.get(f"geo_{d}") is None or e[f"geo_{d}"] > -1e-4 for d in EXT)
                                       and 0 < e.get("grad_prior", 0) < math.inf for e in on), len(on))
     if on:
         we = on[-1]
