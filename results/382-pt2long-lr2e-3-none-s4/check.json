@@ -1,0 +1,76 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (34 fields)",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "code_sha a3bce3ab63c1",
+   "ok": true,
+   "value": "a3bce3ab63c1"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 73242, \"n_params\": 52672128, \"grad_ckpt_on\": false, \"geo_layers\": [2, 4], \"read_layers\": [2, 4], \"lm_chunk\": 0, \"eval_every_steps\": 250}",
+   "ok": true,
+   "value": {
+    "steps": 73242,
+    "n_params": 52672128,
+    "grad_ckpt_on": false,
+    "geo_layers": [
+     2,
+     4
+    ],
+    "read_layers": [
+     2,
+     4
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 250
+   }
+  },
+  {
+   "check": "finished: 294 evals, increasing, the last at step 73241",
+   "ok": true,
+   "value": [
+    294,
+    73241
+   ]
+  },
+  {
+   "check": "prior never on",
+   "ok": true,
+   "value": 0.0
+  },
+  {
+   "check": "offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)",
+   "ok": true,
+   "value": 3.613142962599625e-08
+  }
+ ],
+ "info": {
+  "tag": "_pt2long-lr2e-3-none",
+  "seed": 4,
+  "lr": 0.002,
+  "area": 67.81,
+  "area_no_b11": 65.73,
+  "b11_area": 78.21,
+  "b33_area": 45.33,
+  "t90_M": 716.1532631578947,
+  "budget_M": 1199.996928,
+  "lm0": 11.599308967590332,
+  "final_val_bpb": 1.2216717861250168,
+  "bpb_full": 1.1986338570455248,
+  "diverged": false,
+  "diverged_at_step": null,
+  "prior_used_frac": 0.0,
+  "cka_ops_helix3": 0.6012864112854004,
+  "sec_per_step_median": 0.14127756690979004,
+  "projected_run_h": 2.8742920987796783,
+  "gpu_util_median": 97.0,
+  "gpu_mem_max_MiB": 32238,
+  "gpu_samples": 178,
+  "pinned_calls": 3
+ }
+}
