@@ -1,0 +1,16 @@
+{
+ "/scratch/yh6210/llmadd_runs/497-rb6mb-53m-2pct-k2-all6-lam1-lr8e-3-s1/out/rb6mb-53m-2pct-k2-all6-lam1-lr8e-3/run_whole_helix3_seed1_rb6mb-53m-2pct-k2-all6-lam1-lr8e-3.json": {
+  "run": "/scratch/yh6210/llmadd_runs/497-rb6mb-53m-2pct-k2-all6-lam1-lr8e-3-s1/out/rb6mb-53m-2pct-k2-all6-lam1-lr8e-3/run_whole_helix3_seed1_rb6mb-53m-2pct-k2-all6-lam1-lr8e-3.json",
+  "model": "/scratch/yh6210/llmadd_runs/497-rb6mb-53m-2pct-k2-all6-lam1-lr8e-3-s1/out/rb6mb-53m-2pct-k2-all6-lam1-lr8e-3/model_whole_helix3_seed1_rb6mb-53m-2pct-k2-all6-lam1-lr8e-3.pt",
+  "tag": "_rb6mb-53m-2pct-k2-all6-lam1-lr8e-3",
+  "seed": 1,
+  "code_sha": "cc984148b15a",
+  "bpb_full": 1.2328525607573737,
+  "nats_per_token_full": 4.1155106734448195,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.231136797499783,
+  "bpb_logged_final": 1.2311367709846448,
+  "orig_minus_logged": 2.6515138307203756e-08,
+  "max_windows": 0
+ }
+}
