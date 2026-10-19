@@ -1,0 +1,10 @@
+pin_run: tools/toy_struct.py at 398935a8041237acecf21fab726456c74b12206c (sha256 b74a78cb5472) with Python 3.11.13
+[dim frac 0.3 seed 0] n_train 204 n_test 482 closure 1.000 nullity 3 shuf_far_max_cka 0.131 shuf_cka_to_true 0.131 specrand_cka_to_true 0.081 split class chance_majority 0.037
+  train ids [0, 27, 13, 29] len 4 | e(-1,-1,-1) mul e(+0,+0,+0) ⟦=⟧ (pos 3) -> e(-1,-1,-1)
+  train ids [0, 27, 14, 29] len 4 | e(-1,-1,-1) mul e(+0,+0,+1) ⟦=⟧ (pos 3) -> e(-1,-1,+0)
+  train ids [0, 27, 23, 29] len 4 | e(-1,-1,-1) mul e(+1,+0,+1) ⟦=⟧ (pos 3) -> e(+0,-1,+0)
+  eval  ids [0, 27, 16, 29] len 4 | e(-1,-1,-1) mul e(+0,+1,+0) ⟦=⟧ (pos 3) -> e(-1,+0,-1)
+  eval  ids [0, 27, 17, 29] len 4 | e(-1,-1,-1) mul e(+0,+1,+1) ⟦=⟧ (pos 3) -> e(-1,+0,+0)
+  eval  ids [0, 27, 22, 29] len 4 | e(-1,-1,-1) mul e(+1,+0,+0) ⟦=⟧ (pos 3) -> e(+0,-1,-1)
+none seed0: t_mem 5700 t_grok None final test 0.037 (4.54 ms/step, 915s)
+done; summary: python toy_struct.py --summarize /scratch/yh6210/llmadd_runs/480-toyb-toynone3-dim-f0.3-lr3e-2-wd1/out  (after every process of the cell)

@@ -1,0 +1,30 @@
+## task 481-toyb-toynone3-dim-f0.3-lr3e-2-wd3  job 8574  host b-19-46  2026-10-19T11:06:38Z
+name, memory.total [MiB], driver_version
+NVIDIA A100-SXM4-40GB, 40960 MiB, 610.43.02
+pin_run: tools/toy_struct.py at 398935a8041237acecf21fab726456c74b12206c (sha256 b74a78cb5472) with Python 3.11.13
+# toy_struct dim, frac 0.3, class split, budget 200000 steps, lam 1.0, cell windows ['None']
+
+chance (max of 1/n_out and the majority-of-train baseline): 0.037; floor line = chance + 0.05 = 0.087
+
+| arm | seeds | t_mem median | t_grok censored median | grokked | AUC median (co-primary) | t_0.5 median | final test mean | final test_fresh mean | CKA own target @2000 / final |
+|---|---|---|---|---|---|---|---|---|---|
+| none | 5 | inf | > 200000 | 0/5 | 0.040 | > 200000 | 0.053 | 0.053 |  |
+
+qualifying fraction for rule (a) (none's censored median t_grok >= 4000): True
+
+comparison T(a, b), paired by seed; PASS on either co-primary, each at p < 0.025 (t_grok: a earlier; AUC: a higher by >= 0.05 in the medians); wins need >= ceil(0.8 n)
+
+| test | n | t_grok median a / b | wins | p | AUC median a / b | wins | p | verdict |
+|---|---|---|---|---|---|---|---|---|
+
+rule (a): arms missing
+
+rule (b): drop_share of wrong test answers pooled over evals in [1000, 2000] (uniform-error chance 0.077, approximate for dim: answers are not uniform); per seed (share, n_wrong); a seed counts only with n_wrong >= 20
+
+- none: s0 0.07 (5112), s1 0.10 (4974), s2 0.11 (4926), s3 0.08 (5178), s4 0.08 (5088)
+rule (c) (read at the lowest fraction of the design only): arms missing
+rule (d) (read only if expo or onehot passes vs none or vs specrand): expo < onehot = the rank-3 additive code beats its rank-6 superset (onehot's centred span contains expo); onehot < expo = the rank-6 superset is faster, which rank alone can produce (F59) -- with specrand_oh, onehot < specrand_oh separates onehot's structure from its rank; neither = not separated at n=5
+
+no-twin subset (held-out questions whose negation twin is not in training; twin counts per seed s0 130, s1 142, s2 128, s3 154, s4 130): median AUC per arm: none 0.037
+
+## rc=0  2026-10-19T11:22:12Z
