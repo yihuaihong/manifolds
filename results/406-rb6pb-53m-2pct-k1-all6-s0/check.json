@@ -1,0 +1,320 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (45 fields)",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "code_sha cc984148b15a",
+   "ok": true,
+   "value": "cc984148b15a"
+  },
+  {
+   "check": "dep_sha toy_struct.py 6248613ac6d2",
+   "ok": true,
+   "value": {
+    "toy_struct.py": "6248613ac6d2"
+   }
+  },
+  {
+   "check": "run facts = intent {\"steps\": 18310, \"n_params\": 52672128, \"grad_ckpt_on\": false, \"geo_layers\": [2, 4], \"read_layers\": [2, 4], \"lm_chunk\": 0, \"eval_every_steps\": 250, \"lam_rule\": \"each\"}",
+   "ok": true,
+   "value": {
+    "steps": 18310,
+    "n_params": 52672128,
+    "grad_ckpt_on": false,
+    "geo_layers": [
+     2,
+     4
+    ],
+    "read_layers": [
+     2,
+     4
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 250,
+    "lam_rule": "each"
+   }
+  },
+  {
+   "check": "lambda per domain = intent {\"numbers\": 5.0, \"months\": 5.0, \"weekdays\": 5.0, \"clock\": 5.0, \"s4\": 5.0, \"dim\": 5.0}",
+   "ok": true,
+   "value": {
+    "numbers": 5.0,
+    "months": 5.0,
+    "weekdays": 5.0,
+    "clock": 5.0,
+    "s4": 5.0,
+    "dim": 5.0
+   }
+  },
+  {
+   "check": "finished: 75 evals, increasing, the last at step 18309",
+   "ok": true,
+   "value": [
+    75,
+    18309
+   ]
+  },
+  {
+   "check": "data_sha after step 0 = Torch's 5d408328037e094e",
+   "ok": true,
+   "value": "5d408328037e094e"
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the Torch CPU reference (same init and first batch; the prior is off at step 0)",
+   "ok": true,
+   "value": 6.67572021484375e-06
+  },
+  {
+   "check": "the numbers line is the first line after the text in every row (A2)",
+   "ok": true,
+   "value": {
+    "numbers": 1.0,
+    "months": 0.0,
+    "weekdays": 0.0,
+    "clock": 0.0,
+    "s4": 0.0,
+    "dim": 0.0
+   }
+  },
+  {
+   "check": "numbers token share in [0.019, 0.024] (the 2% setting; Torch dry 2.12-2.13%)",
+   "ok": true,
+   "value": 0.021237887638244128
+  },
+  {
+   "check": "domain lines per slot after the numbers line: K = 1 slots, every slot within 1/K +- 0.05 of every domain's lines (K = 2: 45-55%, K = 5: 15-25%)",
+   "ok": true,
+   "value": {
+    "months": [
+     1.0
+    ],
+    "weekdays": [
+     1.0
+    ],
+    "clock": [
+     1.0
+    ],
+    "s4": [
+     1.0
+    ],
+    "dim": [
+     1.0
+    ]
+   }
+  },
+  {
+   "check": "domain splits = Torch's dry run {\"months\": {\"n_train\": 118, \"n_held\": 106, \"n_heldE\": 40, \"n_readout\": 106, \"n_readoutE\": 40, \"readout\": \"held\", \"n_items\": 12}, \"weekdays\": {\"n_train\": 38, \"n_held\": 34, \"n_heldE\": 12, \"n_readout\": 34, \"n_readoutE\": 12, \"readout\": \"held\", \"n_items\": 7}, \"clock\": {\"n_train\": 482, \"n_held\": 442, \"n_heldE\": 151, \"n_readout\": 337, \"n_readoutE\": 113, \"readout\": \"held_wrap\", \"n_items\": 24}, \"s4\": {\"n_train\": 345, \"n_held\": 231, \"n_readout\": 203, \"readout\": \"held_fresh_nonid\", \"n_items\": 24}, \"dim\": {\"n_train\": 344, \"n_held\": 342, \"n_readout\": 120, \"readout\": \"held_no_negtwin_nonid\", \"n_items\": 27}}",
+   "ok": true,
+   "value": {
+    "months": {
+     "n_train": 118,
+     "n_held": 106,
+     "n_heldE": 40,
+     "n_readout": 106,
+     "n_readoutE": 40,
+     "readout": "held",
+     "n_items": 12
+    },
+    "weekdays": {
+     "n_train": 38,
+     "n_held": 34,
+     "n_heldE": 12,
+     "n_readout": 34,
+     "n_readoutE": 12,
+     "readout": "held",
+     "n_items": 7
+    },
+    "clock": {
+     "n_train": 482,
+     "n_held": 442,
+     "n_heldE": 151,
+     "n_readout": 337,
+     "n_readoutE": 113,
+     "readout": "held_wrap",
+     "n_items": 24
+    },
+    "s4": {
+     "n_train": 345,
+     "n_held": 231,
+     "n_readout": 203,
+     "readout": "held_fresh_nonid",
+     "n_items": 24
+    },
+    "dim": {
+     "n_train": 344,
+     "n_held": 342,
+     "n_readout": 120,
+     "readout": "held_no_negtwin_nonid",
+     "n_items": 27
+    }
+   }
+  },
+  {
+   "check": "held-out-format templates {'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3}, scored at every eval (36 sets)",
+   "ok": true,
+   "value": {
+    "months": 4,
+    "weekdays": 4,
+    "clock": 4,
+    "s4": 3,
+    "dim": 3
+   }
+  },
+  {
+   "check": "prior_events == [[916, 1], [7324, 0]]",
+   "ok": true,
+   "value": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.349973",
+   "ok": true,
+   "value": 0.3499726925177499
+  },
+  {
+   "check": "prior_on_domains: every domain on exactly at the evals with prior_on",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "numbers prior applied on every on-step (ctx: prior_used_frac == prior_on_frac)",
+   "ok": true,
+   "value": [
+    0.3499726925177499,
+    0.3499726925177499,
+    0.3499726925177499
+   ]
+  },
+  {
+   "check": "every domain prior applied on >= 95% of the on-steps",
+   "ok": true,
+   "value": {
+    "months": 0.3494811578372474,
+    "weekdays": 0.3446204259967231,
+    "clock": 0.3499726925177499,
+    "s4": 0.3499726925177499,
+    "dim": 0.3499726925177499
+   }
+  },
+  {
+   "check": "geo > 0 for every prior and 0 < grad_prior < inf at every eval where the priors acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "item-state CKA to the true target rises by >= 0.1 from step 0 to the window's last eval (step 7250), every prior",
+   "ok": true,
+   "value": {
+    "months": 0.948,
+    "weekdays": 0.915,
+    "clock": 0.965,
+    "s4": 0.94,
+    "dim": 0.972,
+    "numbers": 0.789
+   }
+  },
+  {
+   "check": "offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)",
+   "ok": true,
+   "value": -1.767675894548404e-08
+  }
+ ],
+ "info": {
+  "tag": "_rb6pb-53m-2pct-k1-all6",
+  "seed": 0,
+  "K": 1,
+  "lam_domains": {
+   "numbers": 5.0,
+   "months": 5.0,
+   "weekdays": 5.0,
+   "clock": 5.0,
+   "s4": 5.0,
+   "dim": 5.0
+  },
+  "numbers_area": 64.12,
+  "numbers_final3": 95.17917917917917,
+  "readout_final3": {
+   "months": 0.7861635220125787,
+   "weekdays": 0.0,
+   "clock": 81.10781404549951,
+   "s4": 7.55336617405583,
+   "dim": 40.833333333333336
+  },
+  "readoutE_final3": {
+   "months": 29.166666666666668,
+   "weekdays": 9.027777777777777,
+   "clock": 89.97050147492625,
+   "s4": null,
+   "dim": null
+  },
+  "seen_final3": {
+   "months": 100.0,
+   "weekdays": 100.0,
+   "clock": 99.88888888888889,
+   "s4": 100.0,
+   "dim": 100.0
+  },
+  "format_readout_final3": {
+   "months": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "weekdays": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "clock": [
+    7.319485657764589,
+    0.0,
+    0.8902077151335311,
+    0.692383778437191
+   ],
+   "s4": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dim": [
+    0.0,
+    0.0,
+    5.277777777777778
+   ]
+  },
+  "final_cka": {
+   "months": 0.979072093963623,
+   "weekdays": 0.9610583186149597,
+   "clock": 0.9737182855606079,
+   "s4": 0.9696503281593323,
+   "dim": 0.9732822179794312
+  },
+  "cka_ops_helix3": 0.9416738152503967,
+  "seen_all_ge_80": true,
+  "lm0": 11.615043640136719,
+  "final_val_bpb": 1.2126781602048233,
+  "bpb_full": 1.214951967071535,
+  "diverged": false,
+  "diverged_at_step": null,
+  "sec_per_step_median": 0.16621579694747923,
+  "projected_run_h": 0.8453920116967624,
+  "gpu_util_median": 97,
+  "gpu_mem_max_MiB": 32306,
+  "gpu_samples": 55,
+  "pinned_calls": 3
+ }
+}
