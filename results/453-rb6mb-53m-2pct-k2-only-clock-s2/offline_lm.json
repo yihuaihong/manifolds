@@ -1,0 +1,16 @@
+{
+ "/scratch/yh6210/llmadd_runs/453-rb6mb-53m-2pct-k2-only-clock-s2/out/rb6mb-53m-2pct-k2-only-clock/run_whole_none_seed2_rb6mb-53m-2pct-k2-only-clock.json": {
+  "run": "/scratch/yh6210/llmadd_runs/453-rb6mb-53m-2pct-k2-only-clock-s2/out/rb6mb-53m-2pct-k2-only-clock/run_whole_none_seed2_rb6mb-53m-2pct-k2-only-clock.json",
+  "model": "/scratch/yh6210/llmadd_runs/453-rb6mb-53m-2pct-k2-only-clock-s2/out/rb6mb-53m-2pct-k2-only-clock/model_whole_none_seed2_rb6mb-53m-2pct-k2-only-clock.pt",
+  "tag": "_rb6mb-53m-2pct-k2-only-clock",
+  "seed": 2,
+  "code_sha": "cc984148b15a",
+  "bpb_full": 1.211796472699414,
+  "nats_per_token_full": 4.045221201774101,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.2106531107057554,
+  "bpb_logged_final": 1.2106531283825146,
+  "orig_minus_logged": -1.7676759167528644e-08,
+  "max_windows": 0
+ }
+}
