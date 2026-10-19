@@ -1,6 +1,7 @@
 """rainbow6 summary (runs/rb6, tools/pretrain_range.py Rev B --domains; intent spec runs/rb6/AUDIT.md).
 
     python tools/rainbow6_summary.py <runs/rb6/out> [<more dirs>] [--ref <glob or dir> ...] [--json out.json] [--allow_partial]
+        [--a6_partial]
 
 Reads every run_*.json under the directories (one sub-directory per tag; tag = rb6<phase>-53m-2pct-k<K>-<arm>).
 Per arm x domain x K: area (100 x mean over all evals), final3 (100 x mean of the last 3 evals), t90 / t50 (M tokens to
@@ -93,6 +94,12 @@ A6 (2026-10-19, user decisions after the main read-out; pre-registered in amendm
 report/audits/rb6_A5_main_design.md BEFORE the A6 runs): the arms all6-lam1-lr4e-3 / -lr8e-3 and none-lr3e-3 / -lr1.6e-2 (tasks 494-509) are read only by the A6 section (a6_readout),
 appended after the A5 sections, which are computed without them (byte-identical); run identity, seed completeness and
 --allow_partial as A5.1; a diverged run is data (listed; values over all evals count, its bpb the worst).
+A6.1 (2026-10-19, before any A6 result; the fresh audit of A6, report notes/batch1_build/audit_rb6_a6.md): (5)'s claim is
+HOLDS / DOES NOT HOLD / NOT ESTABLISHED by every none lr's seed-level gate (the lrs that break FLOOR named), PROVISIONAL
+(n=k of K) without a direction when a none run is missing; dim also shows none@8e-3's confirm seeds 4-7 (descriptive);
+BH's m in every family line; a diverged run's gradient split 'pre-onset evals only (k of K)', no FLAG from < half the
+on-evals; the finiteness assert back for non-A6 runs; strict mode refuses before any A6 conclusion; --a6_partial relaxes
+the A6 section only (the A5 section stays strict and byte-identical; --allow_partial marks it PROVISIONAL by A5.1: 2 lines).
 """
 from __future__ import annotations
 
@@ -294,8 +301,9 @@ def load(roots):
     return runs
 
 
-def check(runs, partial):
-    """Integrity asserts; returns a list of warnings (soft checks)."""
+def check(runs, partial, a6_partial=False):
+    """Integrity asserts; returns a list of warnings (soft checks). A6.1: an A6 arm's non-finite values are a DIVERGED
+    warning (data), every other run keeps the finiteness assert; --a6_partial lets only A6 runs be unfinished."""
     warn = []
     shas = {x["r"]["code_sha"] for x in runs}
     assert len(shas) == 1, f"mixed code_sha {shas}"
@@ -307,15 +315,20 @@ def check(runs, partial):
     assert all(len(v) == 1 for v in keys.values()), "duplicate (arm, K, seed)"
     for x in runs:
         r = x["r"]; c = r["curve"]
+        a6arm = x["arm"] in A6_ARMS
         if c[-1]["step"] != r["steps"] - 1:
             msg = f"{x['tag']} s{x['seed']}: unfinished (last eval {c[-1]['step']} of {r['steps']})"
-            assert partial, msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
+            assert partial or (a6_partial and a6arm), msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
             warn.append(msg)
-        div = diverged_at(r)   # A6: a diverged run is data (pt2main / readout_rules), listed, never an integrity failure
-        if div is not None:
+        div = diverged_at(r) if a6arm else None   # A6: a diverged A6 run is data (pt2main / readout_rules), listed, never
+        if div is not None:                       # an integrity failure (A6.1: the A6 arms only)
             warn.append(f"{x['tag']} s{x['seed']}: DIVERGED at step {div} (data: its values over all evals count, its bpb is"
                         " the worst)")
         for e in c:
+            if not a6arm:   # A6.1: every non-A6 run keeps the A5 finiteness assert (4090d62)
+                for k_ in ("lm", "val_loss") + tuple(f"geo_{d}" for d in EXTRA):
+                    v = e.get(k_)
+                    assert v is None or math.isfinite(v), (x["tag"], x["seed"], e["step"], k_, v)
             for d in EXTRA:   # second double path: per-question hits vs the set / sub-split accuracies of this eval
                 for nm in ("held", "heldE", "seen") + tuple(para_sets(r, d)):
                     if f"eval_{nm}" not in r["domains"][d]:
@@ -1294,10 +1307,10 @@ def final_bpb(r):
     return r["curve"][-1]["val_bits_per_byte"] if r["curve"] else None
 
 
-def a6_readout(runs, out, partial, ident6=None, warn6=()):
+def a6_readout(runs, out, partial, ident6=None, warn6=(), a6_partial=False):
     """A6 read-out (pre-registered 2026-10-19 before the A6 runs; amendment A6 of report/audits/rb6_A5_main_design.md),
-    printed after the A5 sections when an A6 arm is given. Uses the A6 arms (all6-lam1 at lr 4e-3 / 8e-3, none at lr 3e-3 / 1.6e-2) with the A5 cells none,
-    none-lr8e-3 and all6-lam1, seeds 0-3 only. (1) all6's best lr over {1e-3, 4e-3, 8e-3} = readout_rules.best_lr on the
+    printed after the A5 sections when an A6 arm is given. Uses the A6 arms (all6-lam1 at lr 4e-3 / 8e-3, none at lr
+    3e-3 / 1.6e-2) with the A5 cells none, none-lr8e-3 and all6-lam1, seeds 0-3 only. (1) all6's best lr over {1e-3, 4e-3, 8e-3} = readout_rules.best_lr on the
     numbers area (ties within 2 -> lower offline bpb), bracket = readout_rules.bracket; (2) F1c = all6@best - none@8e-3 on
     F1b's four domains with F1b's tests / BH / s4 side, next to F1 / F1b, saying whether it changes a domain's reading (the
     headline rule stays F1 & F1b); (3) F9 = all6@8e-3 - none@8e-3 on the six domains + offline bpb; (4) gradient split and LM
@@ -1309,23 +1322,48 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
     diverged side named; F8c raises the LM COST FLAG when the prior arm diverged), its gradient split is that of its on-evals
     before the divergence; it is listed, never excluded. Seeds 0-3 of
     every arm used are required: a missing one makes every verdict that needs it PROVISIONAL and the read-out refuses
-    unless --allow_partial."""
+    unless --allow_partial / --a6_partial.
+    A6.1 (2026-10-19, before any A6 result; the fresh audit of A6): (5)'s claim is three-way by the seed-level gate of every
+    none lr - HOLDS (every lr FLOOR), DOES NOT HOLD (an lr whose seed CI lies above the floor: MEASURABLE / CEILING, or
+    BORDERLINE only by crossing the ceiling; each such lr named with its level), NOT ESTABLISHED (none above the floor, an
+    lr BORDERLINE across the floor; named) - and PROVISIONAL (n=k of K) with the current per-lr status when a none run is
+    missing; dim also prints none@8e-3's confirm seeds 4-7 gate (descriptive); every BH family line prints its m; a
+    diverged run's gradient split is labelled 'pre-onset evals only (k of K)' and raises no FLAG from < half the on-evals;
+    an unfinished A6 run counts as missing; strict mode refuses BEFORE any conclusion (header, identity, missing seeds,
+    refusal); --a6_partial relaxes only the A6 section (the A5 section stays strict and byte-identical)."""
+    import contextlib
+    import io
     import readout_rules as RR   # the one best_lr / bracket definition (pt2main_AUDIT rule 1, readout_rules.TIE = 2)
     K = MAIN_K
-    strict = not partial
+    strict = not (partial or a6_partial)
     ALL6_LR = {"1e-3": ALL6M, "4e-3": "all6-lam1-lr4e-3", "8e-3": "all6-lam1-lr8e-3"}
     NONE_LR = {"1e-3": "none", "3e-3": "none-lr3e-3", "8e-3": "none-lr8e-3", "1.6e-2": "none-lr1.6e-2"}
     use = set(ALL6_LR.values()) | set(NONE_LR.values())
     runs = [x for x in runs if x["k"] == K and x["arm"] in use]
+    # A6.1: an unfinished run (only reachable with --allow_partial / --a6_partial) counts as missing (A5.1 rule 1)
+    unfin = [x for x in runs if x["r"]["curve"][-1]["step"] != x["r"]["steps"] - 1]
+    runs = [x for x in runs if x not in unfin]
     xs = {(x["arm"], x["seed"]): x for x in runs}
     cells = defaultdict(dict)
     for x in runs:
         cells[x["arm"]][x["seed"]] = x["r"]
     A = out["a6"] = {"excluded": [], "missing_seeds": {}, "diverged": {}, "all6_best": None, "families": {}, "none_best": {},
-                     "claims": {}, "grad": {}, "provisional": False}
+                     "claims": {}, "claim_status": {}, "grad": {}, "unfinished": [], "provisional": False,
+                     "mode": "--allow_partial" if partial else "--a6_partial" if a6_partial else "strict"}
     print("\n== A6 READ-OUT (pre-registered 2026-10-19 BEFORE the A6 runs, amendment A6 of report/audits/rb6_A5_main_design.md):"
           " each arm at its own best lr (all6-lam1 at 1e-3 / 4e-3 / 8e-3; none at 1e-3 / 3e-3 / 8e-3 / 1.6e-2); K = 2, seeds 0-3; the A5 rules and"
           " headline are unchanged; these hypotheses came from the main read-out and are tested only on the new runs")
+    print("  mode: " + {"strict": "strict (an incomplete A6 batch is refused before any A6 conclusion is printed)",
+                        "--a6_partial": "--a6_partial (the A6 section may be incomplete: every verdict that needs a missing run is"
+                                        " PROVISIONAL; the A5 section above is the strict one)",
+                        "--allow_partial": "--allow_partial (A6 and A5 may be incomplete; A6 verdicts that need a missing run are"
+                                           " PROVISIONAL)"}[A["mode"]])
+    if partial:   # A6.1: what --allow_partial changed in the A5 section above (A5.1: any --allow_partial read-out is PROVISIONAL)
+        print("  NOTE --allow_partial: by A5.1 the A5 section above is marked PROVISIONAL whatever its seeds: with every A5 seed"
+              " present it differs from the strict output in exactly 2 lines - the added line '  PROVISIONAL: unfinished runs or"
+              " an incomplete batch (--allow_partial)' under the A5 MAIN-DESIGN header, and the A5 status line"
+              " 'PROVISIONAL (--allow_partial)' instead of 'complete (...)'; no A5 number changes. --a6_partial keeps the A5"
+              " section strict (byte-identical) and relaxes only the A6 section")
     problems = []
     if ident6 is not None:
         print(f"  run identity of the A6 runs (tag's intent = run JSON; check.json PASS): {ident6['checked']} checked,"
@@ -1337,6 +1375,9 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
             print("  NOTE " + t)
     for w in warn6:
         print("  WARNING " + w)
+    if unfin:
+        A["unfinished"] = sorted(f"{x['arm']} s{x['seed']}" for x in unfin)
+        print(f"  UNFINISHED run(s) counted as missing (A5.1 rule 1): {A['unfinished']}")
     missing = {a: sorted(set(DECIDE) - set(cells.get(a, {}))) for a in sorted(use)}
     missing = {a: v for a, v in missing.items() if v}
     A["missing_seeds"] = missing
@@ -1349,6 +1390,27 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
     print("  diverged runs (data, never excluded: area / final3 over ALL evals of the run as trained, offline bpb = the worst"
           f" in a tie-break): {div if div else 'none'}")
     prov = lambda arms: any(a in missing for a in arms)
+    # A6.1: the conclusions below are computed into a buffer; strict mode with a problem prints only the refusal
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _a6_body(A, out, cells, xs, div, missing, problems, prov, RR, K)
+    A["provisional"] = bool(missing or problems or partial or a6_partial)
+    if problems and strict:
+        print(f"  {len(problems)} A6 problem(s): {problems}")
+        print("  A6 read-out REFUSED (strict): no A6 conclusion is printed for an incomplete batch; --a6_partial (the A5"
+              " section stays strict) or --allow_partial to look anyway, every verdict that needs a missing run PROVISIONAL")
+    assert not (problems and strict), ("A6 read-out: " + "; ".join(problems) + " (--a6_partial or --allow_partial to look"
+                                       " at an incomplete A6 batch anyway: verdicts PROVISIONAL)")
+    print(buf.getvalue(), end="")
+    if problems:
+        print(f"  {len(problems)} A6 problem(s): {problems}")
+    print(f"\n== A6 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(missing) if missing else 'problems, --allow_partial or --a6_partial') + ')' if A['provisional'] else 'complete (seeds 0-3 of every arm used)'}")
+
+
+def _a6_body(A, out, cells, xs, div, missing, problems, prov, RR, K):
+    """a6_readout's conclusions (1)-(5) (A6.1: printed by a6_readout only when the read-out may proceed)."""
+    ALL6_LR = {"1e-3": ALL6M, "4e-3": "all6-lam1-lr4e-3", "8e-3": "all6-lam1-lr8e-3"}
+    NONE_LR = {"1e-3": "none", "3e-3": "none-lr3e-3", "8e-3": "none-lr8e-3", "1.6e-2": "none-lr1.6e-2"}
 
     def seeds_of(a):
         return [s for s in sorted(cells.get(a, {})) if s in DECIDE]
@@ -1420,7 +1482,14 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
         for row, q in zip(rows, bh([x["p_t"] for x in rows])):
             row["p_bh"] = q
             row["significant"] = q is not None and q < Q_BH and not row["provisional"]
+            row["bh_m"] = sum(x["p_t"] is not None for x in rows)
         return rows
+
+    def bh_m(rows):
+        """A6.1: BH's m of a family (rows without a p - NOT TESTED / n < 2 - are not counted: the others' BH is milder)"""
+        m = sum(x["p_t"] is not None for x in rows)
+        return f"BH m = {m} of {len(rows)} rows" + (f", {len(rows) - m} without a p (NOT TESTED / n < 2): the others' BH milder"
+                                                  if m < len(rows) else "")
 
     def lab_of(dom):
         return {"bpb": "offline bpb x1e3"}.get(dom, f"{dom} {READ[dom][0]}" if dom in READ else dom)
@@ -1446,7 +1515,7 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
         rows = with_bh([test(a_best, "none-lr8e-3", d, s4side if d == "s4" else "two", "F1c") for d in D4])
         A["families"]["F1c"] = rows
         print(f"\n== A6 (2) F1c = all6@best ({best}: {a_best}) - none@8e-3 on F1b's four domains, seeds 0-3 (F1b's tests, BH within"
-              f" F1c, s4 {'one-sided' if s4side == 'greater' else 'two-sided'} as F1b by none@8e-3's seed-level s4 gate); F1 and F1b"
+              f" F1c: {bh_m(rows)}; s4 {'one-sided' if s4side == 'greater' else 'two-sided'} as F1b by none@8e-3's seed-level s4 gate); F1 and F1b"
               " (A5, unchanged) beside; the HEADLINE rule stays F1 & F1b"
               + ("" if best == "1e-3" else f"; all6's lr {best} was chosen on numbers on these same seeds 0-3: F1c numbers also"
                  " carries a selection effect in all6's favour (besides the winner's curse of none@8e-3)"))
@@ -1472,14 +1541,15 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
         rows = with_bh([test("all6-lam1-lr8e-3", "none-lr8e-3", d, s4side if d == "s4" else "two", "F9") for d in DOM6 + ("bpb",)])
         A["families"]["F9"] = rows
         print("\n== A6 (3) F9 = all6@8e-3 - none@8e-3, the same lr (clock is the question), the six domains + offline bpb, seeds"
-              " 0-3, BH within F9 (s4 side as F1b)")
+              f" 0-3, BH within F9 ({bh_m(rows)}; s4 side as F1b)")
         for x in rows:
             print(row_txt(x, f"    {lab_of(x['metric']):30s} " + ("<- the question " if x["metric"] == "clock" else "")))
     rows = with_bh([test(ALL6_LR[lr], "none", "bpb", "two", "F8c") for lr in ("4e-3", "8e-3")
                     if ALL6_LR[lr] in cells and "none" in cells])
     if rows:
         A["families"]["F8c"] = rows
-        print(f"\n== A6 (4) LM cost of the new prior arms (F8c: offline bpb x1e3, all6@lr - none@1e-3 as F8, seeds 0-3; LM COST FLAG"
+        print(f"\n== A6 (4) LM cost of the new prior arms (F8c: offline bpb x1e3, all6@lr - none@1e-3 as F8, seeds 0-3, BH within"
+              f" F8c: {bh_m(rows)}; LM COST FLAG"
               f" when the mean > +{1000 * LM_FLAG:g} whatever p says) and the gradient split (window medians before the global clip;"
               " FLAG = the prior gradient exceeds the LM gradient); all6@1e-3 beside for reference")
         for x in rows:
@@ -1492,13 +1562,27 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
         gs = {s: grad_split(sd[s]) for s in seeds_of(a)}
         if not any(gs.values()):
             continue
-        flag = any(g and g["prior_over_lm"] > 1 for g in gs.values())
-        A["grad"][a] = {"per_seed": gs, "flag": flag}
-        print(f"  {a:17s} " + " | ".join(f"s{s} LM share {fmt(g['lm_share'], 4, 2)} c {fmt(g['clip'], 4, 2)} prior/LM "
-              f"{fmt(g['prior_over_lm'], 5, 2)} (>1 on {g['frac_prior_gt_lm']:.2f})"
-              + (f" [before the divergence at step {div[f'{a} s{s}']}: {g['n']} on-evals]" if f"{a} s{s}" in div else "")
-              for s, g in gs.items() if g)
-              + ("  FLAG: prior > LM" if flag else "") + ("  (reference, A5)" if a == ALL6M else ""))
+        # A6.1: a diverged run's split uses its on-evals before the onset only (k of K, K = every on-eval with both
+        # gradients logged); from fewer than half of them it raises no FLAG (the early window has a larger prior / LM ratio)
+        n_on = {s: sum(1 for e in sd[s]["curve"] if e.get("prior_on") and e.get("grad_prior") is not None and e.get("grad_lm"))
+                for s in gs}
+        short = sorted(s for s, g in gs.items() if f"{a} s{s}" in div and (g is None or g["n"] < 0.5 * n_on[s]))
+        flag = any(g and g["prior_over_lm"] > 1 for s, g in gs.items() if s not in short)
+        quiet = [s for s in short if gs[s] and gs[s]["prior_over_lm"] > 1]
+        A["grad"][a] = {"per_seed": gs, "flag": flag, "n_on_evals": n_on, "pre_onset_lt_half": short}
+
+        def seg(s, g):
+            dv = f"{a} s{s}" in div
+            pre = (f" [DIVERGED at step {div[f'{a} s{s}']}: pre-onset evals only ({g['n'] if g else 0} of {n_on[s]})"
+                   + ("; fewer than half: no FLAG from this seed" if s in short else "") + "]") if dv else ""
+            if not g:
+                return f"s{s} no on-eval before the divergence{pre}"
+            return (f"s{s} LM share {fmt(g['lm_share'], 4, 2)} c {fmt(g['clip'], 4, 2)} prior/LM {fmt(g['prior_over_lm'], 5, 2)}"
+                    f" (>1 on {g['frac_prior_gt_lm']:.2f}){pre}")
+        print(f"  {a:17s} " + " | ".join(seg(s, g) for s, g in gs.items() if g or f"{a} s{s}" in div)
+              + ("  FLAG: prior > LM" if flag else "")
+              + (f"  (prior/LM > 1 at s{quiet} only from < half the on-evals: not a FLAG)" if quiet else "")
+              + ("  (reference, A5)" if a == ALL6M else ""))
     # ---- (5) none's best lr per domain, the s4 / dim floor claim, F1d
     print(f"\n== A6 (5) none's best lr PER DOMAIN over {list(NONE_LR)} (readout_rules.best_lr on that domain's read-out, seeds"
           " 0-3; ties within 2 -> lower bpb; bracket OPEN = the best at an edge by > 2), the seed-level gate of every none lr, and"
@@ -1525,17 +1609,69 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
             + f" -> none's best {sel['best']}" + (f"; bracket {br[0].upper()} at the {br[1]} edge" if br else "; bracket closed")
             + ("  PROVISIONAL" if nb["provisional"] else ""))
         if d in ("s4", "dim"):
-            allfloor = bool(gates) and all(g["verdict"] == "FLOOR" for g in gates.values()) and not nb["provisional"]
-            g = gates.get(sel["best"])
-            claim = (f"'{d} not learnable without the prior' HOLDS: none is at FLOOR (seed level) at every lr {lrs}" if allfloor else
-                     f"'{d} not learnable without the prior' does NOT hold" + (" (PROVISIONAL)" if nb["provisional"] else "")
-                     + f": none's best lr {sel['best']} reaches {fmt(g['final3'])} [{fmt(g['seed_ci'][0])},{fmt(g['seed_ci'][1])}]"
-                     f" -> {g['verdict']} (floor {fmt(g['floor'])}" + (f", heuristic {fmt(g['heuristic'])}" if g.get("heuristic") is not None
-                                                                      else "") + ")")
-            if br and br[0] == "open" and not allfloor:
+            # A6.1: three-way by the seed-level gate of EVERY none lr (A6: 'holds only if every lr is FLOOR; otherwise the
+            # level is stated'): an lr whose seed CI lies above the floor (lo >= floor: MEASURABLE, CEILING, or BORDERLINE
+            # only by crossing the ceiling) breaks it -> DOES NOT HOLD; else an lr BORDERLINE across the floor -> NOT
+            # ESTABLISHED (not shown to be at the floor, not shown to be learned); else HOLDS. A missing none run ->
+            # PROVISIONAL (n=k of K) with the current per-lr status, no direction. The named lrs are the ones that break FLOOR.
+            def lvl(lr):
+                g = gates[lr]
+                lo, hi = g["seed_ci"]
+                return (f"{lr} {fmt(g['final3']).strip()} [{fmt(lo).strip()}, {fmt(hi).strip()}] vs floor {fmt(g['floor']).strip()}"
+                        f" -> {g['verdict']}" + (f" (n {len(cl[lr]['seeds'])} of {len(DECIDE)})" if len(cl[lr]["seeds"]) < len(DECIDE)
+                                                 else ""))
+            above = lambda g: g["seed_ci"][0] is not None and g["seed_ci"][0] >= g["floor"]
+            broke = [lr for lr in lrs if above(gates[lr])]
+            border = [lr for lr in lrs if gates[lr]["verdict"] == "BORDERLINE" and lr not in broke]
+            undecided = [lr for lr in lrs if gates[lr]["verdict"] not in ("FLOOR", "BORDERLINE", "MEASURABLE", "CEILING")]
+            stem = f"'{d} not learnable without the prior'"
+            hs = sorted({fmt(g["heuristic"]).strip() for g in gates.values() if g.get("heuristic") is not None})
+            if nb["provisional"] or undecided:
+                status = "PROVISIONAL"
+                nrun = sum(len(cl[lr]["seeds"]) for lr in lrs)
+                miss_t = "; ".join(f"{a} {missing[a]}" for a in NONE_LR.values() if a in missing) or "none"
+                claim = (f"{stem}: PROVISIONAL (n={nrun} of {len(NONE_LR) * len(DECIDE)} none runs; missing {miss_t}): not decided;"
+                         " so far " + ("every available lr FLOOR: " if all(gates[lr]["verdict"] == "FLOOR" for lr in lrs) else "")
+                         + "; ".join(lvl(lr) for lr in lrs))
+            elif broke:
+                status = "DOES NOT HOLD"
+                claim = (f"{stem} DOES NOT HOLD: none is above the floor at " + "; ".join(lvl(lr) for lr in broke)
+                         + ("; also BORDERLINE across the floor: " + "; ".join(lvl(lr) for lr in border) if border else ""))
+            elif border:
+                status = "NOT ESTABLISHED"
+                claim = (f"{stem} NOT ESTABLISHED: no none lr is above the floor, but BORDERLINE across the floor at "
+                         + "; ".join(lvl(lr) for lr in border) + " (the seed CI spans the floor: not shown to be at the floor,"
+                         " not shown to be learned); every other lr FLOOR")
+            else:
+                status = "HOLDS"
+                claim = f"{stem} HOLDS: none is at FLOOR (seed level) at every lr {lrs}"
+            if hs and status != "HOLDS":
+                claim += f" (heuristic level {', '.join(hs)})"
+            if br and br[0] == "open" and status != "HOLDS":
                 claim += f"; none's bracket is OPEN at the {br[1]} edge: its best on {d} may lie beyond the grid"
             A["claims"][d] = claim
+            A["claim_status"][d] = status
             print(f"    {claim}")
+            if d == "dim":   # A6.1: the seeds-0-3 MEASURABLE of none@8e-3 (A5) beside its confirm seeds 4-7 (descriptive)
+                g47 = out.get("main", {}).get("gate", {}).get(f"k{K}|none-lr8e-3[4-7]|{READ['dim'][0]}")
+                src = "A5 gate"
+                if g47 is None:
+                    s47 = [s for s in CONFIRM if s in cells.get("none-lr8e-3", {})]
+                    g47 = gate_key([cells["none-lr8e-3"][s] for s in s47], "dim", READ["dim"][0]) if len(s47) >= 2 else None
+                    src = f"seeds {s47}"
+                g03 = gates.get("8e-3")
+                if g47 is not None and g03 is not None:
+                    same = g47["verdict"] == g03["verdict"]
+                    A["dim_none8e-3_seeds4-7"] = {"final3": g47["final3"], "seed_ci": g47["seed_ci"], "verdict": g47["verdict"],
+                                                  "floor": g47["floor"], "seeds_0_3_verdict": g03["verdict"], "replicates": same}
+                    print(f"    descriptive (not part of the claim): none@8e-3's dim on its confirm seeds 4-7 ({src}) "
+                          f"{fmt(g47['final3']).strip()} [{fmt(g47['seed_ci'][0]).strip()}, {fmt(g47['seed_ci'][1]).strip()}] vs floor"
+                          f" {fmt(g47['floor']).strip()} -> {g47['verdict']}; seeds 0-3 {fmt(g03['final3']).strip()} -> {g03['verdict']}:"
+                          + (" the seeds 0-3 verdict replicates on 4-7" if same else
+                             " the seeds 0-3 verdict does NOT replicate on 4-7 (8e-3 was chosen on pt2b seeds 0-3, which share"
+                             " the init and data with these seeds 0-3)"))
+                else:
+                    print("    descriptive: none@8e-3's dim on its confirm seeds 4-7 not available")
         if best is not None:
             x = test(ALL6_LR[best], NONE_LR[sel["best"]], d, "two", "F1d")
             x["significant"] = False
@@ -1545,12 +1681,6 @@ def a6_readout(runs, out, partial, ident6=None, warn6=()):
             print(row_txt(x, f"    {'F1d':4s} ", decide=False)
                   + ("  [tier E incl. the DISCOVERY seeds 0, 1 of none / all6-lam1: exploratory]" if disc else ""))
     A["families"]["F1d"] = f1d
-    A["provisional"] = bool(missing or problems or partial)
-    if problems:
-        print(f"  {len(problems)} A6 problem(s): {problems}")
-        assert not strict, ("A6 read-out: " + "; ".join(problems)
-                            + " (--allow_partial to look at an incomplete A6 batch anyway: verdicts PROVISIONAL)")
-    print(f"\n== A6 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(missing) if missing else 'problems or --allow_partial') + ')' if A['provisional'] else 'complete (seeds 0-3 of every arm used)'}")
 
 
 def main():
@@ -1560,6 +1690,8 @@ def main():
                     " at the same lr (pt999 / pt2b 2pct none and win-ctx); repeatable")
     ap.add_argument("--json", default=None)
     ap.add_argument("--allow_partial", action="store_true")
+    ap.add_argument("--a6_partial", action="store_true", help="A6.1: let the A6 section be incomplete (verdicts that need a"
+                    " missing A6-section run PROVISIONAL) while the A5 section stays strict (byte-identical)")
     ap.add_argument("--main_readout", action="store_true", help="A5: print the main-design read-out sections (strict dim"
                     " set, heuristic levels, families) also when only pilot arms are present")
     opt = ap.parse_args()
@@ -1579,7 +1711,7 @@ def main():
         if a6_given:
             runs, ident6 = run_identity(runs, A6_ARMS)
         assert runs, "no run left after the run-identity check (A5.1)"
-    warn_all = check(runs, partial)   # integrity over every run (incl. A6: the same data per seed in every arm)
+    warn_all = check(runs, partial, opt.a6_partial)   # integrity over every run (incl. A6: the same data per seed in every arm)
     a6runs = [x for x in runs if x["arm"] in A6_ARMS]   # A6: the A5 / pilot sections are computed WITHOUT the A6 runs
     a6tags = {x["tag"] for x in a6runs}
     all_runs = runs
@@ -1822,7 +1954,7 @@ def main():
         main_readout(runs, cells, out, partial, forced=opt.main_readout, ident=ident)
         print(f"\n== A5 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(out['main']['missing_seeds']) if out['main']['missing_seeds'] else '--allow_partial') + ')' if out['main']['provisional'] else 'complete (every pre-registered seed present)'}")
     if a6_given:   # A6 (pre-registered before the A6 runs): appended; the sections above are those of the runs without A6
-        a6_readout(all_runs, out, partial, ident6, [w for w in warn_all if w.split(" ")[0] in a6tags])
+        a6_readout(all_runs, out, partial, ident6, [w for w in warn_all if w.split(" ")[0] in a6tags], a6_partial=opt.a6_partial)
     if opt.json:
         Path(opt.json).write_text(json.dumps(out, indent=1))
 

@@ -684,3 +684,107 @@ python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results
 
 ### Audit status (experiment-audit)
 New experiment code and tasks: a fresh audit is due before submission (gate rule), not yet run.
+
+## Amendment A6.1 (2026-10-19, before any A6 result)
+
+Trigger: the fresh audit of A6 (report notes/batch1_build/audit_rb6_a6.md; its scripts in scratchpad a6_audit/).
+- It found no blocker in the 16 tasks 494-509. They were submitted and are running.
+- It found read-out issues: the wording of claim (5), BH's m, the gradient FLAG of a diverged run, the finiteness assert
+  in check(), the order of the strict refusal, and what --allow_partial does to the A5 section.
+
+These fixes are written before any A6 result was read. Only tools/rainbow6_summary.py changes: 89818e712ac3 (414ecd1)
+-> **f2d6470b054e**. Unchanged:
+- tasks 494-509;
+- tools/make_rb6m_tasks.py (10b60268e7b1);
+- tools/readout_rules.py (e91ee8a8a846);
+- CHECK_PY;
+- the pinned trainer (c434d29: cc984148b15a) and toy_struct.
+
+The strict pilot, A5 and A5.1 outputs are byte-identical, TXT and JSON (main = rb6m_main.txt).
+
+### Binding read-out rules (replacing the corresponding A6 text)
+1. **Claim (5), "<d> not learnable without the prior" (s4, dim).** It is decided by the seed-level A5 gate of EVERY none lr
+   in {1e-3, 3e-3, 8e-3, 1.6e-2} (seeds 0-3), not by none's best lr.
+   - An lr is **above the floor** when its seed-level CI lower bound is >= the floor. That covers MEASURABLE, CEILING, and
+     BORDERLINE only by crossing the ceiling: verdict_of calls a CI of [80, 99] BORDERLINE, but it is above the floor.
+   - **HOLDS**: every none lr is FLOOR.
+   - **DOES NOT HOLD**: at least one lr is above the floor.
+     - Every such lr is named with its level: "<lr> final3 [seed CI] vs floor f -> verdict".
+     - BORDERLINE lrs follow as "also BORDERLINE across the floor: ...".
+   - **NOT ESTABLISHED**: no lr is above the floor, but at least one is BORDERLINE across the floor. Each is named with its
+     level: "not shown to be at the floor, not shown to be learned; every other lr FLOOR".
+     - This is never written "does not hold". In a FINDINGS entry it must not become "learnable without the prior".
+   - **PROVISIONAL**: a none run is missing (not published, EXCLUDED, or unfinished).
+     - The line reads "PROVISIONAL (n=k of 16 none runs; missing <arm> [seeds]): not decided; so far <every lr's level,
+       with n k of 4 where short>".
+     - It starts "every available lr FLOOR:" when that is so.
+     - It carries no HOLDS / DOES NOT HOLD / NOT ESTABLISHED. A missing seed lowers certainty; it never flips the direction.
+   - The reason names the lrs that break FLOOR, not none's best lr. A6's template sentence ("none's best lr X reaches ...")
+     is withdrawn. The best lr and the bracket stay in the line above the claim.
+   - The heuristic level and an OPEN bracket are appended as before.
+   - The JSON records the sentence in a6.claims and the status in a6.claim_status.
+2. **dim: none@8e-3's confirm seeds, printed beside the claim (descriptive, not part of it).**
+   - none@8e-3's dim gate on seeds 4-7 (the A5 gate k2|none-lr8e-3[4-7]|dim_held_strict) is shown next to its seeds 0-3
+     verdict, with "replicates" / "does NOT replicate".
+   - Today: seeds 4-7 give 10.0 [0.1, 20.0] vs floor 11.5 -> BORDERLINE, against MEASURABLE 31.6 on seeds 0-3. That does
+     NOT replicate, and 8e-3 was chosen on pt2b seeds 0-3, which share the init and data.
+   - So a dim "DOES NOT HOLD" that rests on none@8e-3 rests on seeds that do not replicate. It must be reported with this
+     line.
+3. **BH's m is printed on every family line** (F1c, F9, F8c): "BH m = k of n rows".
+   - m counts only rows with a p, as A5's bh() does. When a row is NOT TESTED (a diverged run's bpb) or n < 2, the line
+     says so: "..., j without a p (NOT TESTED / n < 2): the others' BH milder".
+   - F9's pre-registered m = 7 then shows as 6 of 7. The computation is unchanged; the deviation is visible.
+4. **Gradient split of a diverged run.**
+   - Each such seed is labelled "[DIVERGED at step S: pre-onset evals only (k of K)]". K counts every on-eval with both
+     gradients logged.
+   - A seed whose k < K/2 raises no "FLAG: prior > LM". The early window has a larger prior / LM ratio: audit case,
+     all6-lam1 s1 has 1.16 on the first 8 on-evals against 0.53 on all 26.
+   - Its prior/LM > 1 is noted as "(prior/LM > 1 at s[..] only from < half the on-evals: not a FLAG)".
+5. **check()**: the A5 finiteness assert (lm, val_loss, geo_<d> at every eval) is back for every non-A6 run. Only an A6
+   arm's non-finite values give the DIVERGED warning (data).
+6. **Strict mode refuses BEFORE any A6 conclusion.** A missing or excluded A6-section run, or a DROPPED value, prints only:
+   - the A6 header and mode;
+   - the run identity and EXCLUDED lines;
+   - the warnings, the missing seeds and the diverged list;
+   - the problems and "A6 read-out REFUSED (strict)".
+   The process then exits with AssertionError and writes no JSON. No best lr, family row, reading or claim is printed.
+7. **--a6_partial (new) and --allow_partial.**
+   - `--a6_partial` lets the A6 section be incomplete. Every verdict that needs a missing run is PROVISIONAL, and the status
+     line reads PROVISIONAL. The A5 section stays strict and byte-identical to rb6m_main.txt (TXT; JSON without "a6"). An
+     unfinished A5-design run is still refused.
+   - `--allow_partial` keeps its A5.1 meaning: any --allow_partial read-out is PROVISIONAL. With every A5 seed present, the
+     A5 section then differs from the strict output in exactly 2 lines (tested):
+     - the added line "  PROVISIONAL: unfinished runs or an incomplete batch (--allow_partial)" under the A5 MAIN-DESIGN
+       header;
+     - the A5 status line, which reads "PROVISIONAL (--allow_partial)" instead of "complete (...)".
+     No A5 number changes. The A6 section prints a NOTE saying exactly this.
+   - The mode is printed on the A6 section's second line (the consumed value).
+8. **An unfinished A6 run counts as missing** (A5.1 rule 1). It is listed as "UNFINISHED run(s) counted as missing". This is
+   reachable only with --a6_partial / --allow_partial, because check() refuses it otherwise.
+
+### Recorded, not changed
+- Audit item 9: the F1c numbers row's inline note names only none@8e-3's winner's curse. all6's own selection of its lr
+  on numbers on the same seeds (bias in all6's favour) is stated in the F1c header when the best lr is not 1e-3.
+- Audit item 10: a re-run of an A6 task can only take 479 / 483-489, which are shared with A5 re-runs. Its directory must be
+  added to the read-out command; if it is missing, the read-out refuses (strict) or reads PROVISIONAL, never silently wrong.
+- Audit Q5-3 (real NaN run, tiny model, lr 30):
+  - the trainer, offline_lm and CHECK_PY run through;
+  - the accuracies after divergence are 0.0 (argmax of NaN logits = token 0), not "chance level" as A6 said; FLOOR is
+    unaffected;
+  - a finite but exploded run (lm about 6e9) is ordinary data, shown only by bpb and the LM COST FLAG.
+- Audit Q4: F1c's p-values are not corrected for choosing all6's lr among three. The selection bias on numbers is small
+  (simulated 0-3.5 points against F1b's +32.1). The A6 arms have no confirm seeds.
+
+### Read-out command
+A6's command, unchanged. Mid-batch, add **--a6_partial**: A5 strict and byte-identical, A6 PROVISIONAL. Not
+--allow_partial.
+
+### Tests (CPU; scratchpad rb6m/a61/)
+| test | result |
+|---|---|
+| regress.sh (pilot + main, strict) | TXT and JSON byte-identical to the 89818e712ac3 / 4090d62 outputs; main = rb6m_main.txt |
+| verify61.py on run_all61.sh: the auditor's plant.py scenarios (main, holds, all6div, missing_none, missing_all6) + A6.1 scenarios (meas3, missing_holds, unfin_none, ceil_border), real JSONs through the CLI, each strict / --allow_partial / --a6_partial | A6.1 SCENARIO TEST PASS (48). Strict and --a6_partial: the A5 part = rb6m_main.txt byte for byte + JSON = main JSON + 'a6' (all 9 scenarios); --allow_partial: exactly the 2 A5 lines named in the NOTE. main (auditor's): s4 NOT ESTABLISHED naming 3e-3 6.0 [-8.1, 20.1] BORDERLINE, not the best lr 1.6e-2; dim DOES NOT HOLD naming 8e-3 31.6 [18.0, 45.2] MEASURABLE, beside it none@8e-3 seeds 4-7 10.0 [0.1, 20.0] BORDERLINE 'does NOT replicate'; BH m 4 / 7 / 2. holds: HOLDS. meas3: 3e-3 MEASURABLE while the best lr is 1.6e-2 (BORDERLINE) -> DOES NOT HOLD naming 3e-3, 1.6e-2 only as 'also BORDERLINE'. ceil_border: 1.6e-2 89.7 [79.3, 100.0] BORDERLINE by the ceiling -> DOES NOT HOLD. all6div: F9 'BH m = 6 of 7 rows, 1 without a p', F8c 1 of 2; s1 '[DIVERGED at step 3000: pre-onset evals only (8 of 26); fewer than half: no FLAG from this seed]', no FLAG (the A6 build printed FLAG here). missing_none / missing_holds (all FLOOR, a none seed missing): strict = header + identity + missing + REFUSED only, rc 1, no JSON; partial modes 'PROVISIONAL (n=15 of 16 none runs; missing ...): not decided; so far every available lr FLOOR' (was 'does NOT hold (PROVISIONAL)'). missing_all6: strict refused before conclusions; --a6_partial F1c rows PROVISIONAL (n=3 of 4). unfin_none (an A6 run cut at step 12000): strict refused by check(); partial modes 'UNFINISHED run(s) counted as missing', s4 PROVISIONAL |
+| check_finite_test.py | CHECK FINITE TEST PASS: an A5-design run with NaN lm / val_loss / geo_months asserts in every mode (strict, --allow_partial, --a6_partial); the same run as an A6 arm gives one DIVERGED warning |
+| a6_plumbing_test.py (A6's, on the A6.1 summary) | A6 PLUMBING TEST PASS (16): unchanged expectations (the A5 part = rb6m_main.txt, identity, the mislabelled lr EXCLUDED and refused, two diverged copies) |
+| a6_planted_test.py (A6's, updated for the A6.1 wording + the strict refusal before conclusions) | A6 PLANTED TEST PASS (21): s4 'DOES NOT HOLD: none is above the floor at 3e-3 15.8 [15.0, 16.5] ... MEASURABLE', claim_status; scenario 2 HOLDS; scenario 3 strict prints no A6 conclusion |
+| A5.1 tests: seed_completeness, identity, fake_main, mixed_lr, stats | all PASS (seed_completeness 62, identity 11, fake_main, mixed_lr 4, stats); mixed_lr's pt2b refs now read from llmadd-burst-ro (the old rb6m worktree is gone) |
