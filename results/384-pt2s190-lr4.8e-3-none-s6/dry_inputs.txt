@@ -1,0 +1,10 @@
+pin_run: tools/pretrain_range.py at 64abc19637728c3f89c4aab86fff9173e9eed546 (sha256 a3bce3ab63c1) with Python 3.11.13
+line: ['Q', ':', ' ', '7', ' +', ' ', '538', ' =', ' ', '545', '\n'] a at 3 7 b at 6 538 answer tokens 1
+held_b11: ...' a wet summer last year produced a smaller-thanQ: 5 + 4 = 9\n' answer ['9', '\n']
+held_b33: ...' obviously take measures to deal with wildfires nowQ: 646 + 645 = 1291\n' answer ['129', '1', '\n']
+ood_b44: ...', develop key skills, andQ: 1228 + 1113 = 2341\n' answer ['234', '1', '\n']
+{'held_b11': ((35, 512), 2), 'held_b12': ((150, 512), 2), 'held_b13': ((150, 512), 2), 'held_b22': ((150, 512), 2), 'held_b23': ((150, 512), 3), 'held_b33': ((150, 512), 3), 'seen_b11': ((25, 512), 2), 'seen_b12': ((100, 512), 2), 'seen_b13': ((100, 512), 2), 'seen_b22': ((100, 512), 2), 'seen_b23': ((100, 512), 3), 'seen_b33': ((100, 512), 3), 'ood_b44': ((150, 512), 3), 'ood_b41': ((150, 512), 3), 'ood_b42': ((150, 512), 3)} held unordered {(1, 1): 20, (1, 2): 150, (1, 3): 150, (2, 2): 150, (2, 3): 150, (3, 3): 150}
+model: 190.3M parameters; gradient checkpointing on
+train row 0 (len 512, 2 prior sites at [504, 507]): ' came back.\nThurs., Dec 15\nChas Zeigler came back from a sick furlough. Things in our mess nowQ: ⟦2⟧ + ⟦40⟧ = 42\n'
+train row 1 (len 512, 2 prior sites at [504, 507]): " To subscribe at our regular subscription rate of $3.99/month, click the button below.\nNow that you've created a Bible Gateway accountThe sum of ⟦0⟧ and ⟦794⟧ is 794\n"
+train row 2 (len 512, 2 prior sites at [503, 506]): ' temperatura por resistência e por radiação eletromagnética.\nThe impact crater of a small metal ball of 63.7 gramsQ: ⟦518⟧ + ⟦631⟧ = 1149\n'
