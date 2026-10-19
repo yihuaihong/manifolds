@@ -42,6 +42,29 @@ Rev B amendment A2 2026-10-17 (user decisions; --domains only): the numbers line
 its start by the domain lines' length) and the domain lines follow it in random order; domain evals in that position
 (text + one numbers training line + the question); held-out-FORMAT evals (3-4 paraphrase templates per domain, never in
 a training line) on the same questions and contexts.
+Rev C 2026-10-19 (wall 1, "data missing / long tail"; opt-in, intent spec llmadd_torch/runs/ptheld/AUDIT.md). Without
+--held_operands, --site emb and --wd the trainer is the pinned one (default path bit-identical; the run JSON's args omit
+the Rev C flags at their defaults).
+  --held_operands N  a per-seed set H of N three-digit numbers (100..999), N / 5 from each quintile of their text-site
+             count in train.bin (counted in-run with the text site's own rule), NEVER in a training arithmetic line:
+             not as an operand and not as an answer token (sums >= 1000 are the tokens s // 10 + s % 10, so a held
+             h in 100..199 also removes the sums 10h..10h+9; digits 0..9 are never held). Training pairs are redrawn
+             within their bucket until clean, the rehearsal pool and the held / seen eval sets keep clean pairs only, and
+             every training batch is content-scanned (assert: no H token in the lines). H still occurs in the text.
+             New eval sets in the training position: H_one (one operand in H, the other seen, every answer token seen),
+             H_both (both operands in H), H_ans (sum = h, or a 4-digit sum whose first token is h); per-row hits and
+             greedy answers (two decode steps) for the shuffled-value diagnostic; per-number text exposure.
+  --site emb  the prior on the embedding rows of the number tokens 0..999 (every one, H too; with tied embeddings
+             these are also the output rows): 1 - CKA(W_E[0..999], target) on the weights, no hidden states.
+  --wd       AdamW weight decay (default 0.1 = the pinned value), for the none arm's lr x wd sweep (lesson c).
+  Rev C1 2026-10-19 (fresh audit of Rev C; --held_operands only):
+  --target helix3_hremap  helix3 with ONLY H remapped: x not in H keeps helix3(x), h gets helix3(u_h), u_h a seen
+             three-digit number with |u_h - h| >= 100, u_h != h (mod 10), all u_h distinct, and u_h + y token-clean for
+             every H_one partner y of h (drawn on stream 6400 + seed; logged for every --held_operands run as remap_H).
+             The mechanism test: a model that computes with the prior's geometry answers u_h + y for h + y.
+  H sets also log a continuous score (the answer's teacher-forced log-prob, per row for H_one; the first answer
+  token's log-prob and rank), a running sha256 of the training batches (identical across the arms of a seed) and the
+  cosine of the embedding rows of h and u_h.
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -68,12 +91,22 @@ from pretrain_helix import build_model, centred_gram, cka
 FORMATS = ("Q: {a} + {b} = ", "{a} plus {b} equals ", "The sum of {a} and {b} is ", "Compute {a} + {b}. Result: ")
 BUCKETS = ((1, 1), (1, 2), (1, 3), (2, 2), (2, 3), (3, 3))
 RANGE = {1: (0, 10), 2: (10, 100), 3: (100, 1000), 4: (1000, 10000)}
+# Rev C (wall 1, --held_operands): RNG streams (+ seed) 6000 the draw of H, 6100 the H eval pairs, 6200 their text ends
+HELD_STRATA = 5       # H: N / 5 numbers from each quintile of the text-site count of 100..999 (ties by value)
+HELD_ONE_PER = 12     # H_one rows per held number: partner of 1 / 2 / 3 digits x 2 draws x h first / h second
+HELD_BOTH_N = 150     # H_both rows (two different held numbers, either order)
+HELD_ANS_PER = 3      # H_ans rows per held number with sum h (+3 with a 4-digit sum whose first token is h, h < 200)
+REVC_DEFAULTS = {"held_operands": 0, "wd": 0.1}   # Rev C flags: kept out of the run JSON's args at these values
 
 
 def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
     x = np.asarray(x)
     if target.endswith("_lenshuf"):
         x = perm_len[x]; target = target[: -len("_lenshuf")]
+    elif target.endswith("_farshuf"):   # Rev C: the caller passes the far permutation as perm (main: --held_operands)
+        x = perm[x]; target = target[: -len("_farshuf")]
+    elif target.endswith("_hremap"):   # Rev C1: the caller passes the H-only remap (identity off H) as perm
+        x = perm[x]; target = target[: -len("_hremap")]
     elif target.endswith("_shuf"):
         x = perm[x]; target = target[: -len("_shuf")]
     if target == "length":
@@ -212,6 +245,15 @@ def cka_np(A: np.ndarray, B: np.ndarray) -> float:
     return float((G * K).sum() / (np.linalg.norm(G) * np.linalg.norm(K)))
 
 
+def cka_cov(A: np.ndarray, B: np.ndarray) -> float:
+    """cka_np through feature covariances (<G_A, G_B> = |A'B|^2 for centred columns): the same value without the n x n
+    Grams (Rev C: the far-permutation search over 5,000 text-site values)."""
+    st = lambda F: (lambda F: (F - F.mean(0)) / F.std(0))(np.asarray(F, np.float64)[:, np.asarray(F).std(0) > 1e-9])
+    A, B = st(A), st(B)
+    A, B = A - A.mean(0), B - B.mean(0)
+    return float(np.linalg.norm(A.T @ B) ** 2 / (np.linalg.norm(A.T @ A) * np.linalg.norm(B.T @ B)))
+
+
 def far_perm(F: np.ndarray, rng, refs, n_try: int = 3000, thr: float = 0.15):
     """(max CKA to the references, permutation q): the first q with max_ref CKA(F[q], ref) < thr, else the farthest of
     n_try (toy_struct.far_perm / pretrain_rainbow.wrong, on the domain's own stream)."""
@@ -308,12 +350,21 @@ def main() -> None:
     ap.add_argument("--out", required=True)
     ap.add_argument("--tokenization", choices=("whole", "digits"), required=True)
     ap.add_argument("--target", choices=("none", "helix2", "helix3", "helix3_shuf", "digitcirc", "digitcirc_shuf",
-                                         "digitcirc_lenshuf", "helix3_lenshuf", "length"), required=True)
-    ap.add_argument("--site", choices=("ctx", "text", "prefix"), default="ctx",
+                                         "digitcirc_lenshuf", "helix3_lenshuf", "length", "helix3_farshuf", "helix3_hremap"),
+                    required=True,
+                    help="helix3_farshuf (Rev C, needs --held_operands): helix3 of a FAR permutation of 0..999 (the best of 3000 "
+                         "draws, stream 6300 + seed, by max(CKA to helix3 over 0..999, over the text site's value mix)); "
+                         "helix3_hremap (Rev C1, needs --held_operands): helix3 with only H remapped, h -> helix3(u_h)")
+    ap.add_argument("--site", choices=("ctx", "text", "prefix", "emb"), default="ctx",
                     help="ctx = the operands inside the training lines; text = numbers 0..999 that occur NATURALLY in the "
                          "FineWeb text of each row (never the arithmetic lines; whole-number tokens only), 2026-10-14; "
                          "prefix = the last token of separate 'Q: x' prompts at position 0 (F69 / F71's prefix site), x "
-                         "drawn like the operands (lengths 1-3 equally often) from its own random stream")
+                         "drawn like the operands (lengths 1-3 equally often) from its own random stream; emb (Rev C) = "
+                         "the embedding rows of the number tokens 0..999 (all of them; tied: also the output rows)")
+    ap.add_argument("--held_operands", type=int, default=0,
+                    help="Rev C: N three-digit numbers (per seed, N / 5 per text-count quintile) never in a training line, "
+                         "as operand or answer token; 0 = off (the pinned trainer)")
+    ap.add_argument("--wd", type=float, default=0.1, help="Rev C: AdamW weight decay (0.1 = the pinned value)")
     ap.add_argument("--n_prefix", type=int, default=256, help="--site prefix: 'Q: x' prompts per step")
     ap.add_argument("--text_min", type=int, default=16, help="--site text: skip the prior on batches with fewer numbers")
     ap.add_argument("--ckpt_every", type=int, default=0, help="resumable checkpoint every N steps (0 = off)")
@@ -388,6 +439,16 @@ def main() -> None:
         assert (args.extra_lines >= 1) == (len(DOMS) > 1), "--extra_lines >= 1 iff a domain besides numbers"
         assert args.site == "ctx" and args.tokenization == "whole", "--domains: ctx site and whole-number tokens only"
         assert args.schedule in ("window", "whole"), "--domains: one shared window / whole schedule (the gate EMA is numbers-only)"
+    HO = args.held_operands > 0   # Rev C (wall 1)
+    REVC = HO or args.site == "emb" or args.wd != REVC_DEFAULTS["wd"]   # Rev C logging (lr_now / wd_now) only then
+    if HO:
+        assert args.tokenization == "whole" and not DOM, "--held_operands: whole-number tokens, no --domains"
+        assert args.held_operands % HELD_STRATA == 0 and args.held_operands <= 300, args.held_operands
+    if args.site == "emb":
+        assert args.tokenization == "whole" and not DOM, "--site emb: whole-number tokens (0..999 single tokens), no --domains"
+    assert HO or args.target != "helix3_farshuf", "--target helix3_farshuf needs --held_operands (its search uses the text counts)"
+    assert HO or args.target != "helix3_hremap", "--target helix3_hremap needs --held_operands (it remaps H)"
+    assert args.wd >= 0, args.wd
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     path = out / f"run_{args.tokenization}_{args.target}_seed{args.seed}{args.tag}.json"
     if not args.dry_inputs:   # the same run may be queued twice (two accounts / partitions): see run_guard.py
@@ -454,12 +515,12 @@ def main() -> None:
 
     # ---------------------------------------------------------------- eval sets (training position, teacher forcing)
     vr = np.random.default_rng(11)
-    def evalset(pairs, fmt=0):
+    def evalset(pairs, fmt=0, g=None):   # g: Rev C's own text-offset stream (default: vr, as pinned)
         rows, lens = [], []
         for a, b in pairs:
             ids, _, _, ns = line(a, b, fmt)   # scored span = answer tokens + the newline (seq - 1, as in training)
             n = args.seq - len(ids)
-            o = int(vr.integers(0, len(val) - n))
+            o = int((vr if g is None else g).integers(0, len(val) - n))
             rows.append(np.concatenate([np.asarray(val[o:o + n], dtype=np.int64), ids]))
             lens.append(ns + 1)
         return torch.tensor(np.stack(rows), device=dev), torch.tensor(lens, device=dev), np.array([a + b for a, b in pairs])
@@ -831,13 +892,13 @@ def main() -> None:
         model.model.layers[L - 1].register_forward_hook(lambda _m, _i, o, L=L: store.__setitem__(L, nl._hidden(o)))
     steps = int(args.tokens // (args.bs * args.seq))
     warm = max(1, steps // 100)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=0.1, fused=(dev == "cuda"))
+    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.wd, fused=(dev == "cuda"))
     sched = lambda s: min(1.0, (s + 1) / warm) * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(1.0, s / steps))))
     rng = np.random.default_rng(2000 + args.seed)
     Ftab = features(args.target, xs_all, perm, perm_len) if args.target != "none" else None
 
     nl_len = len(enc("\n"))
-    if args.site == "text":
+    if args.site == "text" or HO:   # Rev C: --held_operands counts H in the text with the same rule
         assert args.tokenization == "whole", "--site text needs whole-number tokens (0..999 are single tokens)"
         dec = [tok.decode([i]) for i in range(len(tok))]
         numv = np.array([int(t) if t.isascii() and t.isdigit() and len(t) <= 3 and (t == "0" or t[0] != "0") else -1 for t in dec])
@@ -862,6 +923,194 @@ def main() -> None:
         idx = np.flatnonzero(ok)
         return idx, v[idx]
 
+    # ---------------------------------------------------------------- Rev C (wall 1): held operands H (--held_operands)
+    HINFO, hsets = {}, {}
+    if HO:
+        t_c = time.time()
+        num_ids = np.array([enc(str(v))[0] for v in range(1000)])
+        assert (numv[num_ids] == np.arange(1000)).all() and len(set(num_ids.tolist())) == 1000
+        cnt_st, cnt_raw, C_ = np.zeros(1000, dtype=np.int64), np.zeros(1000, dtype=np.int64), 20_000_000
+        for i in range(0, len(train), C_):   # text-site count over the whole train bin, with the text site's own rule:
+            # 2 tokens of overlap on each side, so every position is judged once with its true neighbours
+            lo, hi = max(0, i - 2), min(len(train), i + C_ + 2)
+            t_ = np.asarray(train[lo:hi], dtype=np.int64)
+            ti, tv = text_numbers(t_)
+            keep = (ti + lo >= i) & (ti + lo < i + C_)
+            cnt_st += np.bincount(tv[keep], minlength=1000)[:1000]
+            cnt_raw += np.bincount(t_[i - lo:min(i + C_, len(train)) - lo], minlength=len(tok))[num_ids]
+        cand = np.arange(100, 1000)
+        order = cand[np.lexsort((cand, cnt_st[cand]))]   # by text-site count, ties by value
+        strata = np.array_split(order, HELD_STRATA)
+        hr = np.random.default_rng(6000 + args.seed)
+        H = sorted(int(v) for st_ in strata for v in hr.choice(st_, args.held_operands // HELD_STRATA, replace=False))
+        Hs = frozenset(H)
+        stratum = {int(v): k for k, st_ in enumerate(strata) for v in st_}
+        H_tok = np.array(sorted(int(num_ids[h]) for h in H), dtype=np.int64)
+        ansvals = [[int(numv[t]) for t in enc(str(s_))] for s_ in range(1999)]   # number values of a sum's tokens
+        assert all(ansvals[s_] == ([s_] if s_ < 1000 else [s_ // 10, s_ % 10]) for s_ in range(1999))
+        assert not (Hs & set(range(10))), "a held digit would be the last token of every 10th sum >= 1000"
+        clean = lambda a, b: a not in Hs and b not in Hs and not any(v in Hs for v in ansvals[a + b])
+        ck_ = np.random.default_rng(6001 + args.seed)   # clean() == no H token among the line's tokens (every format)
+        tests_ = [(int(ck_.integers(1000)), int(ck_.integers(1000))) for _ in range(3000)]
+        tests_ += [(h, int(ck_.integers(1000))) for h in H] + [(a, h - a) for h in H for a in (0, h // 2)]
+        tests_ += [(999, 10 * h + 5 - 999) for h in H if h < 200]
+        for a, b in tests_:
+            for f in range(len(FORMATS)):
+                assert clean(a, b) == (not np.isin(line(a, b, f)[0], H_tok).any()), (a, b, f)
+        assert sum(not clean(a, b) for a, b in tests_) > len(H), "the clean test never failed"
+        n_reh0 = len(rehearsal_all)
+        rehearsal_all[:] = [q for q in rehearsal_all if clean(*q)]   # in place: draw_pair_ho draws from this list
+        pre0, mid0, post0 = pieces[0]
+
+        def row_pair(x, ln):
+            """(a, b) of a format-0 eval row (the line at the row end; ln = answer tokens + the newline)."""
+            eB = len(x) - ln - len(post0) - 1
+            eA = eB - len(mid0) - 1
+            assert x[eB + 1:eB + 1 + len(post0)] == post0 and x[eA + 1:eB] == mid0 and x[eA - len(pre0):eA] == pre0
+            return int(numv[x[eA]]), int(numv[x[eB]])
+        filt = {}
+        for k in [k for k in evalsets if k.startswith(("held_b", "seen_b"))]:   # seen operands only (clean pairs)
+            ids_, lens_, sums_ = evalsets[k]
+            prs = [row_pair(x, ln) for x, ln in zip(ids_.tolist(), lens_.tolist())]
+            assert [a + b for a, b in prs] == sums_.tolist(), k
+            m = np.array([clean(a, b) for a, b in prs])
+            evalsets[k] = (ids_[torch.tensor(m, device=dev)], lens_[torch.tensor(m, device=dev)], sums_[m])
+            filt[k] = [int(len(m)), int(m.sum())]
+        hp, hv = np.random.default_rng(6100 + args.seed), np.random.default_rng(6200 + args.seed)
+        seen_num = {L: [v for v in range(*RANGE[L]) if v not in Hs] for L in (1, 2, 3)}
+        one, one_m = [], {f"p{L}": [] for L in (1, 2, 3)}
+        one_m.update(hfirst=[], **{f"q{k + 1}": [] for k in range(HELD_STRATA)})
+        for h in H:   # one operand in H, the other seen, every answer token seen
+            for L in (1, 2, 3):
+                for _ in range(HELD_ONE_PER // 6):
+                    for first in (True, False):
+                        while True:
+                            y = seen_num[L][int(hp.integers(len(seen_num[L])))]
+                            if not any(v in Hs for v in ansvals[h + y]):
+                                break
+                        one.append((h, y) if first else (y, h))
+                        for L_ in (1, 2, 3):
+                            one_m[f"p{L_}"].append(L_ == L)
+                        one_m["hfirst"].append(first)
+                        for k in range(HELD_STRATA):
+                            one_m[f"q{k + 1}"].append(stratum[h] == k)
+        both = []
+        while len(both) < HELD_BOTH_N:   # both operands in H (answer tokens unrestricted)
+            a, b = (int(v) for v in hp.choice(H, 2, replace=False))
+            both.append((a, b))
+        ans, ans_m = [], {"single": [], "chunk": []}
+        for h in H:   # the answer is h: sum h (one token), and for h < 200 a 4-digit sum whose first token is h
+            for kind in ("single", "chunk"):
+                if kind == "chunk" and h >= 200:
+                    continue
+                for _ in range(HELD_ANS_PER):
+                    while True:
+                        s_ = h if kind == "single" else 10 * h + int(hp.integers(min(10, 1999 - 10 * h)))
+                        a = int(hp.integers(max(0, s_ - 999), min(999, s_) + 1)); b = s_ - a
+                        if a not in Hs and b not in Hs and (kind == "single" or ansvals[s_][1] not in Hs):
+                            break
+                    ans.append((a, b)); ans_m["single"].append(kind == "single"); ans_m["chunk"].append(kind == "chunk")
+        for nm_, prs, mk_ in (("H_one", one, one_m), ("H_both", both, {}), ("H_ans", ans, ans_m)):
+            ids_, lens_, sums_ = evalset(prs, g=hv)
+            mk_ = {k: np.array(v, dtype=bool) for k, v in mk_.items()}
+            if nm_ == "H_both":
+                mk_ = {"lt1000": sums_ < 1000, "ge1000": sums_ >= 1000,
+                       "ans_tok_in_H": np.array([any(v in Hs for v in ansvals[s_]) for s_ in sums_.tolist()])}
+            hsets[nm_] = (ids_, lens_, sums_, np.array(prs, dtype=np.int64), mk_)
+            assert int(lens_.max()) <= max_ans, nm_
+            for (a, b), x, ln in zip(prs, ids_.tolist(), lens_.tolist()):   # decode: operands, answer, H where intended
+                assert row_pair(x, ln) == (a, b) and tok.decode(x[-ln:]) == f"{a + b}\n" and len(x) == args.seq
+                assert (a in Hs) + (b in Hs) == {"H_one": 1, "H_both": 2, "H_ans": 0}[nm_], (nm_, a, b)
+                assert nm_ != "H_ans" or any(v in Hs for v in ansvals[a + b])
+                assert nm_ != "H_one" or not any(v in Hs for v in ansvals[a + b])
+        # the far permutation (target helix3_farshuf; logged for every arm, the diagnostic's pi): the best of 3000 draws
+        # by max(CKA to helix3 over 0..999, over 5,000 values drawn like the text site's) -- a plain random permutation
+        # keeps ~0.14 over the text mix (the pt999 helix3_shuf of seed 1: 0.20), because small values dominate there
+        T3 = features("helix3", xs_all)
+        smp = np.random.default_rng(0).choice(1000, 5000, p=cnt_st / cnt_st.sum())   # the text site's value mix
+        assert abs(cka_cov(T3[perm], T3) - cka_np(T3[perm], T3)) < 1e-9 and abs(cka_cov(T3[perm[smp]], T3[smp]) -
+                                                                                  cka_np(T3[perm[smp]], T3[smp])) < 1e-9
+        far_c = lambda q: (cka_cov(T3[q], T3), cka_cov(T3[q[smp]], T3[smp]))
+        fg, far = np.random.default_rng(6300 + args.seed), (9.0, None, None)
+        for _ in range(3000):
+            q_ = fg.permutation(1000); c_ = far_c(q_)
+            if max(c_) < far[0]:
+                far = (max(c_), q_, c_)
+        perm_far = far[1]
+        assert far[0] < 0.10, far[2]
+        if args.target == "helix3_farshuf":   # the target table (built above with the pt999 perm as a placeholder)
+            Ftab = features(args.target, xs_all, perm_far, perm_len)
+            assert np.array_equal(Ftab, T3[perm_far]) and abs(cka_np(Ftab, T3) - far[2][0]) < 1e-9
+        # Rev C1: the H-only remap (target helix3_hremap; logged for every arm, the mechanism test's u_h). Candidates of h
+        # (ascending): seen three-digit u, |u - h| >= 100, u != h (mod 10), u + y token-clean for every H_one partner y of
+        # h; drawn for h in H ascending, each u used once (tools/ptheld_summary.py re-draws it: double path + decoys)
+        part_ = {h: sorted({b if a == h else a for a, b in one if h in (a, b)}) for h in H}
+        rcand = {h: [u for u in range(100, 1000) if u not in Hs and abs(u - h) >= 100 and (u - h) % 10 != 0
+                     and all(not any(v in Hs for v in ansvals[u + y]) for y in part_[h])] for h in H}
+        rg_, used_, u_of = np.random.default_rng(6400 + args.seed), set(), {}
+        for h in H:
+            c_ = [u for u in rcand[h] if u not in used_]
+            assert len(c_) >= 100, (h, len(c_))
+            u_of[h] = c_[int(rg_.integers(len(c_)))]; used_.add(u_of[h])
+        rmap = np.arange(1000); rmap[H] = [u_of[h] for h in H]
+        assert all(rmap[x] == x for x in range(1000) if x not in Hs) and len(set(rmap[H].tolist())) == len(H)
+        assert not (set(rmap[H].tolist()) & Hs) and all(abs(int(rmap[h]) - h) >= 100 for h in H)
+        if args.target == "helix3_hremap":   # the target table: true helix3 off H, helix3(u_h) on h
+            Ftab = features(args.target, xs_all, rmap, perm_len)
+            assert np.array_equal(Ftab, T3[rmap]) and np.array_equal(np.delete(Ftab, H, 0), np.delete(T3, H, 0))
+            assert all(np.array_equal(Ftab[h], T3[u_of[h]]) and not np.array_equal(Ftab[h], T3[h]) for h in H)
+        pi_t = {"helix3_farshuf": perm_far, "helix3_hremap": rmap}.get(args.target, perm)   # the arm's shuffled value
+        h_cka_all, h_cka_text = far_c(perm)
+        HINFO = {"N": len(H), "H": H, "stratum": [stratum[h] for h in H], "n_strata": HELD_STRATA,
+                 "stratum_count_edges": [[int(cnt_st[st_].min()), int(cnt_st[st_].max())] for st_ in strata],
+                 "count_rule": "text site rule (text_numbers) over all of train.bin; raw = every occurrence of the token",
+                 "train_bin_tokens": int(len(train)), "count_text_site": cnt_st.tolist(), "count_raw": cnt_raw.tolist(),
+                 "perm_H": [int(perm[h]) for h in H], "helix3_shuf_cka_to_true": h_cka_all,
+                 "helix3_shuf_cka_to_true_text_mix": h_cka_text, "perm_far_H": [int(perm_far[h]) for h in H],
+                 "perm_far_cka_to_true": far[2][0], "perm_far_cka_to_true_text_mix": far[2][1], "perm_far_sha":
+                 hashlib.sha256(perm_far.astype(np.int64).tobytes()).hexdigest()[:12], "pi_H": [int(pi_t[h]) for h in H],
+                 "pi_of": {"helix3_farshuf": "perm_far", "helix3_hremap": "remap"}.get(args.target, "perm (pt999 helix3_shuf)"),
+                 "remap_H": [int(rmap[h]) for h in H], "remap_sha": hashlib.sha256(rmap.astype(np.int64).tobytes()).hexdigest()[:12],
+                 "remap_rule": "u_h: seen 100..999, |u - h| >= 100, u != h mod 10, distinct, u + y token-clean for h's "
+                               "H_one partners; stream 6400 + seed, h ascending, uniform over the unused candidates",
+                 "remap_n_cand": [len(rcand[h]) for h in H],
+                 "rehearsal_pool": [n_reh0, len(rehearsal_all)],
+                 "eval_filtered_rows": filt,
+                 "sets": {k: {"pairs": v[3].tolist(), "masks": {m: "".join("1" if b_ else "0" for b_ in mv) for m, mv in v[4].items()}}
+                          for k, v in hsets.items()}, "count_sec": round(time.time() - t_c, 1)}
+        print(f"held operands: N {len(H)} {H}; text-site counts {[int(cnt_st[h]) for h in H]}; rehearsal {n_reh0} -> "
+              f"{len(rehearsal_all)}; eval rows kept {filt}; H_one {len(one)} H_both {len(both)} H_ans {len(ans)}; "
+              f"helix3_shuf CKA to helix3 {h_cka_all:.4f} (text mix {h_cka_text:.4f}); far permutation {far[2][0]:.4f} "
+              f"({far[2][1]:.4f}){'; the target' if args.target == 'helix3_farshuf' else ''}; H remap u_h {HINFO['remap_H']} "
+              f"(sha {HINFO['remap_sha']}){'; the target' if args.target == 'helix3_hremap' else ''}; "
+              f"{time.time() - t_c:.0f}s", flush=True)
+
+        def draw_pair_ho():
+            """draw_pair without H: the 5% rehearsal pool holds clean pairs only; otherwise a bucket as in draw_pair,
+            the operands redrawn WITHIN it until the line is clean (counted in dyn['held']['rej']), then a held-out
+            pair is rejected (bucket redrawn) as in draw_pair."""
+            if data_rng.random() < 0.05:
+                return rehearsal_all[int(data_rng.integers(len(rehearsal_all)))]
+            while True:
+                la, lb = BUCKETS[int(data_rng.integers(len(BUCKETS)))]
+                if data_rng.random() < 0.5:
+                    la, lb = lb, la
+                while True:
+                    a, b = int(data_rng.integers(*RANGE[la])), int(data_rng.integers(*RANGE[lb]))
+                    if clean(a, b):
+                        break
+                    dyn["held"]["rej"] += 1
+                if (min(a, b), max(a, b)) not in held_set:
+                    return a, b
+
+        def decode_val(t1, t2):
+            """The greedy answer as a number: the first token if it is digits, then the second if it is digits too
+            (-1: the first token is not a number)."""
+            s_ = dec[t1]
+            if not (s_.isascii() and s_.isdigit()):
+                return -1
+            return int(s_ + (dec[t2] if dec[t2].isascii() and dec[t2].isdigit() else ""))
+
     def batch(s=0):
         """Rows of text + arithmetic lines; ops = (row, operand position, value); ans = (row, first answer position,
         number of answer tokens, first line of the row?)."""
@@ -869,10 +1118,12 @@ def main() -> None:
         if DOM:   # Rev B: per-domain sites (row, position, item), token counts per line type, first line per row
             batch.dsite = {d: [] for d in EXT}; batch.ntok = {t: 0 for t in ("text",) + tuple(DOMS)}; batch.first = []
             batch.ntext = []; batch.slot = []
+        if HO:   # Rev C: text exposure of the numbers 0..999 in this batch (text-site rule / raw tokens)
+            batch.h_st, h_txt, batch.h_ntext = np.zeros(1000, dtype=np.int64), [], []
         for r in range(args.bs):
             parts, offs = [], []
             for _ in range(args.arith_lines):
-                a, b = draw_pair()
+                a, b = draw_pair_ho() if HO else draw_pair()
                 ids, ia, ib, ns = line(a, b, int(rng.integers(len(FORMATS))))
                 parts.append((ids, ia, ib, a, b))
             if DOM:
@@ -885,6 +1136,10 @@ def main() -> None:
             if args.site == "text":
                 ti, tv = text_numbers(np.asarray(train[o:o + n], dtype=np.int64))
                 tmeta += [(r, int(i), int(v)) for i, v in zip(ti, tv)]
+            if HO:   # content scan (assert): no H token anywhere in the arithmetic lines of a training row
+                assert not np.isin(np.asarray(row[n:], dtype=np.int64), H_tok).any(), ("H token in a training line", r)
+                h_txt.append(np.asarray(train[o:o + n], dtype=np.int64)); batch.h_ntext.append(n)
+                batch.h_st += np.bincount(text_numbers(h_txt[-1])[1], minlength=1000)[:1000]
             off = n
             for j, (ids, ia, ib, a, b) in enumerate(parts):
                 ops.append((r, off + ia, a)); ops.append((r, off + ib, b))
@@ -894,6 +1149,10 @@ def main() -> None:
                 off += len(ids)
             rows.append(row)
         batch.tmeta = np.array(tmeta, dtype=np.int64).reshape(-1, 3)
+        if HO:
+            batch.h_raw = np.bincount(np.concatenate(h_txt), minlength=len(tok))[num_ids]
+            batch.h_lines = args.bs * args.arith_lines
+            batch.h_np = np.array(rows, dtype=np.int64)   # Rev C1: hashed into dyn['held']['data_sha'] (the model's input)
         if DOM:
             batch.np = np.array(rows)
             batch.dsite = {d: np.array(v, dtype=np.int64).reshape(-1, 3) for d, v in batch.dsite.items()}
@@ -963,6 +1222,8 @@ def main() -> None:
             return prior(ops)
         if args.site == "text":
             return prior(batch.tmeta)
+        if args.site == "emb":   # Rev C: the embedding rows of the number tokens 0..999 (H too) vs the target, on the weights
+            return 1 - cka(model.get_input_embeddings().weight[num_tok], K_emb)
         vals = prefix_vals(prng if g is None else g)
         keep = dict(store)
         model(input_ids=torch.tensor([PRE[int(v)] for v in vals], device=dev))
@@ -976,6 +1237,37 @@ def main() -> None:
         assert all(len(enc(str(v))) == 1 for v in range(1000))
         num_tok = torch.tensor([enc(str(v))[0] for v in range(1000)], device=dev)
         K1000 = centred_gram(Fref, dev)
+    if args.site == "emb" and Ftab is not None:   # Rev C: the emb site's target Gram over 0..999 (shuffled target: Ftab is)
+        K_emb = centred_gram(Ftab, dev)
+        if args.target == "helix3_hremap":   # Rev C1: the target Gram rows of h and u_h are the same row
+            assert all(torch.equal(K_emb[h], K_emb[int(rmap[h])]) for h in H)
+    if HO:   # Rev C1: the embedding rows of h, of u_h, and of a decoy (u of the next h, cyclic) for emb_cos_hu
+        hu_tok = [num_tok[torch.tensor(np.asarray(v_, dtype=np.int64), device=dev)]
+                  for v_ in (H, rmap[H], np.roll(rmap[H], 1))]
+
+    def ans_score(lg, x, ln):
+        """Rev C1 (--held_operands): per eval row scored as in evaluate() (lg = logits of the last max_ans + 1 positions):
+        the answer's teacher-forced log-prob (answer tokens + the newline, nats, summed), the first answer token's
+        log-prob and its rank over the vocabulary (number of tokens with a strictly larger logit; 0 = the argmax)."""
+        lgf = lg[:, :-1].float()
+        tgt = x[:, -max_ans:]
+        lp = lgf.gather(-1, tgt[..., None])[..., 0] - torch.logsumexp(lgf, -1)
+        need = torch.arange(max_ans, device=dev)[None] >= (max_ans - ln)[:, None]
+        ar, j_ = torch.arange(len(x), device=dev), max_ans - ln
+        g1 = lgf[ar, j_]
+        rank1 = (g1 > g1.gather(1, tgt[ar, j_][:, None])).sum(1)
+        return (lp * need).sum(1), lp[ar, j_], rank1
+
+    def ans_logp_direct(x, ln):
+        """ans_score's log-prob on a second path (double path, logged every eval, asserted on CPU): the final hidden
+        states of the whole row, then the head at each answer position p - 1 by explicit index."""
+        hs_ = model.model(input_ids=x, use_cache=False).last_hidden_state
+        out_ = []
+        for r_ in range(len(x)):
+            S_, L_ = x.shape[1], int(ln[r_])
+            out_.append(sum(float(torch.log_softmax(model.lm_head(hs_[r_, p_ - 1]).float(), -1)[x[r_, p_]])
+                            for p_ in range(S_ - L_, S_)))
+        return out_
 
     @torch.no_grad()
     def evaluate(step) -> dict:
@@ -983,7 +1275,7 @@ def main() -> None:
         res = {"step": step, "tokens": step * args.bs * args.seq}
         with torch.autocast(dev, dtype=torch.bfloat16):
             for name, (ids, lens, sums) in evalsets.items():
-                hits = []
+                hits, lps_ = [], []
                 for i in range(0, len(ids), 250):
                     x, ln = ids[i:i + 250], lens[i:i + 250]
                     lg = model(input_ids=x, logits_to_keep=max_ans + 1).logits
@@ -994,11 +1286,63 @@ def main() -> None:
                         need = ln > (max_ans - 1 - k)
                         ok &= ~need | (pred[:, k] == tgt[:, k])
                     hits.append(ok)
+                    if HO:   # Rev C1: the continuous score on the seen sets too (the scale of logp_H_one)
+                        lps_.append(ans_score(lg, x, ln)[0])
                 hit = torch.cat(hits).cpu().numpy()
                 res[name] = float(hit.mean())
+                if HO:
+                    res[f"logp_{name}"] = float(torch.cat(lps_).mean())
                 if name.startswith("held_b") and name.endswith("3"):   # sums < 1000: one answer token; >= 1000: "1xx" + digit
                     for tag, m in (("lt1000", sums < 1000), ("ge1000", sums >= 1000)):
                         res[f"{name}_{tag}"] = float(hit[m].mean()) if m.any() else None
+            for name, (ids, lens, sums, _, mk) in hsets.items():   # Rev C: H sets, same scoring + greedy answers
+                hits, preds, sc_, dpd = [], [], [], 0.0
+                for i in range(0, len(ids), 250):
+                    x, ln = ids[i:i + 250], lens[i:i + 250]
+                    lg = model(input_ids=x, logits_to_keep=max_ans + 1).logits
+                    pred = lg[:, :-1].argmax(-1)
+                    tgt = x[:, -max_ans:]
+                    ok = torch.ones(len(x), dtype=torch.bool, device=dev)
+                    for k in range(max_ans):
+                        need = ln > (max_ans - 1 - k)
+                        ok &= ~need | (pred[:, k] == tgt[:, k])
+                    hits.append(ok)
+                    sc_.append(ans_score(lg, x, ln))   # Rev C1: log-prob of the answer, of its first token; rank
+                    if i == 0:   # double path on the first 8 rows
+                        dpd = max(abs(a_ - b_) for a_, b_ in zip(ans_logp_direct(x[:8], ln[:8]), sc_[-1][0][:8].tolist()))
+                    # greedy answer: the first answer token from the prompt (lg index max_ans - ln = the position before
+                    # the answer), then the next token after it (index + 1) with the predicted first token in place
+                    ar, j_ = torch.arange(len(x), device=dev), max_ans - ln
+                    t1 = lg[ar, j_].argmax(-1)
+                    x2 = x.clone(); x2[ar, x.shape[1] - ln] = t1
+                    t2 = model(input_ids=x2, logits_to_keep=max_ans + 1).logits[ar, j_ + 1].argmax(-1)
+                    preds += [decode_val(a_, b_) for a_, b_ in zip(t1.tolist(), t2.tolist())]
+                hit = torch.cat(hits).cpu().numpy()
+                res[name] = float(hit.mean())
+                for k, m in mk.items():
+                    res[f"{name}_{k}"] = float(hit[m].mean()) if m.any() else None
+                res[f"hits_{name}"] = "".join("1" if h_ else "0" for h_ in hit.tolist())
+                res[f"pred_{name}"] = preds
+                # a scored hit decodes to its sum (the newline after a one-token answer is not a digit): logged, and
+                # asserted in the CPU tests (a GPU run is not stopped on a bf16 tie)
+                res[f"pred_mismatch_{name}"] = int(sum(1 for p_, s_, h_ in zip(preds, sums.tolist(), hit.tolist()) if h_ and p_ != s_))
+                # Rev C1: the continuous score (lesson c's bracket and the 4x trend read it where exact match sits at 0)
+                lp_, lp1_, rk_ = (torch.cat([c_[j] for c_ in sc_]).cpu() for j in range(3))
+                res[f"logp_{name}"] = float(lp_.mean()); res[f"logp1_{name}"] = float(lp1_.mean())
+                res[f"rank1med_{name}"] = float(rk_.float().median())
+                if name == "H_one":
+                    res["logp_rows_H_one"] = [round(float(v), 4) for v in lp_.tolist()]
+                    res["rank1_rows_H_one"] = [int(v) for v in rk_.tolist()]
+                # known answers: a hit's first token is the argmax (rank 0); log-probs are <= 0; the two paths agree
+                res[f"rank_hit_bad_{name}"] = int(((rk_ != 0) & torch.tensor(hit)).sum())
+                res[f"logp_dp_maxdiff_{name}"] = float(dpd)
+                if dev == "cpu":   # the CPU tests (bf16 ties on GPU are logged, not fatal)
+                    assert res[f"rank_hit_bad_{name}"] == 0 and float(lp_.max()) <= 1e-5 and dpd < 2e-2, (name, res[f"rank_hit_bad_{name}"], dpd)
+                    assert res[f"pred_mismatch_{name}"] == 0, (name, res[f"pred_mismatch_{name}"])
+            if HO:   # Rev C1: the remap arm pulls the embedding rows of h and u_h together (decoy: the u of another h)
+                E_ = model.get_input_embeddings().weight.float()
+                res["emb_cos_hu"] = float(Fn.cosine_similarity(E_[hu_tok[0]], E_[hu_tok[1]], dim=-1).mean())
+                res["emb_cos_hu_decoy"] = float(Fn.cosine_similarity(E_[hu_tok[0]], E_[hu_tok[2]], dim=-1).mean())
             vrr = np.random.default_rng(7)
             vl, nats, nbytes = [], 0.0, 0
             for _ in range(8):
@@ -1051,6 +1395,10 @@ def main() -> None:
         # and a running sha256 of every training batch (the data mixture must be identical across arms of one seed and K)
         dyn.update(dtok={t: 0 for t in ("text",) + tuple(DOMS)}, dfirst={t: 0 for t in DOMS}, dused={d: 0 for d in DOMS},
                    data_sha="", dslot={d: [0] * args.extra_lines for d in EXT})   # A2: domain lines per slot after numbers
+    if HO:   # Rev C counters (saved with dyn): candidate pairs redrawn for H, lines content-scanned, text exposure of 0..999
+        # (text-site rule: all steps / prior-on steps; raw token occurrences)
+        dyn["held"] = {"rej": 0, "lines": 0, "st": np.zeros(1000, dtype=np.int64), "st_on": np.zeros(1000, dtype=np.int64),
+                       "raw": np.zeros(1000, dtype=np.int64), "data_sha": ""}   # Rev C1: running sha256 of the batches
 
     def show_line(ids, sites=(), a0=None):
         """Decoded tokens with the prior sites in ⟦ ⟧ and the scored span (answer through the newline) in « »."""
@@ -1170,6 +1518,50 @@ def main() -> None:
             return dyn["gate_open"]
         return True
 
+    def ho_dry():
+        """--dry_inputs, Rev C part (experiment-audit vii): H with stratum, text counts and shuffled value; two eval rows
+        of every H set in their position (⟦ ⟧ = an H token, « » = the scored span); a content scan of 50 training
+        batches on the model's input tensor (H tokens in the lines = 0, in the text > 0) with decoded text snippets
+        around H numbers."""
+        print(f"[held] N {HINFO['N']}; count edges per stratum {HINFO['stratum_count_edges']}; rehearsal pool "
+              f"{HINFO['rehearsal_pool']}; eval rows kept {HINFO['eval_filtered_rows']}; counted in {HINFO['count_sec']}s")
+        for nm_, pp, ca, cm in (("helix3_shuf (pt999 perm)", perm, HINFO["helix3_shuf_cka_to_true"], HINFO["helix3_shuf_cka_to_true_text_mix"]),
+                                ("far perm", perm_far, HINFO["perm_far_cka_to_true"], HINFO["perm_far_cka_to_true_text_mix"])):
+            d_ = np.array([abs(int(pp[h]) - h) for h in H])
+            print(f"[held] {nm_}: CKA to helix3 {ca:.4f} over 0..999, {cm:.4f} over the text-site mix; |pi(h) - h| min "
+                  f"{d_.min()} median {int(np.median(d_))}; {int((d_ < 20).sum())} h with |pi(h) - h| < 20, "
+                  f"{sum(int(pp[h]) % 10 == h % 10 for h in H)} with pi(h) = h mod 10")
+        d_ = np.array([abs(int(rmap[h]) - h) for h in H])
+        print(f"[held] H remap (helix3_hremap; sha {HINFO['remap_sha']}): CKA(helix3[remap], helix3) {cka_np(T3[rmap], T3):.4f}; "
+              f"|u_h - h| min {d_.min()} median {int(np.median(d_))}; candidates per h {min(HINFO['remap_n_cand'])}.."
+              f"{max(HINFO['remap_n_cand'])}")
+        print(f"[held] this arm's pi = {HINFO['pi_of']}")
+        for h, k in zip(H, HINFO["stratum"]):
+            print(f"  h {h}: q{k + 1}, text-site count {int(cnt_st[h])}, raw {int(cnt_raw[h])}, pi(h) {int(pi_t[h])}, "
+                  f"u_h {int(rmap[h])}")
+        Ht = set(H_tok.tolist())
+        for name, (ids, lens, sums, prs, mk) in hsets.items():
+            for rr in range(2):
+                row, L_ = ids[rr].tolist(), int(lens[rr])
+                lo = len(row) - 20
+                hp_ = {j - lo for j in range(lo, len(row)) if row[j] in Ht}
+                print(f"  eval {name} row {rr} (len {len(row)}, pair {tuple(prs[rr].tolist())}, H tokens at {sorted(j + lo for j in hp_)}, "
+                      f"scored {L_} tokens at {len(row) - L_}..{len(row) - 1}): ...{show_line(row[lo:], hp_, 20 - L_)!r}")
+        nl_, hl_, ht_, hs_, ex_ = 0, 0, 0, np.zeros(1000, dtype=np.int64), []
+        for b_ in range(50):
+            x_, ops_, _ = batch(b_)
+            for r_ in range(args.bs):
+                row, n_ = x_[r_].cpu().numpy(), batch.h_ntext[r_]
+                hl_ += int(np.isin(row[n_:], H_tok).sum()); ht_ += int(np.isin(row[:n_], H_tok).sum()); nl_ += args.arith_lines
+                ti, tv = text_numbers(row[:n_])
+                hs_ += np.bincount(tv, minlength=1000)[:1000]
+                for i_, v_ in zip(ti, tv):
+                    if v_ in Hs and len(ex_) < 4:
+                        ex_.append(show_line(row[max(0, i_ - 8):i_ + 5].tolist(), {min(8, i_)}))
+        assert hl_ == 0, hl_
+        print(f"content scan: {nl_} training lines in 50 batches, H tokens in the lines {hl_}; H tokens in the text {ht_} "
+              f"(text-site occurrences {int(hs_[H].sum())}, H numbers seen at least once {int((hs_[H] > 0).sum())}/{len(H)}); e.g. {ex_}")
+
     if args.dry_inputs:   # decoded training rows: prior sites marked with ⟦ ⟧ (ctx: operands; text: numbers in the text)
         if args.site == "prefix":
             vals = prefix_vals(np.random.default_rng(0))
@@ -1196,6 +1588,12 @@ def main() -> None:
                   f"batches; values 0-9 / 10-99 / 100-999: {np.round(bins / bins.sum(), 3).tolist()}")
         if DOM:
             dom_dry()
+        if args.site == "emb" and Ftab is not None:
+            with torch.no_grad():
+                print(f"emb site: prior on the {len(num_tok)} embedding rows of the number tokens 0..999 (no row positions); "
+                      f"1 - CKA at init {float(site_prior(None)):.4f}; target {args.target} {tuple(Ftab.shape)}")
+        if HO:
+            ho_dry()
         return
     # evals and the gate's EMA on a token scale (audit 2026-10-14): --eval_every counts steps of 32 rows; bs 32 unchanged
     eval_every = max(1, round(args.eval_every * 32 / args.bs))
@@ -1322,6 +1720,8 @@ def main() -> None:
         return mt
 
     curve, t0 = [], time.time()
+    if HO and args.target in ("helix3_shuf", "helix3_farshuf", "helix3_hremap"):   # Rev C: the table is helix3 of the logged pi
+        assert np.array_equal(Ftab, features("helix3", xs_all)[pi_t]), "shuffled target table != helix3[pi]"
     model.train()
     ck = out / f"ckpt_{args.tokenization}_{args.target}_seed{args.seed}{args.tag}.pt"
     start = 0
@@ -1342,6 +1742,10 @@ def main() -> None:
         for g in opt.param_groups:
             g["lr"] = args.lr * sched(s)
         x, ops, ans = batch(s)
+        if HO:   # Rev C1: running hash of the model's input (the arms of a seed must see the same data)
+            dyn["held"]["data_sha"] = hashlib.sha256(dyn["held"]["data_sha"].encode() + batch.h_np.tobytes()).hexdigest()
+            if s == 0:
+                assert (batch.h_np == x.cpu().numpy()).all()
         if DOM:   # Rev B: running hash of the data, token / first-line counts per line type
             dyn["data_sha"] = hashlib.sha256(dyn["data_sha"].encode() + batch.np.astype(np.int64).tobytes()).hexdigest()
             for t, v in batch.ntok.items():
@@ -1403,6 +1807,10 @@ def main() -> None:
         if dyn["last_on"] is not None and on != dyn["last_on"]:
             dyn["events"].append([s, int(on)])
         dyn["toggles"] += int(dyn["last_on"] is not None and on != dyn["last_on"]); dyn["last_on"] = on
+        if HO:   # Rev C: lines content-scanned (batch() asserts no H token) and the text exposure of 0..999
+            dyn["held"]["lines"] += batch.h_lines; dyn["held"]["st"] += batch.h_st; dyn["held"]["raw"] += batch.h_raw
+            if on and usable and Ftab is not None:
+                dyn["held"]["st_on"] += batch.h_st
         grad_info = {}
         if DOM and (s % eval_every == 0 or s == steps - 1):   # Rev B: every arm, LM and all true priors (+ the active ones)
             grad_info = dom_grads(lm_loss, ops, on, usable, gl, dgeo)
@@ -1414,6 +1822,14 @@ def main() -> None:
             v2 = torch.cat([(g if g is not None else torch.zeros_like(q)).flatten().float() for g, q in zip(g2, params)])
             grad_info = dict(grad_lm=float(v1.norm()), grad_prior=float(v2.norm()), grad_cos=float(v1 @ v2 / (v1.norm() * v2.norm() + 1e-12)))
             del g1, g2, v1, v2
+            if args.site == "emb":   # Rev C: the emb prior moves exactly the 1000 number rows of the embedding (H too)
+                ge = torch.autograd.grad(args.lam * gl, model.get_input_embeddings().weight, retain_graph=True)[0]
+                nz = ge.abs().sum(1) > 0
+                assert int(nz.sum()) == 1000 and bool(nz[num_tok].all()), ("emb prior rows", int(nz.sum()))
+                grad_info.update(grad_prior_emb_rows=int(nz.sum()), grad_prior_emb=float(ge.float().norm()))
+                if HO:
+                    grad_info["grad_prior_emb_H"] = float(ge[torch.tensor(H_tok, device=dev)].float().norm())
+                del ge
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -1438,13 +1854,22 @@ def main() -> None:
                                       ema_bucket_min=float(dyn["ema_b"].min()),
                                       ema_bucket={f"b{la}{lb}": float(v) for (la, lb), v in zip(BUCKETS, dyn["ema_b"])},
                                       prior_toggles=dyn["toggles"], **grad_info, **dom_log)
+            if REVC:   # Rev C: the consumed optimiser values (lesson 2026-10-18: a new flag must be seen to act)
+                r.update(lr_now=opt.param_groups[0]["lr"], wd_now=opt.param_groups[0]["weight_decay"])
+                assert r["wd_now"] == args.wd and r["lr_now"] == args.lr * sched(s), (r["wd_now"], r["lr_now"])
+            if HO:
+                r.update(held_rej=dyn["held"]["rej"], held_lines_scanned=dyn["held"]["lines"],
+                         held_data_sha=dyn["held"]["data_sha"][:16])
             curve.append(r)
             print(json.dumps(r), flush=True)
-            res_ = {"args": vars(args) if DOM else {k: v for k, v in vars(args).items() if k not in DOM_ARGS}, "steps": steps,
+            res_ = {"args": {k: v for k, v in vars(args).items() if (DOM or k not in DOM_ARGS)
+                             and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])}, "steps": steps,
                     "geo_layers": geo_layers, "read_layers": read_layers,
                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
                     "curve": curve}
+            if HO:   # Rev C: H, its counts, the eval sets' pairs and masks, the exposure during training
+                res_.update(held_operands=HINFO, held_exposure={k: dyn["held"][k].tolist() for k in ("st", "st_on", "raw")})
             if DOM:   # Rev B: domain set-up and the per-domain read-outs of this curve
                 res_.update(domains=DINFO, lam_domains=LAMD, lam_rule=args.lam_rule, nonce={"s4": S4N, "dim": DIMN},
                             dep_sha={"toy_struct.py": hashlib.sha256((Path(__file__).parent / "toy_struct.py").read_bytes()).hexdigest()[:12]},

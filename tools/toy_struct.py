@@ -48,6 +48,29 @@ least-squares residual, the two must agree); nullity of the training relation ma
     python tools/toy_struct.py --summarize <dir>             # pre-registered tests (runs/toystruct/AUDIT.md)
 Run JSONs are written atomically (tmp file + os.replace); a training run never summarises (run --summarize once all
 processes of a cell are done).
+
+Wall 2 (2026-10-19, OPT-IN; every arm and flag above behaves exactly as before, runs/toyshape/AUDIT.md): a SHAPE-ONLY
+prior that constrains the geometry of the item embeddings without saying which item sits where. Arm '<kind>:<target>'
+(+ the usual '@always' / '@t0-t1' override, else the cell --win; works for every task, also mod):
+  kind shape     = spec + norm;  kind shapeprof = spec + norm + prof (vertex-transitive targets only), each term in [0, 1]:
+  spec = 1 - <lam(G_H), lam(G_T)> / (|G_H|_F |G_T|_F), lam = eigenvalues of the centred Gram, sorted (= 1 - the largest
+         linear CKA over item-side orthogonal maps, von Neumann; <= 1 - CKA, i.e. <= the assign prior's loss);
+  norm = 1 - cos(sorted diag G_H, sorted diag G_T)  (the profile of squared centred norms; constant for circle / R);
+  prof = 1 - sum_i <sort(G_H[i]), s_T> / (|sortrows G_H|_F sqrt(n) |s_T|)  (every target row has the same sorted profile s_T).
+  All three are invariant under any permutation of the items (P G P^T) and 0 for the target and every permutation of it.
+  Targets: the task's own (mod 'circle' = cos/sin of --freqs, i.e. the torus for --freqs 1,2,3,4,5; s4 R / R_sign / absR;
+  dim expo / quot / onehot) and two controls built from the centred rank r of the true shape (mod circle, s4 R, dim expo):
+  'line'   = an open chain of the same rank r: path-graph modes cos(pi k (i + 1/2) / n) / k, k = 1..r (wrong spectrum
+             ~ 1/k^2, non-constant norms; anisotropic);
+  'sphere' = a flat, constant-norm, centred configuration of rank r' = sphere_rank(task, r) (mod r + 1, odd, so no union
+             of Fourier circles; s4 12 for r 9, not a sum of S4's centred isotypic dimensions 1, 4, 9, 9): the same
+             isotropy and norm profile as the true shape at another rank (audit 2026-10-19: spec + norm of the torus / R
+             is "a flat constant-norm r-sphere", so this is the matched control).
+  The eigendecomposition of the centred Gram runs on the CPU in float64 (LAPACK; audit 2026-10-19: cuSOLVER float32 on
+  a Gram with ~111 near-zero eigenvalues was untested), the rest on the arm's device.
+  --shape_log: every arm also logs shapeL_<target> (spec + norm) for every shape target, every eval, and for mod also
+  shapeL_fourier1 / shapeL_fourier1-5 (circle / torus, whatever --freqs is): logging only.
+  --summarize_wall <root>: the pre-registered wall-2 reading over the cell dirs <root>/<cell>/ (runs/toyshape/AUDIT.md).
 """
 
 from __future__ import annotations
@@ -78,6 +101,11 @@ LATE = 4000                         # rule (a): a fraction qualifies iff none's 
 ALPHA = 0.025                       # per co-primary (t_grok, AUC): Bonferroni over the two, family alpha 0.05 per comparison
 AUC_MIN = 0.05                      # AUC test: median AUC(a) - median AUC(b) >= AUC_MIN (no claim from sub-chance shifts)
 SPLIT_AUTO = {"mod": "question", "s4": "question", "dim": "class"}
+# wall 2 (opt-in): shape-only prior
+SHAPE_KINDS = {"shape": ("spec", "norm"), "shapeprof": ("spec", "norm", "prof")}
+SHAPE_TRUE = {"mod": "circle", "s4": "R", "dim": "expo"}   # the true shape; 'line' has its centred rank
+SHAPE_OK = {"mod": ("circle", "line", "sphere"), "s4": ("R", "R_sign", "absR", "line", "sphere"),
+            "dim": ("expo", "quot", "onehot", "line", "sphere")}
 
 
 class OneLayer(nn.Module):
@@ -448,6 +476,16 @@ def closure(D: dict, tr: np.ndarray, te: np.ndarray) -> dict:
 # ---------------------------------------------------------------------------------------------------- arms
 def arm_spec(task: str, arm: str, win: str, width: int):
     """(target name or None, on(step) -> bool, window description)."""
+    if ":" in arm:   # wall 2 (opt-in) shape arm '<kind>:<target>[@always|@t0-t1]', any task; else the cell window --win
+        arm_kind(arm)
+        target, _, w = arm.split(":", 1)[1].partition("@")
+        if w:
+            win = w if w == "always" else w.replace("-", ",")
+        if win == "always":
+            return target, (lambda s: True), "always"
+        t0, t1 = (int(x) for x in win.split(","))
+        assert 0 <= t0 < t1, win
+        return target, (lambda s, t0=t0, t1=t1: t0 <= s < t1), [t0, t1]
     if task == "mod":   # toy_grok semantics
         target = "circle_shuf" if arm.endswith("_shuf") else "circle"
         base = arm[: -len("_shuf")] if arm.endswith("_shuf") else arm
@@ -470,7 +508,7 @@ def arm_spec(task: str, arm: str, win: str, width: int):
 
 
 def arm_target(arm: str) -> str:
-    return arm.split("@")[0]
+    return arm.split("@")[0].split(":")[-1]
 
 
 CODE_SHA = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:12]   # at import: the code that is running
@@ -515,9 +553,135 @@ def check_targets(D: dict, T: dict, info: dict) -> None:
         assert sorted(map(tuple, T["shuf"].tolist())) == sorted(map(tuple, F.tolist())), "shuf is a permutation of the true rows"
 
 
+# ---------------------------------------------------------------------------------------------------- wall 2: shape-only prior (opt-in)
+def line_target(n: int, r: int) -> np.ndarray:
+    """'line' = an open chain of n items in r dims: path-graph modes cos(pi k (i + 1/2) / n) / k, k = 1..r (centred,
+    orthogonal; centred spectrum (n / 2) / k^2, non-constant norms). The wrong-shape control of the same rank."""
+    i = np.arange(n)
+    F = np.stack([np.cos(np.pi * k * (i + 0.5) / n) / k for k in range(1, r + 1)], 1)
+    assert centred_rank(F) == r and np.allclose(F.mean(0), 0, atol=1e-12)
+    assert np.allclose(np.linalg.svd(F, compute_uv=False) ** 2, (n / 2) / np.arange(1, r + 1) ** 2), "line spectrum"
+    return F
+
+
+def sphere_rank(task: str, r: int) -> int:
+    """Rank of the 'sphere' control for a true shape of centred rank r: mod r + 1 (odd: no union of Fourier circles,
+    which come in pairs); s4 12 for R's 9 (achievable isotypic sums of the centred regular representation are the
+    subset sums of 1, 4, 9, 9: 12 is not one; 10 = 1 + 9 would be); otherwise r + 1."""
+    if task == "s4" and r == 9:
+        return 12
+    return r + 1
+
+
+def sphere_target(n: int, r: int) -> np.ndarray:
+    """'sphere' = a centred configuration of n items in rank r with a flat centred spectrum (r equal eigenvalues) and
+    constant norms (1): an equal-norm tight frame. Alternating projections (centre + polar = flat; row-normalise =
+    constant norm) from a fixed numpy draw; deterministic; converges in < 100 iterations for the sizes used here."""
+    F = np.random.default_rng(31_000 + 100 * n + r).standard_normal((n, r))
+    for _ in range(5000):
+        F = F - F.mean(0)
+        U, _s, Vt = np.linalg.svd(F, full_matrices=False)
+        F = U @ Vt * np.sqrt(n / r)                    # flat centred spectrum (U is orthogonal to the constant)
+        nr = np.linalg.norm(F, axis=1)
+        if np.abs(nr - 1).max() < 1e-12:
+            break
+        F = F / nr[:, None]
+    lam = np.linalg.svd(F - F.mean(0), compute_uv=False) ** 2
+    nu = ((F - F.mean(0)) ** 2).sum(1)
+    assert centred_rank(F) == r and lam.max() / lam.min() - 1 < 1e-9 and nu.max() / nu.min() - 1 < 1e-9, (n, r, lam, nu)
+    return F
+
+
+def shape_feats(D: dict, T: dict) -> dict:
+    """The task's shape targets (raw features): its own targets allowed by SHAPE_OK, 'line' of the true shape's rank r,
+    'sphere' of rank sphere_rank(task, r)."""
+    F = {k: T[k] for k in SHAPE_OK[D["task"]] if k in T}
+    r = centred_rank(T[SHAPE_TRUE[D["task"]]])
+    F["line"] = line_target(D["n_items"], r)
+    F["sphere"] = sphere_target(D["n_items"], sphere_rank(D["task"], r))
+    return F
+
+
+def shape_readout_feats(D: dict, T: dict) -> dict:
+    """--shape_log readouts: the shape targets, plus for mod the freq-1 circle and the freq 1-5 torus whatever --freqs is
+    (so a none run logs its distance to both mod variants; audit 2026-10-19)."""
+    F = shape_feats(D, T)
+    if D["task"] == "mod":
+        ang = 2 * np.pi * np.arange(D["p"]) / D["p"]
+        circ = lambda ks: np.concatenate([np.stack([np.cos(k * ang), np.sin(k * ang)], 1) for k in ks], 1)
+        F.update({"fourier1": circ((1,)), "fourier1-5": circ((1, 2, 3, 4, 5))})
+    return F
+
+
+def shape_desc(F: np.ndarray) -> dict:
+    """Permutation-invariant descriptor of a target configuration (float64): sorted centred-Gram spectrum (descending,
+    clipped at 0), sorted squared centred norms, and the common sorted Gram row if every row has the same one."""
+    G = np_gram(F)
+    lam = np.clip(np.linalg.eigvalsh(G)[::-1], 0, None).copy()
+    rows = np.sort(G, 1)
+    vt = bool(np.abs(rows - rows[0]).max() <= 1e-9 * np.trace(G) / len(G))
+    return {"lam": lam, "nu": np.sort(np.diag(G)), "prof": rows[0].copy() if vt else None}
+
+
+def shape_tensors(F: np.ndarray, dev) -> dict:
+    d = shape_desc(F)
+    return {k: (None if v is None else torch.tensor(v, dtype=torch.float32, device=dev)) for k, v in d.items()}
+
+
+def shape_terms(H: torch.Tensor, S: dict, terms) -> dict:
+    """The shape loss terms of item embeddings H (n x d) toward descriptor S; each in [0, 1] (module docstring)."""
+    G = centred_gram(H)
+    # the eigendecomposition runs on the CPU in float64 (LAPACK dsyevd), whatever the arm's device (audit 2026-10-19:
+    # cuSOLVER float32 on a Gram with ~111 near-zero eigenvalues was untested on the GPU); a no-op for float64 CPU input
+    G64 = G.to(device="cpu", dtype=torch.float64)
+    if not bool(torch.isfinite(G64).all()):   # a diverged run (e.g. lr 3e-2): eigvalsh would raise; NaN terms keep it running
+        return {k: G.sum() * float("nan") for k in terms}   # (pre-registered: divergence = not learning, reported)
+    out = {}
+    if "spec" in terms:
+        lam = torch.linalg.eigvalsh(G64).flip(0).to(device=G.device, dtype=G.dtype)
+        out["spec"] = 1 - (lam * S["lam"]).sum() / (lam.norm() * S["lam"].norm() + 1e-12)
+    if "norm" in terms:
+        nu = torch.sort(torch.diagonal(G)).values
+        out["norm"] = 1 - (nu * S["nu"]).sum() / (nu.norm() * S["nu"].norm() + 1e-12)
+    if "prof" in terms:
+        assert S["prof"] is not None, "prof needs a vertex-transitive target"
+        rows = torch.sort(G, dim=1).values
+        out["prof"] = 1 - (rows @ S["prof"]).sum() / (rows.norm() * S["prof"].norm() * len(G) ** 0.5 + 1e-12)
+    return out
+
+
+def shape_loss(H: torch.Tensor, S: dict, terms) -> torch.Tensor:
+    return sum(shape_terms(H, S, terms).values())
+
+
+def shape_selfcheck(W0: torch.Tensor, F: np.ndarray, S: dict, terms, seed: int, dev) -> dict:
+    """Asserted at the start of every shape arm, on its device: the loss is invariant under an item permutation of the
+    initial embeddings, ~0 for the target and for a permutation of it, and > 0 at the init (numpy rng: torch's untouched)."""
+    q = torch.tensor(np.random.default_rng(10_000 + seed).permutation(len(F)), device=dev)
+    Ft = torch.tensor(F, dtype=torch.float32, device=dev)
+    with torch.no_grad():
+        v = {"init": float(shape_loss(W0, S, terms)), "init_perm": float(shape_loss(W0[q], S, terms)),
+             "target": float(shape_loss(Ft, S, terms)), "target_perm": float(shape_loss(Ft[q], S, terms))}
+    assert abs(v["init"] - v["init_perm"]) < 1e-4, ("shape loss not permutation-invariant", v)
+    assert abs(v["target"]) < 1e-4 and abs(v["target_perm"]) < 1e-4, ("shape loss of the target not ~0", v)
+    assert v["init"] > 1e-3, ("shape loss already ~0 at init", v)
+    return v
+
+
+def arm_kind(arm: str) -> str:
+    """'cka' for every arm that existed before wall 2; 'shape' / 'shapeprof' for '<kind>:<target>[@...]'."""
+    if ":" not in arm:
+        return "cka"
+    k = arm.split(":", 1)[0]
+    assert k in SHAPE_KINDS, arm
+    return k
+
+
 # ---------------------------------------------------------------------------------------------------- training
 def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
     target, on, window = arm_spec(D["task"], arm, args.win, args.width)
+    kind = arm_kind(arm)                                   # 'cka' = every pre-wall-2 arm (its path is unchanged)
+    shape_log = bool(getattr(args, "shape_log", False))
     n_items = D["n_items"]
     X_all = torch.tensor(D["X"], device=dev)
     Y_all = torch.tensor(D["Y"], device=dev)
@@ -529,6 +693,14 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
     with torch.no_grad():
         cka_init = {k: float(cka(model.W_E[:n_items], K[k])) for k in K}
         W_init = model.W_E[:n_items].detach().cpu().double().numpy()
+    SH = shape_chk = None
+    if kind != "cka" or shape_log:   # wall 2 (opt-in): permutation-invariant shape descriptors of the shape targets
+        SF = shape_readout_feats(D, T) if shape_log else shape_feats(D, T)
+        SH = {k: shape_tensors(v, dev) for k, v in SF.items()}
+    if kind != "cka":
+        terms = SHAPE_KINDS[kind]
+        assert target in SH and target in SHAPE_OK[D["task"]], (arm, target, sorted(SH))
+        shape_chk = shape_selfcheck(model.W_E[:n_items].detach(), SF[target], SH[target], terms, seed, dev)
     if D["task"] == "s4":
         coset = torch.tensor(D["coset"], device=dev)
         noncomm_te = torch.tensor(D["noncomm"][te_np], device=dev)
@@ -545,7 +717,10 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
         for g in opt.param_groups:
             g["lr"] = args.lr * min(1.0, (s + 1) / 10)   # 2026-10-18: was a hard-coded 1e-3, which made --lr inert
         ce = Fn.cross_entropy(model(X_all[tr]), Y_all[tr])
-        loss = ce + (args.lam * (1 - cka(model.W_E[:n_items], K[target])) if on(s) else 0.0)
+        if kind == "cka":
+            loss = ce + (args.lam * (1 - cka(model.W_E[:n_items], K[target])) if on(s) else 0.0)
+        else:   # wall 2: shape-only prior (no assignment)
+            loss = ce + (args.lam * shape_loss(model.W_E[:n_items], SH[target], terms) if on(s) else 0.0)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
@@ -566,7 +741,12 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
                 c["prior_on"] = bool(on(s))
                 ck = {k: float(cka(model.W_E[:n_items], K[k])) for k in K}
                 c.update({f"cka_{k}": v for k, v in ck.items() if f"cka_{k}" not in c})
-                c["geo"] = None if target is None else 1 - ck[target]
+                if kind == "cka":
+                    c["geo"] = None if target is None else 1 - ck[target]
+                else:   # a shape arm's geo = its own objective; the cka_* keys still show the assignment
+                    tv = shape_terms(model.W_E[:n_items], SH[target], terms)
+                    c["geo"] = float(sum(tv.values()))
+                    c["shape_terms"] = {k: float(v) for k, v in tv.items()}
                 c["n_wrong"] = int(wrong.sum())
                 if fresh_te is not None:   # held-out questions with no class-mate in training
                     c["test_fresh"] = float((pred[fresh_te] == y[fresh_te]).float().mean()) if fresh_te.any() else None
@@ -584,6 +764,8 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
                     c["n_negtwin"] = int(nt.sum())
                     c["test_negtwin"] = float((pred[nt] == y[nt]).float().mean()) if nt.any() else None
                     c["test_nonegtwin"] = float((pred[~nt] == y[~nt]).float().mean()) if (~nt).any() else None
+                if shape_log:   # wall 2 readout (logging only): spec + norm distance to every shape target
+                    c.update({f"shapeL_{k}": float(shape_loss(model.W_E[:n_items], v, SHAPE_KINDS["shape"])) for k, v in SH.items()})
                 curve.append(c)
             if args.stop_at_grok and c["test"] >= 0.95:   # pilots only (budget rule): the curve ends here
                 stopped = s + 1
@@ -600,6 +782,11 @@ def run_arm(D, arm, seed, tr_np, te_np, T, args, dev, extra):
            "code_sha": code_sha(), **extra, "curve": curve}
     if D["task"] == "mod":
         res.update({"width": args.width, "p": D["p"], "freqs": D["freqs"]})
+    if kind != "cka":   # wall 2: what the loop consumed
+        res.update({"prior_kind": kind, "shape_terms": list(terms), "shape_check": shape_chk,
+                    "shape_target_rank": centred_rank(SF[target]), "shape_eig": "cpu float64"})
+    if shape_log:
+        res.update({"shape_log": True, "shape_readouts": list(SH)})
     return res, W_init
 
 
@@ -627,19 +814,34 @@ def main() -> None:
     ap.add_argument("--summarize", default=None, help="summarise the run JSONs in this directory and exit")
     ap.add_argument("--split", choices=("auto", "question", "class"), default="auto",
                     help="auto = class for dim, question for s4 / mod (see the module docstring)")
+    # wall 2 (2026-10-19, opt-in; off = the path above, bitwise)
+    ap.add_argument("--shape_log", action="store_true", help="every arm logs shapeL_<target> (spec + norm) each eval; logging only")
+    ap.add_argument("--summarize_wall", default=None, help="the pre-registered wall-2 reading over every cell under this root")
+    ap.add_argument("--mod_twins", action="store_true",
+                    help="mod: relation classes = unordered pairs, so test_fresh / n_fresh (held-out questions whose commuted "
+                         "twin (b, a) is not in training) are logged; the split stays toy_grok's question split (logging only)")
     args = ap.parse_args()
     if args.summarize:
         summarize(Path(args.summarize)); return
+    if args.summarize_wall:
+        summarize_wall(Path(args.summarize_wall)); return
     if args.threads:
         torch.set_num_threads(args.threads)
     dev = ("cuda" if torch.cuda.is_available() else "cpu") if args.device == "auto" else args.device
     D = build_task(args.task, args.p, tuple(int(k) for k in args.freqs.split(",")))
+    if args.mod_twins:   # wall 2 (opt-in, logging only): commutativity classes for mod's test_fresh
+        assert args.task == "mod" and split_mode(args.task, args.split) == "question", "--mod_twins: mod, question split only"
+        D["cls"] = class_ids([(min(a, b), max(a, b)) for a, b in D["X"][:, :2].tolist()])
+        assert D["cls"].max() + 1 == D["p"] * (D["p"] + 1) // 2
     arms = (args.arms or ARMS[args.task]).split(",")
     if args.task != "mod":
         names = {"none"} | set(D["targets"]) | {"specrand", "shuf"} | ({"specrand_oh"} if args.task == "dim" else set())
-        assert {arm_target(a) for a in arms} <= names and not any(a.startswith("none@") for a in arms), arms
+        assert {arm_target(a) for a in arms if ":" not in a} <= names and not any(a.startswith("none@") for a in arms), arms
         for a in arms:
             arm_spec(args.task, a, args.win, args.width)   # parses every window before any training
+    for a in arms:   # wall 2 shape arms (any task): kind, target and window checked before any training
+        if ":" in a:
+            assert arm_kind(a) in SHAPE_KINDS and arm_spec(args.task, a, args.win, args.width)[0] in SHAPE_OK[args.task], a
     seeds = [int(s) for s in args.seeds.split(",")]
     if args.check:
         check(D, args, seeds); return
@@ -655,6 +857,8 @@ def main() -> None:
                  **{k: v for k, v in info.items() if k != "shuf_perm"}}
         if args.task != "mod":
             extra.update({"split": smode, "chance_majority": majority_chance(D, tr, te)})
+        if args.mod_twins:
+            extra["mod_twins"] = True
         if args.task != "mod":
             extra["shuf_perm"] = info["shuf_perm"]
             names, M = target_table(D, T)
@@ -693,6 +897,18 @@ def check(D: dict, args, seeds: list) -> None:
             print(" " * (w + 1) + " ".join(f"{n:>9}" for n in names))
             for n, row in zip(names, M):
                 print(f"{n:>{w}} " + " ".join(f"{x:9.3f}" for x in row))
+            if args.shape_log:   # wall 2: shape loss (spec + norm [prof]) of each configuration (row) toward each target (col)
+                SF = shape_feats(D, T)
+                SF_rows = {**SF, "W_E_init": W0}
+                print("shape loss spec + norm [+ prof where the target is vertex-transitive], row = configuration, col = target")
+                for rn, Fr in SF_rows.items():
+                    H = torch.tensor(Fr, dtype=torch.float32)
+                    cells = []
+                    for cn, Fc in SF.items():
+                        S = shape_tensors(Fc, "cpu")
+                        t = shape_terms(H, S, SHAPE_KINDS["shapeprof" if S["prof"] is not None else "shape"])
+                        cells.append(f"{cn} {float(t['spec'] + t['norm']):.3f}" + (f" [{float(t['prof']):.3f}]" if "prof" in t else ""))
+                    print(f"  {rn:>9}: " + ", ".join(cells))
         smode = split_mode(D["task"], args.split)
         for frac in sorted({0.3, 0.6, args.frac}):
             perm, tr, te = split(D, frac, seed, smode)
@@ -774,11 +990,19 @@ def compare(runs: dict, a: str, b: str, chance: float) -> dict | None:
         return None
     sa, sb = {r["seed"]: r for r in runs[a]}, {r["seed"]: r for r in runs[b]}
     seeds = sorted(set(sa) & set(sb))
-    n = len(seeds); need = math.ceil(0.8 * n)
     ga, gb = [cens(sa[s]) for s in seeds], [cens(sb[s]) for s in seeds]
+    ua, ub = [auc(sa[s]) for s in seeds], [auc(sb[s]) for s in seeds]
+    t = compare_values(ga, gb, ua, ub, chance)
+    return {"a": a, "b": b, "n": t["n"], "seeds": seeds, **{k: t[k] for k in ("grok", "auc", "pass", "floor", "verdict")}}
+
+
+def compare_values(ga: list, gb: list, ua: list, ub: list, chance: float) -> dict:
+    """compare()'s decision on per-seed values (paired lists): censored t_grok (inf = never) and AUC. Shared by the
+    F84 summary and the wall-2 reading (which feeds it t_grok / AUC over the first B steps, summarize_wall)."""
+    n = len(ga); need = math.ceil(0.8 * n)
+    assert len(gb) == len(ua) == len(ub) == n, (len(ga), len(gb), len(ua), len(ub))
     g = {"med_a": median_vals(ga), "med_b": median_vals(gb), "wins": sum(x < y for x, y in zip(ga, gb)), "p": mwu_p(ga, gb)}
     g["pass"] = bool(g["med_a"] < g["med_b"] and g["wins"] >= need and g["p"] < ALPHA)
-    ua, ub = [auc(sa[s]) for s in seeds], [auc(sb[s]) for s in seeds]
     u = {"med_a": median_vals(ua), "med_b": median_vals(ub), "wins": sum(x > y for x, y in zip(ua, ub)),
          "p": mwu_p([-x for x in ua], [-x for x in ub]), "per_seed_a": ua, "per_seed_b": ub}
     # re-audit 2026-10-17: a lift that stays at or below the cell's own floor line (chance + AUC_MIN) is not a pass
@@ -788,8 +1012,7 @@ def compare(runs: dict, a: str, b: str, chance: float) -> dict | None:
                  and max(u["med_a"], u["med_b"]) <= chance + AUC_MIN)
     verdict = ("PASS (t_grok + AUC)" if g["pass"] and u["pass"] else "PASS (t_grok)" if g["pass"] else
                "PASS (AUC)" if u["pass"] else "floor: uninformative" if floor else f"not shown at n={n}")
-    return {"a": a, "b": b, "n": n, "seeds": seeds, "grok": g, "auc": u, "pass": bool(g["pass"] or u["pass"]),
-            "floor": floor, "verdict": verdict}
+    return {"n": n, "grok": g, "auc": u, "pass": bool(g["pass"] or u["pass"]), "floor": floor, "verdict": verdict}
 
 
 def share_in(r, key: str, lo: int, hi: int):
@@ -872,10 +1095,11 @@ def summarize(out: Path) -> None:
         cm = cmedian(R_)
         own = R_[0].get("target")
         ck = ""
-        if own:
-            at = [next((c[f"cka_{own}"] for c in r["curve"] if c["step"] >= 1999), float("nan")) for r in R_]
-            fi = [r["curve"][-1][f"cka_{own}"] for r in R_]
-            ck = f"{np.mean(at):.2f} / {np.mean(fi):.2f}"
+        if own:   # wall 2 shape arms: their own objective (shape loss, 0 = on target) instead of the CKA
+            key = f"cka_{own}" if R_[0].get("prior_kind", "cka") == "cka" else "geo"
+            at = [next((c[key] for c in r["curve"] if c["step"] >= 1999), float("nan")) for r in R_]
+            fi = [r["curve"][-1][key] for r in R_]
+            ck = f"{np.mean(at):.2f} / {np.mean(fi):.2f}" + ("" if key != "geo" else " (shape loss)")
         ng = sum(r["t_grok"] is not None for r in R_)
         au = [auc(r) for r in R_]
         th = median_vals([math.inf if t_half(r) is None else t_half(r) for r in R_])
@@ -974,6 +1198,355 @@ def summarize(out: Path) -> None:
     (out / "summary.json").write_text(json.dumps(clean(summ), indent=1))
     print("".join(L))
 
+
+# ---------------------------------------------------------------------------------------------------- wall 2 reading
+# PRE-REGISTERED (runs/toyshape/AUDIT.md, 2026-10-19, before any run; revised the same day after the independent audit,
+# still before any run): role -> (always-on arm, [0, 2000)-window arm)
+WALL_ROLES = {"mod": {"assign": ("always", "w0"), "shape": ("shape:circle@always", "shape:circle"),
+                      "shapeprof": ("shapeprof:circle@always", "shapeprof:circle"),
+                      "wrongshape": ("shape:line@always", "shape:line"), "rankctl": ("shape:sphere@always", "shape:sphere")},
+              "s4": {"assign": ("R@always", "R"), "shape": ("shape:R@always", "shape:R"),
+                     "shapeprof": ("shapeprof:R@always", "shapeprof:R"),
+                     "wrongshape": ("shape:line@always", "shape:line"), "rankctl": ("shape:sphere@always", "shape:sphere")}}
+WALL_TESTED = ("shape", "shapeprof")   # the two shape roles; each read on its own, no pooling
+WALL_CONTROLS = {"wrongshape": "line (same rank, anisotropic)", "rankctl": "sphere (other rank, isotropic, constant norm)"}
+WALL_RANK = {"circle": 2, "torus": 10, "R": 9}   # centred rank of each variant's true shape
+WALL_SCHED = ("always", "window")      # PRIMARY = always; window = secondary
+WALL_NONE_LRS, WALL_NONE_WDS = (1e-3, 3e-3, 1e-2, 3e-2), (0.1, 1.0, 3.0)
+WALL_NONE_GRID = [(lr, wd) for lr in WALL_NONE_LRS for wd in WALL_NONE_WDS]
+# rule 2: a flat cell is extended once, one x3 step beyond the top of each axis (not the corner lr 1e-1 x wd 10, where
+# AdamW's decoupled decay lr * wd = 1 zeroes the weights every step)
+WALL_FLAT_EXT = [(1e-1, wd) for wd in WALL_NONE_WDS] + [(lr, 10.0) for lr in WALL_NONE_LRS]
+WALL_PRIOR_LRS, WALL_PRIOR_WD = (1e-3, 1e-2), 1.0
+WALL_CAP = 0.20                            # rule 1: every none config's median final test <= this (critique D1's level)
+WALL_RISE_ACC, WALL_RISE_CE = 0.02, 0.01   # rule 1: last-25 % median held-out accuracy gain / test-CE drop (nats, D1)
+WALL_FRESH = ("mod", "s4")                 # every comparison must also pass on test_fresh; its presence is required
+
+
+def upto(r: dict, B: int, key: str = "test") -> tuple:
+    """(t_grok, AUC) of a run read on its first B steps only: the evals at steps 0, e, ..., B - e (B / e of them; a prior
+    arm's extra last eval at B - 1 is left out), so a prior arm run for B steps and none run for 4 B are read on the same
+    evals. t_grok = first of these evals with held-out test >= 0.95 (inf = never); AUC = mean of `key` over them
+    (key test_fresh: the held-out questions whose twin is not in training, mod --mod_twins / s4)."""
+    e = r.get("eval_every", 100)
+    v = [c for c in r["curve"] if c["step"] < B and c["step"] % e == 0]
+    assert B % e == 0 and r["steps"] >= B and len(v) == B // e and v[-1]["step"] == B - e, (r["arm"], r["seed"], len(v), B)
+    assert all(c.get(key) is not None for c in v), (r["arm"], r["seed"], key)
+    tg = next((c["step"] for c in v if c["test"] >= 0.95), None)
+    return (math.inf if tg is None else float(tg)), float(np.mean([c[key] for c in v]))
+
+
+def late_change(r: dict, B4: int) -> tuple:
+    """(held-out accuracy gain, test-CE drop in nats) over the last 25 % of the budget B4: the mean of the last 5 evals
+    before B4 minus the mean of the first 5 evals at or after 0.75 B4 (CE: the reverse). A non-finite value (a diverged
+    run) counts as no change: divergence = not learning (pre-registered). Only a smoke-length curve (< 20 evals) may
+    have too few late evals (then 0, 0)."""
+    e = r.get("eval_every", 100)
+    v = [c for c in r["curve"] if c["step"] < B4 and c["step"] % e == 0]
+    late = [c for c in v if c["step"] >= 0.75 * B4]
+    k = min(5, len(late) // 2)
+    assert k >= 1 or len(v) < 20, (r["arm"], r["seed"], B4, len(v))
+    if k == 0:
+        return 0.0, 0.0
+    a, z = late[:k], late[-k:]
+    assert a[-1]["step"] < z[0]["step"], (r["arm"], r["seed"], B4)
+    assert all("test_ce" in c for c in a + z), (r["arm"], r["seed"], "test_ce missing")
+    m = lambda cs, k: float(np.mean([c[k] for c in cs]))
+    acc, ce = m(z, "test") - m(a, "test"), m(a, "test_ce") - m(z, "test_ce")
+    return (acc if math.isfinite(acc) else 0.0), (ce if math.isfinite(ce) else 0.0)
+
+
+def has_fresh(r: dict) -> bool:
+    return all(c.get("test_fresh") is not None for c in r["curve"])
+
+
+def wall_variant(r: dict) -> str:
+    if r["task"] == "mod":
+        f = r["freqs"]
+        return "circle" if f == [1] else "torus" if f == [1, 2, 3, 4, 5] else "freqs" + "-".join(map(str, f))
+    return SHAPE_TRUE[r["task"]]
+
+
+def _write_wall(root: Path, text: str, summ: dict) -> None:
+    clean = lambda x: ({str(k): clean(v) for k, v in x.items()} if isinstance(x, dict) else [clean(v) for v in x]
+                       if isinstance(x, (list, tuple)) else "censored" if isinstance(x, float) and math.isinf(x) else x)
+    for name, body in (("wall_summary.md", text), ("wall_summary.json", json.dumps(clean(summ), indent=1))):
+        tmp = root / f".tmp_{name}.{os.getpid()}"
+        tmp.write_text(body)
+        os.replace(tmp, root / name)
+    print(text)
+
+
+def summarize_wall(root: Path) -> None:
+    """Wall-2 reading over the cell dirs root/<cell>/run_*.json of ONE experiment (one code_sha; PRE-REGISTERED rules,
+    runs/toyshape/AUDIT.md; a smoke or older run mixed in gives no verdict).
+    1 wall cell (task, frac): EVERY none config of the lr x wd sweep that ran (a) groks on <= floor(0.2 n) seeds within
+      its 4 B budget, (b) has a median final held-out test <= WALL_CAP, (c) is not still rising: median last-25 % gain
+      < WALL_RISE_ACC (every config) and, for the best config, median last-25 % test-CE drop < WALL_RISE_CE nats.
+      Otherwise 'not a wall cell (reason)': speed-up reading only.
+    2 bracket: best none config = most groks, then median AUC over 4 B. Closed iff it is not on an edge of the grid that
+      ran. 'Flat' (every config 0 groks and AUC at or below the floor line) is NOT closed until the one-step extension
+      WALL_FLAT_EXT has run and the cell is still flat. A wall verdict with an open bracket is prefixed 'BRACKET OPEN'.
+    3 per prior role and schedule, its lr (of 1e-3 / 1e-2, wd 1) with the highest median AUC_B; best none for the paired
+      tests = the config with the highest median AUC_B (12+ choices vs 2: favours none). AUC_B / t_grok_B = upto().
+    4 a role MEETS the rule iff it groks within B on >= ceil(0.8 n) seeds AND compare_values(role, best none).auc passes
+      on held-out test AND on test_fresh (floor line included). 'a beats b' = the paired AUC test passes on both.
+    5 verdict per tested role (shape, shapeprof) and schedule (always = PRIMARY), at a wall cell:
+      a control (line, sphere) meets the rule too -> 'NOT SHAPE-SPECIFIC'; else the role meets it and beats BOTH controls
+      -> 'BREAKS THE WALL' (shape: as a rank-r isotropic constant-norm prior; shapeprof: with the row profile, plus
+      'geometry beyond rank SHOWN' iff shapeprof also beats shape); meets it without beating both -> 'SPECIFICITY NOT
+      SHOWN'; AUC pass without the groks -> 'partial'; 'floor: uninformative'; else 'not shown at n'.
+    6 data multiplier: f* / f, f* = the smallest swept fraction at which the best none config's median final test (at 4 B)
+      >= the role's median final test (at B)."""
+    rs = [json.loads(p.read_text()) for p in sorted(root.glob("*/run_*.json"))]
+    if not rs:
+        print("no runs under", root, "(expects <root>/<cell>/run_*.json, e.g. runs/toyshape/out)"); return
+    shas = sorted({str(r.get("code_sha")) for r in rs})
+    if len(shas) != 1:
+        _write_wall(root, f"# wall 2 (shape-only prior) reading over {root}\n\nNO VERDICT: {len(rs)} runs from {len(shas)} "
+                          f"code_sha values {shas}; read one experiment's out/ dir\n", {"root": str(root), "code_sha": shas})
+        return
+    none, prior, notes = {}, {}, []
+    for r in rs:
+        if r["task"] not in WALL_ROLES:
+            continue
+        if r["arm"] == "none":
+            none.setdefault((r["task"], r["frac"]), {}).setdefault((r["lr"], r["wd"]), {})[r["seed"]] = r
+        else:
+            if r["wd"] != WALL_PRIOR_WD or r["lam"] != 1.0:
+                notes.append(f"excluded (not the pre-registered wd 1 / lam 1): {r['task']} {r['arm']} lr {r['lr']} wd {r['wd']} lam {r['lam']}")
+                continue
+            prior.setdefault((r["task"], wall_variant(r), r["frac"]), {}).setdefault((r["arm"], r["lr"]), {})[r["seed"]] = r
+    L = [f"# wall 2 (shape-only prior) reading over {root}\n\n", f"{len(rs)} runs; code_sha {shas}\n\n"]
+    L += [f"- {x}\n" for x in notes[:20]]
+    summ = {"root": str(root), "n_runs": len(rs), "code_sha": shas, "cells": {}}
+    fm = lambda v: "never" if v == math.inf else f"{v:.0f}"
+    cf = lambda k: f"lr {k[0]:g} wd {k[1]:g}"
+    over = ["| task | variant | frac | none: best groks within 4B | wall | bracket | shape@always | shapeprof@always "
+            "| shape@window | shapeprof@window | assign@always groks / AUC_B | multiplier (shape@always) |\n",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|\n"]
+    heads = []
+    for (task, var, frac) in sorted(prior):
+        P, Nc = prior[(task, var, frac)], none.get((task, frac), {})
+        cell = {"task": task, "variant": var, "frac": frac}
+        summ["cells"][f"{task}-{var}-f{frac}"] = cell
+        L.append(f"\n## {task} {var}, frac {frac}\n\n")
+        Bs = sorted({r["steps"] for d in P.values() for r in d.values()})
+        B4s = sorted({r["steps"] for d in Nc.values() for r in d.values()})
+        if len(Bs) != 1 or not Nc or len(B4s) != 1 or B4s[0] != 4 * Bs[0]:
+            L.append(f"NO VERDICT: prior budgets {Bs}, none budgets {B4s} (needs one B and none at 4 B)\n")
+            cell["verdict"] = "no verdict (budgets)"; continue
+        B, B4 = Bs[0], B4s[0]
+        allr = [r for d in list(P.values()) + list(Nc.values()) for r in d.values()]
+        nofresh = sum(not has_fresh(r) for r in allr) if task in WALL_FRESH else 0
+        if nofresh:   # audit 2026-10-19: a missing test_fresh must not count as a pass
+            L.append(f"NO VERDICT: {nofresh} of {len(allr)} runs without test_fresh (mod needs --mod_twins)\n")
+            cell["verdict"] = "no verdict (test_fresh missing)"; continue
+        chance = chance_of(allr, task)
+        cell.update({"B": B, "B4": B4, "chance": chance, "floor_line": chance + AUC_MIN})
+        missing = [g for g in WALL_NONE_GRID if g not in Nc]
+        prov = bool(missing) or any(len(d) < 5 for d in Nc.values())
+        L.append(f"prior budget B {B}, none budget {B4} (= 4 B); chance {chance:.4f}, floor line {chance + AUC_MIN:.4f}"
+                 + (f"; PROVISIONAL: none grid incomplete (missing {missing})" if missing else "") + "\n\n")
+        # ---- the none sweep
+        L += ["| none lr | wd | n | groks within 4B | t_grok cmedian | AUC 4B median | AUC_B median | final test median "
+              "| last 25%: gain / test-CE drop (medians) |\n", "|---|---|---|---|---|---|---|---|---|\n"]
+        nrow = {}
+        for (lr, wd) in sorted(Nc):
+            d = Nc[(lr, wd)]
+            rr = [d[s] for s in sorted(d)]
+            ub = [upto(r, B) for r in rr]
+            lc = [late_change(r, B4) for r in rr]
+            nrow[(lr, wd)] = {"n": len(rr), "grok4": sum(r["t_grok"] is not None for r in rr), "auc4": median_vals([auc(r) for r in rr]),
+                              "aucB": median_vals([u for _, u in ub]), "final": median_vals([r["final_test"] for r in rr]),
+                              "gain": median_vals([g for g, _ in lc]), "ce_drop": median_vals([c for _, c in lc]), "seeds": sorted(d)}
+            x = nrow[(lr, wd)]
+            L.append(f"| {lr:g} | {wd:g} | {x['n']} | {x['grok4']}/{x['n']} | {fm(cmedian(rr))} | {x['auc4']:.3f} | {x['aucB']:.3f} "
+                     f"| {x['final']:.3f} | {x['gain']:+.3f} / {x['ce_drop']:+.3f} |\n")
+        n = min(x["n"] for x in nrow.values())
+        best_grok = max(x["grok4"] for x in nrow.values())
+        bk = max(nrow, key=lambda k: (nrow[k]["grok4"], nrow[k]["auc4"], -k[0]))
+        cap = [k for k in nrow if nrow[k]["final"] > WALL_CAP]
+        rising = [k for k in nrow if nrow[k]["gain"] >= WALL_RISE_ACC or (k == bk and nrow[k]["ce_drop"] >= WALL_RISE_CE)]
+        why = ([f"best none groks {best_grok}/{n} within 4B"] if best_grok > math.floor(0.2 * n) else []) \
+            + ([f"none above the {WALL_CAP:.2f} cap: " + ", ".join(f"{cf(k)} {nrow[k]['final']:.2f}" for k in cap)] if cap else []) \
+            + (["none still rising in the last 25% of 4B: " + ", ".join(f"{cf(k)} (gain {nrow[k]['gain']:+.3f}, CE drop "
+                                                                        f"{nrow[k]['ce_drop']:+.3f})" for k in rising)] if rising else [])
+        wall = not why
+        lrs, wds = sorted({k[0] for k in nrow}), sorted({k[1] for k in nrow})
+        flat = all(x["grok4"] == 0 and x["auc4"] <= chance + AUC_MIN for x in nrow.values())
+        if flat:
+            ext_missing = [g for g in WALL_FLAT_EXT if g not in nrow]
+            bracket = ("flat over the extended grid (lr to 1e-1, wd to 10)" if not ext_missing else
+                       "OPEN (flat on the grid that ran: extend once to lr 1e-1 and wd 10)")
+        else:
+            edges = [e for e, hit in (("lr top", bk[0] == lrs[-1]), ("lr bottom", bk[0] == lrs[0]),
+                                      ("wd top", bk[1] == wds[-1]), ("wd bottom", bk[1] == wds[0])) if hit]
+            bracket = "closed" if not edges else "OPEN at " + ", ".join(edges)
+        closed = not bracket.startswith("OPEN")
+        nb = max(nrow, key=lambda k: (nrow[k]["aucB"], -k[0]))
+        L.append(f"\nwall cell (every none config: groks <= {math.floor(0.2 * n)}/{n} within 4B, median final <= {WALL_CAP:.2f}, "
+                 f"not rising): **{wall}**" + ("" if wall else " (" + "; ".join(why) + ")")
+                 + f"; best config {cf(bk)}, bracket {bracket}; best none on AUC_B (paired tests) {cf(nb)}\n")
+        sk = {"circle": "shapeL_fourier1", "torus": "shapeL_fourier1-5"}.get(var, f"shapeL_{var}")
+        nbr = [Nc[nb][s] for s in sorted(Nc[nb])]
+        if all(sk in c for r in nbr for c in r["curve"]):   # reported only (rule 7)
+            atB = median_vals([[c for c in r["curve"] if c["step"] < B][-1][sk] for r in nbr])
+            at4 = median_vals([r["curve"][-1][sk] for r in nbr])
+            L.append(f"none ({cf(nb)}) distance to the {var} shape (spec + norm, reported only): {atB:.3f} at B, {at4:.3f} at 4 B\n")
+            cell["none_shapeL"] = {"key": sk, "at_B": atB, "at_4B": at4}
+        L.append("\n")
+        cell.update({"none": {f"lr{k[0]:g}-wd{k[1]:g}": v for k, v in nrow.items()}, "wall": wall, "wall_why": why,
+                     "none_best_grok": best_grok, "bracket": bracket, "bracket_closed": closed, "none_best": [bk[0], bk[1]],
+                     "none_best_aucB": [nb[0], nb[1]], "provisional": prov})
+        # ---- prior roles: best lr per role and schedule
+        L += ["| role | schedule | arm | lr chosen (AUC_B per lr) | n | groks within B | AUC_B median | AUC_B fresh median "
+              "| final test median | own objective at end | CKA to the assigned target at end |\n",
+              "|---|---|---|---|---|---|---|---|---|---|---|\n"]
+        pick = {}
+        ck_key = "cka_circle" if task == "mod" else f"cka_{SHAPE_TRUE[task]}"
+        for role, arms in WALL_ROLES[task].items():
+            for si, arm in enumerate(arms):
+                cand = {lr: d for (a, lr), d in P.items() if a == arm}
+                if not cand:
+                    continue
+                stats = {}
+                for lr, d in cand.items():
+                    rr = [d[s] for s in sorted(d)]
+                    ub = [upto(r, B) for r in rr]
+                    uf = [upto(r, B, "test_fresh")[1] if has_fresh(r) else None for r in rr]
+                    stats[lr] = {"runs": {r["seed"]: (r, t, u, f) for r, (t, u), f in zip(rr, ub, uf)}, "aucB": median_vals([u for _, u in ub])}
+                lr = max(stats, key=lambda k: (stats[k]["aucB"], -k))
+                S = stats[lr]["runs"]
+                gB = sum(x[1] < math.inf for x in S.values())
+                fin = median_vals([x[0]["final_test"] for x in S.values()])
+                geo = [g for g in (x[0]["curve"][-1].get("geo") for x in S.values()) if g is not None]
+                cka_end = [g for g in (x[0]["curve"][-1].get(ck_key) for x in S.values()) if g is not None]
+                ufr = [x[3] for x in S.values() if x[3] is not None]
+                pick[(role, WALL_SCHED[si])] = {"arm": arm, "lr": lr, "runs": S, "groksB": gB, "n": len(S), "aucB": stats[lr]["aucB"], "final": fin}
+                per_lr = ", ".join("%g: %.3f" % (k, v["aucB"]) for k, v in sorted(stats.items()))
+                L.append(f"| {role} | {WALL_SCHED[si]} | {arm} | {lr:g} ({per_lr}"
+                         f"{'' if set(stats) == set(WALL_PRIOR_LRS) else '; INCOMPLETE'}) | {len(S)} | {gB}/{len(S)} | {stats[lr]['aucB']:.3f} "
+                         f"| {f'{median_vals(ufr):.3f}' if ufr else '-'} | {fin:.3f} | {f'{np.median(geo):.3f}' if geo else '-'} "
+                         f"| {f'{np.median(cka_end):.3f}' if cka_end else '-'} |\n")
+        # ---- paired tests (AUC_B / t_grok_B), verdicts, data multiplier
+        NB = Nc[nb]
+
+        def test(pa, Nd, fresh=False):
+            sd = sorted(set(pa["runs"]) & set(Nd))
+            if not sd or (fresh and not all(pa["runs"][s][3] is not None and has_fresh(Nd[s]) for s in sd)):
+                return None
+            ga, ua = [pa["runs"][s][1] for s in sd], [pa["runs"][s][3 if fresh else 2] for s in sd]
+            gb, ub = zip(*[upto(Nd[s], B, "test_fresh" if fresh else "test") for s in sd])
+            return compare_values(ga, list(gb), ua, list(ub), chance)
+
+        def test_pp(pa, pb, fresh=False):
+            sd = sorted(set(pa["runs"]) & set(pb["runs"]))
+            i = 3 if fresh else 2
+            if not sd or any(pa["runs"][s][i] is None or pb["runs"][s][i] is None for s in sd):
+                return None
+            return compare_values([pa["runs"][s][1] for s in sd], [pb["runs"][s][1] for s in sd],
+                                  [pa["runs"][s][i] for s in sd], [pb["runs"][s][i] for s in sd], chance)
+
+        cell["tests"], cell["verdict"], cell["multiplier"], cell["meets"] = {}, {}, {}, {}
+        for sch in WALL_SCHED:
+            L += [f"\n### schedule {sch} ({'PRIMARY' if sch == 'always' else 'secondary'})\n\n"
+                  "| test (read on the first B steps, paired by seed) | n | t_grok median a / b | wins | p | AUC_B median a / b | wins | p | verdict |\n",
+                  "|---|---|---|---|---|---|---|---|---|\n"]
+            kn = lambda role: f"{role}@{sch} > none (lr {nb[0]:g} wd {nb[1]:g})"
+            rows = [(kn(role), pick[(role, sch)], None) for role in WALL_ROLES[task] if (role, sch) in pick]
+            for a_, b_ in (("shape", "wrongshape"), ("shape", "rankctl"), ("shapeprof", "wrongshape"), ("shapeprof", "rankctl"),
+                           ("shapeprof", "shape")):
+                if (a_, sch) in pick and (b_, sch) in pick:
+                    rows.append((f"{a_}@{sch} > {b_}@{sch}", pick[(a_, sch)], pick[(b_, sch)]))
+            for name, pa, pb in rows:
+                for fresh in (False, True):
+                    t = test(pa, NB, fresh) if pb is None else test_pp(pa, pb, fresh)
+                    if t is None:
+                        continue
+                    nm_ = name + (" [test_fresh AUC]" if fresh else "")
+                    cell["tests"][nm_] = t
+                    g, u = t["grok"], t["auc"]
+                    L.append(f"| {nm_} | {t['n']} | {fm(g['med_a'])} / {fm(g['med_b'])} | {g['wins']}/{t['n']} | {g['p']:.3f} "
+                             f"| {u['med_a']:.3f} / {u['med_b']:.3f} | {u['wins']}/{t['n']} | {u['p']:.3f} | {t['verdict']} |\n")
+
+            def passes(name):   # the AUC test passes on held-out test AND on test_fresh (both required, rule 4)
+                t, tf = cell["tests"].get(name), cell["tests"].get(name + " [test_fresh AUC]")
+                return bool(t is not None and tf is not None and t["auc"]["pass"] and tf["auc"]["pass"])
+
+            def meets(role):
+                pa = pick.get((role, sch))
+                return None if pa is None else bool(pa["groksB"] >= math.ceil(0.8 * pa["n"]) and passes(kn(role)))
+
+            beats = lambda a_, b_: passes(f"{a_}@{sch} > {b_}@{sch}")
+
+            def verdict(role):
+                if (role, sch) not in pick or any((c, sch) not in pick for c in WALL_CONTROLS):
+                    return "arms missing"
+                pa = pick[(role, sch)]
+                if not wall:
+                    return "not a wall cell (" + "; ".join(why) + "): speed-up reading only"
+                cm = [c for c in WALL_CONTROLS if meets(c)]
+                ctl = " and ".join(WALL_CONTROLS[c] for c in cm)
+                if meets(role):
+                    if cm:
+                        return f"breaks it, but so does {ctl}: NOT SHAPE-SPECIFIC"
+                    sep = {c: beats(role, c) for c in WALL_CONTROLS}
+                    if all(sep.values()):
+                        if role == "shape":
+                            return (f"BREAKS THE WALL (the true shape's spectrum + norms: a rank-{WALL_RANK.get(var, '?')} isotropic "
+                                    "constant-norm prior; beats line and sphere, paired)")
+                        return ("BREAKS THE WALL (spectrum + norms + row profile; beats line and sphere, paired); "
+                                + ("geometry beyond rank SHOWN (shapeprof > shape, paired)" if beats("shapeprof", "shape")
+                                   else "geometry beyond rank not shown (shapeprof vs shape)"))
+                    return "breaks it; SPECIFICITY NOT SHOWN (" + ", ".join(
+                        f"vs {c}: {'pass' if sep[c] else 'n.s.'}" for c in WALL_CONTROLS) + ")"
+                if passes(kn(role)):
+                    return (f"partial: AUC_B above none (test and test_fresh), groks {pa['groksB']}/{pa['n']} within B (< 4/5)"
+                            + (f"; {ctl} meets the rule" if cm else ""))
+                t = cell["tests"].get(kn(role))
+                if t is not None and t["floor"]:
+                    return "floor: uninformative"
+                return f"not shown at n={pa['n']}"
+
+            for role in WALL_TESTED:
+                v = verdict(role)
+                if v != "arms missing":
+                    if wall and not closed:   # pre-registered: extend none once beyond the edge / the flat grid
+                        v = f"BRACKET OPEN ({bracket}; extend none, AUDIT.md rule 2): " + v
+                    if prov:
+                        v = "PROVISIONAL (none grid incomplete): " + v
+                cell["verdict"][f"{role}@{sch}"] = v
+                L.append(f"\n**verdict {role}@{sch}{' (PRIMARY)' if sch == 'always' else ' (secondary)'}**: {v}\n")
+                if sch == "always" and v.startswith("BREAKS THE WALL"):
+                    heads.append(f"{task} {var} frac {frac}: {role}: {v}")
+            cell["meets"][sch] = {role: meets(role) for role in WALL_ROLES[task]}
+            L.append(f"\nmeets the rule ({sch}): " + ", ".join(f"{k} {v}" for k, v in cell["meets"][sch].items())
+                     + " (assign = the upper reference)\n")
+            # data multiplier: smallest swept fraction at which the best none config's median final test reaches the role's
+            fr = sorted(f for (t_, f) in none if t_ == task)
+            best_final = {f: max(median_vals([r["final_test"] for r in d.values()]) for d in none[(task, f)].values()) for f in fr}
+            for role in WALL_ROLES[task]:
+                pa = pick.get((role, sch))
+                if pa is None:
+                    continue
+                A = pa["final"]
+                hit = next((f for f in fr if best_final[f] >= A), None)
+                below = [f for f in fr if hit is None or f < hit]
+                m = (f"<= 1 (none reaches {A:.3f} at frac {hit} <= {frac})" if hit is not None and hit <= frac else
+                     f"{hit / frac:.2f} (none first reaches {A:.3f} at frac {hit}; not at {max(below) if below else '-'})" if hit is not None else
+                     f"> {fr[-1] / frac:.2f} (none never reaches {A:.3f} up to frac {fr[-1]})")
+                cell["multiplier"][f"{role}@{sch}"] = {"A": A, "f_star": hit, "text": m}
+                L.append(f"- data multiplier {role}@{sch}: {m}\n")
+        sh = lambda k: cell["verdict"].get(k, "-")
+        pa = pick.get(("assign", "always"))
+        asg = "-" if pa is None else "%d/%d / %.3f" % (pa["groksB"], pa["n"], pa["aucB"])
+        over.append(f"| {task} | {var} | {frac} | {best_grok}/{n} | {wall} | {bracket} | {sh('shape@always')} | {sh('shapeprof@always')} "
+                    f"| {sh('shape@window')} | {sh('shapeprof@window')} | {asg} | {cell['multiplier'].get('shape@always', {}).get('text', '-')} |\n")
+    summ["headline"] = heads
+    hl = ["## headline (rule 5: a PRIMARY 'BREAKS THE WALL' at >= 1 wall cell, bracket closed, grid complete)\n\n"] + \
+         ([f"- {h}\n" for h in heads] or ["- none: no cell reads 'BREAKS THE WALL' on the PRIMARY schedule\n"]) + ["\n"]
+    _write_wall(root, "".join(L[:2] + hl + ["## overview\n\n"] + over + L[2:]), summ)
 
 if __name__ == "__main__":
     main()
