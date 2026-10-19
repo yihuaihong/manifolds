@@ -1,0 +1,12 @@
+pin_run: tools/toy_struct.py at 398935a8041237acecf21fab726456c74b12206c (sha256 b74a78cb5472) with Python 3.11.13
+[s4 frac 0.6 seed 3] n_train 345 n_test 231 closure 1.000 closure_latin 1.000 shuf_far_max_cka 0.340 shuf_cka_to_true 0.326 specrand_cka_to_true 0.322 split question chance_majority 0.026
+  train ids [11, 23, 24] len 3 | g11 g23 ⟦=⟧ (pos 2) -> g16
+  train ids [5, 13, 24] len 3 | g05 g13 ⟦=⟧ (pos 2) -> g23
+  train ids [12, 11, 24] len 3 | g12 g11 ⟦=⟧ (pos 2) -> g23
+  eval  ids [13, 1, 24] len 3 | g13 g01 ⟦=⟧ (pos 2) -> g12
+  eval  ids [23, 6, 24] len 3 | g23 g06 ⟦=⟧ (pos 2) -> g17
+  eval  ids [3, 19, 24] len 3 | g03 g19 ⟦=⟧ (pos 2) -> g18
+R@always seed3: t_mem 100 t_grok 1200 final test 1.000 (6.02 ms/step, 609s)
+R_sign@always seed3: t_mem 100 t_grok 1000 final test 1.000 (6.10 ms/step, 1219s)
+specrand@always seed3: t_mem 100 t_grok None final test 0.000 (5.80 ms/step, 1799s)
+done; summary: python toy_struct.py --summarize /scratch/yh6210/llmadd_runs/482-toyb-toyprior_lr-s4-f0.6-lr1e-2-wd1/out  (after every process of the cell)
