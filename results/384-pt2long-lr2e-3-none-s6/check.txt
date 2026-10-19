@@ -1,0 +1,8 @@
+PASS run args = intent (34 fields)  ({})
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 73242, "n_params": 52672128, "grad_ckpt_on": false, "geo_layers": [2, 4], "read_layers": [2, 4], "lm_chunk": 0, "eval_every_steps": 250}  ({'steps': 73242, 'n_params': 52672128, 'grad_ckpt_on': False, 'geo_layers': [2, 4], 'read_layers': [2, 4], 'lm_chunk': 0, 'eval_every_steps': 250})
+PASS finished: 294 evals, increasing, the last at step 73241  ([294, 73241])
+PASS prior never on  (0.0)
+PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (9.032857573032516e-09)
+{"tag": "_pt2long-lr2e-3-none", "seed": 6, "lr": 0.002, "area": 64.52, "area_no_b11": 62.57, "b11_area": 74.31, "b33_area": 38.08, "t90_M": 887.329325443787, "budget_M": 1199.996928, "lm0": 11.585131645202637, "final_val_bpb": 1.2334689779801578, "bpb_full": 1.2123360280887319, "diverged": false, "diverged_at_step": null, "prior_used_frac": 0.0, "cka_ops_helix3": 0.7907716035842896, "sec_per_step_median": 0.14096994972229004, "projected_run_h": 2.868033627099991, "gpu_util_median": 98, "gpu_mem_max_MiB": 32238, "gpu_samples": 177, "pinned_calls": 3}
+CHECKS PASS
