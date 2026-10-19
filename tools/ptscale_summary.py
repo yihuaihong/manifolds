@@ -534,6 +534,12 @@ for arm in PRIORS:
         if len(grid[(size, "none")]) < 2:
             print(f"  {arm}: {size} left out (none at a single lr: untuned)")
             continue
+        # results audit 2026-10-19: a size whose none or arm bracket is still open has a PROVISIONAL best lr, so it
+        # does not enter the trend (the 505M point alone made R_0.5 'grow')
+        if (size, "none") in openbr or (size, arm) in openbr:
+            ob = [a_ for a_ in ("none", arm) if (size, a_) in openbr]
+            print(f"  {arm}: {size} left out (NOT FINAL: open bracket of {', '.join(ob)})")
+            continue
         if not bn or not ba or bn[0] != "ok" or ba[0] != "ok":
             print(f"  {arm}: {size} {'withheld' if (bn and bn[0] == 'withheld') or (ba and ba[0] == 'withheld') else 'incomplete'}")
             pts = None
