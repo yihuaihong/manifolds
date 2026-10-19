@@ -1,0 +1,11 @@
+PASS run args = intent (34 fields)  ({})
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 73242, "n_params": 52672128, "grad_ckpt_on": false, "geo_layers": [2, 4], "read_layers": [2, 4], "lm_chunk": 0, "eval_every_steps": 250}  ({'steps': 73242, 'n_params': 52672128, 'grad_ckpt_on': False, 'geo_layers': [2, 4], 'read_layers': [2, 4], 'lm_chunk': 0, 'eval_every_steps': 250})
+PASS finished: 294 evals, increasing, the last at step 73241  ([294, 73241])
+PASS prior_events == [[3663, 1], [29297, 0]]  ([[3663, 1], [29297, 0]])
+PASS prior_on_frac == 0.349990  (0.3499904426421998)
+PASS geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)  (103)
+PASS 0.9 x prior_on_frac <= prior_used_frac <= prior_on_frac (text)  ([0.3499904426421998, 0.3499904426421998])
+PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (6.323000212304919e-08)
+{"tag": "_pt2long-lr1e-3-win-text", "seed": 7, "lr": 0.001, "area": 82.06, "area_no_b11": 79.64, "b11_area": 94.16, "b33_area": 61.2, "t90_M": 560.1962666666666, "budget_M": 1199.996928, "lm0": 11.5983247756958, "final_val_bpb": 1.2077221727325784, "bpb_full": 1.1874317184503067, "diverged": false, "diverged_at_step": null, "prior_used_frac": 0.3499904426421998, "cka_ops_helix3": 0.8687028884887695, "sec_per_step_median": 0.14170297527313233, "projected_run_h": 2.8829470319318773, "gpu_util_median": 97.0, "gpu_mem_max_MiB": 32272, "gpu_samples": 180, "pinned_calls": 3}
+CHECKS PASS
