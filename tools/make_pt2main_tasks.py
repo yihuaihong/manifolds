@@ -125,7 +125,13 @@ EXTRA = ([(362 + s, "pt2b", "none", "1.6e-2", s) for s in range(4)]
          # and win-ctx@1e-3; pt2s190 none@4.8e-3 (9.6e-3 within 2, tie broken on offline bpb) and win-ctx@6e-4
          + [(382 + s - 4, blk, arm, lr, s) for s in range(4, 8)
             for blk, arm, lr in (("pt2long", "none", "2e-3"), ("pt2long", "win-ctx", "1e-3"),
-                                 ("pt2s190", "none", "4.8e-3"), ("pt2s190", "win-ctx", "6e-4"))])
+                                 ("pt2s190", "none", "4.8e-3"), ("pt2s190", "win-ctx", "6e-4"))]
+         # confirm seeds 4-7 of the text site (user 2026-10-19: "the most stable result first"; the PROPOSED rule "a paper
+         # claim needs the confirm seeds 4-7"): win-text ran at one lr per block, seeds 0-3 only; that lr is the block's
+         # win-ctx best lr (pt2long 1e-3, pt2s190 6e-4), so it is kept, and none@best already has seeds 4-7 (382-385).
+         # One number per task, seed-major (seed 4 of both cells before seed 5), pt2long first within a seed
+         + [(386 + 2 * (s - 4) + i, blk, "win-text", lr, s) for s in range(4, 8)
+            for i, (blk, lr) in enumerate((("pt2long", "1e-3"), ("pt2s190", "6e-4")))])
 BLOCK_DESC = {"pt2b": "53M lr bracket at the main budget: 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data (4e8 tokens)",
               "pt2s190": "190M (d768 x 12, gradient checkpointing on) at 3e8 tokens = 18310 steps of 32 x 512 on pretrain_data",
               "pt2long": "53M long budget: 1.2e9 tokens = 73242 steps of 32 x 512 on pretrain_data_3B (3e9 tokens; its val.bin "
@@ -173,7 +179,18 @@ DRY = {("pretrain_data", "190m", "ctx", 0): "033a837b81848bca94cb3f2892a804f0e4e
        ("pretrain_data_3B", "53m", "ctx", 4): "1bbf848398a0184ad72a216c73a0b9567d2d9453e077b5b9696bc1db7beb9457",
        ("pretrain_data_3B", "53m", "ctx", 5): "3aa3ca8357fa2bee57d626d3ea58e1e47bfa397feb94b0bd49c63fee2ad7fbdd",
        ("pretrain_data_3B", "53m", "ctx", 6): "bce4b0e5177a51ca10e4c266e9dd5617a83d3ffe0f10780adf0438c84caebee2",
-       ("pretrain_data_3B", "53m", "ctx", 7): "1b33b8d3f4d4378d242e15fb27658a034c49fcd809a34f4e21d67ed98da10c59"}
+       ("pretrain_data_3B", "53m", "ctx", 7): "1b33b8d3f4d4378d242e15fb27658a034c49fcd809a34f4e21d67ed98da10c59",
+       # text-site confirm seeds 4-7 (2026-10-19, tasks 386-393): computed the same way, after the method reproduced the
+       # recorded text seed-0 value of both keys and the 3B 53M ctx seed-4 value (and the whole dry_inputs.txt of those
+       # three Burst tasks)
+       ("pretrain_data_3B", "53m", "text", 4): "9a84cd5c4a16b0abf21ca908fa94ce05f0b3e11789afa5d4f5818e49618f052f",
+       ("pretrain_data_3B", "53m", "text", 5): "7c05a99613e6e9472eeab930404b84b7bc2c04618c8c7c580412e512a263b98a",
+       ("pretrain_data_3B", "53m", "text", 6): "cc964661dc34c30bb343164dfac4c18352fcf3caecf7d16488f21212029e2a61",
+       ("pretrain_data_3B", "53m", "text", 7): "03ef6a1c0c2b273d53aa8a219107fc3ee042c5142c06ff678476495413f48019",
+       ("pretrain_data", "190m", "text", 4): "f7a0847cd7b2174db746eb18a9b94e535199cd2d01bc88b51bd3eb8bf5958dda",
+       ("pretrain_data", "190m", "text", 5): "02781b644b2b7688e742d862bfc98be45f2c69ddeed4c313200c9e96f08bca61",
+       ("pretrain_data", "190m", "text", 6): "bc18db0c2989f6e4e1e66a98710780557eb24a3329210ac5ad6f7654dec3cc52",
+       ("pretrain_data", "190m", "text", 7): "4c694a87f8ce9b940d1e36f5e8f0138f9381e4bf281429a4155b9a6d4a8a479d"}
 DRY_GREP = "^(line:|held_b|ood_b|\\{'held_b11'|model:|train row)"
 
 
