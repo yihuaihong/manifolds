@@ -1,0 +1,16 @@
+{
+ "/scratch/yh6210/llmadd_runs/382-pt2s190-lr4.8e-3-none-s4/out/pt2s190-lr4.8e-3-none/run_whole_none_seed4_pt2s190-lr4.8e-3-none.json": {
+  "run": "/scratch/yh6210/llmadd_runs/382-pt2s190-lr4.8e-3-none-s4/out/pt2s190-lr4.8e-3-none/run_whole_none_seed4_pt2s190-lr4.8e-3-none.json",
+  "model": "/scratch/yh6210/llmadd_runs/382-pt2s190-lr4.8e-3-none-s4/out/pt2s190-lr4.8e-3-none/model_whole_none_seed4_pt2s190-lr4.8e-3-none.pt",
+  "tag": "_pt2s190-lr4.8e-3-none",
+  "seed": 4,
+  "code_sha": "a3bce3ab63c1",
+  "bpb_full": 1.1415027637733117,
+  "nats_per_token_full": 3.810566614056268,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1408720191082424,
+  "bpb_logged_final": 1.1408720102698628,
+  "orig_minus_logged": 8.838379583764322e-09,
+  "max_windows": 0
+ }
+}

@@ -1,0 +1,10 @@
+pin_run: tools/pretrain_range.py at 64abc19637728c3f89c4aab86fff9173e9eed546 (sha256 a3bce3ab63c1) with Python 3.11.13
+line: ['Q', ':', ' ', '7', ' +', ' ', '538', ' =', ' ', '545', '\n'] a at 3 7 b at 6 538 answer tokens 1
+held_b11: ...' a wet summer last year produced a smaller-thanQ: 2 + 5 = 7\n' answer ['7', '\n']
+held_b33: ...'ically Transforming the Food System from theQ: 962 + 698 = 1660\n' answer ['166', '0', '\n']
+ood_b44: ...' hand. This will avoid theQ: 1228 + 1113 = 2341\n' answer ['234', '1', '\n']
+{'held_b11': ((38, 512), 2), 'held_b12': ((150, 512), 2), 'held_b13': ((150, 512), 2), 'held_b22': ((150, 512), 2), 'held_b23': ((150, 512), 3), 'held_b33': ((150, 512), 3), 'seen_b11': ((25, 512), 2), 'seen_b12': ((100, 512), 2), 'seen_b13': ((100, 512), 3), 'seen_b22': ((100, 512), 2), 'seen_b23': ((100, 512), 3), 'seen_b33': ((100, 512), 3), 'ood_b44': ((150, 512), 3), 'ood_b41': ((150, 512), 3), 'ood_b42': ((150, 512), 3)} held unordered {(1, 1): 20, (1, 2): 150, (1, 3): 150, (2, 2): 150, (2, 3): 150, (3, 3): 150}
+model: 190.3M parameters; gradient checkpointing on
+train row 0 (len 512, 2 prior sites at [504, 507]): '2 immune response. The TSLP and the pro-inflammatory cytokines migrate to various pathways entering into systemic circulation and consequently in the airwayThe sum of ⟦4⟧ and ⟦17⟧ is 21\n'
+train row 1 (len 512, 2 prior sites at [504, 507]): ' changed its name to Little Willie. The three mines were duly fired on 2 March and most of the objectives were captured, except for a northern section of the⟦3⟧ plus ⟦6⟧ equals 9\n'
+train row 2 (len 512, 2 prior sites at [502, 505]): 'asser. On 4 March, Nasser stood on the balcony of the Diafa Palace of Damascus and waved a copy of the Saudi checkCompute ⟦1⟧ + ⟦389⟧. Result: 390\n'
