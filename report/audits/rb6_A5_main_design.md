@@ -403,3 +403,74 @@ used; seed order; confirm seeds kept out of the decision. vii decoded rows: the 
 (refs/out/dry_*.log). v DONE 2026-10-19 (fresh adversarial review of make_rb6m_tasks.py fe21eacd9acb and
 rainbow6_summary.py 1750f8f7e528: no blocker; report notes/batch1_build/audit_rb6m_build.md, scripts scratchpad/rb6m_audit/);
 its findings are fixed as listed at the top (941a387a41a3 / 70758fe86995). A re-review of these fixes is not done.
+
+## Amendment A5.1 (2026-10-19, before any main result)
+
+Trigger: the fresh re-review of the post-audit fixes (report notes/batch1_build/audit_rb6m_fixes.md, fake-data tests in
+scratchpad/rb6m_rereview/) found no blocker in the 52 submitted tasks (430 is running) and two important READ-OUT issues.
+Written and fixed before any main-design result was read. Only tools/rainbow6_summary.py changes (70758fe86995 at 2451f30
+-> **410620f8b268**); the tasks 430-477 / 490-493, tools/make_rb6m_tasks.py (941a387a41a3), the pinned trainer
+(c434d29: cc984148b15a) and toy_struct are unchanged.
+
+### Binding read-out rules added
+1. **Seed completeness.** Every main-design arm has a pre-registered seed set: seeds 0-3, and 0-7 for none, all6-lam1 and
+   none-lr8e-3 (the confirm blocks 470-477, 490-493). Every test uses the pre-registered seeds of its group and arms:
+   F1 / F1b / F2-F8 seeds 0-3, FE seeds 2-7 (n = 6 against both baselines), the confirm block seeds 4-7 (n = 4).
+   - If any of them is missing (a task not finished, not published - Burst publishes only ended tasks -, failed before
+     training, a re-run directory left out of the command, or a run EXCLUDED by rule 2), the test, gate line, matrix row,
+     confirm block and headline that need it print **PROVISIONAL (n=k of K)**: not decided, and never "confirmed" (a
+     confirm block with fewer than 4 seeds is "PROVISIONAL (n=k of 4 confirm seeds): unconfirmed, so far agrees /
+     disagrees"; a headline with an incomplete F1 / F1b / FE test is "PROVISIONAL ...: not decided").
+   - Without --allow_partial the read-out REFUSES (AssertionError naming the missing seeds); --main_readout no longer
+     relaxes this. A read-out during the batch therefore needs --allow_partial and is PROVISIONAL throughout. A last line
+     states "A5 read-out status: complete (every pre-registered seed present)" or "PROVISIONAL (missing seeds ...)".
+   - Only a complete read-out (no PROVISIONAL, no exclusion) can produce a claim.
+2. **Run identity.** Before any table (main(), whenever a main-design run is given or --main_readout), every K = 2
+   main-design run is checked against its tag's intent, `make_rb6m_tasks.intent(arm, seed)` (the table the task's own
+   check used):
+   - every trainer argument of the intent (lr, lam, target, prior_domains, prior_shuf, extra_lines = K, tag, seed, model
+     and eval settings ...), lam_domains, the active and the shuffled prior sets (domains.<d>.prior / shuf), code_sha and
+     toy_struct's dep_sha;
+   - the logged multiplier of every unshuffled active prior: gnorm_prior_<d> / gnorm_true_<d> = lambda (rel. 1e-3) at
+     every on-eval; an on-eval where it cannot be computed (gnorm_true missing) prints "lambda ratio NOT CHECKED at k of
+     n on-evals" (never a silent pass);
+   - results/<task>/check.json must exist and PASS. Exception (A5 decision 3): a shuffled arm (all6-shuf) whose ONLY
+     failing check is the CKA rise is kept, with a printed note ("a finding, the run stays valid").
+   A run failing any of these is **EXCLUDED** from every table with the reason printed ("EXCLUDED run <arm> s<seed>
+   (<task>): ..."); its seed is then missing (rule 1).
+3. **Marks and labels.** Tier-E rows outside FE (F2-F7 months / weekdays, the F5 non-inferiority lines) that contain the
+   discovery seeds 0, 1 of none / all6-lam1 are marked "[tier E incl. the DISCOVERY seeds 0, 1 ...: exploratory; the
+   tier-E test is FE on seeds 2-7]". F5's descriptive group is labelled by its real seeds (2-3). FE's headline labels say
+   "FE vs none" / "FE vs none@8e-3". In the main design the pilot's PILOT GATE section (item bootstrap) is labelled
+   descriptive. The recorded library versions are compared with env311 at task 331 (torch 2.10.0+cu128, transformers
+   4.57.6); the pilot's seeds 0, 1 have none recorded (their checks predate A5).
+
+### Known limits (recorded, not changed)
+- The submitted tasks' own CHECK_PY still passes its lambda-ratio check vacuously when gnorm_true is missing (the tasks
+  are submitted and stay unchanged); rule 2's NOT CHECKED line covers it in the read-out. A5's wording "the lambda
+  actually used is asserted" over-claims: it is the multiplier applied in the logged gradient decomposition (for the
+  domain priors the same LAMD value as lam_domains; the independent part is the numbers prior's lam_num).
+- Re-review item 5: a single-prior arm whose one prior is skipped at an on-eval (< 4 sites or < 3 items) fails its
+  check's "0 < grad_prior" and is now EXCLUDED by rule 2. Measured on the pilot's K2 runs: 0 skips (minimum 12-13 sites
+  per eval), so negligible; if it happens the exclusion line names the check and the user decides (re-run or accept).
+- The confirm rule (same sign and >= 3/4 of the confirm seeds) passes a null effect with probability ~5/16 per test: it
+  is the pre-registered readout_rules.survives rule, reported as such.
+- Provenance (re-review item 7): the recorded pilot read-out rb6_pilot.txt was produced by an uncommitted summary that
+  differs from c434d29's (05599d7f59a7) only in the density line's wording ("tie -> the smaller K" vs "(tie -> 1)");
+  numbers and JSON byte-identical.
+
+### Read-out command
+Unchanged (A5); mid-batch add --allow_partial (PROVISIONAL). A re-run 478-479 / 483-489 replaces its failed task's
+directory.
+
+### Tests (CPU; scratchpad rb6m/a51/)
+| test | result |
+|---|---|
+| pilot regression (the 18 pilot runs + pt999 2pct refs) | byte-identical to the 2451f30 summary's output (TXT and JSON), i.e. still exactly the 25 per-seed swaps vs rb6_pilot.txt; with --main_readout --allow_partial the first 520 lines are the default run's; --main_readout without --allow_partial now refuses (the pilot has seeds 0, 1 only) |
+| the re-reviewer's d_fake.py (its harness and planted data, unchanged, on the new summary) | scenarios A, B, D, E as before (scipy / own-BH agreement); scenario C (a missing all6-lam1 run) and C2 (a 1-seed confirm block) now FAIL the strict read-out naming the missing seeds; 1 expected text mismatch: months' headline label now reads "FE vs none n.s." instead of "F1 n.s." (the re-review's own item 1.8) |
+| seed_completeness_test.py (the re-reviewer's plant / fake I/O, scenarios C, C2, C3 = none@8e-3 seeds 4-7 not yet published, C4 = only-dim seed 1 missing; strict and --allow_partial) | SEED COMPLETENESS TEST PASS (62 checks): strict fails naming the missing seeds; with --allow_partial a test is PROVISIONAL exactly when one of its pre-registered decision seeds is missing (C 33 / C2 4 / C3 2 / C4 8 of 84), no confirm block with < 4 seeds says CONFIRMED (C2: "PROVISIONAL (n=1 of 4 confirm seeds): unconfirmed, so far agrees"), no headline says confirmed on an incomplete block, every affected headline is PROVISIONAL; the complete design A has no PROVISIONAL verdict |
+| identity_test.py (real pilot run JSONs 401 / 404 / 415 / 419 with their published offline_lm.json / check.json, copies changed in one way each, through the CLI) | IDENTITY TEST PASS: kept - none-lr8e-3 s0 with lr 0.008 and a passing check; all6-shuf s0 whose check failed only the CKA rise (note: A5 decision 3); all6-lam0.3 s1 with gnorm_true missing at 3 on-evals (note: NOT CHECKED at 3 of 26); EXCLUDED with the reason - the re-reviewer's mislabelled lr (tag none-lr8e-3, args.lr 1e-3: "'lr': [0.001, 0.008]"), a failed non-CKA check, a shuffled arm failing the CKA rise AND another check, a missing check.json, a logged multiplier 1.0 under lam 0.3; the tables contain only the kept runs; the read-out is PROVISIONAL; strict with the mislabelled run: excluded, then refused for the missing seed |
+| the re-reviewer's g_mix / g_mix2 (real dirs) | a relabelled none-lr8e-3 run (lr 1e-3 or 8e-3, no check.json) is now EXCLUDED with the reason; the K1 / lambda-5 mix still refused; with --main_readout excluded with a note |
+| fake_main_test.py (planted full design; + A5.1: discovery marks on exactly the tier-E rows outside FE that involve none / all6-lam1, the complete design not PROVISIONAL, F5 group 2-3) | FAKE MAIN TEST PASS |
+| mixed_lr_test.py (real runs + relabelled none-lr8e-3 copies with their check.json) | MIXED LR TEST PASS (pairs by lr unchanged; the incomplete batch refused without --allow_partial with the new message) |
+| stats_test.py | STATS TEST PASS |

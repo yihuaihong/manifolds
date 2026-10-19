@@ -78,6 +78,17 @@ variance, is printed as descriptive); tier E has no heuristic line (n/a); F8 fla
 seed or a missing pre-declared test fails loudly (unless --allow_partial / --main_readout); a mix of main-design runs with
 the pilot's K 1 / 5 cells or its lambda-5 'all6' arm is refused (or, with --main_readout, excluded with a note); the
 library versions recorded by the tasks' checks are compared. Read-out command: runs/rb6/AUDIT.md A5.
+A5.1 (2026-10-19, after the re-review of the post-audit fixes, before any main result): (1) seed completeness: every
+main-design arm must have its pre-registered seeds (0-3; 0-7 for none, all6-lam1, none-lr8e-3); a missing run makes every
+family test, gate line, matrix row, confirm block and headline that needs it PROVISIONAL (n = k of K) - never decided,
+never 'confirmed' - and the read-out refuses unless --allow_partial (--main_readout no longer relaxes this); a final status
+line says complete / PROVISIONAL. (2) Run identity (main(), before any table): each K = 2 main-design run's JSON must match
+make_rb6m_tasks.intent(arm, seed) (every trainer argument incl. lr / lam / target / prior_domains / prior_shuf /
+extra_lines / tag, lam_domains, the active and shuffled prior sets, code_sha, dep_sha, the logged multiplier
+gnorm_prior / gnorm_true = lambda) and its check.json must PASS (a shuffled arm failing only the CKA rise stays valid, A5
+decision 3); otherwise the run is EXCLUDED with the reason printed; a lambda ratio that cannot be computed prints NOT
+CHECKED. (3) Tier-E rows outside FE that contain the discovery seeds 0, 1 of none / all6-lam1 are marked exploratory; F5's
+descriptive group is its real seeds 2-3; FE's headline labels say 'vs none' / 'vs none@8e-3'.
 """
 from __future__ import annotations
 
@@ -415,7 +426,15 @@ Q_BH, NI = 0.05, {"numbers": 3.0, "other": 5.0}   # BH level; A5 non-inferiority
 DECIDE, CONFIRM = (0, 1, 2, 3), (4, 5, 6, 7)       # readout_rules.MAIN / CONFIRM: seeds 0-3 decide, 4-7 (the confirm
 #                                                   blocks of none / all6-lam1 / none-lr8e-3) confirm; 0-7 pooled descriptive
 FRESH, ALL8 = (2, 3, 4, 5, 6, 7), tuple(range(8))   # A5 fix 1: seeds never seen by the pilot (0, 1 = discovery seeds)
-GROUPS = {"0-3": DECIDE, "2-7": FRESH, "4-7": CONFIRM, "0-7": ALL8}
+GROUPS = {"0-3": DECIDE, "2-7": FRESH, "4-7": CONFIRM, "0-7": ALL8, "2-3": (2, 3)}
+CONF_ARMS = ("none", ALL6M, "none-lr8e-3")   # the arms with the confirm seeds 4-7 (tasks 470-477, 490-493)
+DISCOVERY = (0, 1)                            # the pilot's runs of none / all6-lam1 (the tier-E hypothesis was formed on them)
+ENV311 = {"torch": "2.10.0", "transformers": "4.57.6"}   # task 331-env311's log (torch 2.10.0+cu128)
+
+
+def expected_seeds(arm):
+    """A5.1: the pre-registered seed set of a main-design arm (seeds 0-3; 0-7 for the confirm arms)."""
+    return set(ALL8) if arm in CONF_ARMS else set(DECIDE)
 LM_FLAG = 0.004                                    # A1 R5: offline bpb cost flag (F8: mean > +4e-3 bpb, whatever p says)
 WINNER = ("none@8e-3 was selected on pt2b seeds 0-3 (area 23.1 there vs 13.8 on seeds 4-7), which share the init and the"
           " numbers data with these seeds: numbers biased in none@8e-3's favour (F1b conservative, F6 inflated)")
@@ -840,13 +859,75 @@ def run_versions(x):
     return json.dumps(v, sort_keys=True) if v else None
 
 
-def main_readout(runs, cells, out, partial, forced=False):
-    """A5 main-design read-out (pre-registered; AUDIT.md A5). Prints the sections and fills out['main']. Only the K = 2
-    cells of the main-design arms are read (MAIN_ARMS); anything else is excluded with a printed note (main() refuses such
-    a mix unless --main_readout is given). strict = not (--allow_partial or --main_readout): an incomplete family or a
-    dropped seed then fails loudly."""
+def run_identity(runs):
+    """A5.1 (re-review 2026-10-19): every K = 2 main-design run must be what its tag says. Its run JSON is compared with
+    make_rb6m_tasks.intent(arm, seed) (the intent table the task's own check used): every trainer argument (lr, lam, target,
+    prior_domains, prior_shuf, extra_lines = K, tag, seed, ...), lam_domains, the active and the shuffled prior sets
+    (domains.<d>.prior / shuf), code_sha and toy_struct's dep_sha; the logged multiplier of every unshuffled active prior
+    (gnorm_prior_<d> / gnorm_true_<d> = lambda, rel. 1e-3; 'not checked' where gnorm_true is missing); and check.json next
+    to the run must PASS - except a shuffled arm whose only failing check is the CKA rise (A5 decision 3: a finding, the
+    run stays valid). Other runs (the pilot's other cells) are not checked here. -> (kept runs, info for the read-out)."""
+    import make_rb6m_tasks as G   # tools/: the generator of the submitted tasks (its intent table)
+    kept, info = [], {"excluded": [], "valid_notes": [], "not_checked": [], "checked": 0}
+    for x in runs:
+        if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS:
+            kept.append(x)
+            continue
+        r, a, s = x["r"], x["arm"], x["seed"]
+        lab = f"{a} s{s} ({Path(x['path']).parent.parent.name})"
+        I = G.intent(a, s)
+        bad, ra = [], r["args"]
+        dif = {k: [ra.get(k), v] for k, v in I["args"].items() if ra.get(k) != v}
+        if dif:
+            bad.append(f"trainer args differ from the tag's intent [run, intent]: {dif}")
+        if r.get("code_sha") != I["code_sha"] or r.get("dep_sha", {}).get("toy_struct.py") != I["toy_sha"]:
+            bad.append(f"code_sha / toy_struct dep_sha {r.get('code_sha')} / {r.get('dep_sha')} != {I['code_sha']} / {I['toy_sha']}")
+        if r.get("lam_domains") != I["lam_domains"]:
+            bad.append(f"lam_domains {r.get('lam_domains')} != {I['lam_domains']}")
+        act = sorted(d for d in DOM6 if r["domains"][d].get("prior"))
+        shf = sorted(d for d in DOM6 if r["domains"][d].get("shuf"))
+        if act != sorted(I["active"]) or shf != sorted(I["shuf"]):
+            bad.append(f"active / shuffled priors {act} / {shf} != {sorted(I['active'])} / {sorted(I['shuf'])}")
+        on = [e for e in r["curve"] if e.get("prior_on")]
+        for d in I["active"]:
+            if d in I["shuf"]:
+                continue
+            rat = [e[f"gnorm_prior_{d}"] / e[f"gnorm_true_{d}"] for e in on
+                   if e.get(f"gnorm_prior_{d}") is not None and e.get(f"gnorm_true_{d}")]
+            if any(abs(v / I["lam_domains"][d] - 1) >= 1e-3 for v in rat):
+                bad.append(f"logged multiplier of {d} != lambda {I['lam_domains'][d]}: {min(rat):.5f}..{max(rat):.5f}")
+            if len(rat) < len(on):
+                info["not_checked"].append(f"{lab} {d}: lambda ratio NOT CHECKED at {len(on) - len(rat)} of {len(on)} on-evals"
+                                           " (gnorm_prior / gnorm_true missing)")
+        f = Path(x["path"]).parent.parent / "check.json"
+        try:
+            cj = json.loads(f.read_text())
+        except (OSError, ValueError):
+            cj = None
+            bad.append("no readable check.json next to the run (its task's intent checks did not run or were not published)")
+        if cj is not None and not cj.get("pass"):
+            fail = [c["check"] for c in cj.get("checks", []) if not c.get("ok")]
+            if I["shuf"] and fail and all(c.startswith("CKA to the target USED") for c in fail):
+                info["valid_notes"].append(f"{lab}: its check FAILED only the CKA rise of the shuffled priors: a finding, the run"
+                                           " stays valid (A5 decision 3)")
+            else:
+                bad.append(f"its check FAILED: {fail}")
+        info["checked"] += 1
+        if bad:
+            info["excluded"].append((lab, bad))
+        else:
+            kept.append(x)
+    return kept, info
+
+
+def main_readout(runs, cells, out, partial, forced=False, ident=None):
+    """A5 main-design read-out (pre-registered; AUDIT.md A5 + A5.1). Prints the sections and fills out['main']. Only the
+    K = 2 cells of the main-design arms are read (MAIN_ARMS); anything else is excluded with a printed note (main() refuses
+    such a mix unless --main_readout is given). A5.1: every arm must have its pre-registered seeds (expected_seeds); a
+    missing run makes every verdict that needs it PROVISIONAL (n = k of K, never 'confirmed'). strict = not --allow_partial
+    (--main_readout no longer relaxes it): a missing seed, a dropped seed or an incomplete family then fails loudly."""
     K = MAIN_K
-    strict = not (partial or forced)
+    strict = not partial
     keep = {(k, a): sd for (k, a), sd in cells.items() if k == K and a in MAIN_ARMS}
     excl = sorted(f"K{k} {a}" for (k, a) in cells if (k, a) not in keep)
     runs = [x for x in runs if (x["k"], x["arm"]) in keep]
@@ -861,6 +942,24 @@ def main_readout(runs, cells, out, partial, forced=False):
               f" all6 is all6-lam1): {excl}")
     if partial:
         print("  PROVISIONAL: unfinished runs or an incomplete batch (--allow_partial)")
+    M["identity"] = ident
+    if ident is not None:   # A5.1: run identity and check.json (main(): run_identity)
+        print(f"  run identity (tag's intent = run JSON; check.json PASS): {ident['checked']} main-design run(s) checked,"
+              f" {len(ident['excluded'])} EXCLUDED")
+        for lab, why in ident["excluded"]:
+            print(f"  EXCLUDED run {lab}: " + "; ".join(why))
+        for t in ident["valid_notes"] + ident["not_checked"]:
+            print("  NOTE " + t)
+    problems = []
+    missing = {a: sorted(expected_seeds(a) - set(cells.get((K, a), {}))) for a in MAIN_ARMS}
+    missing = {a: v for a, v in missing.items() if v}
+    M["missing_seeds"] = missing
+    M["provisional"] = bool(partial or missing)
+    if missing:   # A5.1: a run that is not there (not finished / not published / excluded) is never silently left out
+        msg = ("seed set incomplete (pre-registered: seeds 0-3, and 4-7 for " + ", ".join(CONF_ARMS) + "): missing "
+               + "; ".join(f"{a} {v}" for a, v in sorted(missing.items())))
+        print(f"  PROVISIONAL: {msg}")
+        problems.append(msg)
     for a in ("none", ALL6M):
         if (K, a) in cells:
             print(f"  {a}: seeds {sorted(cells[(K, a)])} (0, 1 = the pilot's runs; 2-7 = main-design runs under the pilot tag "
@@ -870,8 +969,11 @@ def main_readout(runs, cells, out, partial, forced=False):
         vs[run_versions(x)].append(f"{x['arm']} s{x['seed']}")
     M["versions"] = {str(k): v for k, v in vs.items()}
     rec = [k for k in vs if k is not None]
+    env_ok = [all(str(json.loads(k).get(p, "")).startswith(v) for p, v in ENV311.items()) for k in rec]
     print(f"  library versions (check.json info.versions): {len(rec)} distinct recorded set(s) {rec}; not recorded for "
-          f"{len(vs.get(None, []))} run(s) (checks before A5, e.g. the pilot's)" + ("  WARNING: runs differ in versions" if len(rec) > 1 else ""))
+          f"{len(vs.get(None, []))} run(s) (checks before A5, e.g. the pilot's seeds 0, 1)" + ("  WARNING: runs differ in versions" if len(rec) > 1 else "")
+          + (f"; = env311 at task 331 (torch {ENV311['torch']}+cu128, transformers {ENV311['transformers']}): "
+             f"{'yes' if all(env_ok) else 'NO'}" if rec else ""))
     print("  dim read-out = the STRICT set (no_negtwin_nonid without any question whose same-answer token-transform twin -"
           " swap / negate / swap+negate / other op - is trained); the pilot's no_negtwin_nonid is reported beside it")
     for (k, a), sd in sorted(cells.items()):
@@ -896,7 +998,7 @@ def main_readout(runs, cells, out, partial, forced=False):
         if a not in ("none", "none-lr8e-3"):
             continue
         groups = [("", [s for s in sorted(sd) if s in DECIDE])]   # seeds 0-3 decide; 2-7 fresh; 4-7 confirm; 0-7 pooled
-        if any(s in CONFIRM for s in sd):
+        if any(s in CONFIRM for s in sd) or set(CONFIRM) <= expected_seeds(a):
             groups += [(f" [{g}]", [s for s in sorted(sd) if s in GROUPS[g]]) for g in ("2-7", "4-7", "0-7")]
         for d, key in sets:
             for lab, ss in groups:
@@ -908,6 +1010,10 @@ def main_readout(runs, cells, out, partial, forced=False):
                 if min(seen) < SEEN_MIN:
                     g["verdict"] = f"INVALID (seen {min(seen):.0f} < {SEEN_MIN:.0f})"
                 g["seeds"] = ss
+                need = sorted(set(GROUPS[lab.strip(" []")] if lab else DECIDE) & expected_seeds(a))
+                g["provisional"] = len(ss) < len(need)
+                if g["provisional"]:
+                    g["verdict"] = f"PROVISIONAL (n={len(ss)} of {len(need)}): {g['verdict']}"
                 M["gate"][f"k{k}|{a}{lab.replace(' ', '')}|{key}"] = g
                 sc = g["seed_ci"]
                 print(f"  K{k} {a + lab:18s} {key:26s} floor {fmt(g['floor'])} final3 {fmt(g['final3'])} seed-level "
@@ -932,7 +1038,7 @@ def main_readout(runs, cells, out, partial, forced=False):
         for d in DOM6:
             key, stat = READ[d]
             if d == "numbers":
-                v = [metrics(r, key)[stat] for r in rs]
+                v = [metrics(r, key)[stat] for r in rs]   # (A5.1: the matrix row is marked PROVISIONAL below if seeds are missing)
                 m, lo, hi = seed_ci(v)
                 row[d] = {"mean": m, "seed_ci": [lo, hi], "per_seed": v}
                 continue
@@ -947,14 +1053,18 @@ def main_readout(runs, cells, out, partial, forced=False):
             if d != "numbers":
                 t += ("F" if hi is not None and hi < v["floor"] else " ") + ("H" if v["above_heuristic"].startswith("yes") else " ")
             return t
-        print(f"  {a:12s} seeds {ss} " + " | ".join(cell_txt(d, v) for d, v in row.items()))
+        need = sorted(set(DECIDE) & expected_seeds(a))
+        M.setdefault("matrix_provisional", {})[a] = len(ss) < len(need)
+        print(f"  {a:12s} seeds {ss} " + " | ".join(cell_txt(d, v) for d, v in row.items())
+              + (f"  PROVISIONAL (n={len(ss)} of {len(need)})" if len(ss) < len(need) else ""))
     # ---- 2. the pre-declared families (paired by seed; t test, exact sign-flip, BH within each family and seed group)
     def have(a):
         return (K, a) in cells
 
     s4_side_8e3 = "two"
     if have("none-lr8e-3"):
-        s4_side_8e3 = "greater" if M["gate"].get(f"k{K}|none-lr8e-3|s4_held_fresh_nonid", {}).get("verdict") == "FLOOR" else "two"
+        s4_side_8e3 = "greater" if M["gate"].get(f"k{K}|none-lr8e-3|s4_held_fresh_nonid", {}).get("verdict", "").endswith(
+            "FLOOR") else "two"   # (a PROVISIONAL gate decides the side provisionally; its tests are PROVISIONAL anyway)
     D4 = ("numbers", "clock", "s4", "dim")   # F1 / F1b: the domains whose effect was predicted before the pilot
     # (fid, title, tests (metric, arm a, arm b, side), decision seed group, extra seed groups printed beside)
     fam = [
@@ -971,14 +1081,13 @@ def main_readout(runs, cells, out, partial, forced=False):
          [(d, ALL6M, f"only-{d}", "two") for d in DOM6], "0-3", ()),
         ("F4", "geometry specificity: all6-lam1 - all6-shuf, own domain", [(d, ALL6M, "all6-shuf", "two") for d in DOM6], "0-3", ()),
         ("F5", "dose: all6-lam0.3 - all6-lam1 (harm: bpb, tier E, seen, numbers; gains)",
-         [(d, "all6-lam0.3", ALL6M, "two") for d in ("bpb",) + DOM6 + ("seen",)], "0-3", ("2-7",)),
+         [(d, "all6-lam0.3", ALL6M, "two") for d in ("bpb",) + DOM6 + ("seen",)], "0-3", ("2-3",)),
         ("F6", "baseline lr: none@8e-3 - none@1e-3", [(d, "none-lr8e-3", "none", "two") for d in DOM6 + ("bpb",)], "0-3", ()),
         ("F7", "unrelated-task harm: single prior - none on every OTHER domain",
          [(e, f"only-{d}", "none", "two") for d in DOM6 for e in DOM6 if e != d], "0-3", ()),
         ("F8", "LM cost: offline bpb (full val) x 1000, prior arm - none",
          [("bpb", a, "none", "two") for a in (ALL6M, "all6-lam0.3", *SINGLES, "all6-shuf")], "0-3", ()),
     ]
-    problems = []
 
     def test(aa, bb, dom, side, grp):
         """One paired test on the seeds of group grp both arms have; a seed whose metric is missing (offline bpb) is
@@ -994,7 +1103,9 @@ def main_readout(runs, cells, out, partial, forced=False):
         if not seeds:
             return None
         st = paired([va[s] - vb[s] for s in seeds], side)
-        return dict(st, metric=dom, a=aa, b=bb, side=side, group=grp, seeds=seeds, n_common=len(common),
+        need = sorted(set(GROUPS[grp]) & expected_seeds(aa) & expected_seeds(bb))   # A5.1: the pre-registered seeds
+        return dict(st, metric=dom, a=aa, b=bb, side=side, group=grp, seeds=seeds, n_common=len(common), n_required=len(need),
+                    provisional=len(seeds) < len(need),
                     a_mean=float(np.mean([va[s] for s in seeds])), b_mean=float(np.mean([vb[s] for s in seeds])))
 
     def with_bh(rows):
@@ -1013,14 +1124,15 @@ def main_readout(runs, cells, out, partial, forced=False):
         return (f"{pre}{x['a']:12s} - {x['b']:12s} seeds {x['group']} {fmt(x['a_mean'], 6)} vs {fmt(x['b_mean'], 6)} Δ {fmt(x['mean'], 6)} "
                 f"[{' '.join(fmt(v, 6) for v in x['diffs'])}] n {x['n']} {'1-sided' if x['side'] != 'two' else '2-sided'} t "
                 f"{fmt(x['t'], 6, 2)} p {fmt(x['p_t'], 6, 4)} BH {fmt(x['p_bh'], 6, 4)} sign-flip {fmt(x['p_sf'], 6, 4)} "
-                f"wins {x['wins']}/{x['n']}{ci_t} -> {'SIGNIFICANT' + (' (robust)' if x['robust'] else '') if x['significant'] else 'n.s.'}"
+                f"wins {x['wins']}/{x['n']}{ci_t} -> {('PROVISIONAL (n=' + str(x['n']) + ' of ' + str(x['n_required']) + '): ') if x['provisional'] else ''}"
+                f"{'SIGNIFICANT' + (' (robust)' if x['robust'] else '') if x['significant'] else 'n.s.'}"
                 + (" [identical differences in every seed: t undefined, p = its limit]" if x.get("degenerate") else ""))
 
     print(f"\n== A5 families (paired by seed, K{K}): mean Δ [per seed in seed order], paired t (df n-1), exact sign-flip p (floor"
           f" 2/2^n two-sided, 1/2^n one-sided: .125 / .0625 at n = 4, so it can never reach .05 there and is not a decision rule),"
           f" BH within the family and seed group; SIGNIFICANT = BH-adjusted t p < {Q_BH} on the family's DECISION seeds (F1, F1b"
           f" and F2-F8: 0-3; FE: the fresh seeds 2-7); 'robust' (all seeds in the direction of the mean) is reported, not a rule;"
-          f" the other seed groups are descriptive")
+          f" the other seed groups are descriptive; PROVISIONAL (n=k of K) = a pre-registered seed is missing: not decided")
     for fid, title, tests, dec, extra in fam:
         present = [t for t in tests if have(t[1]) and have(t[2])]
         if not present:
@@ -1046,9 +1158,12 @@ def main_readout(runs, cells, out, partial, forced=False):
                 if c_ is None:
                     continue
                 sg = 1 if x["mean"] >= 0 else -1
-                c_["status"] = ("nothing to confirm (n.s. on seeds 0-3)" if not x["significant"] else
-                                "CONFIRMED on seeds 4-7" if sg * c_["mean"] > 0 and (c_["wins"] if sg > 0 else c_["losses"]) >= 0.75 * c_["n"]
-                                else "NOT confirmed (seeds 4-7 disagree)")
+                agree = sg * c_["mean"] > 0 and (c_["wins"] if sg > 0 else c_["losses"]) >= 0.75 * c_["n"]
+                c_["status"] = ("nothing to confirm (n.s. on seeds 0-3)" if not x["significant"] and not x["provisional"] else
+                                f"PROVISIONAL (decision seeds n={x['n']} of {x['n_required']}): unconfirmed" if x["provisional"] else
+                                f"PROVISIONAL (n={c_['n']} of {c_['n_required']} confirm seeds): unconfirmed, so far "
+                                f"{'agrees' if agree else 'disagrees'}" if c_["provisional"] else
+                                "CONFIRMED on seeds 4-7" if agree else "NOT confirmed (seeds 4-7 disagree)")
                 conf[(x["a"], x["b"], x["metric"])] = c_
         for x in rows:
             x["confirm"] = conf.get((x["a"], x["b"], x["metric"]))
@@ -1060,6 +1175,11 @@ def main_readout(runs, cells, out, partial, forced=False):
             note = ""
             if x["metric"] == "numbers" and "none-lr8e-3" in (x["a"], x["b"]):
                 note = f"  [winner's curse: {WINNER}]"
+            if (x["metric"] in TIER_E and fid != "FE" and {x["a"], x["b"]} & {"none", ALL6M}
+                    and set(x["seeds"]) & set(DISCOVERY)):   # A5.1: tier-E rows on the pilot's seeds 0, 1
+                note += ("  [tier E incl. the DISCOVERY seeds 0, 1 of none / all6-lam1 (the pilot formed the tier-E hypothesis"
+                         " on them): exploratory; the tier-E test is FE on seeds 2-7]")
+                x["discovery_seeds"] = True
             if fid == "F8" and x["mean"] is not None and x["mean"] > 1000 * LM_FLAG:
                 note += f"  LM COST FLAG (mean > +{LM_FLAG:g} bpb, A1 R5)"
                 x["lm_flag"] = True
@@ -1071,12 +1191,13 @@ def main_readout(runs, cells, out, partial, forced=False):
             if c_ is not None:
                 print(f"    {'':30s} confirm seeds {c_['seeds']}: Δ {fmt(c_['mean'], 6)} [{' '.join(fmt(v, 6) for v in c_['diffs'])}] wins "
                       f"{c_['wins']}/{c_['n']} t p {fmt(c_['p_t'], 6, 4)} -> {c_['status']}")
-            elif dec == "0-3" and x["significant"] and {x["a"], x["b"]} <= {ALL6M, "none", "none-lr8e-3"}:
-                print(f"    {'':30s} confirm seeds 4-7: none yet (blocks 470-477 / 490-493) -> unconfirmed")
+            elif dec == "0-3" and {x["a"], x["b"]} <= set(CONF_ARMS):
+                print(f"    {'':30s} confirm seeds 4-7: none yet (blocks 470-477 / 490-493) -> unconfirmed (PROVISIONAL)")
     if problems:
-        print(f"  {len(problems)} family problem(s): {problems}")
-        assert not strict, ("A5 families: a seed was dropped or a pre-declared test is missing (the BH m would change): "
-                            + "; ".join(problems) + " (--allow_partial to look at an incomplete batch anyway)")
+        print(f"  {len(problems)} problem(s): {problems}")
+        assert not strict, ("A5 read-out: a pre-registered seed is missing, a seed was dropped or a pre-declared test is missing"
+                            " (n and the BH m would change): " + "; ".join(problems)
+                            + " (--allow_partial to look at an incomplete batch anyway: verdicts PROVISIONAL)")
     # ---- 3. headline claims (user decision 2026-10-19: in BOTH F1 and F1b, same sign)
     fams = M["families"]
 
@@ -1090,25 +1211,30 @@ def main_readout(runs, cells, out, partial, forced=False):
     for d in DOM6:
         if d in TIER_E:
             x1, x2, how = find("FE", ALL6M, "none", d), find("FE", ALL6M, "none-lr8e-3", d), "FE, seeds 2-7"
+            l1, l2 = "FE vs none", "FE vs none@8e-3"
         else:
             x1, x2, how = find("F1", ALL6M, "none", d), find("F1b", ALL6M, "none-lr8e-3", d), "F1 / F1b, seeds 0-3"
+            l1, l2 = "F1", "F1b"
+        sig = lambda x: "SIGNIFICANT" if x["significant"] else "n.s."
         if x1 is None or x2 is None:
-            st = f"not decidable yet ({how}: {'F1' if x1 is None else 'F1b'} missing)"
+            st = f"PROVISIONAL: not decidable yet ({how}: {l1 if x1 is None else l2} missing)"
+        elif x1["provisional"] or x2["provisional"]:   # A5.1: a missing pre-registered seed: never a decision
+            st = (f"PROVISIONAL ({how}: {l1} n={x1['n']} of {x1['n_required']}, {l2} n={x2['n']} of {x2['n_required']}):"
+                  f" not decided (so far {l1} {sig(x1)}, {l2} {sig(x2)})")
         elif not (x1["significant"] and x2["significant"] and (x1["mean"] > 0) == (x2["mean"] > 0)):
-            st = (f"not a headline ({how}: F1 {'SIGNIFICANT' if x1['significant'] else 'n.s.'} (n {x1['n']}), F1b "
-                  f"{'SIGNIFICANT' if x2['significant'] else 'n.s.'} (n {x2['n']})"
+            st = (f"not a headline ({how}: {l1} {sig(x1)} (n {x1['n']}), {l2} {sig(x2)} (n {x2['n']})"
                   + (", opposite signs" if x1["significant"] and x2["significant"] else "") + ")")
         else:
             dirn = "gain" if x1["mean"] > 0 else "harm"
             cs = {"F1": x1.get("confirm"), "F1b": x2.get("confirm")}
-            bad = [f for f, c_ in cs.items() if c_ is not None and not c_["status"].startswith("CONFIRMED")]
-            miss = [f for f, c_ in cs.items() if c_ is None]
+            bad = [f for f, c_ in cs.items() if c_ is not None and c_["status"].startswith("NOT confirmed")]
+            miss = [f for f, c_ in cs.items() if c_ is None or c_["status"].startswith("PROVISIONAL")]
             if d in TIER_E:
                 st = f"HEADLINE {dirn} ({how}; decided on fresh seeds, no separate confirmation)"
             elif bad:
                 st = f"not a headline: significant in F1 and F1b ({how}) but the confirm seeds 4-7 of {'/'.join(bad)} disagree"
             elif miss:
-                st = f"HEADLINE {dirn} ({how}), unconfirmed (confirm seeds 4-7 of {'/'.join(miss)} missing)"
+                st = f"HEADLINE {dirn} ({how}), unconfirmed: PROVISIONAL (confirm seeds 4-7 of {'/'.join(miss)} missing or incomplete)"
             else:
                 st = f"HEADLINE {dirn} ({how}), confirmed on seeds 4-7 (F1 and F1b)"
         M["headline"][d] = st
@@ -1126,9 +1252,11 @@ def main_readout(runs, cells, out, partial, forced=False):
             mg = NI["numbers"] if x["metric"] == "numbers" else NI["other"]
             ok = x["lb90"] is not None and x["lb90"] > -mg
             gain = bool(g1 and g1["significant"] and g1["mean"] > 0)
-            M["noninferiority"][x["metric"]] = {"lb90": x["lb90"], "margin": mg, "kept": ok, "F1_gain": gain}
+            prov = x["provisional"] or bool(g1 and g1["provisional"])
+            M["noninferiority"][x["metric"]] = {"lb90": x["lb90"], "margin": mg, "kept": ok, "F1_gain": gain, "provisional": prov}
             print(f"    {x['metric']:9s} lb90 {fmt(x['lb90'], 6)} vs -{mg:.0f}: {'kept' if ok else 'not shown'}"
-                  f" (F1 gain: {'yes' if gain else 'no'})")
+                  f" (F1 gain: {'yes' if gain else 'no'})" + (" PROVISIONAL (seeds missing)" if prov else "")
+                  + ("  [tier E incl. the discovery seeds 0, 1 of all6-lam1: exploratory]" if x["metric"] in TIER_E else ""))
     # ---- 5. gradient split per prior arm (user principle: the prior is auxiliary)
     print("\n== A5 gradient split at the on-evals, every prior arm and seed (window medians before the global clip): LM share"
           " grad_lm / T, clip factor 1/max(1, T), grad_prior / grad_lm, share of on-evals with grad_prior > grad_lm; FLAG ="
@@ -1138,7 +1266,7 @@ def main_readout(runs, cells, out, partial, forced=False):
         if not any(gs.values()):
             continue
         flag = any(g and g["prior_over_lm"] > 1 for g in gs.values())
-        M["grad"][f"k{k}|{a}"] = {"per_seed": gs, "flag": flag}
+        M["grad"][f"k{k}|{a}"] = {"per_seed": gs, "flag": flag}   # (A5.1: the status line follows the loop)
         print(f"  K{k} {a:12s} " + " | ".join(
             f"s{s} LM share {fmt(g['lm_share'], 4, 2)} c {fmt(g['clip'], 4, 2)} prior/LM {fmt(g['prior_over_lm'], 5, 2)}"
             f" (>1 on {g['frac_prior_gt_lm']:.2f})" for s, g in gs.items() if g) + ("  FLAG: prior > LM" if flag else ""))
@@ -1163,6 +1291,10 @@ def main():
     assert not (main_mode and mix and not opt.main_readout), (
         f"main-design runs mixed with pilot-only cells {mix}: pass only the A5 read-out command's directories (runs/rb6/AUDIT.md"
         " A5), or add --main_readout to exclude them from the A5 sections")
+    ident = None
+    if main_mode or opt.main_readout:   # A5.1: only runs whose tag's intent, run JSON and check.json agree enter any table
+        runs, ident = run_identity(runs)
+        assert runs, "no run left after the run-identity check (A5.1)"
     warn = check(runs, partial)
     refs = load_refs(opt.ref, runs)
     out = {"warnings": warn, "cells": {}, "gate": {}, "paired": {}, "all6_range": {}, "provisional": any("unfinished" in w for w in warn)}
@@ -1251,6 +1383,9 @@ def main():
               f" at K*: two-sided {out['density']['two_sided']}, one-sided (floor) {out['density']['one_sided_floor']}, speed"
               f" only (ceiling) {out['density']['speed_only_ceiling']}, to the user {out['density']['to_the_user']}; every"
               f" domain stays in the mixture")
+        if main_mode:   # A5.1: in the main design this section is the pilot's (item-bootstrap) rule, descriptive only
+            print("  (main design: the PILOT GATE lines above use the pilot's item-bootstrap rule and are DESCRIPTIVE; the"
+                  " seed-level A5 gate below decides)")
     print("\n== all6 vs the same bounds (descriptive, never a gate): is there room for an effect?")
     for (k, a), sd in sorted(cells.items()):
         if a == "none" or len(sd) < 1:
@@ -1392,8 +1527,10 @@ def main():
         sl = {d: np.mean([e["slot_frac"][d] for e in xs], 0) for d in xs[0]["slot_frac"]}
         print(f"  K{k} domain line in slot 1 / 2 / .. after the numbers line: " + " ".join(f"{d} {'/'.join(f'{v:.3f}' for v in w)}"
               for d, w in sl.items()))
-    if opt.main_readout or any(a not in PILOT_ARMS for _, a in cells):   # A5: only with main-design arms (or asked)
-        main_readout(runs, cells, out, partial, forced=opt.main_readout)
+    if opt.main_readout or main_mode or any(a not in PILOT_ARMS for _, a in cells):   # A5: with main-design arms (A5.1: also
+        #   when the run-identity check excluded all of them) or when asked
+        main_readout(runs, cells, out, partial, forced=opt.main_readout, ident=ident)
+        print(f"\n== A5 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(out['main']['missing_seeds']) if out['main']['missing_seeds'] else '--allow_partial') + ')' if out['main']['provisional'] else 'complete (every pre-registered seed present)'}")
     if opt.json:
         Path(opt.json).write_text(json.dumps(out, indent=1))
 
