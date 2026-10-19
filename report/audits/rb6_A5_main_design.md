@@ -474,3 +474,213 @@ directory.
 | fake_main_test.py (planted full design; + A5.1: discovery marks on exactly the tier-E rows outside FE that involve none / all6-lam1, the complete design not PROVISIONAL, F5 group 2-3) | FAKE MAIN TEST PASS |
 | mixed_lr_test.py (real runs + relabelled none-lr8e-3 copies with their check.json) | MIXED LR TEST PASS (pairs by lr unchanged; the incomplete batch refused without --allow_partial with the new message) |
 | stats_test.py | STATS TEST PASS |
+
+## Amendment A6 (2026-10-19, after the main read-out, BEFORE any A6 run)
+
+Trigger: the user's decisions of 2026-10-19 after reading the main read-out (rb6m_main.txt; FINDINGS F88). F88 left open
+three questions:
+- every arm at its own best lr: all6's lr was never tuned, and F1b compares all6@1e-3 with none@8e-3;
+- whether the prior hurts clock at the same lr: F1b clock is -3.3 n.s., with lr and prior changing together;
+- whether "S4 / dim not learnable without the prior" survives a closed lr bracket for none, which so far was tried only at
+  1e-3 and 8e-3, and 8e-3 was chosen on numbers.
+
+The hypotheses below come from the main results. They are tested only through the new runs: every A6 comparison involves
+at least one A6 arm. The A5 rules, the A5 families and the A5 headline (F1 & F1b) are unchanged.
+
+### Code
+- tools/make_rb6m_tasks.py, 941a387a41a3 -> **10b60268e7b1**: the A6 block, with the 52 existing renderings unchanged.
+- tools/rainbow6_summary.py, 410620f8b268 -> **89818e712ac3**: the A6 section. The pilot and main outputs are
+  byte-identical.
+- Unchanged:
+  - tools/readout_rules.py (e91ee8a8a846);
+  - CHECK_PY (embedded verbatim in every task);
+  - the pinned trainer (c434d29: pretrain_range cc984148b15a) and toy_struct (6248613ac6d2).
+- Base: origin/main bbd8714. origin/main is now caad91c (report/FINDINGS.md F88 only), which does not touch these files.
+
+### Arms and tasks (K = 2, seeds 0-3, 53M, 3e8 tokens, 18,310 steps of 32 x 512)
+| arm (tag rb6mb-53m-2pct-k2-<arm>) | = | tasks |
+|---|---|---|
+| all6-lam1-lr4e-3 | all6-lam1 with --lr 4e-3 | 494, 496, 498, 500 (s0-s3) |
+| all6-lam1-lr8e-3 | all6-lam1 with --lr 8e-3 | 495, 497, 499, 501 |
+| none-lr3e-3 | none with --lr 3e-3 | 502, 504, 506, 508 |
+| none-lr1.6e-2 | none with --lr 1.6e-2 | 503, 505, 507, 509 |
+
+- Order: seed-major within each block, so every finished pair of lrs is paired.
+- Numbering: 494-509 are free in tasks/, status/ and results/ on origin/main. 478 is the 440 re-run, and 483-489 stay
+  reserved for re-runs.
+- The generator asserts that each A6 task's trainer flags equal its 1e-3 base arm's except --lr, --tag and --out.
+- Header: kind gpu, time 02:00:00, cpus 8, after 331-env311 332-data. The pin is c434d29 via burst/pin_run.sh.
+- Same task body as A5:
+  - the input checks (model line, prior target, per-domain prior / shuf / lam, numbers first, content scan, DRY count +
+    sha256, pinned trainer);
+  - training;
+  - offline_lm.py;
+  - CHECK_PY with `make_rb6m_tasks.intent(arm, seed)` (args.lr = 0.004 / 0.008 / 0.003 / 0.016) -> check.json, exit 4
+    on a failed check.
+
+### Torch references (reused per seed; lr acts only after the step-0 forward)
+- Dry runs of all 16 (arm, seed) cells on the pinned tools (scratchpad rb6m/refs/out_a6/):
+  - each gives the seed's DRY sha256 with 88 lines and the seed's domain splits (16/16);
+  - 12 of them are byte-identical to the base arm's Torch dry log at the same seed;
+  - the other 4 (all6 s0 / s1) are checked by the A6 task's own check block, which accepts the pilot's real Burst dry
+    log of 419 / 415 (exit 0).
+- Step 0 on CPU: the step-0 lm and data_sha after step 0 are bitwise the seed's reference.
+  - all6-lam1-lr8e-3 s0: 11.614818572998047 / 28c9fff8ef37e82f
+  - none-lr1.6e-2 s1: 11.603224754333496 / dfac64fb1b4a4f36
+
+| seed | DRY sha256 (88 lines) | step-0 lm | data_sha after step 0 |
+|---|---|---|---|
+| 0 | fe6a8bba65f7c326... | 11.614818572998047 | 28c9fff8ef37e82f |
+| 1 | b4aabe5cd8c829e6... | 11.603224754333496 | dfac64fb1b4a4f36 |
+| 2 | 964d1b8b61a15305... | 11.570906639099121 | 36b63d307358a0a4 |
+| 3 | ea21c901acad5eca... | 11.604287147521973 | df68c5608eedaa9a |
+
+### Read-out (pre-registered; tools/rainbow6_summary.py `a6_readout`, printed after the A5 sections when an A6 arm is given)
+The A5 / pilot sections are computed WITHOUT the A6 runs, so everything up to and including "A5 read-out status" equals
+rb6m_main.txt byte for byte. The A6 section then uses the A6 arms plus the A5 cells none, none-lr8e-3 and all6-lam1,
+seeds 0-3 only.
+
+Read-out values are the A5 ones (READ):
+- numbers: the 6-bucket area;
+- months / weekdays: heldE final3;
+- clock: held_wrap final3;
+- s4: held_fresh_nonid final3;
+- dim: the STRICT set final3;
+- bpb: offline bpb_full x 1e3.
+
+Tests are paired across seeds: paired t, the exact sign-flip p and a t interval. BH (q 0.05) is applied within each
+family.
+
+1. **all6's best lr** over {1e-3, 4e-3, 8e-3}, by ONE criterion fixed now: `readout_rules.best_lr` on the numbers area
+   (seeds 0-3).
+   - Every lr within 2 points of the top is tied, and the tie goes to the lower mean offline bpb (in-training bpb if any
+     tied run lacks it). A non-finite bpb counts as the worst; an exact tie goes to the lower lr. This is the pt2b rule
+     that picked none@8e-3.
+   - No per-domain selection.
+   - The bracket uses `readout_rules.bracket`. It is OPEN when the best is at an edge and beats its neighbour by > 2
+     (all6's best may lie beyond the grid; reported, no extra runs pre-registered), and gets a NOTE when the area argmax
+     is at an edge within 2.
+2. **F1c** = all6@best - none@8e-3 on F1b's four domains (numbers, clock, s4, dim), seeds 0-3.
+   - F1b's tests: s4 is one-sided (greater) because none@8e-3's seed-level s4 gate is FLOOR (A5: 3.1 [0.0, 6.2]); the
+     rest are two-sided. BH is within F1c (m = 4).
+   - Printed next to the A5 F1 and F1b rows of that domain.
+   - Each domain states its **reading**:
+     - "no change: all6's best lr is 1e-3, so F1c = F1b by construction";
+     - "no change (F1b X, F1c Y)";
+     - "CHANGES the best-vs-best reading: F1b X -> F1c Y (the A5 headline, F1 & F1b, is not changed by it)".
+     - Here X / Y is gain or harm (significant) or n.s.; "PROVISIONAL: cannot compare" when F1b or F1c is incomplete.
+   - **The headline rule stays F1 & F1b.** F1c neither creates nor removes a headline; it qualifies the best-vs-best
+     wording.
+3. **F9** = all6@8e-3 - none@8e-3, the same lr, on the six domains + offline bpb, seeds 0-3. BH within F9 (m = 7); the s4
+   side as F1b. The clock row is marked "<- the question".
+4. **LM cost of the new prior arms.**
+   - F8c = offline bpb x1e3, all6@4e-3 / 8e-3 - none@1e-3, as F8. BH within F8c (m = 2).
+   - **LM COST FLAG** when the mean > +4 (x1e-3 bpb, A1 R5) whatever p says, or when the prior arm diverged.
+   - Gradient split per seed (window medians of the on-evals before the global clip): LM share of T, clip factor
+     1/max(1, T), prior/LM and the share of on-evals with prior > LM. Shown for all6@1e-3 (A5 reference), 4e-3 and 8e-3;
+     FLAG = a seed's median prior/LM > 1.
+   - F8c is against none@1e-3, so it mixes lr and prior. The same-lr LM cost at 8e-3 is F9's bpb row.
+5. **"S4 / dim not learnable without the prior."** Per domain (all six; s4 and dim carry the claim), none's best lr over
+   {1e-3, 3e-3, 8e-3, 1.6e-2} = `readout_rules.best_lr` on that domain's read-out (seeds 0-3, the same tie rule).
+   - The bracket is closed or OPEN at an edge (the best at an edge by > 2), and each lr's seed-level A5 gate verdict is
+     printed (FLOOR / BORDERLINE / MEASURABLE / CEILING).
+   - The claim **holds only if every none lr is FLOOR** by the seed-level gate (complete seeds). Otherwise it reads
+     "'<d> not learnable without the prior' does NOT hold: none's best lr X reaches v [seed CI] -> verdict (floor f,
+     heuristic h)", plus "none's bracket is OPEN at the X edge: its best on <d> may lie beyond the grid" when open.
+   - Already known before A6: none@8e-3's strict dim is 31.6 [18.0, 45.2] = MEASURABLE (A5 gate). So the dim claim
+     cannot hold in A6. A6 only shows where none's dim peaks and whether the bracket closes.
+   - s4 so far: none@1e-3 0.2, none@8e-3 3.1, both FLOOR.
+   - **F1d** = all6@best - none@best-on-that-domain, per domain, DESCRIPTIVE (no BH, no verdict). It is printed next to
+     F1c. Months / weekdays rows that involve none@1e-3 or all6@1e-3 carry the A5.1 tier-E discovery-seed mark.
+6. **Winner's curse.** A5's note (none@8e-3 was selected on pt2b seeds 0-3, which share the init and the numbers data with
+   these seeds) stays on every numbers row that involves none@8e-3: F1c and F9, and F1d when none's best numbers lr is
+   8e-3.
+   - When all6's best lr is not 1e-3, the F1c header also says that all6's lr was chosen on numbers on the same seeds 0-3.
+     F1c numbers then carries a selection effect in all6's favour as well.
+
+**A diverged run is data, not an exclusion** (pt2main's rule). A 53M run at 1.6e-2 may diverge. In pt2b, none@1.6e-2
+(362-365, the same 53M 2% setting with the older pt2 data) finished 4/4 with no non-finite value, final bpb 1.253-1.268
+against 1.218-1.241 at 8e-3.
+- Onset: the first eval with a non-finite lm, val_loss, geo, grad_prior or geo_<d>. This is CHECK_PY's onset (and its
+  info.diverged_at_step).
+- The run's task check PASSES when nothing else fails:
+  - its lambda-ratio and grad checks use the on-evals before the onset;
+  - the CKA-rise and offline-delta checks are skipped;
+  - a diverged run with a wrong lr is still caught (tested).
+- Read-out:
+  - listed ("diverged runs ... {arm sN: step}" plus a WARNING line), never excluded;
+  - its area / final3 count over ALL evals of the run as trained. Accuracies are argmax exact matches, so they stay
+    finite: the broken model's chance-level answers;
+  - its offline bpb (NaN) is the worst in every best-lr tie-break, so it never wins a tie;
+  - a paired row on its bpb (F9 bpb, F8c) prints "NOT TESTED: DIVERGED <arm> at seeds [...] (a non-finite value = the
+    worst: that run's LM is broken; no t test)", is never significant, and raises F8c's LM COST FLAG when the prior arm
+    diverged;
+  - its gradient split uses its on-evals before the onset (the row says "[before the divergence at step S: n on-evals]").
+- A run that crashes instead of finishing is not "diverged data" but an unfinished task (rule below).
+  - This is not expected: the trainer has no NaN guard and keeps stepping, the evals are argmax / norm ratios, and
+    offline_lm.py writes NaN without an assert.
+  - The strict read-out then refuses; --allow_partial lists it as unfinished and PROVISIONAL; the user decides.
+
+**Seed completeness and run identity** (as A5.1):
+- Every A6 run is checked against `make_rb6m_tasks.intent(arm, seed)`: args incl. lr, lam_domains, priors, code_sha, the
+  logged lambda multiplier, and check.json PASS. A failing run is EXCLUDED with the reason.
+- Seeds 0-3 of every arm used are required. A missing seed makes every verdict that needs it PROVISIONAL, and the read-out
+  REFUSES without --allow_partial.
+- The last line reads "== A6 read-out status: complete (seeds 0-3 of every arm used)" or "PROVISIONAL (...)".
+
+### What each comparison can and cannot show
+- (1) / F1c can show whether all6's best-vs-best gain over none@8e-3 holds, per domain, once all6 also gets an lr search.
+  - It cannot remove the selection effects (both lrs chosen on numbers on seeds 0-3).
+  - It cannot replace the confirm seeds: the A6 arms have none.
+  - It cannot say "each at its own best lr per domain": the rule is numbers-only on purpose.
+- F9 removes the lr confound for clock at one lr (8e-3).
+  - It cannot say which lr is best for either arm.
+  - A clock harm at 8e-3 would be a same-lr effect of the priors at that lr, not a general one.
+- (5) can refute "not learnable without the prior" for a domain, given a non-FLOOR none lr.
+  - It can support the claim only within the grid {1e-3 ... 1.6e-2} and at 53M / 3e8 tokens: an OPEN bracket says the
+    grid may be too narrow.
+  - F1d picks none's lr per domain on the same seeds, so it is biased in none's favour: it is descriptive and
+    conservative for the prior.
+- The new information is the A6 runs only. Their baselines (none@8e-3, all6@1e-3, none@1e-3 seeds 0-3) are the main runs
+  that suggested these hypotheses, and they reappear unchanged.
+
+### Read-out command
+The command that produced rb6m_main.txt, plus the A6 directories (494-509 run last):
+```
+python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results/415-rb6pb-* results/419-rb6pb-* \
+  results/4[3-6][0-9]-rb6*-* results/47[0-8]-rb6*-* results/49[0-3]-rb6mb-* \
+  results/49[4-9]-rb6mb-* results/50[0-9]-rb6mb-* \
+  --ref 'results/35[0-3]-pt2b-lr1e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr8e-3-none-s?' \
+  --ref 'results/35[0-3]-pt2b-lr1e-3-win-ctx-s?' --json rb6m_a6_summary.json
+```
+- 440 holds only a failed log_tail.txt; 478 is its re-run.
+- Mid-batch, add --allow_partial (A6 PROVISIONAL).
+
+### Tick order and budget
+- 494-509 are the highest task numbers in tasks/, so Burst runs them after everything else (file-name order, MAX_GPU_JOBS
+  12): 12 start and then 4 more, about 2 waves of about 1 h each with Burst idle.
+- Training is 0.85 A100-h per run (median of the 40 main rb6mb runs with a check.json; GPU util 97%, 32.3 GB peak).
+  With offline_lm and the check, about 16 x 0.92 = 15 A100-h; 16 x 2 h = 32 h of limits.
+
+### Tests (CPU; scratchpad rb6m/a6/)
+| test | result |
+|---|---|
+| generator --check | 68 tasks: 0 to write, 68 unchanged (430-477, 490-493, 494-509), 52 already ran; bash -n clean on all 16 new files |
+| regress.sh: pilot (18 pilot runs + pt999 refs) and main (the rb6m_main.txt command) | TXT and JSON byte-identical to the committed summary's (main TXT = rb6m_main.txt) |
+| render_test_a6.py (all 68 tasks) | RENDER TEST PASS. bash -n; each task's input-check block exits 0 on its own Torch dry log, 1054 cross cases exit 3 with the right reason, 56 runs on the pilot's Burst logs (8 A6 tasks accept 419 / 415 / 401 / 404 at their own seed); embedded CHECK_PY = the generator's, intent = intent(arm, seed), ARGS = trainer_args |
+| check_test_a6.py (the A5 cases on the rb6m3 generator + A6) | CHECK SCRIPT TEST PASS (51). Pilot JSONs relabelled to each A6 intent (seeds 0 / 1) PASS; tag with the lr left at 1e-3, or an A6 run vs its base intent, fails only "run args" ({'lr': [0.001, 0.004]} ...); DIVERGED copies (NaN from step 9000 in none-lr1.6e-2 / step 3000 = in-window in all6-lam1-lr8e-3, offline bpb NaN) PASS with info.diverged and the onset step; diverged + wrong lr still caught |
+| tiny_a6.py (pinned trainer, tiny model, --stop_after 20) | TINY A6 A/B PASS (26). Controls (all6-lam1 / none + stop_after) = the full tiny runs bitwise at steps 0 / 10 / 20; each A6 arm: args.lr consumed (0.004 / 0.008 / 0.003 / 0.016), every other argument = the base's, same data_sha and step-0 lm, same prior schedule, lm at steps 10 / 20 differs from the base (e.g. all6 4e-3 8.427, 8e-3 7.322, base 10.602 at step 20) and between the two lrs |
+| a6_plumbing_test.py (real main dirs + 16 relabelled copies of the same seeds' runs, CLI) | A6 PLUMBING TEST PASS (16). The output = rb6m_main.txt byte for byte, then the A6 section; JSON = main JSON + 'a6'; identity 16 checked 0 excluded; identical copies -> best 1e-3 -> F1c = F1b by construction; a copy whose lr was not changed is EXCLUDED, strict refuses, --allow_partial PROVISIONAL; two DIVERGED copies: listed, warned, not excluded, F9 / F8c bpb rows NOT TESTED naming the arm, LM COST FLAG, gradient split from the 8 pre-onset on-evals, 8e-3 loses the tie-break (bpb inf) |
+| a6_planted_test.py (planted per-(arm, seed) values; the summary's own rules) | A6 PLANTED TEST PASS (20). Best 4e-3 by the bpb tie-break (not the area argmax), bracket note; F1c clock p = scipy, "CHANGES ... F1b n.s. -> F1c gain"; s4 one-sided; F9 clock harm; F8c flag 8e-3 only; gradient FLAG 8e-3 only; none's s4 at 3e-3 MEASURABLE -> "does NOT hold", dim bracket OPEN at the upper edge, the diverged none@1.6e-2 s2 kept with area 0; scenario 2 "HOLDS"; scenario 3 missing seed: strict refuses, partial PROVISIONAL; winner's-curse notes on exactly the none@8e-3 numbers rows; F1c header names all6's own lr selection |
+| A5.1 tests on the A6 summary: seed_completeness (62), identity (11), fake_main, mixed_lr (4), stats | all PASS (the pre-A5.1 copies in rb6m/tests fail the same way on the committed summary: stale, superseded by rb6m/a51/tests) |
+
+### Decisions taken in the build (for the reviewer)
+- The A6 references in the code and the task headers point to "amendment A6 of report/audits/rb6_A5_main_design.md".
+  If A6 is filed elsewhere, change those 7 strings and regenerate 494-509 (not yet run).
+- The summary's grad_split now ignores on-evals at or after a divergence onset. Finite runs are unchanged (byte-identical
+  outputs).
+- CHECK_PY is unchanged (it is embedded in the 52 submitted tasks). Its info.grad_window_median is NaN for a diverged
+  prior run. That field is information only; the read-out uses its own pre-onset split.
+
+### Audit status (experiment-audit)
+New experiment code and tasks: a fresh audit is due before submission (gate rule), not yet run.

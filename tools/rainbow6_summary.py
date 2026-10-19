@@ -89,6 +89,10 @@ gnorm_prior / gnorm_true = lambda) and its check.json must PASS (a shuffled arm 
 decision 3); otherwise the run is EXCLUDED with the reason printed; a lambda ratio that cannot be computed prints NOT
 CHECKED. (3) Tier-E rows outside FE that contain the discovery seeds 0, 1 of none / all6-lam1 are marked exploratory; F5's
 descriptive group is its real seeds 2-3; FE's headline labels say 'vs none' / 'vs none@8e-3'.
+A6 (2026-10-19, user decisions after the main read-out; pre-registered in amendment A6 of
+report/audits/rb6_A5_main_design.md BEFORE the A6 runs): the arms all6-lam1-lr4e-3 / -lr8e-3 and none-lr3e-3 / -lr1.6e-2 (tasks 494-509) are read only by the A6 section (a6_readout),
+appended after the A5 sections, which are computed without them (byte-identical); run identity, seed completeness and
+--allow_partial as A5.1; a diverged run is data (listed; values over all evals count, its bpb the worst).
 """
 from __future__ import annotations
 
@@ -307,10 +311,11 @@ def check(runs, partial):
             msg = f"{x['tag']} s{x['seed']}: unfinished (last eval {c[-1]['step']} of {r['steps']})"
             assert partial, msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
             warn.append(msg)
+        div = diverged_at(r)   # A6: a diverged run is data (pt2main / readout_rules), listed, never an integrity failure
+        if div is not None:
+            warn.append(f"{x['tag']} s{x['seed']}: DIVERGED at step {div} (data: its values over all evals count, its bpb is"
+                        " the worst)")
         for e in c:
-            for k_ in ("lm", "val_loss") + tuple(f"geo_{d}" for d in EXTRA):
-                v = e.get(k_)
-                assert v is None or math.isfinite(v), (x["tag"], x["seed"], e["step"], k_, v)
             for d in EXTRA:   # second double path: per-question hits vs the set / sub-split accuracies of this eval
                 for nm in ("held", "heldE", "seen") + tuple(para_sets(r, d)):
                     if f"eval_{nm}" not in r["domains"][d]:
@@ -416,6 +421,7 @@ DOM6 = ("numbers",) + EXTRA
 SINGLES = tuple(f"only-{d}" for d in DOM6)
 PILOT_ARMS = ("none", "all6", "all6-lam1")
 MAIN_ARMS = ("none", ALL6M, "all6-lam0.3", *SINGLES, "all6-shuf", "none-lr8e-3")
+A6_ARMS = ("all6-lam1-lr4e-3", "all6-lam1-lr8e-3", "none-lr3e-3", "none-lr1.6e-2")   # A6: read by a6_readout only
 TIER_E = ("months", "weekdays")   # A5 fix 1: the pilot's tier-E harm hypothesis, decided on the fresh seeds 2-7 only
 STRICT = "dim_held_strict"    # A5: the main dim read-out (no same-answer token-transform twin trained; see strict_mask)
 # the main read-out of every domain (pilot gate at K* = 2: months / weekdays MEASURABLE on tier E only, clock / dim
@@ -835,8 +841,9 @@ def grad_split(r):
     """Window medians at the on-evals (before the clip): LM share grad_lm / T, clip factor 1 / max(1, T), grad_prior /
     grad_lm, share of the on-evals with grad_prior > grad_lm."""
     rows = []
+    div = diverged_at(r)   # A6: a diverged run's split = its on-evals before the divergence (CHECK_PY's rule)
     for e in r["curve"]:
-        if not e.get("prior_on") or e.get("grad_prior") is None or not e.get("grad_lm"):
+        if not e.get("prior_on") or e.get("grad_prior") is None or not e.get("grad_lm") or (div is not None and e["step"] >= div):
             continue
         gl, gp, cs = e["grad_lm"], e["grad_prior"], e["grad_cos"]
         T = math.sqrt(max(gl * gl + gp * gp + 2 * gl * gp * cs, 0.0))
@@ -859,7 +866,7 @@ def run_versions(x):
     return json.dumps(v, sort_keys=True) if v else None
 
 
-def run_identity(runs):
+def run_identity(runs, arms=MAIN_ARMS):
     """A5.1 (re-review 2026-10-19): every K = 2 main-design run must be what its tag says. Its run JSON is compared with
     make_rb6m_tasks.intent(arm, seed) (the intent table the task's own check used): every trainer argument (lr, lam, target,
     prior_domains, prior_shuf, extra_lines = K, tag, seed, ...), lam_domains, the active and the shuffled prior sets
@@ -870,7 +877,7 @@ def run_identity(runs):
     import make_rb6m_tasks as G   # tools/: the generator of the submitted tasks (its intent table)
     kept, info = [], {"excluded": [], "valid_notes": [], "not_checked": [], "checked": 0}
     for x in runs:
-        if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS:
+        if x["k"] != MAIN_K or x["arm"] not in arms:
             kept.append(x)
             continue
         r, a, s = x["r"], x["arm"], x["seed"]
@@ -1272,6 +1279,280 @@ def main_readout(runs, cells, out, partial, forced=False, ident=None):
             f" (>1 on {g['frac_prior_gt_lm']:.2f})" for s, g in gs.items() if g) + ("  FLAG: prior > LM" if flag else ""))
 
 
+def diverged_at(r):
+    """A6: step of the first eval with a non-finite lm, val_loss, geo, grad_prior or geo_<d> (None if none): the trainer's /
+    CHECK_PY's / readout_rules' divergence onset (+ the domain priors' values)."""
+    fin = lambda v: v is None or math.isfinite(v)
+    for e in r["curve"]:
+        if not all(fin(e.get(k)) for k in ("lm", "val_loss", "geo", "grad_prior") + tuple(f"geo_{d}" for d in EXTRA)):
+            return e["step"]
+    return None
+
+
+def final_bpb(r):
+    """The last eval's in-training val bits per byte (readout_rules.best_lr's fallback tie-break)."""
+    return r["curve"][-1]["val_bits_per_byte"] if r["curve"] else None
+
+
+def a6_readout(runs, out, partial, ident6=None, warn6=()):
+    """A6 read-out (pre-registered 2026-10-19 before the A6 runs; amendment A6 of report/audits/rb6_A5_main_design.md),
+    printed after the A5 sections when an A6 arm is given. Uses the A6 arms (all6-lam1 at lr 4e-3 / 8e-3, none at lr 3e-3 / 1.6e-2) with the A5 cells none,
+    none-lr8e-3 and all6-lam1, seeds 0-3 only. (1) all6's best lr over {1e-3, 4e-3, 8e-3} = readout_rules.best_lr on the
+    numbers area (ties within 2 -> lower offline bpb), bracket = readout_rules.bracket; (2) F1c = all6@best - none@8e-3 on
+    F1b's four domains with F1b's tests / BH / s4 side, next to F1 / F1b, saying whether it changes a domain's reading (the
+    headline rule stays F1 & F1b); (3) F9 = all6@8e-3 - none@8e-3 on the six domains + offline bpb; (4) gradient split and LM
+    cost (F8c: offline bpb all6@lr - none@1e-3, flag > +4e-3) of the new prior arms; (5) none's best lr PER DOMAIN over
+    {1e-3, 3e-3, 8e-3, 1.6e-2} (best_lr on that domain's read-out, bracket), the s4 / dim 'at the floor at every lr' claim
+    (every none lr FLOOR at the seed level), and F1d = all6@best - none@best-on-that-domain (descriptive); (6) the
+    winner's-curse note on numbers rows with none@8e-3. A diverged run is data: its values over ALL evals count (area, final3
+    of the broken model), its offline bpb counts as the worst in a tie-break, a paired row on its bpb is NOT TESTED (the
+    diverged side named; F8c raises the LM COST FLAG when the prior arm diverged), its gradient split is that of its on-evals
+    before the divergence; it is listed, never excluded. Seeds 0-3 of
+    every arm used are required: a missing one makes every verdict that needs it PROVISIONAL and the read-out refuses
+    unless --allow_partial."""
+    import readout_rules as RR   # the one best_lr / bracket definition (pt2main_AUDIT rule 1, readout_rules.TIE = 2)
+    K = MAIN_K
+    strict = not partial
+    ALL6_LR = {"1e-3": ALL6M, "4e-3": "all6-lam1-lr4e-3", "8e-3": "all6-lam1-lr8e-3"}
+    NONE_LR = {"1e-3": "none", "3e-3": "none-lr3e-3", "8e-3": "none-lr8e-3", "1.6e-2": "none-lr1.6e-2"}
+    use = set(ALL6_LR.values()) | set(NONE_LR.values())
+    runs = [x for x in runs if x["k"] == K and x["arm"] in use]
+    xs = {(x["arm"], x["seed"]): x for x in runs}
+    cells = defaultdict(dict)
+    for x in runs:
+        cells[x["arm"]][x["seed"]] = x["r"]
+    A = out["a6"] = {"excluded": [], "missing_seeds": {}, "diverged": {}, "all6_best": None, "families": {}, "none_best": {},
+                     "claims": {}, "grad": {}, "provisional": False}
+    print("\n== A6 READ-OUT (pre-registered 2026-10-19 BEFORE the A6 runs, amendment A6 of report/audits/rb6_A5_main_design.md):"
+          " each arm at its own best lr (all6-lam1 at 1e-3 / 4e-3 / 8e-3; none at 1e-3 / 3e-3 / 8e-3 / 1.6e-2); K = 2, seeds 0-3; the A5 rules and"
+          " headline are unchanged; these hypotheses came from the main read-out and are tested only on the new runs")
+    problems = []
+    if ident6 is not None:
+        print(f"  run identity of the A6 runs (tag's intent = run JSON; check.json PASS): {ident6['checked']} checked,"
+              f" {len(ident6['excluded'])} EXCLUDED")
+        for lab, why in ident6["excluded"]:
+            print(f"  EXCLUDED run {lab}: " + "; ".join(why))
+            A["excluded"].append([lab, why])
+        for t in ident6["valid_notes"] + ident6["not_checked"]:
+            print("  NOTE " + t)
+    for w in warn6:
+        print("  WARNING " + w)
+    missing = {a: sorted(set(DECIDE) - set(cells.get(a, {}))) for a in sorted(use)}
+    missing = {a: v for a, v in missing.items() if v}
+    A["missing_seeds"] = missing
+    if missing:
+        msg = "A6 seed set incomplete (seeds 0-3 of every arm used): missing " + "; ".join(f"{a} {v}" for a, v in missing.items())
+        print(f"  PROVISIONAL: {msg}")
+        problems.append(msg)
+    div = {f"{a} s{s}": diverged_at(r) for a, sd in cells.items() for s, r in sd.items() if diverged_at(r) is not None}
+    A["diverged"] = div
+    print("  diverged runs (data, never excluded: area / final3 over ALL evals of the run as trained, offline bpb = the worst"
+          f" in a tie-break): {div if div else 'none'}")
+    prov = lambda arms: any(a in missing for a in arms)
+
+    def seeds_of(a):
+        return [s for s in sorted(cells.get(a, {})) if s in DECIDE]
+
+    def lr_cells(arms, dom):
+        """readout_rules.best_lr input: {lr: {area: [metric per seed 0-3], off: [offline bpb], intr: [in-training bpb]}}"""
+        cl = {}
+        for lr, a in arms.items():
+            ss = seeds_of(a)
+            if not ss:
+                continue
+            off = [offline_bpb(xs[(a, s)]["path"], cells[a][s]) for s in ss]
+            cl[lr] = {"area": [mval(xs[(a, s)], dom) for s in ss], "off": off, "intr": [final_bpb(cells[a][s]) for s in ss],
+                      "seeds": ss}
+        return cl
+
+    # ---- (1) all6's best lr (ONE criterion, fixed before the runs: numbers area, ties within 2 -> offline bpb)
+    cl = lr_cells(ALL6_LR, "numbers")
+    best = None
+    if len(cl) >= 1:
+        sel = RR.best_lr(cl)
+        lrs = sorted(cl, key=float)
+        br = RR.bracket(lrs, sel["mean"], sel["best"])
+        best = sel["best"]
+        A["all6_best"] = {"best": best, "arm": ALL6_LR[best], "near": sel["near"], "mean_area": sel["mean"], "bpb": sel["bpb"],
+                          "offline": sel["offline"], "bracket": br, "provisional": prov(ALL6_LR.values()) or len(cl) < 3}
+        print(f"\n== A6 (1) all6's best lr over {list(ALL6_LR)} (readout_rules.best_lr: the highest mean numbers area over seeds 0-3;"
+              f" lrs within {RR.TIE:g} of the top tied -> the lower mean {'offline' if sel['offline'] else 'in-training'} bpb, a"
+              " non-finite one the worst; the same rule that picked none@8e-3 in pt2b; no per-domain selection)")
+        for lr in lrs:
+            print(f"  all6@{lr:7s} ({ALL6_LR[lr]:17s}) numbers area {fmt(sel['mean'][lr])} [{' '.join(fmt(v) for v in cl[lr]['area'])}]"
+                  f" seeds {cl[lr]['seeds']}" + (f" bpb {sel['bpb'][lr]:.4f}" if lr in sel["bpb"] else "")
+                  + (" (tied)" if lr in sel["near"] and len(sel["near"]) > 1 else ""))
+        print(f"  -> all6's best lr = {best}" + (f"; bracket {br[0].upper()} at the {br[1]} edge" if br else "; bracket closed")
+              + ("  PROVISIONAL (seeds or lrs missing)" if A["all6_best"]["provisional"] else ""))
+    # ---- (2)-(5) families
+    gate8 = out.get("main", {}).get("gate", {}).get(f"k{K}|none-lr8e-3|s4_held_fresh_nonid", {}).get("verdict", "")
+    if not gate8 and seeds_of("none-lr8e-3"):
+        gate8 = gate_key([cells["none-lr8e-3"][s] for s in seeds_of("none-lr8e-3")], "s4", READ["s4"][0])["verdict"]
+    s4side = "greater" if gate8.endswith("FLOOR") else "two"
+    D4 = ("numbers", "clock", "s4", "dim")
+
+    def test(a, b, dom, side, label):
+        need = list(DECIDE)
+        ss = [s for s in need if s in cells.get(a, {}) and s in cells.get(b, {})]
+        va = {s: mval(xs[(a, s)], dom) for s in ss}
+        vb = {s: mval(xs[(b, s)], dom) for s in ss}
+        miss = [s for s in ss if va[s] is None or vb[s] is None]
+        if miss:   # a value that is not there (no offline_lm record): a problem, as A5's DROPPED seeds
+            problems.append(f"{label}: {a} - {b} {dom}: DROPPED seeds {miss} (no value: offline_lm.json missing?)")
+        ss = [s for s in ss if s not in miss]
+        nonfin = [s for s in ss if not (math.isfinite(va[s]) and math.isfinite(vb[s]))]   # a diverged run's bpb: data
+        if nonfin or not ss:
+            dd = [va[s] - vb[s] for s in ss]
+            return {"n": len(ss), "diffs": dd, "mean": float(np.mean(dd)) if dd else None, "wins": sum(v > 0 for v in dd),
+                    "losses": sum(v < 0 for v in dd), "sd": None, "t": None, "p_t": None, "p_sf": None, "ci": None,
+                    "metric": dom, "a": a, "b": b, "side": side, "seeds": ss, "n_required": len(need),
+                    "provisional": len(ss) < len(need), "diverged_seeds": nonfin,
+                    "diverged_a": [s for s in nonfin if not math.isfinite(va[s])],
+                    "diverged_b": [s for s in nonfin if not math.isfinite(vb[s])],
+                    "a_mean": float(np.mean([va[s] for s in ss])) if ss else None,
+                    "b_mean": float(np.mean([vb[s] for s in ss])) if ss else None}
+        st = paired([va[s] - vb[s] for s in ss], side)
+        return dict(st, metric=dom, a=a, b=b, side=side, seeds=ss, n_required=len(need), provisional=len(ss) < len(need),
+                    diverged_seeds=[], diverged_a=[], diverged_b=[], a_mean=float(np.mean([va[s] for s in ss])),
+                    b_mean=float(np.mean([vb[s] for s in ss])))
+
+    def with_bh(rows):
+        for row, q in zip(rows, bh([x["p_t"] for x in rows])):
+            row["p_bh"] = q
+            row["significant"] = q is not None and q < Q_BH and not row["provisional"]
+        return rows
+
+    def lab_of(dom):
+        return {"bpb": "offline bpb x1e3"}.get(dom, f"{dom} {READ[dom][0]}" if dom in READ else dom)
+
+    def row_txt(x, pre, decide=True):
+        ci = x.get("ci")
+        ci_t = "" if ci is None else (f" 95% CI [{fmt(ci[0], 6)},{fmt(ci[1], 6)}]" if x["side"] == "two" else f" 95% LB {fmt(ci[0], 6)}")
+        dv = " and ".join(f"{x[k]} at seeds {x['diverged_' + k]}" for k in ("a", "b") if x.get("diverged_" + k))
+        v = ("PROVISIONAL (n=" + str(x["n"]) + " of " + str(x["n_required"]) + "): " if x["provisional"] else "") + (
+            (f"NOT TESTED: DIVERGED {dv} (a non-finite value = the worst: that run's LM is broken; no t test)"
+             if x.get("diverged_seeds") else "SIGNIFICANT" if x["significant"] else "n.s.") if decide else
+            ("descriptive" + (f" [DIVERGED {dv}]" if x.get("diverged_seeds") else "")))
+        note = f"  [winner's curse: {WINNER}]" if x["metric"] == "numbers" and "none-lr8e-3" in (x["a"], x["b"]) else ""
+        return (f"{pre}{x['a']:17s} - {x['b']:13s} {fmt(x['a_mean'], 6)} vs {fmt(x['b_mean'], 6)} Δ {fmt(x['mean'], 6)} "
+                f"[{' '.join(fmt(d, 6) for d in x['diffs'])}] n {x['n']} {'1-sided' if x['side'] != 'two' else '2-sided'} p "
+                f"{fmt(x.get('p_t'), 6, 4)} BH {fmt(x.get('p_bh'), 6, 4)} sign-flip {fmt(x.get('p_sf'), 6, 4)} wins {x['wins']}/{x['n']}"
+                f"{ci_t} -> {v}{note}")
+
+    fams = out.get("main", {}).get("families", {})
+    old = {fid: {x["metric"]: x for x in fams.get(fid, {}).get("tests", [])} for fid in ("F1", "F1b")}
+    if best is not None and "none-lr8e-3" in cells:
+        a_best = ALL6_LR[best]
+        rows = with_bh([test(a_best, "none-lr8e-3", d, s4side if d == "s4" else "two", "F1c") for d in D4])
+        A["families"]["F1c"] = rows
+        print(f"\n== A6 (2) F1c = all6@best ({best}: {a_best}) - none@8e-3 on F1b's four domains, seeds 0-3 (F1b's tests, BH within"
+              f" F1c, s4 {'one-sided' if s4side == 'greater' else 'two-sided'} as F1b by none@8e-3's seed-level s4 gate); F1 and F1b"
+              " (A5, unchanged) beside; the HEADLINE rule stays F1 & F1b"
+              + ("" if best == "1e-3" else f"; all6's lr {best} was chosen on numbers on these same seeds 0-3: F1c numbers also"
+                 " carries a selection effect in all6's favour (besides the winner's curse of none@8e-3)"))
+        for x in rows:
+            d = x["metric"]
+            print(row_txt(x, f"    {lab_of(d):30s} F1c "))
+            for fid in ("F1", "F1b"):
+                y = old[fid].get(d)
+                print(f"    {'':30s} {fid:3s} " + (f"{y['a']} - {y['b']} Δ {fmt(y['mean'], 6)} n {y['n']} -> "
+                      f"{('PROVISIONAL ' if y.get('provisional') else '')}{'SIGNIFICANT' if y['significant'] else 'n.s.'}" if y else "not computed"))
+            y = old["F1b"].get(d)
+            if best == "1e-3":
+                ch = "no change: all6's best lr is 1e-3, so F1c = F1b by construction"
+            elif y is None or x["provisional"] or y.get("provisional"):
+                ch = "PROVISIONAL: cannot compare (F1b or F1c incomplete)"
+            else:
+                rd = lambda z: ("gain" if z["mean"] > 0 else "harm") if z["significant"] else "n.s."
+                ch = (f"no change (F1b {rd(y)}, F1c {rd(x)})" if rd(x) == rd(y) else
+                      f"CHANGES the best-vs-best reading: F1b {rd(y)} -> F1c {rd(x)} (the A5 headline, F1 & F1b, is not changed by it)")
+            x["reading"] = ch
+            print(f"    {'':30s} reading: {ch}")
+    if "all6-lam1-lr8e-3" in cells and "none-lr8e-3" in cells:
+        rows = with_bh([test("all6-lam1-lr8e-3", "none-lr8e-3", d, s4side if d == "s4" else "two", "F9") for d in DOM6 + ("bpb",)])
+        A["families"]["F9"] = rows
+        print("\n== A6 (3) F9 = all6@8e-3 - none@8e-3, the same lr (clock is the question), the six domains + offline bpb, seeds"
+              " 0-3, BH within F9 (s4 side as F1b)")
+        for x in rows:
+            print(row_txt(x, f"    {lab_of(x['metric']):30s} " + ("<- the question " if x["metric"] == "clock" else "")))
+    rows = with_bh([test(ALL6_LR[lr], "none", "bpb", "two", "F8c") for lr in ("4e-3", "8e-3")
+                    if ALL6_LR[lr] in cells and "none" in cells])
+    if rows:
+        A["families"]["F8c"] = rows
+        print(f"\n== A6 (4) LM cost of the new prior arms (F8c: offline bpb x1e3, all6@lr - none@1e-3 as F8, seeds 0-3; LM COST FLAG"
+              f" when the mean > +{1000 * LM_FLAG:g} whatever p says) and the gradient split (window medians before the global clip;"
+              " FLAG = the prior gradient exceeds the LM gradient); all6@1e-3 beside for reference")
+        for x in rows:
+            fl = bool(x.get("diverged_a")) or (x["mean"] is not None and math.isfinite(x["mean"]) and x["mean"] > 1000 * LM_FLAG)
+            x["lm_flag"] = fl
+            print(row_txt(x, f"    {lab_of('bpb'):30s} ") + ((f"  LM COST FLAG (the prior arm DIVERGED at seeds {x['diverged_a']})"
+                  if x.get("diverged_a") else f"  LM COST FLAG (mean > +{LM_FLAG:g} bpb, A1 R5)") if fl else ""))
+    for a in (ALL6M, "all6-lam1-lr4e-3", "all6-lam1-lr8e-3"):
+        sd = cells.get(a, {})
+        gs = {s: grad_split(sd[s]) for s in seeds_of(a)}
+        if not any(gs.values()):
+            continue
+        flag = any(g and g["prior_over_lm"] > 1 for g in gs.values())
+        A["grad"][a] = {"per_seed": gs, "flag": flag}
+        print(f"  {a:17s} " + " | ".join(f"s{s} LM share {fmt(g['lm_share'], 4, 2)} c {fmt(g['clip'], 4, 2)} prior/LM "
+              f"{fmt(g['prior_over_lm'], 5, 2)} (>1 on {g['frac_prior_gt_lm']:.2f})"
+              + (f" [before the divergence at step {div[f'{a} s{s}']}: {g['n']} on-evals]" if f"{a} s{s}" in div else "")
+              for s, g in gs.items() if g)
+              + ("  FLAG: prior > LM" if flag else "") + ("  (reference, A5)" if a == ALL6M else ""))
+    # ---- (5) none's best lr per domain, the s4 / dim floor claim, F1d
+    print(f"\n== A6 (5) none's best lr PER DOMAIN over {list(NONE_LR)} (readout_rules.best_lr on that domain's read-out, seeds"
+          " 0-3; ties within 2 -> lower bpb; bracket OPEN = the best at an edge by > 2), the seed-level gate of every none lr, and"
+          " F1d = all6@best - none@best-on-that-domain (DESCRIPTIVE: a per-domain choice for none only, conservative for the prior)")
+    f1d = []
+    for d in DOM6:
+        cl = lr_cells(NONE_LR, d)
+        if not cl:
+            continue
+        sel = RR.best_lr(cl)
+        lrs = sorted(cl, key=float)
+        br = RR.bracket(lrs, sel["mean"], sel["best"])
+        gates = {}
+        if d != "numbers":
+            for lr in lrs:
+                a = NONE_LR[lr]
+                gates[lr] = gate_key([cells[a][s] for s in cl[lr]["seeds"]], d, READ[d][0])
+        nb = {"best": sel["best"], "arm": NONE_LR[sel["best"]], "mean": sel["mean"], "near": sel["near"], "bracket": br,
+              "verdicts": {lr: g["verdict"] for lr, g in gates.items()},
+              "provisional": prov(NONE_LR.values()) or len(cl) < len(NONE_LR)}
+        A["none_best"][d] = nb
+        print(f"  {d:9s} {READ[d][0]:22s} " + " | ".join(
+            f"{lr} {fmt(sel['mean'][lr])}" + (f" {gates[lr]['verdict']}" if lr in gates else "") for lr in lrs)
+            + f" -> none's best {sel['best']}" + (f"; bracket {br[0].upper()} at the {br[1]} edge" if br else "; bracket closed")
+            + ("  PROVISIONAL" if nb["provisional"] else ""))
+        if d in ("s4", "dim"):
+            allfloor = bool(gates) and all(g["verdict"] == "FLOOR" for g in gates.values()) and not nb["provisional"]
+            g = gates.get(sel["best"])
+            claim = (f"'{d} not learnable without the prior' HOLDS: none is at FLOOR (seed level) at every lr {lrs}" if allfloor else
+                     f"'{d} not learnable without the prior' does NOT hold" + (" (PROVISIONAL)" if nb["provisional"] else "")
+                     + f": none's best lr {sel['best']} reaches {fmt(g['final3'])} [{fmt(g['seed_ci'][0])},{fmt(g['seed_ci'][1])}]"
+                     f" -> {g['verdict']} (floor {fmt(g['floor'])}" + (f", heuristic {fmt(g['heuristic'])}" if g.get("heuristic") is not None
+                                                                      else "") + ")")
+            if br and br[0] == "open" and not allfloor:
+                claim += f"; none's bracket is OPEN at the {br[1]} edge: its best on {d} may lie beyond the grid"
+            A["claims"][d] = claim
+            print(f"    {claim}")
+        if best is not None:
+            x = test(ALL6_LR[best], NONE_LR[sel["best"]], d, "two", "F1d")
+            x["significant"] = False
+            x["p_bh"] = None
+            disc = d in TIER_E and (ALL6_LR[best] == ALL6M or NONE_LR[sel["best"]] == "none")
+            f1d.append(dict(x, discovery_seeds=disc))
+            print(row_txt(x, f"    {'F1d':4s} ", decide=False)
+                  + ("  [tier E incl. the DISCOVERY seeds 0, 1 of none / all6-lam1: exploratory]" if disc else ""))
+    A["families"]["F1d"] = f1d
+    A["provisional"] = bool(missing or problems or partial)
+    if problems:
+        print(f"  {len(problems)} A6 problem(s): {problems}")
+        assert not strict, ("A6 read-out: " + "; ".join(problems)
+                            + " (--allow_partial to look at an incomplete A6 batch anyway: verdicts PROVISIONAL)")
+    print(f"\n== A6 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(missing) if missing else 'problems or --allow_partial') + ')' if A['provisional'] else 'complete (seeds 0-3 of every arm used)'}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="rainbow6 (rb6) summary; see the module docstring")
     ap.add_argument("roots", nargs="+", help="directories with the rb6 run JSONs (searched recursively)")
@@ -1285,17 +1566,26 @@ def main():
     partial = opt.allow_partial
     runs = load(opt.roots)
     main_mode = any(x["arm"] not in PILOT_ARMS for x in runs)
-    mix = sorted({f"K{x['k']} {x['arm']}" for x in runs if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS})
+    mix = sorted({f"K{x['k']} {x['arm']}" for x in runs if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS + A6_ARMS})
     # A5 fix 6: the main design's read-out refuses the pilot's other cells (K 1 / 5, and the lambda-5 arm 'all6', not the
     # main all6 = all6-lam1) unless --main_readout is given (then they are excluded from the A5 sections with a note)
     assert not (main_mode and mix and not opt.main_readout), (
         f"main-design runs mixed with pilot-only cells {mix}: pass only the A5 read-out command's directories (runs/rb6/AUDIT.md"
         " A5), or add --main_readout to exclude them from the A5 sections")
-    ident = None
+    ident = ident6 = None
+    a6_given = any(x["arm"] in A6_ARMS for x in runs)
     if main_mode or opt.main_readout:   # A5.1: only runs whose tag's intent, run JSON and check.json agree enter any table
         runs, ident = run_identity(runs)
+        if a6_given:
+            runs, ident6 = run_identity(runs, A6_ARMS)
         assert runs, "no run left after the run-identity check (A5.1)"
-    warn = check(runs, partial)
+    warn_all = check(runs, partial)   # integrity over every run (incl. A6: the same data per seed in every arm)
+    a6runs = [x for x in runs if x["arm"] in A6_ARMS]   # A6: the A5 / pilot sections are computed WITHOUT the A6 runs
+    a6tags = {x["tag"] for x in a6runs}
+    all_runs = runs
+    runs = [x for x in runs if x["arm"] not in A6_ARMS]
+    warn = [w for w in warn_all if w.split(" ")[0] not in a6tags]
+    assert runs, "only A6 runs given: the A6 read-out needs the A5 cells none, none-lr8e-3 and all6-lam1"
     refs = load_refs(opt.ref, runs)
     out = {"warnings": warn, "cells": {}, "gate": {}, "paired": {}, "all6_range": {}, "provisional": any("unfinished" in w for w in warn)}
     cells = defaultdict(dict)   # (K, arm) -> seed -> run
@@ -1531,6 +1821,8 @@ def main():
         #   when the run-identity check excluded all of them) or when asked
         main_readout(runs, cells, out, partial, forced=opt.main_readout, ident=ident)
         print(f"\n== A5 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(out['main']['missing_seeds']) if out['main']['missing_seeds'] else '--allow_partial') + ')' if out['main']['provisional'] else 'complete (every pre-registered seed present)'}")
+    if a6_given:   # A6 (pre-registered before the A6 runs): appended; the sections above are those of the runs without A6
+        a6_readout(all_runs, out, partial, ident6, [w for w in warn_all if w.split(" ")[0] in a6tags])
     if opt.json:
         Path(opt.json).write_text(json.dumps(out, indent=1))
 
