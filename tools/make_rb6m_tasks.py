@@ -62,7 +62,10 @@ before these runs): 494-501 = all6-lam1 at lr 4e-3 / 8e-3 and 502-509 = none at 
 each identical to all6-lam1 / none except --lr and the tag (rb6mb-53m-2pct-k2-<arm>); the same intent checks (lr in the
 args); read by the A6 section of tools/rainbow6_summary.py. A diverged run (1.6e-2 may) is data, as in pt2main: its
 check passes when nothing else fails.
-    python tools/make_rb6m_tasks.py [--check] [--show] [--no_confirm] [--no_a6]
+A7 (user decisions 2026-10-19 after the A6 read-out; amendment A7 of report/audits/rb6_A5_main_design.md, pre-registered
+before these runs): 510-521 = per seed s = 0-3 none at lr 3.2e-2 (seed s), all6-lam1 at lr 5e-4 (seed s), none at lr 1.6e-2
+(seed s + 4); each identical to none / all6-lam1 except --lr and the tag; read by the A7 section of rainbow6_summary.py.
+    python tools/make_rb6m_tasks.py [--check] [--show] [--no_confirm] [--no_a6] [--no_a7]
 """
 import argparse
 import json
@@ -90,8 +93,13 @@ SPEC = {"none": ("none", (), (), None, "1e-3"),
         "all6-lam1-lr4e-3": ("helix3", DOMS6, (), "1", "4e-3"),
         "all6-lam1-lr8e-3": ("helix3", DOMS6, (), "1", "8e-3"),
         "none-lr3e-3": ("none", (), (), None, "3e-3"),
-        "none-lr1.6e-2": ("none", (), (), None, "1.6e-2")}
+        "none-lr1.6e-2": ("none", (), (), None, "1.6e-2"),
+        # A7 (user decisions 2026-10-19 after the A6 read-out; report/audits/rb6_A5_main_design.md A7): none's s4 bracket
+        # one step up, all6's lr bracket one step down; = none / all6-lam1 except --lr
+        "none-lr3.2e-2": ("none", (), (), None, "3.2e-2"),
+        "all6-lam1-lr5e-4": ("helix3", DOMS6, (), "1", "5e-4")}
 A6_ARMS = ("all6-lam1-lr4e-3", "all6-lam1-lr8e-3", "none-lr3e-3", "none-lr1.6e-2")
+A7_ARMS = ("none-lr3.2e-2", "all6-lam1-lr5e-4")   # + none-lr1.6e-2 at the fresh seeds 4-7 (A7_ORDER)
 REUSED = {"none": "rb6pb-53m-2pct-k2-none", "all6-lam1": "rb6pb-53m-2pct-k2-all6-lam1"}   # pilot cells: seeds 0, 1 ran
 DESC = {"none": "no prior (the same data); REUSED pilot cell rb6pb (seeds 0, 1 = tasks 401, 404)",
         "all6-lam1": "helix3 on the operands + the five domain priors on their item tokens (ctx), one window (0.05, 0.4), "
@@ -105,7 +113,9 @@ DESC = {"none": "no prior (the same data); REUSED pilot cell rb6pb (seeds 0, 1 =
         "all6-lam1-lr4e-3": "as all6-lam1 with lr 4e-3 (A6: the prior arm at its own best lr; grid 1e-3 / 4e-3 / 8e-3)",
         "all6-lam1-lr8e-3": "as all6-lam1 with lr 8e-3 (A6: the prior arm at its own best lr; same-lr contrast with none@8e-3)",
         "none-lr3e-3": "as none with lr 3e-3 (A6: none's lr bracket on s4 / dim; grid 1e-3 / 3e-3 / 8e-3 / 1.6e-2)",
-        "none-lr1.6e-2": "as none with lr 1.6e-2 (A6: none's lr bracket on s4 / dim, the upper edge; may diverge: data)"}
+        "none-lr1.6e-2": "as none with lr 1.6e-2 (A6: none's lr bracket on s4 / dim, the upper edge; may diverge: data)",
+        "none-lr3.2e-2": "as none with lr 3.2e-2 (A7: none's s4 bracket one step above 1.6e-2; may diverge: data)",
+        "all6-lam1-lr5e-4": "as all6-lam1 with lr 5e-4 (A7: all6's lr bracket, open at 1e-3, one step down)"}
 ORDER = ([("none", 2), ("none", 3), ("all6-lam1", 2), ("all6-lam1", 3)] + [("all6-shuf", s) for s in SEEDS]
          + [(f"only-{d}", s) for s in SEEDS for d in DOMS6] + [("all6-lam0.3", s) for s in SEEDS]
          + [("none-lr8e-3", s) for s in SEEDS])
@@ -134,6 +144,13 @@ A6 = True
 FIRST6 = 494
 A6_ORDER = ([(a, s) for s in SEEDS for a in ("all6-lam1-lr4e-3", "all6-lam1-lr8e-3")]
             + [(a, s) for s in SEEDS for a in ("none-lr3e-3", "none-lr1.6e-2")])
+# The A7 block (user decisions 2026-10-19 after the A6 read-out; pre-registered in amendment A7 of
+# report/audits/rb6_A5_main_design.md before these runs): 510-521, seed-major, per step (none@3.2e-2 seed s, all6@5e-4
+# seed s, none@1.6e-2 seed s + 4) for s = 0-3. The Torch references are the seeds' (A5: seeds 0-3, the confirm block's
+# 4-7; lr acts only after the step-0 forward: dry logs of all 12 and step 0 of one cell checked). 483-489 stay for re-runs.
+A7 = True
+FIRST7 = 510
+A7_ORDER = [x for s in SEEDS for x in (("none-lr3.2e-2", s), ("all6-lam1-lr5e-4", s), ("none-lr1.6e-2", s + 4))]
 GEO_TOL = -1e-3   # float CKA exceeds 1 at a perfect fit: pilot 411 geo_weekdays -3.2e-5, 416 -2.4e-4 (rc 4 under the
 #                   pilot's > 0); the pilot generator's later -1e-4 would still fail 416
 CKA_RISE = P.CKA_RISE   # 0.1 (see make_rb6_tasks.py: a sanity floor against a broken prior path, not a strength test)
@@ -204,6 +221,8 @@ def lam_of(arm):
 
 
 def number(arm, seed):
+    if (arm, seed) in A7_ORDER:
+        return FIRST7 + A7_ORDER.index((arm, seed))
     if (arm, seed) in A6_ORDER:
         return FIRST6 + A6_ORDER.index((arm, seed))
     if (arm, seed) in CONFIRM2_ORDER:
@@ -455,7 +474,7 @@ def render(arm, seed):
         assert arm_flags(arm) == P.ARM[{"none": "none", "all6-lam1": "all6-lam1"}[arm]], arm
         assert tag == f"rb6pb-53m-2pct-k{K}-{arm}" and seed in (2, 3) + CONFIRM_SEEDS, (arm, seed)
     confirm = seed in CONFIRM_SEEDS
-    assert not confirm or arm in REUSED or arm == "none-lr8e-3", (arm, seed)
+    assert not confirm or arm in REUSED or arm == "none-lr8e-3" or (arm, seed) in A7_ORDER, (arm, seed)
     I = intent(arm, seed)
     for key in ("lm0_ref", "data_sha0", "dom"):
         assert I[key] is not None, f"{name}: no Torch reference {key} for (K {K}, seed {seed}); compute it first"
@@ -480,6 +499,11 @@ def render(arm, seed):
                     "\n# pre-registered before these runs): each arm at its own best lr, the prior arm too (all6-lam1 at 4e-3 /"
                     "\n# 8e-3), and none's lr bracket on s4 / dim closed (none at 3e-3 / 1.6e-2); read by rainbow6_summary's A6"
                     "\n# section, never by the A5 rules.")
+    if (arm, seed) in A7_ORDER:
+        conf_txt = ("\n# A7 (user decisions 2026-10-19 after the A6 read-out; amendment A7 of report/audits/rb6_A5_main_design.md,"
+                    "\n# pre-registered before these runs): none's s4 bracket one step up (none at 3.2e-2, seeds 0-3), all6's lr"
+                    "\n# bracket one step down (all6-lam1 at 5e-4, seeds 0-3), none@1.6e-2 at the fresh seeds 4-7; read by"
+                    "\n# rainbow6_summary's A7 section, never by the A5 / A6 rules.")
     text = f"""# kind: gpu
 # time: {P.TLIM}
 # cpus: 8
@@ -536,11 +560,11 @@ echo "## 4. intent checks $(date -u +%FT%TZ)"
     return name, tag, text, args
 
 
-def tasks(confirm=True, a6=True):
-    """Every (arm, seed) of the main design (+ the confirm blocks, + the A6 block) in task-number order:
+def tasks(confirm=True, a6=True, a7=True):
+    """Every (arm, seed) of the main design (+ the confirm blocks, + the A6 block, + the A7 block) in task-number order:
     [(name, tag, text, args, arm, seed)]."""
     return sorted((render(a, s) + (a, s) for a, s in ORDER + (CONFIRM_ORDER + CONFIRM2_ORDER if confirm else [])
-                   + (A6_ORDER if a6 else [])), key=lambda t: t[0])
+                   + (A6_ORDER if a6 else []) + (A7_ORDER if a7 else [])), key=lambda t: t[0])
 
 
 def pilot_unchanged(repo):
@@ -568,6 +592,8 @@ def main() -> None:
                     "all6-lam1) and 490-493 (none-lr8e-3 seeds 4-7); ON by the decisions of 2026-10-19; --check renders them")
     ap.add_argument("--no_a6", action="store_true", help="do not write the A6 block 494-509 (ON by the user's decisions of "
                     "2026-10-19 after the main read-out); --check renders it either way")
+    ap.add_argument("--no_a7", action="store_true", help="do not write the A7 block 510-521 (ON by the user's decisions of "
+                    "2026-10-19 after the A6 read-out); --check renders it either way")
     ap.add_argument("--repo", default=str(REPO))
     a = ap.parse_args()
     repo = Path(a.repo)
@@ -576,18 +602,27 @@ def main() -> None:
     print("pilot generator unchanged: its 18 renderings = tasks/400-417 (9cbfca7's geo line undone), 418 / 419 = 408 / 409")
     T = tasks()
     names = [t[0] for t in T]
-    assert len(set(names)) == len(names) == 68 and [int(n[:3]) for n in names] == list(range(FIRST, FIRST + 48)) + list(
-        range(FIRST2, FIRST2 + 4)) + list(range(FIRST6, FIRST6 + 16)), names
+    assert len(set(names)) == len(names) == 80 and [int(n[:3]) for n in names] == list(range(FIRST, FIRST + 48)) + list(
+        range(FIRST2, FIRST2 + 4)) + list(range(FIRST6, FIRST6 + 16)) + list(range(FIRST7, FIRST7 + 12)), names
     cells = {}
     for t in T:
         cells.setdefault(t[1], set()).add(t[5])
-    assert len(cells) == len(SPEC) == 15, sorted(cells)
+    assert len(cells) == len(SPEC) == 17, sorted(cells)
     assert all(v == ({2, 3, *CONFIRM_SEEDS} if any(tag_of(r) == tg for r in REUSED) else {*SEEDS, *CONFIRM_SEEDS}
-                    if tg == tag_of("none-lr8e-3") else set(SEEDS)) for tg, v in cells.items()), cells
+                    if tg in (tag_of("none-lr8e-3"), tag_of("none-lr1.6e-2")) else set(SEEDS)) for tg, v in cells.items()), cells
+    # A7: the 12 tasks 510-521, seed-major; each identical to its 1e-3 arm except --lr and the tag (none-lr1.6e-2 at
+    # seeds 4-7 = the A6 cell's tag and arguments with another seed)
+    assert [(t[4], t[5]) for t in T[68:]] == A7_ORDER and all("# A7 (user decisions" in t[2] for t in T[68:]) and not any(
+        "# A7 (user decisions" in t[2] for t in T[:68]), "A7 block 510-521"
+    for t in T[68:]:
+        base = "all6-lam1" if t[4].startswith("all6") else "none"
+        fa, fb = P.flags(expand(t[4], t[5], t[3])), P.flags(expand(base, t[5]))
+        assert {k: v for k, v in fa.items() if k not in ("--lr", "--tag", "--out")} == {
+            k: v for k, v in fb.items() if k not in ("--lr", "--tag", "--out")} and fa["--lr"] == SPEC[t[4]][4], (t[0], fa, fb)
     # A6: the 16 tasks 494-509, all6 lr arms first, seed-major; each identical to its 1e-3 arm except --lr and the tag
-    assert [(t[4], t[5]) for t in T[52:]] == A6_ORDER and all("# A6 (user decisions" in t[2] for t in T[52:]) and not any(
-        "# A6 (user decisions" in t[2] for t in T[:52]), "A6 block 494-509"
-    for t in T[52:]:
+    assert [(t[4], t[5]) for t in T[52:68]] == A6_ORDER and all("# A6 (user decisions" in t[2] for t in T[52:68]) and not any(
+        "# A6 (user decisions" in t[2] for t in T[:52] + T[68:]), "A6 block 494-509"
+    for t in T[52:68]:
         base = "all6-lam1" if t[4].startswith("all6") else "none"
         fa, fb = P.flags(expand(t[4], t[5], t[3])), P.flags(expand(base, t[5]))
         assert {k: v for k, v in fa.items() if k not in ("--lr", "--tag", "--out")} == {
@@ -601,19 +636,24 @@ def main() -> None:
     assert not set(RERUN_NUMBERS) & {int(n[:3]) for n in names} and not set(RERUN_NUMBERS) & set(range(480, 483))
     write_confirm = CONFIRM and not a.no_confirm
     write_a6 = A6 and not a.no_a6
+    write_a7 = A7 and not a.no_a7
     if a.show:
         for name, tag, text, args, arm, seed in T:
             print(f"{name}{'' if seed not in CONFIRM_SEEDS else ' (confirm block: ' + ('written' if write_confirm else 'NOT written') + ')'}"
                   f"\n    {expand(arm, seed, args)}")
     tdir, sdir = repo / "tasks", repo / "status"
     foreign = sorted(p.name for p in list(tdir.glob("4[3-7][0-9]*.sh")) + list(tdir.glob("49[0-9]*.sh"))
-                     + list(tdir.glob("50[0-9]*.sh")) if p.stem not in names and int(p.name[:3]) not in RERUN_NUMBERS)
-    assert not foreign, f"task files in 430-479 / 490-509 not made by this generator (re-runs: {RERUN_NUMBERS}): {foreign}"
+                     + list(tdir.glob("50[0-9]*.sh")) + list(tdir.glob("51[0-9]*.sh")) + list(tdir.glob("52[01]*.sh"))
+                     if p.stem not in names and int(p.name[:3]) not in RERUN_NUMBERS)
+    assert not foreign, f"task files in 430-479 / 490-521 not made by this generator (re-runs: {RERUN_NUMBERS}): {foreign}"
     reruns = sorted(p.name for p in tdir.glob("4[7-8][0-9]*.sh") if int(p.name[:3]) in RERUN_NUMBERS)
     if reruns:
         print(f"re-run task files in the reserved numbers (not made by this generator): {reruns}")
+    if not write_a7:
+        T = T[:68]
+        print("A7 block (510-521) rendered and asserted, NOT written (--no_a7)")
     if not write_a6:
-        T = T[:52]
+        T = T[:52] + T[68:]
         print("A6 block (494-509) rendered and asserted, NOT written (--no_a6)")
     if not write_confirm:
         T = T[:40] + T[52:]

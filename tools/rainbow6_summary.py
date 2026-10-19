@@ -1,7 +1,7 @@
 """rainbow6 summary (runs/rb6, tools/pretrain_range.py Rev B --domains; intent spec runs/rb6/AUDIT.md).
 
     python tools/rainbow6_summary.py <runs/rb6/out> [<more dirs>] [--ref <glob or dir> ...] [--json out.json] [--allow_partial]
-        [--a6_partial]
+        [--a6_partial] [--a7_partial]
 
 Reads every run_*.json under the directories (one sub-directory per tag; tag = rb6<phase>-53m-2pct-k<K>-<arm>).
 Per arm x domain x K: area (100 x mean over all evals), final3 (100 x mean of the last 3 evals), t90 / t50 (M tokens to
@@ -100,6 +100,11 @@ HOLDS / DOES NOT HOLD / NOT ESTABLISHED by every none lr's seed-level gate (the 
 BH's m in every family line; a diverged run's gradient split 'pre-onset evals only (k of K)', no FLAG from < half the
 on-evals; the finiteness assert back for non-A6 runs; strict mode refuses before any A6 conclusion; --a6_partial relaxes
 the A6 section only (the A5 section stays strict and byte-identical; --allow_partial marks it PROVISIONAL by A5.1: 2 lines).
+A7 (2026-10-19, user decisions after the A6 read-out; pre-registered in amendment A7 of report/audits/rb6_A5_main_design.md
+BEFORE the A7 runs): none@3.2e-2 and all6@5e-4 at seeds 0-3 and none@1.6e-2 at seeds 4-7 (tasks 510-521) are read only by
+the A7 section (a7_readout: S4 reliability vs the per-seed Latin-propagation level, speed to 25%, best vs best on s4,
+none's s4 bracket over five lrs, all6's best lr over four and F1c updated), appended after A6; every section above is
+computed without them (byte-identical); --a7_partial relaxes only the A7 section.
 """
 from __future__ import annotations
 
@@ -301,7 +306,7 @@ def load(roots):
     return runs
 
 
-def check(runs, partial, a6_partial=False):
+def check(runs, partial, a6_partial=False, a7_partial=False):
     """Integrity asserts; returns a list of warnings (soft checks). A6.1: an A6 arm's non-finite values are a DIVERGED
     warning (data), every other run keeps the finiteness assert; --a6_partial lets only A6 runs be unfinished."""
     warn = []
@@ -315,10 +320,11 @@ def check(runs, partial, a6_partial=False):
     assert all(len(v) == 1 for v in keys.values()), "duplicate (arm, K, seed)"
     for x in runs:
         r = x["r"]; c = r["curve"]
-        a6arm = x["arm"] in A6_ARMS
+        a6arm = x["arm"] in A6_ARMS + A7_ARMS   # A7: its lr arms are A6's kind (a diverged run is data)
         if c[-1]["step"] != r["steps"] - 1:
             msg = f"{x['tag']} s{x['seed']}: unfinished (last eval {c[-1]['step']} of {r['steps']})"
-            assert partial or (a6_partial and a6arm), msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
+            assert partial or (a6_partial and a6arm and not is_a7(x)) or (a7_partial and is_a7(x)), \
+                msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
             warn.append(msg)
         div = diverged_at(r) if a6arm else None   # A6: a diverged A6 run is data (pt2main / readout_rules), listed, never
         if div is not None:                       # an integrity failure (A6.1: the A6 arms only)
@@ -435,6 +441,7 @@ SINGLES = tuple(f"only-{d}" for d in DOM6)
 PILOT_ARMS = ("none", "all6", "all6-lam1")
 MAIN_ARMS = ("none", ALL6M, "all6-lam0.3", *SINGLES, "all6-shuf", "none-lr8e-3")
 A6_ARMS = ("all6-lam1-lr4e-3", "all6-lam1-lr8e-3", "none-lr3e-3", "none-lr1.6e-2")   # A6: read by a6_readout only
+A7_ARMS = ("none-lr3.2e-2", "all6-lam1-lr5e-4")   # A7: + none-lr1.6e-2 at seeds 4-7 (is_a7); read by a7_readout only
 TIER_E = ("months", "weekdays")   # A5 fix 1: the pilot's tier-E harm hypothesis, decided on the fresh seeds 2-7 only
 STRICT = "dim_held_strict"    # A5: the main dim read-out (no same-answer token-transform twin trained; see strict_mask)
 # the main read-out of every domain (pilot gate at K* = 2: months / weekdays MEASURABLE on tier E only, clock / dim
@@ -1683,6 +1690,422 @@ def _a6_body(A, out, cells, xs, div, missing, problems, prov, RR, K):
     A["families"]["F1d"] = f1d
 
 
+def is_a7(x):
+    """A7: a run of the A7 block (none@3.2e-2 / all6@5e-4 at seeds 0-3, none@1.6e-2 at the fresh seeds 4-7): read by the A7
+    section only; the A5 / A6 sections are computed without them (byte-identical)."""
+    return x["arm"] in A7_ARMS or (x["arm"] == "none-lr1.6e-2" and x["seed"] in CONFIRM)
+
+
+def s4_latin_level(r):
+    """A7: the full Latin-square propagation level of this run's s4 read-out set (READ['s4'], held_fresh_nonid), in points:
+    the trained cells' answers as givens; naked singles and hidden singles (per row / column) to a fixpoint; a derived
+    cell scores 1, any other held cell 1 / (its remaining candidates) if its answer is among them. Only the Latin-square
+    property, no group law (the F88 result audit's computation, notes/batch1_build/audit_rb6m_results.md: 32.5 over
+    seeds 0-3, 31.5 over 0-7). A seed's level is the same for every arm (same split)."""
+    ck = (id(r), "latin")
+    if ck in _CACHE and _CACHE[ck][0] is r:
+        return _CACHE[ck][1]
+    sp = split_of(r, "s4")
+    T = toy_tables()["s4"]
+    X, Y = T["X"], T["Y"]
+    n = 24
+    K = {(int(X[j, 0]), int(X[j, 1])): int(Y[j]) for j in sp["train"]}
+    held = [(int(X[q, 0]), int(X[q, 1])) for q in sp["held"]]
+    ans = {(int(X[q, 0]), int(X[q, 1])): int(Y[q]) for q in sp["held"]}
+    cand = {c: set(range(n)) - {v for (a, b), v in K.items() if a == c[0] or b == c[1]} for c in held}
+
+    def place(c, v):
+        K[c] = v
+        cand[c] = {v}
+        for c2 in cand:
+            if c2 != c and (c2[0] == c[0] or c2[1] == c[1]):
+                cand[c2].discard(v)
+    changed = True
+    while changed:
+        changed = False
+        for c, cs in list(cand.items()):   # naked singles
+            if len(cs) == 1 and c not in K:
+                place(c, next(iter(cs)))
+                changed = True
+        for line in range(n):   # hidden singles per row / column
+            for axis in (0, 1):
+                cells = [c for c in cand if c[axis] == line and c not in K]
+                for v in range(n):
+                    if any(K.get((line, j) if axis == 0 else (j, line)) == v for j in range(n)):
+                        continue
+                    where = [c for c in cells if v in cand[c]]
+                    if len(where) == 1:
+                        place(where[0], v)
+                        changed = True
+    mk = [ch == "1" for ch in r["domains"]["s4"]["eval_held"]["masks"][READ["s4"][0][len("s4_held_"):]]]
+    acc = []
+    for c, m in zip(held, mk):
+        if not m:
+            continue
+        if c in K:
+            assert K[c] == ans[c], ("s4 Latin propagation derived a wrong answer", c)
+            acc.append(1.0)
+        else:
+            acc.append(1 / len(cand[c]) if ans[c] in cand[c] else 0.0)
+    v = 100 * float(np.mean(acc))
+    _CACHE[ck] = (r, v)
+    return v
+
+
+def first_step_ge(r, key, th):
+    """A7: the first eval step at which the read-out key reaches th (a fraction); None = never (censored at the budget)."""
+    return next((s for s, v in series(r, key) if v is not None and v >= th), None)
+
+
+def fisher_greater(ka, na, kb, nb):
+    """A7: one-sided Fisher exact p for 'group a has a larger success share than group b' (hypergeometric upper tail)."""
+    tot, m = na + nb, ka + kb
+    pmf = lambda x: math.comb(m, x) * math.comb(tot - m, na - x) / math.comb(tot, na)
+    return float(min(1.0, sum(pmf(x) for x in range(ka, min(m, na) + 1))))
+
+
+def barnard_greater(ka, na, kb, nb, grid=2001):
+    """A7: one-sided Barnard exact p (pooled-variance Wald z, a larger for a; the nuisance share maximised over a grid on
+    (0, 1)); the same statistic as scipy.stats.barnard_exact(pooled=True, alternative='greater')."""
+    def z(xa, xb):
+        pa, pb, p = xa / na, xb / nb, (xa + xb) / (na + nb)
+        v = p * (1 - p) * (1 / na + 1 / nb)
+        return 0.0 if v == 0 else (pa - pb) / math.sqrt(v)
+    z0 = z(ka, kb)
+    ext = [(xa, xb) for xa in range(na + 1) for xb in range(nb + 1) if z(xa, xb) >= z0 - 1e-12]
+    best = 0.0
+    for pi in np.linspace(1e-6, 1 - 1e-6, grid):
+        pr = sum(math.comb(na, xa) * pi ** xa * (1 - pi) ** (na - xa) * math.comb(nb, xb) * pi ** xb * (1 - pi) ** (nb - xb)
+                 for xa, xb in ext)
+        best = max(best, pr)
+    return float(min(1.0, best))
+
+
+def gehan_perm(ta, tb):
+    """A7: exact permutation Gehan test (censored times: None = never reached, censored at the budget, later than every
+    event) for 'a reaches it earlier'. U = sum over (i in a, j in b) of +1 if a_i < b_j (a_i an event), -1 if b_j < a_i
+    (b_j an event), 0 otherwise; p = share of the C(n, |a|) relabellings with U >= U_obs. -> (U, p)"""
+    inf = float("inf")
+    pool = [inf if t is None else float(t) for t in list(ta) + list(tb)]
+    na = len(ta)
+
+    def U(ia):
+        ib = [k for k in range(len(pool)) if k not in ia]
+        u = 0
+        for i in ia:
+            for j in ib:
+                x, y = pool[i], pool[j]
+                u += 1 if x < y else -1 if y < x else 0
+        return u
+    u0 = U(tuple(range(na)))
+    perms = list(itertools.combinations(range(len(pool)), na))
+    return u0, float(np.mean([U(c) >= u0 for c in perms]))
+
+
+def sign_greater(pairs):
+    """A7: exact one-sided sign test over paired seeds (a_t, b_t), None = never: 'a earlier' wins; ties (equal, incl. both
+    never) dropped. -> (wins, losses, ties, p)"""
+    inf = float("inf")
+    w = l_ = t_ = 0
+    for a, b in pairs:
+        a, b = inf if a is None else a, inf if b is None else b
+        w, l_, t_ = (w + 1, l_, t_) if a < b else (w, l_ + 1, t_) if b < a else (w, l_, t_ + 1)
+    n = w + l_
+    p = float(sum(math.comb(n, k) for k in range(w, n + 1)) / 2 ** n) if n else 1.0
+    return w, l_, t_, p
+
+
+def km_median(ts):
+    """A7: the time by which half the seeds reached it (the ceil(n/2)-th smallest; None = not reached by then)."""
+    s = sorted(float("inf") if t is None else t for t in ts)
+    if not s:
+        return None
+    v = s[(len(s) + 1) // 2 - 1]
+    return None if v == float("inf") else v
+
+
+def a7_readout(runs, out, partial, ident7=None, warn7=(), a7_partial=False):
+    """A7 read-out (pre-registered 2026-10-19 before the A7 runs; amendment A7 of report/audits/rb6_A5_main_design.md),
+    printed after the A6 section when an A7 run is given. Hypothesis (formed on the A6 read-out; tested only with the new
+    runs): 'the prior makes S4 learned reliably and early; without it S4 is learned only at a high lr, in some seeds and
+    late'. (1) reliability: seeds with s4 read-out final3 >= that seed's Latin-propagation level (s4_latin_level), all6@1e-3
+    vs none@1.6e-2 at the fresh seeds 4-7 (primary) and vs none@3.2e-2 at seeds 0-3 (same seeds): one-sided Fisher exact
+    (decision, BH within the family), Barnard exact and the paired seed-level t on final3 beside; (2) speed: the first
+    eval step with s4 read-out >= 25% (censored at the budget), the same pairs: exact permutation Gehan (decision, BH),
+    sign test over paired seeds, medians; (3) best vs best: all6@best over {5e-4, 1e-3, 4e-3, 8e-3} (numbers area, A6's
+    rule) - none@best over {1e-3, 3e-3, 8e-3, 1.6e-2, 3.2e-2} by the s4 AREA, on s4 area and final3 at seeds 0-3 and, where
+    both cells have them, 4-7 (two-sided, BH within the family); (4) none's s4 bracket over the five lrs (by area and by
+    final3), divergence as A6; (5) all6's best lr over the four lrs and F1c updated. A diverged run is data (A6). A missing
+    / excluded / unfinished run -> PROVISIONAL; strict refuses before any conclusion (A6.1)."""
+    import contextlib
+    import io
+    import readout_rules as RR
+    K = MAIN_K
+    strict = not (partial or a7_partial)
+    ALL6_LR = {"5e-4": "all6-lam1-lr5e-4", "1e-3": ALL6M, "4e-3": "all6-lam1-lr4e-3", "8e-3": "all6-lam1-lr8e-3"}
+    NONE_LR = {"1e-3": "none", "3e-3": "none-lr3e-3", "8e-3": "none-lr8e-3", "1.6e-2": "none-lr1.6e-2", "3.2e-2": "none-lr3.2e-2"}
+    use = set(ALL6_LR.values()) | set(NONE_LR.values())
+    need = {a: set(DECIDE) for a in use}
+    need[ALL6M] |= set(CONFIRM)
+    need["none-lr1.6e-2"] |= set(CONFIRM)
+    runs = [x for x in runs if x["k"] == K and x["arm"] in use and x["seed"] in need[x["arm"]]]
+    unfin = [x for x in runs if x["r"]["curve"][-1]["step"] != x["r"]["steps"] - 1]
+    runs = [x for x in runs if x not in unfin]
+    xs = {(x["arm"], x["seed"]): x for x in runs}
+    cells = defaultdict(dict)
+    for x in runs:
+        cells[x["arm"]][x["seed"]] = x["r"]
+    A = out["a7"] = {"excluded": [], "missing_seeds": {}, "diverged": {}, "unfinished": [], "levels": {}, "families": {},
+                     "all6_best": None, "none_s4_best": None, "provisional": False,
+                     "mode": "--allow_partial" if partial else "--a7_partial" if a7_partial else "strict"}
+    print("\n== A7 READ-OUT (pre-registered 2026-10-19 BEFORE the A7 runs, amendment A7 of report/audits/rb6_A5_main_design.md):"
+          " 'the prior makes S4 learned reliably and early; without it S4 is learned only at a high lr, in some seeds and late'"
+          " - formed on the A6 read-out, tested with the new runs only (none@1.6e-2 seeds 4-7, none@3.2e-2 and all6@5e-4"
+          " seeds 0-3); the A5 / A6 rules and headlines are unchanged")
+    print("  mode: " + {"strict": "strict (an incomplete A7 batch is refused before any A7 conclusion is printed)",
+                        "--a7_partial": "--a7_partial (the A7 section may be incomplete: every verdict that needs a missing run is"
+                                        " PROVISIONAL; the A5 / A6 sections above are the strict ones)",
+                        "--allow_partial": "--allow_partial (A7 verdicts that need a missing run are PROVISIONAL)"}[A["mode"]])
+    problems = []
+    if ident7 is not None:
+        print(f"  run identity of the A7 runs (tag's intent = run JSON; check.json PASS): {ident7['checked']} checked,"
+              f" {len(ident7['excluded'])} EXCLUDED")
+        for lab, why in ident7["excluded"]:
+            print(f"  EXCLUDED run {lab}: " + "; ".join(why))
+            A["excluded"].append([lab, why])
+        for t in ident7["valid_notes"] + ident7["not_checked"]:
+            print("  NOTE " + t)
+    for w in warn7:
+        print("  WARNING " + w)
+    if unfin:
+        A["unfinished"] = sorted(f"{x['arm']} s{x['seed']}" for x in unfin)
+        print(f"  UNFINISHED run(s) counted as missing (A5.1 rule 1): {A['unfinished']}")
+    missing = {a: sorted(need[a] - set(cells.get(a, {}))) for a in sorted(use)}
+    missing = {a: v for a, v in missing.items() if v}
+    A["missing_seeds"] = missing
+    if missing:
+        msg = "A7 seed set incomplete: missing " + "; ".join(f"{a} {v}" for a, v in missing.items())
+        print(f"  PROVISIONAL: {msg}")
+        problems.append(msg)
+    div = {f"{a} s{s}": diverged_at(r) for a, sd in cells.items() for s, r in sd.items() if diverged_at(r) is not None}
+    A["diverged"] = div
+    print("  diverged runs (data, never excluded: accuracies over ALL evals count; offline bpb = the worst in a tie-break):"
+          f" {div if div else 'none'}")
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _a7_body(A, out, cells, xs, missing, problems, RR, K, ALL6_LR, NONE_LR)
+    A["provisional"] = bool(missing or problems or partial or a7_partial)
+    if problems and strict:
+        print(f"  {len(problems)} A7 problem(s): {problems}")
+        print("  A7 read-out REFUSED (strict): no A7 conclusion is printed for an incomplete batch; --a7_partial (the A5 / A6"
+              " sections stay strict) or --allow_partial to look anyway, every verdict that needs a missing run PROVISIONAL")
+    assert not (problems and strict), ("A7 read-out: " + "; ".join(problems) + " (--a7_partial or --allow_partial to look"
+                                       " at an incomplete A7 batch anyway: verdicts PROVISIONAL)")
+    print(buf.getvalue(), end="")
+    if problems:
+        print(f"  {len(problems)} A7 problem(s): {problems}")
+    print(f"\n== A7 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(missing) if missing else 'problems, --allow_partial or --a7_partial') + ')' if A['provisional'] else 'complete (every A7 seed present)'}")
+
+
+def _a7_body(A, out, cells, xs, missing, problems, RR, K, ALL6_LR, NONE_LR):
+    """a7_readout's conclusions (1)-(5), printed only when the read-out may proceed."""
+    S4K = READ["s4"][0]
+    have = lambda a, ss: [s for s in ss if s in cells.get(a, {})]
+    f3 = lambda a, s: metrics(cells[a][s], S4K)["final3"]
+    ar = lambda a, s: metrics(cells[a][s], S4K)["area"]
+    # per-seed levels (the same split for every arm of a seed): Latin propagation (decision) and one-step elimination
+    lev, el = {}, {}
+    for s in sorted({s for sd in cells.values() for s in sd}):
+        r = next(sd[s] for sd in cells.values() if s in sd)
+        lev[s], el[s] = s4_latin_level(r), heuristic(r, "s4", S4K)
+    A["levels"] = {"latin": lev, "elimination": el}
+    print("\n== A7 s4 levels per seed (the read-out set's own; the same for every arm of a seed): full Latin-square propagation"
+          " (decision threshold of (1)) | one-step elimination (the summary's heuristic, beside): "
+          + " ".join(f"s{s} {lev[s]:.1f} | {el[s]:.1f}" for s in sorted(lev))
+          + (f"; mean seeds 0-3 {np.mean([lev[s] for s in DECIDE if s in lev]):.1f}" if all(s in lev for s in DECIDE) else "")
+          + (f", 0-7 {np.mean([lev[s] for s in DECIDE + CONFIRM if s in lev]):.1f}" if all(s in lev for s in DECIDE + CONFIRM) else ""))
+
+    def bh_rows(rows, key="p", out_key="p_bh"):
+        for row, q in zip(rows, bh([x[key] for x in rows])):
+            row[out_key] = q
+        return sum(x[key] is not None for x in rows)
+
+    # ---- (1) reliability
+    comps = [("R1", ALL6M, "none-lr1.6e-2", CONFIRM, "primary: the fresh seeds 4-7"),
+             ("R2", ALL6M, "none-lr3.2e-2", DECIDE, "the second none, seeds 0-3 (same seeds)")]
+    rows = []
+    for lab, a, b, seeds, what in comps:
+        sa, sb = have(a, seeds), have(b, seeds)
+        ss = [s for s in seeds if s in sa and s in sb]
+        va = {s: f3(a, s) for s in sa}
+        vb = {s: f3(b, s) for s in sb}
+        ka, kb = sum(va[s] >= lev[s] for s in sa), sum(vb[s] >= lev[s] for s in sb)
+        prov = len(sa) < len(seeds) or len(sb) < len(seeds)
+        st = paired([va[s] - vb[s] for s in ss], "greater")
+        rows.append({"id": lab, "a": a, "b": b, "seeds": list(seeds), "what": what, "a_vals": va, "b_vals": vb, "k_a": ka,
+                     "n_a": len(sa), "k_b": kb, "n_b": len(sb), "p": fisher_greater(ka, len(sa), kb, len(sb)) if sa and sb else None,
+                     "p_barnard": barnard_greater(ka, len(sa), kb, len(sb)) if sa and sb else None, "t": st, "provisional": prov})
+    m = bh_rows(rows)
+    for x in rows:
+        x["t_p"] = x["t"]["p_t"]
+    mt = bh_rows(rows, "t_p", "t_bh")
+    print(f"\n== A7 (1) reliability: seeds whose s4 read-out final3 ({S4K}) >= that seed's Latin-propagation level; one-sided"
+          f" (the hypothesis' direction): Fisher exact on the counts = the decision (BH m = {m} of {len(rows)}), Barnard exact and"
+          f" the paired seed-level t on final3 beside (t BH m = {mt}); all6@1e-3's seeds 0-7 were seen when the hypothesis was formed,"
+          " the none runs are new")
+    for x in rows:
+        sig = x["p_bh"] is not None and x["p_bh"] < Q_BH and not x["provisional"]
+        x["significant"] = sig
+        tt = x["t"]
+        verdict = ("PROVISIONAL (n=" + f"{x['n_a']}+{x['n_b']} of {2 * len(x['seeds'])}): not decided" if x["provisional"] else
+                   "MORE RELIABLE with the prior (SIGNIFICANT)" if sig else "n.s.")
+        print(f"  {x['id']} {x['a']} - {x['b']} seeds {x['seeds'][0]}-{x['seeds'][-1]} ({x['what']}): above the level"
+              f" {x['k_a']}/{x['n_a']} vs {x['k_b']}/{x['n_b']} | final3 [" + " ".join(fmt(x["a_vals"].get(s)) for s in x["seeds"])
+              + "] vs [" + " ".join(fmt(x["b_vals"].get(s)) for s in x["seeds"]) + "] | levels ["
+              + " ".join(fmt(lev.get(s)) for s in x["seeds"]) + f"] | Fisher p {fmt(x['p'], 6, 4)} BH {fmt(x['p_bh'], 6, 4)}"
+              f" Barnard p {fmt(x['p_barnard'], 6, 4)} | t Δ {fmt(tt['mean'], 6)} p {fmt(tt['p_t'], 6, 4)} BH {fmt(x['t_bh'], 6, 4)}"
+              f" sign-flip {fmt(tt['p_sf'], 6, 4)} -> {verdict}")
+    A["families"]["R"] = rows
+    # ---- (2) speed
+    srows = []
+    for lab, a, b, seeds, what in [("S" + c[0][1:],) + c[1:] for c in comps]:
+        sa, sb = have(a, seeds), have(b, seeds)
+        ta = {s: first_step_ge(cells[a][s], S4K, 0.25) for s in sa}
+        tb = {s: first_step_ge(cells[b][s], S4K, 0.25) for s in sb}
+        u, p = gehan_perm([ta[s] for s in sa], [tb[s] for s in sb]) if sa and sb else (None, None)
+        w, l_, t_, ps = sign_greater([(ta[s], tb[s]) for s in seeds if s in ta and s in tb])
+        srows.append({"id": lab, "a": a, "b": b, "seeds": list(seeds), "what": what, "t_a": ta, "t_b": tb, "U": u, "p": p,
+                      "sign": [w, l_, t_, ps], "median_a": km_median(list(ta.values())), "median_b": km_median(list(tb.values())),
+                      "provisional": len(sa) < len(seeds) or len(sb) < len(seeds)})
+    m = bh_rows(srows)
+    stp = lambda t: "never" if t is None else str(t)
+    print(f"\n== A7 (2) speed: the first eval step with s4 read-out >= 25% (censored at the budget, step {next(iter(next(iter(cells.values())).values()))['steps'] - 1}:"
+          f" 'never'); one-sided (all6 earlier): exact permutation Gehan test = the decision (BH m = {m} of {len(srows)}), the sign test"
+          " over paired seeds beside; median = the step by which half the seeds reached it")
+    for x in srows:
+        sig = x["p_bh"] is not None and x["p_bh"] < Q_BH and not x["provisional"]
+        x["significant"] = sig
+        w, l_, t_, ps = x["sign"]
+        verdict = ("PROVISIONAL: not decided" if x["provisional"] else "EARLIER with the prior (SIGNIFICANT)" if sig else "n.s.")
+        print(f"  {x['id']} {x['a']} - {x['b']} seeds {x['seeds'][0]}-{x['seeds'][-1]}: steps [" + " ".join(stp(x["t_a"].get(s, "-"))
+              if s in x["t_a"] else "-" for s in x["seeds"]) + "] vs [" + " ".join(stp(x["t_b"][s]) if s in x["t_b"] else "-"
+                                                                                   for s in x["seeds"])
+              + f"] medians {stp(x['median_a'])} vs {stp(x['median_b'])} | Gehan U {x['U']} p {fmt(x['p'], 6, 4)} BH"
+              f" {fmt(x['p_bh'], 6, 4)} | sign test {w} earlier / {l_} later / {t_} tied, p {fmt(ps, 6, 4)} -> {verdict}")
+    A["families"]["S"] = srows
+
+    # ---- (5) all6's best lr over the four lrs (A6 (1)'s rule) and (4) none's s4 bracket (by area, also final3)
+    def lr_cells(arms, val):
+        cl = {}
+        for lr, a in arms.items():
+            ss = have(a, DECIDE)
+            if ss:
+                cl[lr] = {"area": [val(a, s) for s in ss], "off": [offline_bpb(xs[(a, s)]["path"], cells[a][s]) for s in ss],
+                          "intr": [final_bpb(cells[a][s]) for s in ss], "seeds": ss}
+        return cl
+    cl = lr_cells(ALL6_LR, lambda a, s: metrics(cells[a][s], "numbers")["area"])
+    sel = RR.best_lr(cl)
+    lrs = sorted(cl, key=float)
+    br = RR.bracket(lrs, sel["mean"], sel["best"])
+    best = sel["best"]
+    a6b = (out.get("a6") or {}).get("all6_best") or {}
+    A["all6_best"] = {"best": best, "near": sel["near"], "mean_area": sel["mean"], "bpb": sel["bpb"], "bracket": br,
+                      "a6_best": a6b.get("best"), "provisional": any(ALL6_LR[lr] in missing for lr in ALL6_LR) or len(cl) < 4}
+    print(f"\n== A7 (5) all6's best lr over {list(ALL6_LR)} (A6 (1)'s rule: the numbers area, seeds 0-3, ties within {RR.TIE:g}"
+          " -> lower bpb)")
+    for lr in lrs:
+        print(f"  all6@{lr:5s} ({ALL6_LR[lr]:17s}) numbers area {fmt(sel['mean'][lr])} [{' '.join(fmt(v) for v in cl[lr]['area'])}]"
+              f" seeds {cl[lr]['seeds']}" + (" (tied)" if lr in sel["near"] and len(sel["near"]) > 1 else ""))
+    print(f"  -> all6's best lr = {best}" + (f"; bracket {br[0].upper()} at the {br[1]} edge" if br else "; bracket closed")
+          + (f"; A6's best was {a6b.get('best')}: " + ("UNCHANGED" if a6b.get("best") == best else "CHANGED") if a6b else "")
+          + ("  PROVISIONAL (seeds or lrs missing)" if A["all6_best"]["provisional"] else ""))
+    gate8 = out.get("main", {}).get("gate", {}).get(f"k{K}|none-lr8e-3|s4_held_fresh_nonid", {}).get("verdict", "")
+    s4side = "greater" if gate8.endswith("FLOOR") else "two"
+    fams = out.get("main", {}).get("families", {})
+    old = {x["metric"]: x for x in fams.get("F1b", {}).get("tests", [])}
+
+    def test(a, b, dom, side, seeds=DECIDE, val=None):
+        ss = [s for s in seeds if s in cells.get(a, {}) and s in cells.get(b, {})]
+        g = val or (lambda arm, s: mval(xs[(arm, s)], dom))
+        va, vb = {s: g(a, s) for s in ss}, {s: g(b, s) for s in ss}
+        miss = [s for s in ss if va[s] is None or vb[s] is None]
+        if miss:
+            problems.append(f"A7: {a} - {b} {dom}: DROPPED seeds {miss} (no value)")
+        ss = [s for s in ss if s not in miss]
+        st = paired([va[s] - vb[s] for s in ss], side)
+        return dict(st, metric=dom, a=a, b=b, side=side, seeds=ss, n_required=len(seeds), provisional=len(ss) < len(seeds),
+                    a_mean=float(np.mean([va[s] for s in ss])) if ss else None, b_mean=float(np.mean([vb[s] for s in ss])) if ss else None)
+
+    def row_txt(x, pre):
+        v = ("PROVISIONAL (n=" + str(x["n"]) + " of " + str(x["n_required"]) + "): " if x["provisional"] else "") + (
+            "SIGNIFICANT" if x["significant"] else "n.s.")
+        ci = x.get("ci")
+        ci_t = "" if ci is None else (f" 95% CI [{fmt(ci[0], 6)},{fmt(ci[1], 6)}]" if x["side"] == "two" else f" 95% LB {fmt(ci[0], 6)}")
+        return (f"{pre}{x['a']:17s} - {x['b']:13s} {fmt(x['a_mean'], 6)} vs {fmt(x['b_mean'], 6)} Δ {fmt(x['mean'], 6)} "
+                f"[{' '.join(fmt(d, 6) for d in x['diffs'])}] n {x['n']} {'1-sided' if x['side'] != 'two' else '2-sided'} p "
+                f"{fmt(x.get('p_t'), 6, 4)} BH {fmt(x.get('p_bh'), 6, 4)} sign-flip {fmt(x.get('p_sf'), 6, 4)} wins {x['wins']}/{x['n']}"
+                f"{ci_t} -> {v}")
+    a_best = ALL6_LR[best]
+    rows = [test(a_best, "none-lr8e-3", d, s4side if d == "s4" else "two") for d in ("numbers", "clock", "s4", "dim")]
+    m = sum(x["p_t"] is not None for x in rows)
+    for x, q in zip(rows, bh([x["p_t"] for x in rows])):
+        x["p_bh"], x["significant"] = q, q is not None and q < Q_BH and not x["provisional"]
+        y = old.get(x["metric"])
+        rd = lambda z: ("gain" if z["mean"] > 0 else "harm") if z["significant"] else "n.s."
+        x["reading"] = ("F1c unchanged: all6's best lr is still 1e-3, so F1c = F1b by construction" if best == "1e-3" else
+                        "PROVISIONAL: cannot compare" if y is None or x["provisional"] else
+                        f"no change (F1b {rd(y)}, F1c {rd(x)})" if rd(x) == rd(y) else
+                        f"CHANGES the best-vs-best reading: F1b {rd(y)} -> F1c {rd(x)} (the A5 headline is not changed by it)")
+    A["families"]["F1c_a7"] = rows
+    print(f"  F1c updated = all6@best ({best}: {a_best}) - none@8e-3, seeds 0-3, F1b's tests (BH m = {m} of {len(rows)}; s4"
+          f" {'one-sided' if s4side == 'greater' else 'two-sided'})" + ("" if best == "1e-3" else f"; all6's lr {best} was chosen on"
+                                                                         " numbers on these seeds 0-3"))
+    for x in rows:
+        print(row_txt(x, f"    {x['metric']:9s} ") + f"  | {x['reading']}")
+    # (4) none's s4 bracket over the five lrs
+    print(f"\n== A7 (4) none's s4 lr bracket over {list(NONE_LR)} (seeds 0-3): by the s4 AREA (the A7 criterion, used by (3)) and"
+          " by the s4 final3 (A6 (5)'s), each with readout_rules.best_lr (ties within 2 -> lower bpb, a diverged run the worst)"
+          " and the bracket (OPEN = the best at an edge by > 2); the seed-level gate of every lr")
+    nb = {}
+    for crit, val in (("area", ar), ("final3", f3)):
+        c2 = lr_cells(NONE_LR, val)
+        s2 = RR.best_lr(c2)
+        l2 = sorted(c2, key=float)
+        b2 = RR.bracket(l2, s2["mean"], s2["best"])
+        nb[crit] = {"best": s2["best"], "mean": s2["mean"], "near": s2["near"], "bracket": b2,
+                    "provisional": any(NONE_LR[lr] in missing for lr in NONE_LR) or len(c2) < len(NONE_LR)}
+        print(f"  by {crit:6s}: " + " | ".join(f"{lr} {fmt(s2['mean'][lr])}" for lr in l2) + f" -> none's best {s2['best']}"
+              + (f"; bracket {b2[0].upper()} at the {b2[1]} edge" + (" (none's s4 may peak beyond the grid; reported as OPEN)"
+                                                                     if b2[0] == "open" and b2[1] == "upper" else "") if b2 else "; bracket closed")
+              + ("  PROVISIONAL" if nb[crit]["provisional"] else ""))
+    gates = {lr: gate_key([cells[a][s] for s in have(a, DECIDE)], "s4", S4K) for lr, a in NONE_LR.items() if have(a, DECIDE)}
+    print("  seed-level gate: " + " | ".join(f"{lr} {fmt(g['final3']).strip()} [{fmt(g['seed_ci'][0]).strip()}, {fmt(g['seed_ci'][1]).strip()}]"
+                                             f" {g['verdict']}" for lr, g in gates.items()))
+    nb["gates"] = {lr: g["verdict"] for lr, g in gates.items()}
+    A["none_s4_best"] = nb
+    # ---- (3) best vs best on s4
+    nbest = nb["area"]["best"]
+    na_ = NONE_LR[nbest]
+    brows = [test(a_best, na_, crit, "two", DECIDE, val) for crit, val in (("s4 area", ar), ("s4 final3", f3))]
+    for x in brows:
+        x["group"] = "0-3"
+    both47 = have(a_best, CONFIRM) and have(na_, CONFIRM)
+    if both47:
+        for crit, val in (("s4 area", ar), ("s4 final3", f3)):
+            x = test(a_best, na_, crit, "two", CONFIRM, val)
+            x["group"] = "4-7"
+            brows.append(x)
+    m = sum(x["p_t"] is not None for x in brows)
+    for x, q in zip(brows, bh([x["p_t"] for x in brows])):
+        x["p_bh"], x["significant"] = q, q is not None and q < Q_BH and not x["provisional"]
+    A["families"]["B"] = brows
+    print(f"\n== A7 (3) best vs best on s4: all6@best ({best}, by the numbers area) - none@best on s4 ({nbest}, by the s4 area),"
+          f" two-sided paired by seed, BH m = {m} of {len(brows)}; seeds 0-3 = the seeds both lrs were chosen on; seeds 4-7 = fresh"
+          + ("" if both47 else f" (not available: all6@{best} or none@{nbest} has no seeds 4-7)"))
+    for x in brows:
+        print(row_txt(x, f"    {x['metric']:9s} seeds {x['group']} ") + ("  [both lrs chosen on these seeds]" if x["group"] == "0-3" else ""))
+
+
 def main():
     ap = argparse.ArgumentParser(description="rainbow6 (rb6) summary; see the module docstring")
     ap.add_argument("roots", nargs="+", help="directories with the rb6 run JSONs (searched recursively)")
@@ -1692,26 +2115,38 @@ def main():
     ap.add_argument("--allow_partial", action="store_true")
     ap.add_argument("--a6_partial", action="store_true", help="A6.1: let the A6 section be incomplete (verdicts that need a"
                     " missing A6-section run PROVISIONAL) while the A5 section stays strict (byte-identical)")
+    ap.add_argument("--a7_partial", action="store_true", help="A7: let the A7 section be incomplete (verdicts that need a"
+                    " missing A7-section run PROVISIONAL) while the A5 / A6 sections stay strict (byte-identical)")
     ap.add_argument("--main_readout", action="store_true", help="A5: print the main-design read-out sections (strict dim"
                     " set, heuristic levels, families) also when only pilot arms are present")
     opt = ap.parse_args()
     partial = opt.allow_partial
     runs = load(opt.roots)
     main_mode = any(x["arm"] not in PILOT_ARMS for x in runs)
-    mix = sorted({f"K{x['k']} {x['arm']}" for x in runs if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS + A6_ARMS})
+    mix = sorted({f"K{x['k']} {x['arm']}" for x in runs if x["k"] != MAIN_K or x["arm"] not in MAIN_ARMS + A6_ARMS + A7_ARMS})
     # A5 fix 6: the main design's read-out refuses the pilot's other cells (K 1 / 5, and the lambda-5 arm 'all6', not the
     # main all6 = all6-lam1) unless --main_readout is given (then they are excluded from the A5 sections with a note)
     assert not (main_mode and mix and not opt.main_readout), (
         f"main-design runs mixed with pilot-only cells {mix}: pass only the A5 read-out command's directories (runs/rb6/AUDIT.md"
         " A5), or add --main_readout to exclude them from the A5 sections")
-    ident = ident6 = None
+    ident = ident6 = ident7 = None
+    a7runs = [x for x in runs if is_a7(x)]   # A7: split off first; every section above A7 is computed without them
+    a7_given = bool(a7runs)
+    runs = [x for x in runs if not is_a7(x)]
+    assert runs, "only A7 runs given: the A7 read-out needs the A5 / A6 cells"
     a6_given = any(x["arm"] in A6_ARMS for x in runs)
     if main_mode or opt.main_readout:   # A5.1: only runs whose tag's intent, run JSON and check.json agree enter any table
         runs, ident = run_identity(runs)
         if a6_given:
             runs, ident6 = run_identity(runs, A6_ARMS)
+        if a7_given:
+            a7runs, ident7 = run_identity(a7runs, A7_ARMS + ("none-lr1.6e-2",))
         assert runs, "no run left after the run-identity check (A5.1)"
-    warn_all = check(runs, partial, opt.a6_partial)   # integrity over every run (incl. A6: the same data per seed in every arm)
+    # integrity over every run (incl. A6 / A7: the same data per seed in every arm); A7 runs' warnings are theirs only
+    warn_full = check(runs + a7runs, partial, opt.a6_partial, opt.a7_partial)
+    a7keys = {f"{x['tag']} s{x['seed']}" for x in a7runs}
+    warn7 = [w for w in warn_full if w.split(":")[0] in a7keys]
+    warn_all = [w for w in warn_full if w.split(":")[0] not in a7keys]
     a6runs = [x for x in runs if x["arm"] in A6_ARMS]   # A6: the A5 / pilot sections are computed WITHOUT the A6 runs
     a6tags = {x["tag"] for x in a6runs}
     all_runs = runs
@@ -1955,6 +2390,8 @@ def main():
         print(f"\n== A5 read-out status: {'PROVISIONAL (' + ('missing seeds ' + str(out['main']['missing_seeds']) if out['main']['missing_seeds'] else '--allow_partial') + ')' if out['main']['provisional'] else 'complete (every pre-registered seed present)'}")
     if a6_given:   # A6 (pre-registered before the A6 runs): appended; the sections above are those of the runs without A6
         a6_readout(all_runs, out, partial, ident6, [w for w in warn_all if w.split(" ")[0] in a6tags], a6_partial=opt.a6_partial)
+    if a7_given:   # A7 (pre-registered before the A7 runs): appended; the sections above are those of the runs without A7
+        a7_readout(all_runs + a7runs, out, partial, ident7, warn7, a7_partial=opt.a7_partial)
     if opt.json:
         Path(opt.json).write_text(json.dumps(out, indent=1))
 

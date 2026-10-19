@@ -788,3 +788,146 @@ A6's command, unchanged. Mid-batch, add **--a6_partial**: A5 strict and byte-ide
 | a6_plumbing_test.py (A6's, on the A6.1 summary) | A6 PLUMBING TEST PASS (16): unchanged expectations (the A5 part = rb6m_main.txt, identity, the mislabelled lr EXCLUDED and refused, two diverged copies) |
 | a6_planted_test.py (A6's, updated for the A6.1 wording + the strict refusal before conclusions) | A6 PLANTED TEST PASS (21): s4 'DOES NOT HOLD: none is above the floor at 3e-3 15.8 [15.0, 16.5] ... MEASURABLE', claim_status; scenario 2 HOLDS; scenario 3 strict prints no A6 conclusion |
 | A5.1 tests: seed_completeness, identity, fake_main, mixed_lr, stats | all PASS (seed_completeness 62, identity 11, fake_main, mixed_lr 4, stats); mixed_lr's pt2b refs now read from llmadd-burst-ro (the old rb6m worktree is gone) |
+
+## Amendment A7 (2026-10-19, after the A6 read-out, BEFORE any A7 run)
+
+Trigger: the user's decisions of 2026-10-19 after the A6 read-out (rb6m_a6.txt). Two things in A6 prompt it:
+- none@1.6e-2 learns S4 in some seeds. Its s4 read-out final3 per seed is 68.3 / 16.9 / 36.3 / 8.7, and it first
+  reaches 25% at step 3750 / never / 9250 / never.
+- all6@1e-3 gives 36.9 / 41.5 / 52.7 / 29.0 on seeds 0-3 and 48.8 / 41.1 / 51.0 / 36.5 on seeds 4-7. It reaches 25%
+  at steps 1750-3000 in 8/8 seeds.
+- Also, all6's lr bracket is open at the lower edge (numbers area: 1e-3 68.8 > 4e-3 61.8 > 8e-3 55.7).
+
+**Hypothesis**, formed on these A5 / A6 numbers and tested only with the new runs: "the prior makes S4 learned
+reliably and early, while without it S4 is learned only at a high lr, in some seeds and late".
+- The none side of every A7 test is new.
+- all6@1e-3 has no new seeds. Its seeds 0-7 were all seen when the hypothesis was formed.
+- The A5 / A6 / A6.1 rules and headlines are unchanged. A7's claims are new, and each is stated as tested on new runs only.
+
+### Code
+- tools/make_rb6m_tasks.py: 10b60268e7b1 -> **2b629d98a87c**. Adds the A7 block; the 68 existing renderings are unchanged.
+- tools/rainbow6_summary.py: f2d6470b054e (f1731e4) -> **490bfe8877f9**. Adds the A7 section.
+  - The A7 runs are split off before every other section, so the pilot, A5 and A6 outputs are byte-identical with and
+    without them.
+  - New flag --a7_partial.
+- Unchanged: readout_rules (e91ee8a8a846), CHECK_PY, the pinned trainer (c434d29: cc984148b15a) and toy_struct.
+- Base: origin/main de73af2.
+
+### Runs (K = 2; each identical to its base arm except --lr and the tag; tasks 510-521, seed-major)
+| arm (tag rb6mb-53m-2pct-k2-<arm>) | = | seeds | tasks |
+|---|---|---|---|
+| none-lr3.2e-2 | none with --lr 3.2e-2 | 0-3 | 510, 513, 516, 519 |
+| all6-lam1-lr5e-4 | all6-lam1 with --lr 5e-4 | 0-3 | 511, 514, 517, 520 |
+| none-lr1.6e-2 | the A6 cell (none with --lr 1.6e-2), fresh seeds | 4-7 | 512, 515, 518, 521 |
+
+- 483-489 stay reserved for re-runs; 479 is the re-run of 508.
+- The generator asserts each A7 task's flags = its base arm's except --lr / --tag / --out.
+- Header: gpu, 02:00:00, cpus 8, after 331-env311 332-data.
+
+### Torch references
+- The seeds' references are reused: A5 for seeds 0-3, and the confirm block (470-477, 490-493) for seeds 4-7.
+- Dry runs of all 12 cells give the seed's DRY sha (88 lines). They are byte-identical to the base arm's Torch dry log at
+  that seed (12/12; for all6 s0 / s1 the base is all6-lam1-lr4e-3's log, which equals the Burst inputs of 419 / 415).
+- Step 0 of none-lr1.6e-2 s5 on CPU: lm 11.569442749023438 and data_sha 99801f9e457357aa, bitwise the seed-5 references.
+
+### Read-out (pre-registered; tools/rainbow6_summary.py `a7_readout`, printed after the A6 section when an A7 run is given)
+The S4 read-out is READ["s4"] = s4_held_fresh_nonid (as A5 / A6).
+
+**The per-seed level (decision threshold of (1)).** This is the full Latin-square propagation level of that seed's
+read-out set (`s4_latin_level`).
+- Method: the trained cells' answers are givens. Naked singles and hidden singles per row / column are iterated to a
+  fixpoint. A derived cell scores 1; any other held cell scores 1 / (remaining candidates) when its answer is among them.
+- It uses only the Latin-square property, not the group law. It is the F88 result audit's computation
+  (notes/batch1_build/audit_rb6m_results.md), re-implemented in the summary.
+- It reproduces the audit: mean 32.5 over seeds 0-3 and 31.5 over seeds 0-7. Per seed: 35.2 34.8 29.6 30.4 | 32.2 30.2
+  26.8 33.1.
+- It is the same for every arm of a seed (same split).
+- The summary's one-step elimination heuristic (26.2 / 25.7) is printed beside it, as a descriptive line only.
+
+1. **Reliability.** Per arm and per seed: is s4 final3 >= that seed's level? The count is k of n.
+   - R1 (primary): all6@1e-3 vs none@1.6e-2 at the fresh seeds 4-7.
+   - R2 (second none): all6@1e-3 vs none@3.2e-2 at seeds 0-3, the same seeds, so the pairs share data and init.
+   - Decision: Fisher exact on the 2x2 counts, one-sided in the hypothesis' direction (all6 has the larger share), BH
+     within R (m = 2). A significant comparison prints "MORE RELIABLE with the prior (SIGNIFICANT)".
+   - Reported beside: Barnard exact (pooled z, one-sided), and the paired seed-level t on final3 (one-sided, BH within R
+     over the t's, sign-flip p).
+   - With n = 4 against 4, Fisher can reach p < 0.05 only at 4/4 vs 0/4 (p = 1/70 = .014). That is a limit of the design.
+2. **Speed.** Per seed: the first eval step with s4 read-out >= 25%, or "never" (censored at the budget, step 18309).
+   - The same pairs as (1): S1 and S2.
+   - Decision: an exact permutation Gehan test, one-sided (all6 earlier), BH within S (m = 2).
+     - U = sum over pairs of +1 when all6's seed reached it first (the earlier one observed), -1 when none's did, 0 for
+       ties or both never.
+     - p = the share of the C(8, 4) = 70 relabellings with U >= U_obs; the minimum is 1/70.
+   - Beside: the exact sign test over the paired seeds (both never = a tie, dropped; with 4 pairs its minimum is
+     0.0625), and medians (the step by which half the seeds reached it; "never" if not reached).
+3. **Best vs best on s4.**
+   - all6@best: over {5e-4, 1e-3, 4e-3, 8e-3} by the numbers area, A6 (1)'s rule (readout_rules.best_lr, ties within 2 ->
+     lower offline bpb).
+   - none@best on s4: over {1e-3, 3e-3, 8e-3, 1.6e-2, 3.2e-2} by the s4 AREA, the same tie rule.
+   - Tests: all6@best - none@best on s4 area and s4 final3, two-sided, paired by seed, BH within the family (m = 2, or 4
+     when the fresh seeds exist).
+     - Seeds 0-3 rows are marked "[both lrs chosen on these seeds]".
+     - Seeds 4-7 rows are fresh and are added where both cells have them: all6@1e-3, and none@{1e-3, 8e-3, 1.6e-2}.
+       Otherwise the section says "not available".
+4. **none@3.2e-2.**
+   - Divergence is handled as in A6 / A6.1. A diverged run is data: its accuracies over all evals count (0 after the
+     onset), its offline bpb is the worst in the tie-break, and it is listed, never excluded.
+   - none's s4 bracket over the five lrs is printed by area (the A7 criterion, used by (3)) and by final3 (A6 (5)'s), each
+     with readout_rules.bracket, plus each lr's seed-level gate verdict.
+   - If none's best is at the 3.2e-2 edge by > 2, the bracket stays OPEN and is reported as such ("none's s4 may peak
+     beyond the grid"). No further runs are pre-registered.
+5. **all6@5e-4.**
+   - A6 (1) is re-run over the four lrs; the bracket is printed, and whether the best lr is UNCHANGED or CHANGED against
+     A6's (1e-3).
+   - **F1c updated** = all6@best - none@8e-3 on numbers / clock / s4 / dim, with F1b's tests (s4 one-sided), BH m = 4, and
+     each domain's reading against F1b ("F1c unchanged: ... = F1b by construction" while the best stays 1e-3).
+
+**Robustness** (A5.1 / A6.1):
+- Required runs:
+  - all6 at the four lrs and none at the five lrs, seeds 0-3;
+  - all6-lam1 and none-lr1.6e-2 at seeds 4-7.
+- A missing run counts as missing whether it is not published, EXCLUDED by run identity (tag's intent = run JSON, and
+  check.json PASS) or unfinished. It makes every verdict that needs it PROVISIONAL: counts n=k of 4, never SIGNIFICANT.
+- Strict mode refuses BEFORE any A7 conclusion: it prints the header, mode, identity, missing seeds and "A7 read-out
+  REFUSED (strict)", then raises AssertionError and writes no JSON.
+- `--a7_partial` lets the A7 section be incomplete while the A5 / A6 sections stay strict (byte-identical).
+- The last line reads "== A7 read-out status: complete (every A7 seed present)" or "PROVISIONAL (...)".
+
+### What A7 can and cannot show
+- (1) / (2) on R1 test the hypothesis on fresh none runs. The all6 side is old: seen when the hypothesis was formed, and
+  never at a new seed.
+- With 4 seeds per arm, only an extreme split decides (4/4 vs 0/4; Gehan U = 16).
+- R2 / S2 use none@3.2e-2, which may diverge. A diverged run counts as not learned and never reached.
+- The level is the Latin propagation, so "above the level" means beyond what Latin-square constraints alone give. It does
+  not mean "learned the group".
+- (3) on seeds 0-3 carries the selection of both lrs on those seeds. Only the seeds 4-7 rows are free of it, and they exist
+  only for some best-lr pairs.
+- p-values are not corrected for the choice of lr.
+
+### Read-out command
+The A6 command (incl. the re-run 479) plus the A7 directories:
+```
+python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results/415-rb6pb-* results/419-rb6pb-* \
+  results/4[3-6][0-9]-rb6*-* results/47[0-8]-rb6*-* results/49[0-3]-rb6mb-* \
+  results/49[4-9]-rb6mb-* results/50[0-9]-rb6mb-* results/479-rb6mb-* results/51[0-9]-rb6mb-* results/52[01]-rb6mb-* \
+  --ref 'results/35[0-3]-pt2b-lr1e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr8e-3-none-s?' \
+  --ref 'results/35[0-3]-pt2b-lr1e-3-win-ctx-s?' --json rb6m_a7_summary.json
+```
+- Mid-batch: add --a7_partial.
+- A re-run of an A7 task takes 483-489, and its directory is added to the command.
+
+### Tick order and budget
+- 510-521 are the highest task numbers, so they run last: one wave of 12 (MAX_GPU_JOBS 12), about 1 h with Burst idle.
+- About 12 x 0.92 = 11 A100-h; 24 h of limits.
+
+### Tests (CPU; scratchpad rb6m/a7/)
+| test | result |
+|---|---|
+| generator --check | 80 tasks: 0 to write, 80 unchanged (68 existing + 12 written), 68 already ran; bash -n clean |
+| regress7.sh | pilot, A5 main (= rb6m_main.txt) and A6 (= rb6m_a6.txt, the A6 command incl. 479) TXT + JSON byte-identical to the committed summary's |
+| render_test_a7.py (80 tasks) | RENDER TEST PASS: the 12 A7 dry logs = their base arm's; each task's input-check block exits 0 on its own log; 1382 cross cases with the right reason; 80 runs on the pilot's Burst logs (12 at their own seed exit 0); embedded CHECK_PY / intent / ARGS = the generator's |
+| check_test_a7.py | CHECK SCRIPT TEST PASS (70 = the A5 / A6 cases + 19 A7). Pilot JSONs relabelled to none-lr3.2e-2 / all6-lam1-lr5e-4 (s0 / s1) and A5-confirm none runs relabelled to none-lr1.6e-2 s4 / s5 PASS; the lr left at 1e-3 or the base intent -> only 'run args'; a diverged none-lr3.2e-2 copy PASSES |
+| tiny_a7.py (pinned trainer, --stop_after 20) | TINY A7 A/B PASS: args.lr 0.032 / 0.0005 consumed; other args = the base's; same data_sha, step-0 lm and prior schedule; lm at steps 10 / 20 differs from the base and from another lr of the same base (none 3.2e-2 6.821, 1.6e-2 7.057, 1e-3 9.960 at step 20; all6 5e-4 11.043, 1e-3 10.602) |
+| a7_planted_test.py (planted values; the summary's own rules) | A7 PLANTED TEST PASS (17): Fisher = scipy, Barnard ~ scipy (< 2e-3), paired t = scipy, BH = scipy; Gehan U / p = an independent computation (incl. ties and censoring), sign test, medians; best lr by the tie-break (UNCHANGED / CHANGED, OPEN lower), none's s4 OPEN upper reported; (3) at seeds 0-3 and, when both exist, 4-7 (m = 4); a diverged run counted; a missing seed: strict refuses before any conclusion, --a7_partial PROVISIONAL |
+| a7_plumbing_test.py (real dirs + 12 relabelled copies, CLI) | A7 PLUMBING TEST PASS (10): output = rb6m_a6.txt byte for byte + the A7 section, JSON = A6 JSON + 'a7'; identity 12 / 0; levels reproduce 32.5 / 31.5; a copy with its lr unchanged EXCLUDED, strict refused before any A7 conclusion; --a7_partial PROVISIONAL with A5 / A6 unchanged |
+| the A5.1 / A6 / A6.1 tests on the A7 summary | all PASS: seed_completeness, identity, fake_main, mixed_lr, stats, a6_planted, check_finite (the A6 / A6.1 scenario outputs are covered by the byte-identical A6 regression on the real A6 data) |
