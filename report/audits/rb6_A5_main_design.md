@@ -1119,3 +1119,12 @@ A8's 25% sat at chance; replaced by A8.2 (below).
 - Missing / excluded / unfinished run in seeds 8-15: PROVISIONAL, no decision (as A5.1); a re-run replaces it.
 - The user's request "look at which metric is better afterwards" was declined: choosing the metric after the results
   would invalidate the test; all metrics are reported, the area alone decides.
+
+### Erratum to A8.2 / A8.1 (2026-10-20, before any A8 result was read; fresh audit notes/batch1_build/audit_rb6_a8.md, I3)
+- The A8.2 note says all6@1e-3 seeds 0 and 3 "pass once at step 2750 but are not learned at the last eval". This is wrong
+  for seed 0: it is significant on s4_hard at 55 of its 75 evals and misses only the last eval (61 < 63 correct). It shows
+  the fragility of the last-eval "learned" rule for borderline seeds (audit I1), which is one more reason the A8.3
+  primary is the s4_hard AREA (integrated over all evals) and the learned count is secondary.
+- Audit I2: a significant H1 implies a significant H2 in this design, so "early" is not tested separately by the
+  demoted A8 rule; under A8.3 neither decides.
+- The audit precomputed seeds 8-11 n / chance / critical for s4_hard; the read-out must reproduce them (assert).
