@@ -1,0 +1,1 @@
+{"task": "512-rb6mb-53m-2pct-k2-none-lr1.6e-2-s4", "job": "9128", "kind": "gpu", "state": "COMPLETED", "rc": "0", "elapsed_min": 52, "ended": "2026-10-20T01:03:37Z", "account": "ds_ga_1006_001-2026fa"}
