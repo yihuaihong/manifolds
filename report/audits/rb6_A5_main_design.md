@@ -943,3 +943,162 @@ python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results
 - s4_hard is the PRIMARY S4 metric for A7's reliability (1) and speed (2) read-outs and for A8; the A5 / A6 / A7 rows on s4_held_fresh_nonid stay as they are (secondary). The threshold of "learned" on s4_hard: final3 >= 25% (chance on s4_hard is ~1/24 + the Latin-row/column elimination share; the exact chance per seed is printed).
 - **A8 runs**: all6-lam1@1e-3 and none@1.6e-2 at fresh seeds 8-11 (8 runs, same args except seed; Torch references to be computed for seeds 8-11). Here BOTH sides are fresh, so A8 is the confirmatory test of "the prior makes S4 learned reliably and early" that A7 cannot be (A7.1). Tests: the count of seeds learned on s4_hard (Fisher exact, one-sided, prior > none), steps to 25% on s4_hard (Gehan, one-sided), paired t on s4_hard final3 and area; seeds 8-11 decide, all other seeds descriptive.
 - No change to the A5 / A6 / A7 rules or headlines.
+
+## Amendment A8.1 (2026-10-20, implementation of A8, BEFORE any A7 result and any A8 run)
+
+What A8 (commit ecc367c) decided is implemented as written. Nothing in A8 is changed. One finding needs a decision by the
+user BEFORE results; see "For the user to decide".
+
+### Code
+- tools/rainbow6_summary.py: 490bfe8877f9 (A7) -> **5edd08a68d96** (A8 + A8.2).
+- tools/make_rb6m_tasks.py: 2b629d98a87c -> **a1b3d3486605**: the A8 block, the seed 8-11 references, and the --no_* write logic
+  by membership. The 80 existing renderings are unchanged.
+- Unchanged: readout_rules, CHECK_PY, the pinned trainer (c434d29: cc984148b15a) and toy_struct.
+- Base: origin/main ecc367c.
+
+### s4_hard (the A8 read-out)
+**Definition.** s4_hard (`s4_hard(r)`) is the s4_held_fresh_nonid cells NOT solved by A7's Latin propagation of the seed's
+own training table (naked + hidden singles to a fixpoint; the same code as `s4_latin_level`).
+- The function asserts that the propagation's implied level of the whole read-out set equals A7's level, and that no true
+  answer is ever eliminated.
+- An independent re-implementation in the test gives the same cells.
+- The set is the same for every arm of a seed.
+
+**Accuracy.** Each eval's accuracy is the mean over the s4_hard cells of the logged per-question hits (hits_s4_held, one
+context). No re-run is needed; it is computed for every run.
+- final3 and area use the A5 definitions on this series.
+- Learned / speed: A8.2 (the exact binomial test against the seed's chance at the last eval / the first eval from which it passes at every later eval).
+
+**Exact chance.** The chance is the pure Latin table-filler's expected accuracy on s4_hard: the mean over the cells of
+1 / (remaining candidates).
+
+**Per seed (seeds 0-7):**
+
+| seed | n of the read-out set | chance | Latin level (A7) |
+|---|---|---|---|
+| 0 | 179 of 203 | 26.6 | 35.2 |
+| 1 | 171 of 191 | 27.2 | 34.8 |
+| 2 | 182 of 194 | 25.0 | 29.6 |
+| 3 | 188 of 200 | 26.0 | 30.4 |
+| 4 | 184 of 202 | 25.6 | 32.2 |
+| 5 | 182 of 197 | 24.4 | 30.2 |
+| 6 | 197 of 204 | 24.2 | 26.8 |
+| 7 | 190 of 209 | 26.4 | 33.1 |
+
+**Where it is printed** (A8: "printed with n per seed"; the primary S4 metric of A7 (1) / (2) and of A8):
+- **A7 (1h)**: printed right after A7's (1) rows. R1h = all6@1e-3 vs none@1.6e-2 at seeds 4-7; R2h = vs none@3.2e-2 at seeds
+  0-3.
+  - Counts: seeds learned on s4_hard (A8.2).
+  - Decision: one-sided Fisher, BH m = 2.
+  - Beside: Barnard, and the paired t on s4_hard final3.
+  - Its header says that the (1) rows above, on the old set, are SECONDARY.
+- **A7 (2h)**: printed right after A7's (2) rows. It covers the first eval from which s4_hard stays significant (A8.2, sustained), with a one-sided exact Gehan test (BH
+  m = 2), the sign test and medians. Its header says the (2) rows are SECONDARY.
+- **The A8 s4_hard table**: every K = 2 run given, per seed n / chance / level, and per arm x seed final3 / area / step.
+  - It is printed after the A7 section when an A7 or A8 run is given.
+  - A new flag, --s4_hard, prints it for any command, e.g. the A5 or pilot one (default off, so those outputs are unchanged).
+- **The A8 section**: printed last when an A8 run is given.
+
+### Output lines that change (tested; everything else byte-identical)
+- **Pilot, A5 (rb6m_main.txt) and A6 (rb6m_a6.txt) commands**: no change, TXT and JSON byte for byte (regress8.sh). This
+  also holds when A8 runs are added: everything up to and including the A6 status line is unchanged (A8 plumbing).
+- **A7 command (with A7 runs)**: the A8 summary's output = the A7 summary's output with exactly 3 insertions and no
+  changed or removed line (a7diff.py, difflib on the A7 plumbing copies):
+  1. after the last (1) row: a blank line, the "== A7 (1h) PRIMARY S4 reliability (A8) ..." header, and the R1h and R2h
+     rows (4 lines);
+  2. after the last (2) row: a blank line, the "== A7 (2h) PRIMARY S4 speed (A8) ..." header, and the S1h and S2h rows
+     (4 lines);
+  3. after the "== A7 read-out status" line: the A8 s4_hard table, which is a blank line, the header, the per-seed line and
+     one line per arm.
+  - JSON: a7.families gains "Rh" / "Sh", and a new top-level "s4_hard" appears; every other key is equal.
+  - A7's own (1) header still reads "Fisher exact on the counts = the decision". That line is unchanged, as required; the
+    (1h) header states that it is now secondary.
+- **With A8 runs**: the A8 section is appended at the end. Its lines are the header, mode, identity, warnings, missing and
+  diverged lines, the decision lines H1-H4, the conjunction line, the descriptive other seeds, A8.1 and the A8 status line.
+
+### A8 runs and references
+**Tasks.** 522-529 = all6-lam1@1e-3 and none@1.6e-2 at seeds 8, 9, 10, 11; per seed the pair: 522 / 523 = s8, 524 / 525
+= s9, and so on.
+- Tags: rb6pb-53m-2pct-k2-all6-lam1 (the reused A5 cell's tag) and rb6mb-53m-2pct-k2-none-lr1.6e-2.
+- The arguments are the A5 / A6 cells' arguments with the seed (asserted).
+- Header: gpu, 02:00:00, cpus 8, after 331-env311 332-data.
+- 483-489 stay reserved.
+- They are the highest numbers, so they run after A7's 510-521. That is about 8 x 0.92 = 7.4 A100-h.
+
+**Torch references** (refs/run_refs_a8.py on the pinned tools; a8/refs8.py checks them):
+- Seed 4 was recomputed first and equals its recorded values exactly: DRY 1f07da985f7d7acf.. (88 lines), DOMS, LM0
+  11.58791446685791, DSHA0 9451e7743f0607ed.
+- Seeds 8-11 then used the same method: --dry_inputs of none and all6-lam1 give equal DRY sha / DOMS; step 0 of none at every
+  seed, and of all6-lam1 at seed 8, give the same value.
+- none-lr1.6e-2's own dry logs at seeds 8 / 9 equal none's byte for byte.
+
+| seed | DRY sha256 (88 lines) | LM0 | DSHA0 |
+|---|---|---|---|
+| 8 | 9cc7c5f0e911d73b.. | 11.61306095123291 | a3181fb4799d4806 |
+| 9 | 61ae59aeb59e9d5e.. | 11.606510162353516 | c38dac2d365eb3ae |
+| 10 | 6bb4ed0e31c43f6f.. | 11.57604694366455 | 0c4d582a9d024701 |
+| 11 | 43d9194d521dacc2.. | 11.581033706665039 | fd9ea9b83ff3522d |
+
+### The A8 read-out (a8_readout; A8's tests, made explicit)
+The A8 runs are split off before every other section. Seeds 8-11 decide, and every test is one-sided (prior > none):
+- **H1 'reliably'**: the count of seeds learned on s4_hard (A8.2), compared by Fisher exact. Barnard is printed beside.
+- **H2 'early'**: the first eval from which s4_hard stays significant (A8.2, sustained), compared by an exact permutation Gehan test. The sign test and medians are printed
+  beside.
+- **H3 / H4 'level'**: the paired t on s4_hard final3 and on area, BH over the two.
+
+**The hypothesis line** reads CONFIRMED only if H1 AND H2 are significant at 0.05. A8 names one test per part of the
+hypothesis, and the conjunction is an intersection-union test, so it needs no multiplicity correction. Otherwise the line
+reads "NOT CONFIRMED (<part> n.s.)". With a missing seed it reads "PROVISIONAL: not decided".
+
+**Other parts of the section:**
+- The other seeds of the two arms are printed descriptively (s4_hard final3 / step).
+- **A8.1 (descriptive)**: numbers area, clock held_wrap and dim strict final3 on seeds 8-11, as all6@1e-3 - none@1.6e-2
+  paired by seed with a two-sided t. These are labelled descriptive. none@1e-3 and none@8e-3 have no seeds 8-11. all6's
+  seeds 0-7 mean is printed beside.
+- Robustness as A7: a missing, excluded or unfinished run gives PROVISIONAL. Strict mode refuses before any conclusion.
+  --a8_partial relaxes only the A8 section.
+
+### Read-out command
+The A7 command plus `results/52[2-9]-rb6*-*`; mid-batch add --a8_partial.
+
+### Threshold
+A8's 25% sat at chance; replaced by A8.2 (below).
+
+### Tests (CPU; scratchpad rb6m/a8/)
+| test | result |
+|---|---|
+| regress8.sh | pilot, A5 (= rb6m_main.txt) and A6 (= rb6m_a6.txt) TXT + JSON byte-identical |
+| a7diff.py | the A7 output with the A8 summary = the A7 summary's + exactly 3 inserted blocks ((1h), (2h), the s4_hard table); JSON + Rh / Sh / s4_hard only |
+| s4hard_planted_test.py (real JSONs, planted hits) | S4_HARD PLANTED TEST PASS: the set = an independent propagation's unsolved read-out cells; the table-filler scores the chance on s4_hard (26.0 / 25.5 / 26.7 vs 26.6 / 25.6 / 26.4) and the Latin level on the old set (34.8 / 32.2 / 33.4 vs 35.2 / 32.2 / 33.1); a perfect learner 100 / step 0; a hard-only learner from step 5000 has t25 = 5000 and old final3 = n_hard / n_readout; the same set across arms; a level differing from A7's -> AssertionError |
+| a8_plumbing_test.py (real dirs + 8 relabelled copies, CLI) | A8 PLUMBING TEST PASS: output = rb6m_a6.txt + the s4_hard table + A8; JSON = A6's + s4_hard + a8; identity 8 / 0; H1 4/4 vs 0/4 (Fisher 1/70), H2 Gehan U 16 p 1/70 -> CONFIRMED; a copy with lr 1e-3 under the none-lr1.6e-2 tag EXCLUDED, strict refused before any A8 conclusion; --a8_partial PROVISIONAL, never CONFIRMED, A5 / A6 unchanged; with the A7 copies as well, everything above the s4_hard table = the A7-only output |
+| render_test_a8.py (88 tasks) | RENDER TEST PASS: bash -n + own-log input checks 88, 1558 cross cases, 96 runs on the pilot's Burst logs; none-lr1.6e-2 dry logs at seeds 8 / 9 = none's byte for byte |
+| check_test_a8.py | CHECK SCRIPT TEST PASS (76): real seed-4 / 5 runs relabelled to seed 8 / 9 with the new reference facts PASS; by args only they fail exactly data_sha / step-0 lm / domain splits (the references are seed-specific); intent(arm, 8) differs from intent(arm, 4) only in seed / lm0_ref / data_sha0 / dom; the A5-A7 cases as before |
+| refs8.py | seed 4 recomputed = recorded; seeds 8-11 new and equal across both arms; all6-lam1 step 0 at seed 8 = none's |
+| earlier suites on the A8 summary | all PASS: seed_completeness, identity, fake_main, mixed_lr, stats, a6_planted, check_finite, a7_plumbing (JSON check allows the new s4_hard key), a7_planted (+ an s4_hard lookup in its harness and a check of the (1h) / (2h) blocks, 18) |
+
+## Amendment A8.2 (2026-10-20, before any A7 / A8 result; the 25% threshold of A8 sat at chance 24.2-27.2%, discovered while implementing)
+- **Learned on s4_hard** means the run's LAST eval's s4_hard hits are significantly above its seed's exact chance.
+  - Test: a one-sided exact binomial test at alpha .01, with n = the seed's s4_hard size and p = the exact chance (the
+    Latin table-filler's expected accuracy).
+  - The 3 evals of final3 are not pooled, because they are not independent.
+  - The per-seed critical accuracy is printed. Seeds 0-7: 35.2 35.7 33.0 34.0 | 33.7 32.4 32.0 34.7, i.e. chance + 7.8 to
+    8.6 points.
+  - The binomial is conservative for a table-filler, whose per-cell chances differ (the count is Poisson-binomial with a
+    smaller variance). Simulated, a pure filler passes the last-eval rule 0.6-0.7% of the time.
+- **Speed (sustained)** is the first eval FROM WHICH that same per-eval test passes at that eval and at every later eval,
+  censored at the budget. It is "never" whenever the last eval fails.
+  - Why the sustained form: the any-eval form (the first eval passing the test at all) looks at 75 evals. A pure Latin
+    table-filler passes it in 33-42% of simulated runs (seeds 0 / 4 / 7: 0.342 / 0.424 / 0.334; 4000 Poisson-binomial runs
+    each).
+  - The sustained form needs the last eval to pass, so its false-pass rate is the last-eval rate: 0.0060 / 0.0065 / 0.0070,
+    within alpha .01.
+  - The fixed-seed planted filler at seed 0 passes the any-eval form at step 5000 and gets "never" under the sustained one.
+  - A run significant only at one early eval gets "never". On existing runs this applies to all6@1e-3 seeds 0 and 3, which
+    pass once at step 2750 and are not learned at the last eval.
+  - A learned run whose evals dip below the critical count late gets a late time (in the A8 plumbing copies, the seed-7
+    copy's time is the last eval, 18309).
+- **Where it applies**: A7 (1h) / (2h) and A8 H1 / H2. H3 / H4 (the paired t on s4_hard final3 / area) stay as written.
+  A8's 25% is withdrawn everywhere.
+- **Reading of A8 confirmed by the user**: CONFIRMED only if H1 AND H2 are significant (an intersection-union test).
+- **The rule is data-independent.** It fixes alpha (.01) and the reference (the exact chance) without looking at any
+  result. The critical accuracies follow from n and the chance alone.

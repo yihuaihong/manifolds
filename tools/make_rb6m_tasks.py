@@ -65,7 +65,10 @@ check passes when nothing else fails.
 A7 (user decisions 2026-10-19 after the A6 read-out; amendment A7 of report/audits/rb6_A5_main_design.md, pre-registered
 before these runs): 510-521 = per seed s = 0-3 none at lr 3.2e-2 (seed s), all6-lam1 at lr 5e-4 (seed s), none at lr 1.6e-2
 (seed s + 4); each identical to none / all6-lam1 except --lr and the tag; read by the A7 section of rainbow6_summary.py.
-    python tools/make_rb6m_tasks.py [--check] [--show] [--no_confirm] [--no_a6] [--no_a7]
+A8 (amendment A8, 2026-10-20, pre-registered before any A7 result and any A8 run): 522-529 = all6-lam1@1e-3 and
+none@1.6e-2 at the fresh seeds 8-11 (per seed the pair), the A5 / A6 cells' arguments with the seed; Torch references of
+seeds 8-11 computed with the same method after recomputing seed 4 exactly; read by rainbow6_summary's A8 section.
+    python tools/make_rb6m_tasks.py [--check] [--show] [--no_confirm] [--no_a6] [--no_a7] [--no_a8]
 """
 import argparse
 import json
@@ -151,6 +154,13 @@ A6_ORDER = ([(a, s) for s in SEEDS for a in ("all6-lam1-lr4e-3", "all6-lam1-lr8e
 A7 = True
 FIRST7 = 510
 A7_ORDER = [x for s in SEEDS for x in (("none-lr3.2e-2", s), ("all6-lam1-lr5e-4", s), ("none-lr1.6e-2", s + 4))]
+# The A8 block (amendment A8 of report/audits/rb6_A5_main_design.md, 2026-10-20, pre-registered before any A7 result and
+# any A8 run): all6-lam1@1e-3 and none@1.6e-2 at the fresh seeds 8-11 (both sides fresh), 522-529, seed-major (each seed's
+# pair together). Same arguments as the A5 / A6 cells except the seed; Torch references of seeds 8-11 below.
+A8 = True
+FIRST8 = 522
+A8_SEEDS = (8, 9, 10, 11)
+A8_ORDER = [(a, s) for s in A8_SEEDS for a in ("all6-lam1", "none-lr1.6e-2")]
 GEO_TOL = -1e-3   # float CKA exceeds 1 at a perfect fit: pilot 411 geo_weekdays -3.2e-5, 416 -2.4e-4 (rc 4 under the
 #                   pilot's > 0); the pilot generator's later -1e-4 would still fail 416
 CKA_RISE = P.CKA_RISE   # 0.1 (see make_rb6_tasks.py: a sanity floor against a broken prior path, not a strength test)
@@ -181,6 +191,16 @@ DOMS = {**{s: P.DOMS[s] for s in (0, 1)},
         5: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 480, "n_held": 442, "n_heldE": 148, "n_readout": 338, "n_readoutE": 121, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 197, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 342, "n_held": 344, "n_readout": 156, "readout": "held_no_negtwin_nonid", "n_items": 27}},
         6: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 482, "n_held": 442, "n_heldE": 150, "n_readout": 327, "n_readoutE": 115, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 204, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 344, "n_held": 342, "n_readout": 150, "readout": "held_no_negtwin_nonid", "n_items": 27}},
         7: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 475, "n_held": 442, "n_heldE": 144, "n_readout": 338, "n_readoutE": 109, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 209, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 342, "n_held": 344, "n_readout": 130, "readout": "held_no_negtwin_nonid", "n_items": 27}}}
+# A8 (2026-10-20): the fresh seeds 8-11 for all6-lam1 / none-lr1.6e-2, the same method (refs/run_refs_a8.py on the pinned
+# tools: --dry_inputs of none and all6-lam1, equal DRY / DOMS; step0.py of none at every seed and all6-lam1 at seed 8,
+# equal), after recomputing seed 4 = its recorded DRY / DOMS / LM0 / DSHA0 exactly (a8/refs8.py)
+DRY.update({8: ('9cc7c5f0e911d73ba2c5b626b45c633a00d91175c7b65ff44a1db4b48d33d49c', 88), 9: ('61ae59aeb59e9d5eff590f8b097411872f8de47e46931e4bccf298c61768ade7', 88), 10: ('6bb4ed0e31c43f6fc0d8de5e6223f5ad4520842f0ebc0265529d8b0fad64f4eb', 88), 11: ('43d9194d521dacc2e01aa82bbe6abb263352f339e365dab307e0184895581cb1', 88)})
+LM0.update({8: 11.61306095123291, 9: 11.606510162353516, 10: 11.57604694366455, 11: 11.581033706665039})
+DSHA0.update({8: 'a3181fb4799d4806', 9: 'c38dac2d365eb3ae', 10: '0c4d582a9d024701', 11: 'fd9ea9b83ff3522d'})
+DOMS.update({8: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 477, "n_held": 442, "n_heldE": 146, "n_readout": 342, "n_readoutE": 111, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 200, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 342, "n_held": 344, "n_readout": 154, "readout": "held_no_negtwin_nonid", "n_items": 27}},
+             9: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 477, "n_held": 442, "n_heldE": 146, "n_readout": 335, "n_readoutE": 113, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 198, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 342, "n_held": 344, "n_readout": 124, "readout": "held_no_negtwin_nonid", "n_items": 27}},
+             10: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 480, "n_held": 442, "n_heldE": 149, "n_readout": 334, "n_readoutE": 112, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 195, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 344, "n_held": 342, "n_readout": 138, "readout": "held_no_negtwin_nonid", "n_items": 27}},
+             11: {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_items": 12}, "weekdays": {"n_train": 38, "n_held": 34, "n_heldE": 12, "n_readout": 34, "n_readoutE": 12, "readout": "held", "n_items": 7}, "clock": {"n_train": 474, "n_held": 442, "n_heldE": 142, "n_readout": 337, "n_readoutE": 103, "readout": "held_wrap", "n_items": 24}, "s4": {"n_train": 345, "n_held": 231, "n_readout": 203, "readout": "held_fresh_nonid", "n_items": 24}, "dim": {"n_train": 342, "n_held": 344, "n_readout": 136, "readout": "held_no_negtwin_nonid", "n_items": 27}}})
 assert all(P.DRY[(K, s)][1] == 88 for s in (0, 1))
 # the pilot generator's one later edit (9cbfca7, 'future renders only'): its current renderings carry the new geo check
 GEO_NEW = ('chk("geo > -1e-4 for every prior (float CKA can exceed 1 by ~3e-5 at a perfect fit; 2026-10-19) and 0 < '
@@ -221,6 +241,8 @@ def lam_of(arm):
 
 
 def number(arm, seed):
+    if (arm, seed) in A8_ORDER:
+        return FIRST8 + A8_ORDER.index((arm, seed))
     if (arm, seed) in A7_ORDER:
         return FIRST7 + A7_ORDER.index((arm, seed))
     if (arm, seed) in A6_ORDER:
@@ -472,7 +494,7 @@ def render(arm, seed):
     assert P.LIM_X * P.PLAN_H[K] <= P.hours(P.TLIM) < P.LIM_X * P.PLAN_H[K] + 0.5, (name, P.TLIM)
     if arm in REUSED:   # a reused pilot cell: the pilot's arguments with another seed, the pilot's tag
         assert arm_flags(arm) == P.ARM[{"none": "none", "all6-lam1": "all6-lam1"}[arm]], arm
-        assert tag == f"rb6pb-53m-2pct-k{K}-{arm}" and seed in (2, 3) + CONFIRM_SEEDS, (arm, seed)
+        assert tag == f"rb6pb-53m-2pct-k{K}-{arm}" and seed in (2, 3) + CONFIRM_SEEDS + A8_SEEDS, (arm, seed)
     confirm = seed in CONFIRM_SEEDS
     assert not confirm or arm in REUSED or arm == "none-lr8e-3" or (arm, seed) in A7_ORDER, (arm, seed)
     I = intent(arm, seed)
@@ -504,6 +526,10 @@ def render(arm, seed):
                     "\n# pre-registered before these runs): none's s4 bracket one step up (none at 3.2e-2, seeds 0-3), all6's lr"
                     "\n# bracket one step down (all6-lam1 at 5e-4, seeds 0-3), none@1.6e-2 at the fresh seeds 4-7; read by"
                     "\n# rainbow6_summary's A7 section, never by the A5 / A6 rules.")
+    if (arm, seed) in A8_ORDER:
+        conf_txt = ("\n# A8 (amendment A8 of report/audits/rb6_A5_main_design.md, 2026-10-20, pre-registered before any A7 result"
+                    "\n# and any A8 run): all6-lam1@1e-3 vs none@1.6e-2 at the fresh seeds 8-11, both sides fresh; S4 read on"
+                    "\n# s4_hard; read by rainbow6_summary's A8 section, never by the A5 / A6 / A7 rules.")
     text = f"""# kind: gpu
 # time: {P.TLIM}
 # cpus: 8
@@ -560,11 +586,11 @@ echo "## 4. intent checks $(date -u +%FT%TZ)"
     return name, tag, text, args
 
 
-def tasks(confirm=True, a6=True, a7=True):
+def tasks(confirm=True, a6=True, a7=True, a8=True):
     """Every (arm, seed) of the main design (+ the confirm blocks, + the A6 block, + the A7 block) in task-number order:
     [(name, tag, text, args, arm, seed)]."""
     return sorted((render(a, s) + (a, s) for a, s in ORDER + (CONFIRM_ORDER + CONFIRM2_ORDER if confirm else [])
-                   + (A6_ORDER if a6 else []) + (A7_ORDER if a7 else [])), key=lambda t: t[0])
+                   + (A6_ORDER if a6 else []) + (A7_ORDER if a7 else []) + (A8_ORDER if a8 else [])), key=lambda t: t[0])
 
 
 def pilot_unchanged(repo):
@@ -594,6 +620,8 @@ def main() -> None:
                     "2026-10-19 after the main read-out); --check renders it either way")
     ap.add_argument("--no_a7", action="store_true", help="do not write the A7 block 510-521 (ON by the user's decisions of "
                     "2026-10-19 after the A6 read-out); --check renders it either way")
+    ap.add_argument("--no_a8", action="store_true", help="do not write the A8 block 522-529 (ON by amendment A8, 2026-10-20);"
+                    " --check renders it either way")
     ap.add_argument("--repo", default=str(REPO))
     a = ap.parse_args()
     repo = Path(a.repo)
@@ -602,19 +630,27 @@ def main() -> None:
     print("pilot generator unchanged: its 18 renderings = tasks/400-417 (9cbfca7's geo line undone), 418 / 419 = 408 / 409")
     T = tasks()
     names = [t[0] for t in T]
-    assert len(set(names)) == len(names) == 80 and [int(n[:3]) for n in names] == list(range(FIRST, FIRST + 48)) + list(
-        range(FIRST2, FIRST2 + 4)) + list(range(FIRST6, FIRST6 + 16)) + list(range(FIRST7, FIRST7 + 12)), names
+    assert len(set(names)) == len(names) == 88 and [int(n[:3]) for n in names] == list(range(FIRST, FIRST + 48)) + list(
+        range(FIRST2, FIRST2 + 4)) + list(range(FIRST6, FIRST6 + 16)) + list(range(FIRST7, FIRST7 + 12)) + list(
+        range(FIRST8, FIRST8 + 8)), names
     cells = {}
     for t in T:
         cells.setdefault(t[1], set()).add(t[5])
     assert len(cells) == len(SPEC) == 17, sorted(cells)
-    assert all(v == ({2, 3, *CONFIRM_SEEDS} if any(tag_of(r) == tg for r in REUSED) else {*SEEDS, *CONFIRM_SEEDS}
-                    if tg in (tag_of("none-lr8e-3"), tag_of("none-lr1.6e-2")) else set(SEEDS)) for tg, v in cells.items()), cells
+    assert all(v == ({2, 3, *CONFIRM_SEEDS, *A8_SEEDS} if tg == tag_of("all6-lam1") else {2, 3, *CONFIRM_SEEDS} if any(
+        tag_of(r) == tg for r in REUSED) else {*SEEDS, *CONFIRM_SEEDS, *A8_SEEDS} if tg == tag_of("none-lr1.6e-2") else
+        {*SEEDS, *CONFIRM_SEEDS} if tg == tag_of("none-lr8e-3") else set(SEEDS)) for tg, v in cells.items()), cells
+    # A8: the 8 tasks 522-529, seed-major; each = the A5 / A6 cell's arguments with the seed
+    assert [(t[4], t[5]) for t in T[80:]] == A8_ORDER and all("# A8 (amendment A8" in t[2] for t in T[80:]) and not any(
+        "# A8 (amendment A8" in t[2] for t in T[:80]), "A8 block 522-529"
+    for t in T[80:]:
+        fa, fb = P.flags(expand(t[4], t[5], t[3])), P.flags(expand(t[4], 2 if t[4] == "all6-lam1" else 0))
+        assert {k: v for k, v in fa.items() if k != "--seed"} == {k: v for k, v in fb.items() if k != "--seed"} and fa["--seed"] == str(t[5]), (t[0], fa, fb)
     # A7: the 12 tasks 510-521, seed-major; each identical to its 1e-3 arm except --lr and the tag (none-lr1.6e-2 at
     # seeds 4-7 = the A6 cell's tag and arguments with another seed)
-    assert [(t[4], t[5]) for t in T[68:]] == A7_ORDER and all("# A7 (user decisions" in t[2] for t in T[68:]) and not any(
-        "# A7 (user decisions" in t[2] for t in T[:68]), "A7 block 510-521"
-    for t in T[68:]:
+    assert [(t[4], t[5]) for t in T[68:80]] == A7_ORDER and all("# A7 (user decisions" in t[2] for t in T[68:80]) and not any(
+        "# A7 (user decisions" in t[2] for t in T[:68] + T[80:]), "A7 block 510-521"
+    for t in T[68:80]:
         base = "all6-lam1" if t[4].startswith("all6") else "none"
         fa, fb = P.flags(expand(t[4], t[5], t[3])), P.flags(expand(base, t[5]))
         assert {k: v for k, v in fa.items() if k not in ("--lr", "--tag", "--out")} == {
@@ -637,27 +673,29 @@ def main() -> None:
     write_confirm = CONFIRM and not a.no_confirm
     write_a6 = A6 and not a.no_a6
     write_a7 = A7 and not a.no_a7
+    write_a8 = A8 and not a.no_a8
     if a.show:
         for name, tag, text, args, arm, seed in T:
             print(f"{name}{'' if seed not in CONFIRM_SEEDS else ' (confirm block: ' + ('written' if write_confirm else 'NOT written') + ')'}"
                   f"\n    {expand(arm, seed, args)}")
     tdir, sdir = repo / "tasks", repo / "status"
     foreign = sorted(p.name for p in list(tdir.glob("4[3-7][0-9]*.sh")) + list(tdir.glob("49[0-9]*.sh"))
-                     + list(tdir.glob("50[0-9]*.sh")) + list(tdir.glob("51[0-9]*.sh")) + list(tdir.glob("52[01]*.sh"))
+                     + list(tdir.glob("50[0-9]*.sh")) + list(tdir.glob("51[0-9]*.sh")) + list(tdir.glob("52[0-9]*.sh"))
                      if p.stem not in names and int(p.name[:3]) not in RERUN_NUMBERS)
-    assert not foreign, f"task files in 430-479 / 490-521 not made by this generator (re-runs: {RERUN_NUMBERS}): {foreign}"
+    assert not foreign, f"task files in 430-479 / 490-529 not made by this generator (re-runs: {RERUN_NUMBERS}): {foreign}"
     reruns = sorted(p.name for p in tdir.glob("4[7-8][0-9]*.sh") if int(p.name[:3]) in RERUN_NUMBERS)
     if reruns:
         print(f"re-run task files in the reserved numbers (not made by this generator): {reruns}")
-    if not write_a7:
-        T = T[:68]
-        print("A7 block (510-521) rendered and asserted, NOT written (--no_a7)")
-    if not write_a6:
-        T = T[:52] + T[68:]
-        print("A6 block (494-509) rendered and asserted, NOT written (--no_a6)")
-    if not write_confirm:
-        T = T[:40] + T[52:]
-        print("confirm blocks (470-477, 490-493) rendered and asserted, NOT written (--no_confirm)")
+    drop = set()   # A8: by membership (the blocks' positions no longer matter)
+    for flag, block, msg in ((write_a8, A8_ORDER, "A8 block (522-529) rendered and asserted, NOT written (--no_a8)"),
+                             (write_a7, A7_ORDER, "A7 block (510-521) rendered and asserted, NOT written (--no_a7)"),
+                             (write_a6, A6_ORDER, "A6 block (494-509) rendered and asserted, NOT written (--no_a6)"),
+                             (write_confirm, CONFIRM_ORDER + CONFIRM2_ORDER,
+                              "confirm blocks (470-477, 490-493) rendered and asserted, NOT written (--no_confirm)")):
+        if not flag:
+            drop |= set(block)
+            print(msg)
+    T = [t for t in T if (t[4], t[5]) not in drop]
     new, same, differ, ran = [], [], [], []
     for name, tag, text, *_ in T:
         p = tdir / f"{name}.sh"
