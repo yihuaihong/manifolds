@@ -23,5 +23,23 @@ Status at registration (2026-10-20):
 - Wall 1 (runs/ptheld, Torch): (a) mostly (none lr 2e-3 / 8e-3 / 1.6e-2, wd 0.01 / 0.1 / 1, 4x tokens); (b) open: prior
   arms at one lr (2e-3); (c) met (helix encodes values, not sums); (f) met (L40S).
 - Wall 2 (runs/toyshape, Torch): shape-only targets (c met by construction); (b) open for most prior arms (lr 1e-2).
-- rb6 A7 / A8 (Burst, A100): S4 matrix targets encode the table, so (c) is NOT met: no rescue claim is possible there
+- rb6 A7 / A8 (Burst, A100): S4 matrix targets encode the table, so (c) is NOT met [superseded by Amendment 1: at most Tier L]: no rescue claim is possible there
   whatever the result; A8 can support "reliable / early", not "rescue".
+
+## Amendment 1 (2026-10-20, user decision, before any result of wall 1 / wall 2 / rb6 A8 was read): two tiers for criterion (c)
+Criterion (c) was applied inconsistently above: a faithful matrix representation of a group determines its table, but
+so do the numbers' values on the helix (given every value, the addition table is determined). The user asked to try both
+readings; to avoid choosing one after the results, both are fixed now as two labelled tiers. Every rescue result is
+reported with the highest tier it meets, and the paper names the tier.
+- **Tier S (strict)**: the target does not determine the operation table (e.g. a permutation-invariant, shape-only
+  target that gives the geometry but not which item sits where). Only shape-only priors (wall 2) can reach it.
+- **Tier L (lenient, "structure given")**: the target does not place any question's answer, but it may give a
+  structure from which the table follows once the model learns the operation (helix values for numbers, matrix
+  representations of a group). A Tier-L rescue is written as "given the structure, the model learns to use it", never
+  as "the model discovered the structure".
+- **Neither**: targets that place the answer's coordinates directly (anchor targets, F81 fact injection).
+- Criteria (a), (b), (d), (e), (f) apply to both tiers unchanged.
+- Tier per current experiment: wall 1 (helix on held-out numbers) -> at most L; wall 2 shape / shapeprof arms -> at most
+  S (its assignment controls at most L); rb6 S4 (rotation matrices) -> at most L, and (a) currently fails (none learns S4
+  at lr 1.6e-2 / 3.2e-2 in some seeds, F88 A7); the new-manifold screen (notes/new_manifolds_screen_design.md) is to run
+  both an assignment prior (L) and a shape-only prior (S) per candidate.
