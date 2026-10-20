@@ -1,7 +1,7 @@
 """rainbow6 summary (runs/rb6, tools/pretrain_range.py Rev B --domains; intent spec runs/rb6/AUDIT.md).
 
     python tools/rainbow6_summary.py <runs/rb6/out> [<more dirs>] [--ref <glob or dir> ...] [--json out.json] [--allow_partial]
-        [--a6_partial] [--a7_partial] [--a8_partial] [--s4_hard]
+        [--a6_partial] [--a7_partial] [--a8_partial] [--a83_partial] [--s4_hard]
 
 Reads every run_*.json under the directories (one sub-directory per tag; tag = rb6<phase>-53m-2pct-k<K>-<arm>).
 Per arm x domain x K: area (100 x mean over all evals), final3 (100 x mean of the last 3 evals), t90 / t50 (M tokens to
@@ -115,6 +115,14 @@ A8.2 (2026-10-20, before any A7 / A8 result; A8's 25% sat at chance, 24.2-27.2%,
 s4_hard' = the LAST eval's s4_hard hits significantly above the seed's exact chance (one-sided exact binomial, alpha .01,
 n = the seed's s4_hard size; the per-seed critical accuracy printed); speed = the first eval from which that test passes
 at every later eval too (sustained; censored).
+A8.3 (2026-10-20, user decision BEFORE any A8 result was read; amendment A8.3 of report/audits/rb6_A5_main_design.md): the
+confirmatory set = seeds 8-15 of all6-lam1@1e-3 and none@1.6e-2 (A8's 522-529 + tasks 530-537 at seeds 12-15; is_a83;
+split off first); the A8.3 section (a83_readout, printed last whenever a run of the two arms at seeds 8-15 is given): the
+ONLY decision = the s4_hard AREA, all6 - none paired by seed over seeds 8-15, one-sided paired t at alpha .05 (95% CI,
+per-seed differences, exact sign-flip p beside); SECONDARY: s4_hard final3 t, the learned count (Fisher), the sustained
+speed (Gehan), A8's H1 & H2 rule (demoted), numbers / clock / dim (descriptive); seeds 0-7 exploratory. Every confirmatory
+run's s4_hard = the A8 audit's precomputation (S4_HARD_PRE, asserted before any output). --a83_partial relaxes only A8.3;
+every section above (pilot, A5, A6, A7, the s4_hard table, A8) is byte-identical with and without the A8.3 runs.
 """
 from __future__ import annotations
 
@@ -316,9 +324,10 @@ def load(roots):
     return runs
 
 
-def check(runs, partial, a6_partial=False, a7_partial=False, a8_partial=False):
+def check(runs, partial, a6_partial=False, a7_partial=False, a8_partial=False, a83_partial=False):
     """Integrity asserts; returns a list of warnings (soft checks). A6.1: an A6 arm's non-finite values are a DIVERGED
-    warning (data), every other run keeps the finiteness assert; --a6_partial lets only A6 runs be unfinished."""
+    warning (data), every other run keeps the finiteness assert; --a6_partial lets only A6 runs be unfinished (A8.3:
+    --a83_partial only the A8.3 runs, seeds 12-15)."""
     warn = []
     shas = {x["r"]["code_sha"] for x in runs}
     assert len(shas) == 1, f"mixed code_sha {shas}"
@@ -333,8 +342,8 @@ def check(runs, partial, a6_partial=False, a7_partial=False, a8_partial=False):
         a6arm = x["arm"] in A6_ARMS + A7_ARMS   # A7: its lr arms are A6's kind (a diverged run is data)
         if c[-1]["step"] != r["steps"] - 1:
             msg = f"{x['tag']} s{x['seed']}: unfinished (last eval {c[-1]['step']} of {r['steps']})"
-            assert partial or (a6_partial and a6arm and not is_a7(x) and not is_a8(x)) or (a7_partial and is_a7(x)) or (
-                a8_partial and is_a8(x)), \
+            assert partial or (a6_partial and a6arm and not is_a7(x) and not is_a8(x) and not is_a83(x)) or (
+                a7_partial and is_a7(x)) or (a8_partial and is_a8(x)) or (a83_partial and is_a83(x)), \
                 msg + " (--allow_partial to look anyway; verdicts are then PROVISIONAL)"
             warn.append(msg)
         div = diverged_at(r) if a6arm else None   # A6: a diverged A6 run is data (pt2main / readout_rules), listed, never
@@ -2160,6 +2169,40 @@ def is_a8(x):
     return x["arm"] in A8_ARMS and x["seed"] in A8_SEEDS
 
 
+A83_SEEDS = (12, 13, 14, 15)   # A8.3: all6-lam1 / none-lr1.6e-2 at the fresh seeds 12-15 (tasks 530-537; is_a83)
+CONF83 = A8_SEEDS + A83_SEEDS   # A8.3: the confirmatory set (8 fresh pairs); seeds 0-7 of both arms = the exploratory set
+EXPL83 = tuple(range(8))
+ALPHA83 = 0.05   # A8.3: the PRIMARY test's level (one-sided paired t on the s4_hard area)
+# Erratum to A8.2 / A8.1 (2026-10-20): the s4_hard set of every confirmatory seed, precomputed from the seed's split alone
+# (inputs, no result) by the fresh A8 audit's own code (toy_struct at the pin, the split from the dry log's split_seed, its
+# own Latin propagation; notes/batch1_build/audit_rb6_a8.md): (hard cells, read-out set size, exact chance in points).
+# Seeds 8-11 = the audit's values; seeds 12-15 = the same code on the A8.3 Torch reference dry logs. Every confirmatory
+# run's s4_hard must reproduce them (s4_hard_pre_check, before anything is printed).
+S4_HARD_PRE = {8: (191, 200, 25.16392420842683), 9: (173, 198, 26.437287824571058), 10: (181, 195, 23.94764535648514),
+               11: (193, 203, 23.494530800230283), 12: (190, 201, 24.120718462823724), 13: (187, 199, 26.573932603344367),
+               14: (175, 197, 25.001360544217683), 15: (187, 199, 24.81262201850437)}
+
+
+def is_a83(x):
+    """A8.3: a run of the A8.3 block (all6-lam1 / none-lr1.6e-2 at seeds 12-15): read by the A8.3 section only; every
+    section above it (pilot, A5, A6, A7, the s4_hard table, A8) is computed without them (byte-identical)."""
+    return x["arm"] in A8_ARMS and x["seed"] in A83_SEEDS
+
+
+def s4_hard_pre_check(xs):
+    """A8.3 (erratum to A8.2 / A8.1): every confirmatory run's s4_hard set size, read-out set size and exact chance =
+    S4_HARD_PRE (the audit's precomputation from the split alone); an AssertionError otherwise."""
+    for x in xs:
+        if x["k"] != MAIN_K or x["arm"] not in A8_ARMS or x["seed"] not in CONF83:
+            continue
+        h = s4_hard(x["r"])
+        assert x["seed"] in S4_HARD_PRE, ("no precomputed s4_hard for this confirmatory seed", x["seed"])
+        n, nr, ch = S4_HARD_PRE[x["seed"]]
+        assert (h["n"], h["n_readout"]) == (n, nr) and abs(h["chance"] - ch) < 1e-9, (
+            "s4_hard differs from the audit's precomputation (erratum to A8.2 / A8.1)", x["arm"], x["seed"],
+            (h["n"], h["n_readout"], h["chance"]), (n, nr, ch))
+
+
 def s4_hard(r):
     """A8: the strict S4 read-out set of this run's seed - the s4_held_fresh_nonid questions NOT solved by the A7 Latin
     propagation (s4_latin_level's: the trained cells as givens, naked + hidden singles per row / column to a fixpoint) -
@@ -2529,6 +2572,194 @@ def _a8_body(A, cells, xs, problems):
     A["families"]["A8.1"] = rows
 
 
+def a83_readout(runs, out, partial, ident8=None, ident83=None, warn8=(), warn83=(), a83_partial=False):
+    """A8.3 read-out (amendment A8.3 of report/audits/rb6_A5_main_design.md, 2026-10-20, user decision BEFORE any A8
+    result was read; the binding decision rule). Confirmatory set = seeds 8-15 of all6-lam1@1e-3 and none@1.6e-2 (8 fresh
+    pairs: seeds 8-11 = A8, tasks 522-529; seeds 12-15 = tasks 530-537). PRIMARY (the only decision): the s4_hard AREA
+    (100 x the mean over all evals of the s4_hard accuracy), all6 - none paired by seed over seeds 8-15, one-sided paired
+    t at alpha .05 (prior > none), n = 8, with the 95% CI, the per-seed differences and the exact sign-flip p beside
+    (descriptive). SECONDARY (reported, not deciding): s4_hard final3 paired t; the count learned on s4_hard (A8.2 binomial
+    rule) with Fisher exact; the sustained speed (A8.2) with Gehan; A8's H1 & H2 rule (demoted); numbers / clock / dim on
+    seeds 8-15 (descriptive). Seeds 0-7 of both arms: the exploratory block. A missing / excluded / unfinished run in seeds
+    8-15 -> PROVISIONAL (no decision); strict mode refuses before any A8.3 conclusion; a decision is printed in strict mode
+    only (--a83_partial / --allow_partial: every verdict PROVISIONAL). A diverged run is data (A6). Printed last, whenever a
+    run of the two arms at seeds 8-15 is given. Read-out command (Burst repo root; mid-batch add --a8_partial and / or
+    --a83_partial; a re-run's directory replaces its failed task's):
+      python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results/415-rb6pb-* results/419-rb6pb-* \\
+        results/4[3-6][0-9]-rb6*-* results/47[0-8]-rb6*-* results/49[0-3]-rb6mb-* \\
+        results/49[4-9]-rb6mb-* results/50[0-9]-rb6mb-* results/479-rb6mb-* results/51[0-9]-rb6mb-* results/52[01]-rb6mb-* \\
+        results/52[2-9]-rb6*-* results/53[0-7]-rb6*-* \\
+        --ref 'results/35[0-3]-pt2b-lr1e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr8e-3-none-s?' \\
+        --ref 'results/35[0-3]-pt2b-lr1e-3-win-ctx-s?' --json rb6m_a83_summary.json"""
+    import contextlib
+    import io
+    K = MAIN_K
+    strict = not (partial or a83_partial)
+    runs = [x for x in runs if x["k"] == K and x["arm"] in A8_ARMS]
+    unfin = [x for x in runs if x["r"]["curve"][-1]["step"] != x["r"]["steps"] - 1]
+    runs = [x for x in runs if x not in unfin]
+    cells = defaultdict(dict)
+    for x in runs:
+        cells[x["arm"]][x["seed"]] = x["r"]
+    xs = {(x["arm"], x["seed"]): x for x in runs}
+    A = out["a83"] = {"excluded": [], "missing_seeds": {}, "diverged": {}, "unfinished": [], "families": {}, "provisional": False,
+                      "decision": None, "mode": "--allow_partial" if partial else "--a83_partial" if a83_partial else "strict"}
+    print("\n== A8.3 READ-OUT (amendment A8.3 of report/audits/rb6_A5_main_design.md, 2026-10-20, user decision BEFORE any A8"
+          " result was read; the BINDING decision rule): confirmatory set = seeds 8-15 of all6-lam1@1e-3 and none@1.6e-2 (8"
+          " fresh pairs: seeds 8-11 = A8, tasks 522-529; seeds 12-15 = tasks 530-537); PRIMARY (the only decision) = the"
+          f" s4_hard AREA, all6 - none paired by seed, one-sided paired t at alpha {ALPHA83:g}; everything else is SECONDARY"
+          " (reported, not deciding) or descriptive; seeds 0-7 = the exploratory block; the A5 / A6 / A7 / A8 sections above"
+          " are unchanged (A8's H1 & H2 rule is demoted to the SECONDARY block)")
+    print("  mode: " + {"strict": "strict (an incomplete confirmatory set is refused before any A8.3 conclusion is printed)",
+                        "--a83_partial": "--a83_partial (the A8.3 section may be incomplete: every A8.3 verdict is PROVISIONAL;"
+                                         " the sections above keep their own modes)",
+                        "--allow_partial": "--allow_partial (every A8.3 verdict is PROVISIONAL)"}[A["mode"]])
+    problems = []
+    for lab, ident in (("seeds 8-11 (A8, tasks 522-529)", ident8), ("seeds 12-15 (A8.3, tasks 530-537)", ident83)):
+        if ident is None:
+            continue
+        print(f"  run identity of the confirmatory runs, {lab} (tag's intent = run JSON; check.json PASS): {ident['checked']}"
+              f" checked, {len(ident['excluded'])} EXCLUDED")
+        for lab_, why in ident["excluded"]:
+            print(f"  EXCLUDED run {lab_}: " + "; ".join(why))
+            A["excluded"].append([lab_, why])
+        for t in ident["valid_notes"] + ident["not_checked"]:
+            print("  NOTE " + t)
+    for w in list(warn8) + list(warn83):
+        print("  WARNING " + w)
+    if unfin:
+        A["unfinished"] = sorted(f"{x['arm']} s{x['seed']}" for x in unfin)
+        print(f"  UNFINISHED run(s) counted as missing (A5.1 rule 1): {A['unfinished']}")
+    missing = {a: sorted(set(CONF83) - set(cells.get(a, {}))) for a in A8_ARMS}
+    missing = {a: v for a, v in missing.items() if v}
+    A["missing_seeds"] = missing
+    if missing:
+        msg = ("A8.3 confirmatory set incomplete (seeds 8-15 of both arms): missing "
+               + "; ".join(f"{a} {v}" for a, v in missing.items()))
+        print(f"  PROVISIONAL: {msg}")
+        problems.append(msg)
+    div = {f"{a} s{s}": diverged_at(r) for a, sd in cells.items() for s, r in sd.items() if s in CONF83 and diverged_at(r) is not None}
+    A["diverged"] = div
+    print(f"  diverged confirmatory runs (data, never excluded: their s4_hard over all evals counts): {div if div else 'none'}")
+    prov = bool(problems or not strict)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        _a83_body(A, cells, xs, prov)
+    A["provisional"] = prov
+    if problems and strict:
+        print(f"  {len(problems)} A8.3 problem(s): {problems}")
+        print("  A8.3 read-out REFUSED (strict): no A8.3 conclusion is printed for an incomplete confirmatory set; --a83_partial"
+              " (the sections above keep their own modes) or --allow_partial to look anyway, every A8.3 verdict PROVISIONAL")
+    assert not (problems and strict), ("A8.3 read-out: " + "; ".join(problems) + " (--a83_partial or --allow_partial to look"
+                                       " at an incomplete confirmatory set anyway: verdicts PROVISIONAL)")
+    print(buf.getvalue(), end="")
+    if problems:
+        print(f"  {len(problems)} A8.3 problem(s): {problems}")
+    print("\n== A8.3 read-out status: " + ("PROVISIONAL (" + ("missing seeds " + str(missing) if missing else
+                                                                "--allow_partial or --a83_partial") + "): no decision"
+                                         if prov else "complete (seeds 8-15 of both arms present; the PRIMARY decision"
+                                                      f" above is the A8.3 decision: {A['decision']})"))
+
+
+def _a83_body(A, cells, xs, prov):
+    P_, N_ = ALL6M, "none-lr1.6e-2"
+    sd = CONF83
+    ss = [s for s in sd if s in cells.get(P_, {}) and s in cells.get(N_, {})]
+    hm = lambda a, s: s4_hard_metrics(cells[a][s])
+    stp = lambda t: "never" if t is None else str(t)
+    vals = lambda a, k, seeds: "[" + " ".join(fmt(hm(a, s)[k]) if s in cells.get(a, {}) else "    -" for s in seeds) + "]"
+    pv = lambda p: "PROVISIONAL: not decided" if prov else "p < 0.05" if p is not None and p < 0.05 else "n.s."
+    seeds_ = sorted({s for a in (P_, N_) for s in cells.get(a, {}) if s in sd})
+    if seeds_:
+        print("\n== A8.3 s4_hard per confirmatory seed (= the fresh audit's precomputation from the split alone, asserted): n of"
+              " the read-out set | exact chance | critical accuracy (one-sided exact binomial, alpha"
+              f" {ALPHA_HARD:g}) | Latin level of the whole set")
+        print("  " + " | ".join(
+            f"s{s} n {h['n']} of {h['n_readout']} chance {h['chance']:.1f} critical {h['acc_crit']:.1f} level {h['level']:.1f}"
+            for s, h in ((s, hm(P_ if s in cells.get(P_, {}) else N_, s)) for s in seeds_)))
+    # PRIMARY: the s4_hard area, one-sided paired t over the confirmatory pairs
+    d = [hm(P_, s)["area"] - hm(N_, s)["area"] for s in ss]
+    st = paired(d, "greater")
+    two = paired(d, "two")
+    n_ev = sorted({len(s4_hard_series(cells[a][s])) for a in (P_, N_) for s in ss})
+    sig = (not prov) and st["p_t"] is not None and st["p_t"] < ALPHA83
+    A["decision"] = "PROVISIONAL" if prov else "SIGNIFICANT" if sig else "n.s."
+    A["families"]["primary"] = dict(st, metric="s4_hard area", seeds=ss, ci95_two_sided=two.get("ci"),
+                                    all6={s: hm(P_, s)["area"] for s in ss}, none={s: hm(N_, s)["area"] for s in ss},
+                                    significant=sig, provisional=prov, evals=n_ev)
+    print(f"\n== A8.3 PRIMARY (the ONLY decision; seeds 8-15, n = {len(ss)} of 8 pairs): the s4_hard AREA (100 x the mean over all"
+          f" {'/'.join(str(v) for v in n_ev) or '-'} evals of the s4_hard accuracy), all6@1e-3 - none@1.6e-2 paired by seed,"
+          f" one-sided paired t (prior > none, df n - 1) at alpha {ALPHA83:g}; the 95% CI (two-sided t) and the one-sided 95%"
+          " lower bound (> 0 iff p < .05) beside; the exact sign-flip p (all 2^n sign patterns) is DESCRIPTIVE")
+    print(f"  all6@1e-3     {vals(P_, 'area', sd)} (seeds {sd[0]}-{sd[-1]})")
+    print(f"  none@1.6e-2   {vals(N_, 'area', sd)}")
+    print(f"  per-seed Δ    [{' '.join(fmt(v, 6) for v in d)}] (seeds {ss}; wins {st['wins']}/{st['n']})")
+    lo2, hi2 = (two.get("ci") or [None, None])[:2]
+    print(f"  mean Δ {fmt(st['mean'], 6, 2).strip()} sd {fmt(st['sd'], 6, 2).strip()} t {fmt(st['t'], 6, 3).strip()} (df"
+          f" {max(st['n'] - 1, 0)}) one-sided p {fmt(st['p_t'], 6, 4).strip()}"
+          f" | 95% CI [{fmt(lo2, 6, 2).strip()}, {fmt(hi2, 6, 2).strip()}] (two-sided t), one-sided 95% lower bound"
+          f" {fmt((st.get('ci') or [None])[0], 6, 2).strip()} | exact sign-flip p (one-sided) {fmt(st['p_sf'], 6, 4)} (descriptive)")
+    print("  -> A8.3 DECISION: " + ("PROVISIONAL: not decided (the confirmatory set is incomplete, or a partial mode)" if prov else
+                                   f"SIGNIFICANT (one-sided p < {ALPHA83:g}): the prior raises the s4_hard area on fresh seeds"
+                                   if sig else f"n.s. (one-sided p >= {ALPHA83:g}): no s4_hard area gain shown on fresh seeds"))
+    # SECONDARY (reported, not deciding)
+    rel = hard_reliability(cells, P_, N_, sd, "learned", "secondary")
+    spd = hard_speed(cells, P_, N_, sd, "speed", "secondary")
+    tf = rel["t"]
+    A["families"]["secondary"] = {"final3": dict(tf, seeds=ss), "learned": rel, "speed": spd}
+    print("\n== A8.3 SECONDARY (reported, NOT deciding; seeds 8-15; one-sided, prior > none; raw p, no multiplicity"
+          " correction: none of these decides)")
+    print(f"  s4_hard final3: all6 {vals(P_, 'final3', sd)} vs none {vals(N_, 'final3', sd)} | Δ [{' '.join(fmt(v, 6) for v in tf['diffs'])}]"
+          f" mean {fmt(tf['mean'], 6, 2)} 1-sided t p {fmt(tf['p_t'], 6, 4)} sign-flip {fmt(tf['p_sf'], 6, 4)} -> {pv(tf['p_t'])}"
+          " (not deciding)")
+    lst = lambda dd: " ".join((f"{v[0]:.1f}{'*' if v[3] else ''}" if v else "-") for v in (dd.get(s) for s in sd))
+    print(f"  learned on s4_hard (A8.2: the last eval above the seed's chance, exact binomial alpha {ALPHA_HARD:g}): all6"
+          f" {rel['k_a']}/{rel['n_a']} vs none {rel['k_b']}/{rel['n_b']} | last eval [{lst(rel['a_last'])}] vs [{lst(rel['b_last'])}]"
+          f" (* = learned) | Fisher exact p {fmt(rel['p'], 6, 4)} (Barnard {fmt(rel['p_barnard'], 6, 4)}) -> {pv(rel['p'])} (not deciding)")
+    w, l_, t_, ps = spd["sign"]
+    print(f"  sustained speed (A8.2: the first eval from which s4_hard stays above chance; censored 'never'): ["
+          + " ".join(stp(spd["t_a"][s]) if s in spd["t_a"] else "-" for s in sd) + "] vs ["
+          + " ".join(stp(spd["t_b"][s]) if s in spd["t_b"] else "-" for s in sd) + f"] medians {stp(spd['median_a'])} vs"
+          f" {stp(spd['median_b'])} | Gehan U {spd['U']} p {fmt(spd['p'], 6, 4)} (sign test {w}/{l_}/{t_} p {fmt(ps, 6, 4)}) ->"
+          f" {pv(spd['p'])} (not deciding)")
+    h1 = (not prov) and rel["p"] is not None and rel["p"] < 0.05
+    h2 = (not prov) and spd["p"] is not None and spd["p"] < 0.05
+    A["families"]["secondary"]["a8_rule"] = {"H1": h1, "H2": h2, "would_confirm": h1 and h2, "demoted": True}
+    print("  A8's H1 & H2 rule (DEMOTED by A8.3, not a decision; the A8 section above applies it to seeds 8-11): on seeds 8-15 H1"
+          f" Fisher p {fmt(rel['p'], 6, 4)} & H2 Gehan p {fmt(spd['p'], 6, 4)} -> "
+          + ("PROVISIONAL" if prov else "would read CONFIRMED (both p < 0.05)" if h1 and h2 else
+             "would read NOT CONFIRMED (" + ", ".join(k for k, v in (("H1 n.s.", h1), ("H2 n.s.", h2)) if not v) + ")")
+          + " (not deciding)")
+    print("  descriptive: the A5 headline domains on seeds 8-15, all6@1e-3 - none@1.6e-2 paired by seed (two-sided t); all6's"
+          " exploratory seeds 0-7 mean beside")
+    rows = []
+    for dm in ("numbers", "clock", "dim"):
+        key = READ[dm][0]
+        val = lambda arm, s: (metrics(cells[arm][s], "numbers")["area"] if dm == "numbers" else mval(xs[(arm, s)], dm))
+        st2 = paired([val(P_, s) - val(N_, s) for s in ss], "two")
+        old = [val(P_, s) for s in sorted(cells.get(P_, {})) if s in EXPL83]
+        rows.append(dict(st2, metric=dm))
+        print(f"    {dm:8s} {key:22s} all6 [" + " ".join(fmt(val(P_, s)) for s in ss) + "] vs none@1.6e-2 ["
+              + " ".join(fmt(val(N_, s)) for s in ss) + f"] Δ {fmt(st2['mean'], 6)} 2-sided p {fmt(st2['p_t'], 6, 4)} (descriptive)"
+              + (f" | all6 seeds 0-7 mean {fmt(float(np.mean(old)))}" if old else ""))
+    A["families"]["secondary"]["domains"] = rows
+    # EXPLORATORY: seeds 0-7 (all6@1e-3 seen when the hypothesis was formed; none@1.6e-2's lr chosen on them)
+    ex = [s for s in EXPL83 if s in cells.get(P_, {}) and s in cells.get(N_, {})]
+    ea = paired([hm(P_, s)["area"] - hm(N_, s)["area"] for s in ex], "greater")
+    ef = paired([hm(P_, s)["final3"] - hm(N_, s)["final3"] for s in ex], "greater")
+    kl = lambda a: (sum(hm(a, s)["learned"] for s in ex), len(ex))
+    A["families"]["exploratory"] = {"seeds": ex, "area": ea, "final3": ef, "learned": {"all6": kl(P_), "none": kl(N_)}}
+    print("\n== A8.3 EXPLORATORY (seeds 0-7 of both arms: all6@1e-3's were seen when the hypothesis was formed, none@1.6e-2's"
+          " seeds 0-3 chose its lr (A6 / A7); reported, never part of the decision)")
+    if ex:
+        print(f"  s4_hard area all6 {vals(P_, 'area', ex)} vs none {vals(N_, 'area', ex)} (seeds {ex}) | Δ mean"
+              f" {fmt(ea['mean'], 6, 2)} 1-sided t p {fmt(ea['p_t'], 6, 4)} (exploratory)")
+        print(f"  s4_hard final3 all6 {vals(P_, 'final3', ex)} vs none {vals(N_, 'final3', ex)} | Δ mean {fmt(ef['mean'], 6, 2)}"
+              f" 1-sided t p {fmt(ef['p_t'], 6, 4)} | learned {kl(P_)[0]}/{kl(P_)[1]} vs {kl(N_)[0]}/{kl(N_)[1]} (exploratory)")
+    else:
+        print("  (no seed 0-7 pair of the two arms given)")
+
+
 def main():
     ap = argparse.ArgumentParser(description="rainbow6 (rb6) summary; see the module docstring")
     ap.add_argument("roots", nargs="+", help="directories with the rb6 run JSONs (searched recursively)")
@@ -2540,6 +2771,8 @@ def main():
                     " missing A6-section run PROVISIONAL) while the A5 section stays strict (byte-identical)")
     ap.add_argument("--a7_partial", action="store_true", help="A7: let the A7 section be incomplete (verdicts that need a"
                     " missing A7-section run PROVISIONAL) while the A5 / A6 sections stay strict (byte-identical)")
+    ap.add_argument("--a83_partial", action="store_true", help="A8.3: let the A8.3 section be incomplete (every A8.3 verdict"
+                    " PROVISIONAL) while every section above keeps its own mode (byte-identical)")
     ap.add_argument("--a8_partial", action="store_true", help="A8: let the A8 section be incomplete (verdicts that need a"
                     " missing A8 run PROVISIONAL) while every section above stays strict (byte-identical)")
     ap.add_argument("--s4_hard", action="store_true", help="A8: print the s4_hard table for every K = 2 run given (on by itself"
@@ -2557,6 +2790,10 @@ def main():
         f"main-design runs mixed with pilot-only cells {mix}: pass only the A5 read-out command's directories (runs/rb6/AUDIT.md"
         " A5), or add --main_readout to exclude them from the A5 sections")
     ident = ident6 = ident7 = ident8 = None
+    ident83 = None
+    a83runs = [x for x in runs if is_a83(x)]   # A8.3: split off first; every section above A8.3 is computed without them
+    a83_given = bool(a83runs)
+    runs = [x for x in runs if not is_a83(x)]
     a8runs = [x for x in runs if is_a8(x)]   # A8: split off first; every section above A8 is computed without them
     a8_given = bool(a8runs)
     runs = [x for x in runs if not is_a8(x)]
@@ -2573,14 +2810,19 @@ def main():
             a7runs, ident7 = run_identity(a7runs, A7_ARMS + ("none-lr1.6e-2",))
         if a8_given:
             a8runs, ident8 = run_identity(a8runs, A8_ARMS)
+        if a83_given:
+            a83runs, ident83 = run_identity(a83runs, A8_ARMS)
         assert runs, "no run left after the run-identity check (A5.1)"
     # integrity over every run (incl. A6 / A7: the same data per seed in every arm); A7 runs' warnings are theirs only
-    warn_full = check(runs + a7runs + a8runs, partial, opt.a6_partial, opt.a7_partial, opt.a8_partial)
+    s4_hard_pre_check(a8runs + a83runs)   # A8.3 erratum: the confirmatory s4_hard sets = the audit's, before any output
+    warn_full = check(runs + a7runs + a8runs + a83runs, partial, opt.a6_partial, opt.a7_partial, opt.a8_partial, opt.a83_partial)
     a7keys = {f"{x['tag']} s{x['seed']}" for x in a7runs}
     a8keys = {f"{x['tag']} s{x['seed']}" for x in a8runs}
+    a83keys = {f"{x['tag']} s{x['seed']}" for x in a83runs}
     warn7 = [w for w in warn_full if w.split(":")[0] in a7keys]
     warn8 = [w for w in warn_full if w.split(":")[0] in a8keys]
-    warn_all = [w for w in warn_full if w.split(":")[0] not in a7keys | a8keys]
+    warn83 = [w for w in warn_full if w.split(":")[0] in a83keys]
+    warn_all = [w for w in warn_full if w.split(":")[0] not in a7keys | a8keys | a83keys]
     a6runs = [x for x in runs if x["arm"] in A6_ARMS]   # A6: the A5 / pilot sections are computed WITHOUT the A6 runs
     a6tags = {x["tag"] for x in a6runs}
     all_runs = runs
@@ -2830,6 +3072,9 @@ def main():
         s4_hard_table(all_runs + a7runs + a8runs, out)
     if a8_given:   # A8 (pre-registered before any A7 result / A8 run): appended last
         a8_readout(all_runs + a7runs + a8runs, out, partial, ident8, warn8, a8_partial=opt.a8_partial)
+    if a8_given or a83_given:   # A8.3 (user decision before any A8 result was read; the binding rule): appended last
+        a83_readout(all_runs + a7runs + a8runs + a83runs, out, partial, ident8, ident83, warn8, warn83,
+                    a83_partial=opt.a83_partial)
     if opt.json:
         Path(opt.json).write_text(json.dumps(out, indent=1))
 

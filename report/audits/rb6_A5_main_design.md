@@ -1128,3 +1128,14 @@ A8's 25% sat at chance; replaced by A8.2 (below).
 - Audit I2: a significant H1 implies a significant H2 in this design, so "early" is not tested separately by the
   demoted A8 rule; under A8.3 neither decides.
 - The audit precomputed seeds 8-11 n / chance / critical for s4_hard; the read-out must reproduce them (assert).
+
+### A8.3 implementation note (2026-10-20, before any A8 / A8.3 result was read)
+- Tasks 530-537 = all6-lam1@1e-3 and none@1.6e-2 at seeds 12-15 (pairs 530/531 = s12 ... 536/537 = s15); args = the A8
+  seed-8 tasks except the seed and the Torch references (seeds 12-15 computed after reproducing seeds 8 and 4 bitwise;
+  step-0 forward run under no_grad to stay under 8 GB, reproducing 8 and 4 bitwise).
+- rainbow6_summary.py: the A8.3 section is appended after the last existing line (32 lines); the JSON gains only "a83";
+  pilot / A5 / A6 / A7 outputs byte-identical. The s4_hard values of seeds 8-15 (n / chance / critical) are asserted
+  before any output.
+- Read-out command: `python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results/415-rb6pb-* results/419-rb6pb-* results/4[3-6][0-9]-rb6*-* results/47[0-8]-rb6*-* results/49[0-3]-rb6mb-* results/49[4-9]-rb6mb-* results/50[0-9]-rb6mb-* results/479-rb6mb-* results/51[0-9]-rb6mb-* results/52[01]-rb6mb-* results/52[2-9]-rb6*-* results/53[0-7]-rb6*-* --ref 'results/35[0-3]-pt2b-lr1e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr8e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr1e-3-win-ctx-s?' --json rb6m_a83_summary.json`
+  (exclude 440 and 508, whose re-runs are 478 / 479). Only the strict mode decides; any partial flag makes every A8.3
+  verdict PROVISIONAL. The A8 command alone (522-529 only) now ends with the A8.3 refusal unless --a83_partial is given.
