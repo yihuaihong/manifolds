@@ -1102,3 +1102,20 @@ A8's 25% sat at chance; replaced by A8.2 (below).
 - **Reading of A8 confirmed by the user**: CONFIRMED only if H1 AND H2 are significant (an intersection-union test).
 - **The rule is data-independent.** It fixes alpha (.01) and the reference (the exact chance) without looking at any
   result. The critical accuracies follow from n and the chance alone.
+
+## Amendment A8.3 (2026-10-20, before any A8 result was read; user decision)
+- Why: A7 showed that A8's binary decision (seeds "learned" on s4_hard, Fisher exact, 4 vs 4) has little power: at the
+  rates seen in A7 (prior ~6/8, none@1.6e-2 ~2/8), even 8 vs 8 gives Fisher p ~ .07. This amendment is made after reading
+  A7 and BEFORE any A8 (522-529) result was read by anyone in this session.
+- Confirmatory set: seeds 8-15 for BOTH all6-lam1@1e-3 and none@1.6e-2 (8 pairs, all fresh: never seen, never used to
+  select an lr or to form the hypothesis). Seeds 8-11 = A8 (tasks 522-529); seeds 12-15 = new tasks (same args except
+  seed). Seeds 0-7 of both arms are the exploratory set: reported, never part of the decision.
+- PRIMARY (the only decision): the s4_hard AREA (100 x mean over all evals of s4_hard accuracy), all6 - none paired by
+  seed over seeds 8-15, one-sided paired t at alpha .05 (prior > none). n = 8. Reported with the 95% CI, per-seed
+  differences, and the exact sign-flip p beside (descriptive).
+- SECONDARY (reported, not deciding): s4_hard final3 paired t; the count of seeds learned on s4_hard (A8.2 binomial
+  rule) with Fisher exact; the sustained speed (A8.2) with Gehan; the A8 H1 & H2 "CONFIRMED" rule is demoted to this
+  secondary block. Also the numbers / clock / dim headline domains on seeds 8-15, descriptive.
+- Missing / excluded / unfinished run in seeds 8-15: PROVISIONAL, no decision (as A5.1); a re-run replaces it.
+- The user's request "look at which metric is better afterwards" was declined: choosing the metric after the results
+  would invalidate the test; all metrics are reported, the area alone decides.
