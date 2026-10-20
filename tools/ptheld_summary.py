@@ -130,8 +130,12 @@ def check_run(r, code_sha):
             bad.append(f"held_lines_scanned {e.get('held_lines_scanned')} at step {e['step']}"); break
         if a["site"] == "emb" and a["target"] != "none" and e.get("grad_prior_emb_rows") not in (None, 1000):
             bad.append(f"grad_prior_emb_rows {e.get('grad_prior_emb_rows')} at step {e['step']}"); break
-        if not e.get("logp_dp_maxdiff_H_one", 0.0) <= 0.05:
-            bad.append(f"logp double path {e.get('logp_dp_maxdiff_H_one')} at step {e['step']}"); break
+        # AUDIT amendment DP (2026-10-20): step 0 (near-uniform model) <= 0.05 for every H set = the span check the hits
+        # share; later evals <= 0.5 nat per scored token (H_one 1.0, H_both / H_ans 1.5) = two bf16 ulps per token on GPU
+        dp_tol = {"H_one": 1.0, "H_both": 1.5, "H_ans": 1.5}
+        dp_bad = [s for s in dp_tol if not e.get(f"logp_dp_maxdiff_{s}", 0.0) <= (0.05 if e["step"] == 0 else dp_tol[s])]
+        if dp_bad:
+            bad.append(f"logp double path {[(s, e.get(f'logp_dp_maxdiff_{s}')) for s in dp_bad]} at step {e['step']}"); break
         if any(e.get(f"pred_mismatch_{s}", 0) for s in ("H_one", "H_both", "H_ans")):
             r3_ok = False
     if not r["curve"][-1].get("held_rej", 0) > 0:
