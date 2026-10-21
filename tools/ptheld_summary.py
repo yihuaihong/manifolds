@@ -45,6 +45,13 @@ H_one teacher-forced log-prob of the answer (nats, summed over the answer tokens
       the same partial Spearman (win-emb's own rho is NOT a null: count and value are rank-correlated -0.86 over
       100..999). win-text also against its logged exposure (held_exposure.st_on).
   R5 (descriptive): H_both, H_ans single / chunk, held6, val bits per byte vs none@2e-3, win-emb acc_H1 at the window end.
+  R1-best (amendment PLR, 2026-10-20; implemented 2026-10-21 before any PLR result was read): per prior arm (win-text,
+      win-emb), the lr in {1e-3, 2e-3, 4e-3} with the highest mean H_one area over seeds 0-3 (area = the mean of acc_H1
+      over all evals of a run, the evals being evenly spaced); means within 0.02 of the top -> the lower mean offline
+      bpb (val_bits_per_byte final3); bracket closed iff 2e-3 is chosen, else OPEN at that edge. R1 is then re-run with
+      those two cells as X on seeds 0-3 of every cell (the selection seeds: a winner's-curse-biased reading). The
+      CONF seeds (4-7) exist only at 2e-3: if 2e-3 is chosen, R1 with that X cut to seeds 4-7 (the controls as in R1)
+      is the confirmation, else "CONF seeds not run at the chosen lr". R1 itself (the prior arms at 2e-3, all seeds) is unchanged.
 Validity (AUDIT 'Controls'; a failure withholds every verdict that uses the cell): code_sha, steps / evals, base args,
 held_lines_scanned = 128 x (step + 1), held_rej > 0, pred_mismatch = 0 (else R3 withheld for the run),
 logp_dp_maxdiff <= 0.05, prior_on_frac 6408 / 18310 and prior_events [[916, 1], [7324, 0]] for window arms (1x), none
@@ -212,15 +219,15 @@ def need_wins(m):
     return math.ceil(0.75 * m)
 
 
-def r1(runs, probs):
+def r1(runs, probs, xcells=X_CELLS):
     out, lines = {}, []
     ref = runs.get("none@2e-3", {})
     get = lambda c, s, k="H_one": final3(runs[c][s], k)
-    missing = [c for c in X_CELLS + Y_CELLS if c not in runs]
+    missing = [c for c in tuple(xcells) + Y_CELLS if c not in runs or len(runs[c]) < 3]
     if missing:
         lines.append(f"R1 INCOMPLETE: missing cells {missing}")
         return {"status": "incomplete"}, lines
-    withheld = [c for c in X_CELLS + Y_CELLS if c in probs]
+    withheld = [c for c in tuple(xcells) + Y_CELLS if c in probs]
     if withheld:
         lines.append(f"R1 WITHHELD: invalid runs in {withheld}")
         return {"status": "withheld"}, lines
@@ -233,7 +240,7 @@ def r1(runs, probs):
         yb[y] = "holds" if ok_n and all(vals[s] <= 0.10 for s in inf) else ("uninformative" if not ok_n else "fails")
         lines.append(f"R1(b) {y}: acc_H1 final3 {[round(vals[s], 3) for s in ss]}, informative {len(inf)}/{len(ss)} -> {yb[y]}")
     px, detail = {}, {}
-    for x in X_CELLS:
+    for x in xcells:
         ss = sorted(runs[x])
         vals = {s: get(x, s) for s in ss}
         inf_x = {s: held6_final3(runs[x][s]) >= 0.80 and RR.diverged_at(runs[x][s]) is None for s in ss}
@@ -258,7 +265,7 @@ def r1(runs, probs):
             ok, md, w, m = cs[y]
             lines.append(f"R1(c) {x} - {y}: mean {md:+.3f}, wins {w}/{m}, one-sided paired t p {ps[y]:.4f}")
     # Holm over the two X (each X's p = max over its Y: intersection-union)
-    order = sorted(X_CELLS, key=lambda x: (math.isnan(px[x]), px[x]))
+    order = sorted(xcells, key=lambda x: (math.isnan(px[x]), px[x]))
     holm, prev = {}, True
     for i, x in enumerate(order):
         holm[x] = prev and not math.isnan(px[x]) and px[x] < ALPHA[i]
@@ -285,7 +292,7 @@ def r1(runs, probs):
     br = bracket(runs, probs, info)
     lines += br["lines"]
     NONE_Y = Y_CELLS[:2]
-    for x in X_CELLS:
+    for x in xcells:
         d_ = detail[x]
         # (b): both none cells hold; win-ctx holds, or fails and R2's extra margin holds (site specificity)
         allb = all(yb[y] == "holds" for y in NONE_Y) and (yb["win-ctx@2e-3"] == "holds" or
@@ -314,11 +321,64 @@ def r1(runs, probs):
             v = "transient (curve max >= 0.5, final3 < 0.5): not the claim"
         else:
             v = "fails"
-        if x == "win-emb@2e-3" and v.startswith("HOLDS"):
+        if x.startswith("win-emb@") and v.startswith("HOLDS"):
             v += " [wording: injecting h's value coordinates into its embedding substitutes for task exposure]"
         out[x] = v
         lines.append(f"R1 {x}: {v}  (p_X = max_Y p = {px[x]:.4f}, Holm alpha {ALPHA[order.index(x)]}{'; R2 needed' if d_['r2_need'] else ''})")
     out.update(lc={c: v for c, v in lc.items()}, yb=yb, bracket_open=br["open"], trend=br["trend"], status="done")
+    return out, lines
+
+
+PLR_LRS = ("1e-3", "2e-3", "4e-3")
+SEL_SEEDS, CONF_SEEDS = (0, 1, 2, 3), (4, 5, 6, 7)
+
+
+def h_area(r):
+    return float(np.mean([e["H_one"] for e in r["curve"]]))
+
+
+def seeds_view(runs, seeds, cells=None):
+    """runs with the given cells (default: all) cut to `seeds`; a cell left with no seed is dropped (-> 'missing')"""
+    v = {c: ({s: r for s, r in rs.items() if s in seeds} if cells is None or c in cells else dict(rs)) for c, rs in runs.items()}
+    return {c: rs for c, rs in v.items() if rs}
+
+
+def r1_best(runs, probs):
+    """amendment PLR: each prior arm at its best lr (seeds 0-3), then R1 with the same thresholds"""
+    lines, best, br = [], {}, {}
+    for arm in ("win-text", "win-emb"):
+        cells = [f"{arm}@{lr}" for lr in PLR_LRS]
+        miss = [c for c in cells if c not in runs or not all(s in runs[c] for s in SEL_SEEDS)]
+        bad = [c for c in cells if c in probs]
+        if miss or bad:
+            lines.append(f"R1-best {arm}: " + (f"INCOMPLETE (missing / short of seeds 0-3: {miss})" if miss else f"WITHHELD (invalid runs in {bad})"))
+            return {"status": "incomplete" if miss else "withheld"}, lines
+        area = {c: float(np.mean([h_area(runs[c][s]) for s in SEL_SEEDS])) for c in cells}
+        bpb = {c: float(np.mean([final3(runs[c][s], "val_bits_per_byte") for s in SEL_SEEDS])) for c in cells}
+        top = max(area.values())
+        tied = [c for c in cells if area[c] >= top - 0.02]
+        b = min(tied, key=lambda c: (bpb[c], cells.index(c)))
+        best[arm] = b
+        i = cells.index(b)
+        br[arm] = "closed" if 0 < i < len(cells) - 1 else f"OPEN ({'bottom' if i == 0 else 'top'} edge, lr {PLR_LRS[i]})"
+        lines.append(f"R1-best {arm}: H_one area (seeds 0-3) " + ", ".join(f"{c.split('@')[1]} {area[c]:.3f}" for c in cells)
+                     + f"; offline bpb " + ", ".join(f"{c.split('@')[1]} {bpb[c]:.4f}" for c in cells)
+                     + f"; within 0.02 of the top: {[c.split('@')[1] for c in tied]} -> best {b} (bracket {br[arm]})")
+    xb = tuple(best[a] for a in ("win-text", "win-emb"))
+    o_sel, l_sel = r1(seeds_view(runs, SEL_SEEDS), probs, xcells=xb)
+    lines += ["R1-best [seeds 0-3, the selection seeds] " + l for l in l_sel]
+    out = {"status": "done", "best": best, "bracket": br, "sel": o_sel}
+    # CONF: only the chosen X is cut to seeds 4-7 (the paired tests then pair on 4-7; Y's (b), LC, bracket and 4x trend
+    # read the same seeds as R1: they are not selected); an X chosen at another lr has no CONF seeds and is left out
+    # (one X -> Holm alpha .025)
+    conf_x = tuple(x for x in xb if x.endswith("@2e-3"))
+    if conf_x:
+        o_c, l_c = r1(seeds_view(runs, CONF_SEEDS, cells=conf_x), probs, xcells=conf_x)
+        lines += ["R1-best [seeds 4-7, CONF] " + l for l in l_c]
+        out["conf"] = {x: o_c.get(x) for x in conf_x}
+    for x in xb:
+        if not x.endswith("@2e-3"):
+            lines.append(f"R1-best {x}: CONF seeds not run at the chosen lr (selection-seed reading only)")
     return out, lines
 
 
@@ -344,8 +404,8 @@ def bracket(runs, probs, info):
             else:
                 lines.append(f"bracket {key} {list(axis)}: means {[round(means[c], 3) for c in axis]}, best {best} inside -> closed")
     c4, c1 = "none@8e-3-4x", "none@8e-3"
-    if c4 in runs and c1 in runs and c4 not in probs and c1 not in probs:
-        common = sorted(s for s in runs[c4] if s in runs[c1])
+    common = sorted(s for s in runs.get(c4, {}) if s in runs.get(c1, {}))
+    if c4 in runs and c1 in runs and c4 not in probs and c1 not in probs and len(common) >= 3:   # no vacuous rise on 0 seeds
         d = [final3(runs[c4][s], "logp_H_one") - final3(runs[c1][s], "logp_H_one") for s in common]
         sl = []   # the OLS rise of logp_H1 over the last quarter of the 4x run (slope x the quarter's token span)
         for s in common:
@@ -562,12 +622,13 @@ def summarise(root, code_sha, n_rand):
     for c, b in sorted(probs.items()):
         lines.append(f"INVALID {c}: {b[:4]}{' ...' if len(b) > 4 else ''}")
     o1, l1 = r1(runs, probs)
+    ob, lb = r1_best(runs, probs)
     o3, l3 = r3(runs, probs, r3ok, n_rand)
-    return {"R1": o1, "R3": o3, "problems": probs}, lines + l1 + l3 + r4_r5(runs, probs)
+    return {"R1": o1, "R1best": ob, "R3": o3, "problems": probs}, lines + l1 + lb + l3 + r4_r5(runs, probs)
 
 
 # ---------------------------------------------------------------------------------------------------------------- selftest
-def fake_run(tpl, cell, seed, rng, acc, logp, held=0.97, hremap_share=0.0, sha="fake", data_sha_tag="", diverge=False):
+def fake_run(tpl, cell, seed, rng, acc, logp, held=0.97, hremap_share=0.0, sha="fake", data_sha_tag="", diverge=False, bpb=1.22):
     """a fake run JSON on the template's H / pairs (one template for every seed; remap_H re-drawn for the seed)"""
     arm, rest = cell.split("@")
     lr_s = rest.split("-wd")[0].split("-4x")[0]
@@ -601,7 +662,7 @@ def fake_run(tpl, cell, seed, rng, acc, logp, held=0.97, hremap_share=0.0, sha="
             else:
                 preds.append(int(rng.integers(0, 1999)))
         e = dict(step=st, tokens=st * 16384, lm=11.5 if st == 0 else 3.0, val_loss=3.2 if not (diverge and k > 10) else float("nan"),
-                 val_bits_per_byte=1.22, geo=None, grad_prior=None, H_one=float(hits.mean()), hits_H_one="".join("1" if v else "0" for v in hits),
+                 val_bits_per_byte=bpb, geo=None, grad_prior=None, H_one=float(hits.mean()), hits_H_one="".join("1" if v else "0" for v in hits),
                  pred_H_one=preds, logp_H_one=logp * (0.5 + 0.5 * fr) + float(rng.normal(0, 0.05)), H_both=0.0, H_ans_single=0.0, H_ans_chunk=0.0,
                  held_lines_scanned=LINES_PER_STEP * (st + 1), held_rej=10 + st, held_data_sha=f"sha{seed}{data_sha_tag}{st}",
                  prior_used_frac=0.0 if tgt == "none" else 0.35, prior_on_frac=6408 / 18310 if tgt != "none" else 0.0,
@@ -629,12 +690,15 @@ def selftest(tpl_path, n_rand):
     MAINC = ("none@2e-3", "none@8e-3", "win-ctx@2e-3", "win-text@2e-3", "win-emb@2e-3", "win-emb-hremap@2e-3",
              "win-text-farshuf@2e-3")
 
-    def scenario(name, spec, check, lc=True, **kw):
+    PLRC = tuple(f"{a}@{lr}" for a in ("win-text", "win-emb") for lr in ("1e-3", "4e-3"))
+    CONFC = X_CELLS + Y_CELLS   # the cells with CONF seeds 4-7 in the real design
+
+    def scenario(name, spec, check, lc=True, plr=False, conf=False, **kw):
         with tempfile.TemporaryDirectory() as d:
             rng = np.random.default_rng(1)
-            for c in MAINC + (LC_CELLS if lc else ()):
+            for c in MAINC + (LC_CELLS if lc else ()) + (PLRC if plr else ()):
                 acc, logp, extra = spec.get(c, (0.02, -9.0, {}))
-                for s in range(4):
+                for s in (range(8) if conf and c in CONFC else range(4)):
                     ex = dict(extra)
                     if callable(ex.get("held")):
                         ex["held"] = ex["held"](s)
@@ -686,6 +750,30 @@ def selftest(tpl_path, n_rand):
              lambda o: o["R1"]["win-emb@2e-3"].startswith("HOLDS") and "R2: win-ctx also uses H" in o["R1"]["win-emb@2e-3"])
     scenario("S9 R2 margin missed", {"win-emb@2e-3": (0.75, -1.0, {}), "win-ctx@2e-3": (0.60, -2.0, {})},
              lambda o: o["R1"]["win-emb@2e-3"].startswith("no wall claim"))
+    # R1-best (amendment PLR). B0: no PLR cells -> R1-best INCOMPLETE, R1 as in S1
+    scenario("B0 PLR not landed", {"win-emb@2e-3": (0.75, -1.0, {}), "win-text@2e-3": (0.30, -5.0, {})},
+             lambda o: o["R1best"]["status"] == "incomplete" and o["R1"]["win-emb@2e-3"].startswith("HOLDS")
+             and o["R1"]["win-text@2e-3"].startswith("partial"))
+    # B1: emb best at the top edge 4e-3 (OPEN), text best at 2e-3 (closed); the selection-seed R1 uses those cells;
+    # CONF only for the 2e-3 pick; R1 itself unchanged (emb at 2e-3 = 0.30 -> partial)
+    L = scenario("B1 emb best at 4e-3", {"win-emb@1e-3": (0.20, -6.0, {}), "win-emb@2e-3": (0.30, -5.0, {}), "win-emb@4e-3": (0.80, -1.0, {}),
+                                        "win-text@1e-3": (0.10, -7.0, {}), "win-text@2e-3": (0.35, -5.0, {}), "win-text@4e-3": (0.20, -6.0, {})},
+                 lambda o: o["R1best"]["best"] == {"win-text": "win-text@2e-3", "win-emb": "win-emb@4e-3"}
+                 and o["R1best"]["bracket"]["win-emb"].startswith("OPEN (top") and o["R1best"]["bracket"]["win-text"] == "closed"
+                 and o["R1best"]["sel"]["win-emb@4e-3"].startswith("HOLDS") and o["R1best"]["sel"]["win-text@2e-3"].startswith("partial")
+                 and list(o["R1best"]["conf"]) == ["win-text@2e-3"] and o["R1best"]["conf"]["win-text@2e-3"].startswith("partial")
+                 and o["R1"]["win-emb@2e-3"].startswith("partial"), plr=True, conf=True)
+    print("\n".join("    " + l for l in L if l.startswith("R1-best") and ("best" in l.split(":")[0] or "CONF seeds not run" in l)))
+    tr = [l for l in L if l.startswith("R1-best [seeds 4-7, CONF] 4x trend")]
+    assert len(tr) == 1 and "[]" not in tr[0] and tr[0].endswith("flat"), tr   # the CONF trend reads the R1 seeds, not 0 seeds
+    print("selftest B1b CONF trend not vacuous: PASS")
+    # B2: areas within 0.02 -> the lower offline bpb wins (2e-3 has the lower area but the lower bpb)
+    scenario("B2 tie -> lower bpb", {"win-emb@1e-3": (0.20, -6.0, {}), "win-emb@2e-3": (0.70, -1.0, {"bpb": 1.20}),
+                                     "win-emb@4e-3": (0.715, -1.0, {"bpb": 1.30})},
+             lambda o: o["R1best"]["best"]["win-emb"] == "win-emb@2e-3" and o["R1best"]["bracket"]["win-emb"] == "closed", plr=True)
+    # B3: an X at a non-2e-3 lr never reaches the CONF reading (no vacuous pass on zero seeds)
+    scenario("B3 no vacuous CONF", {"win-emb@4e-3": (0.80, -1.0, {}), "win-text@1e-3": (0.80, -1.0, {})},
+             lambda o: "conf" not in o["R1best"] and o["R1best"]["bracket"]["win-text"].startswith("OPEN (bottom"), plr=True, conf=True)
     print("selftest: all scenarios pass")
 
 
