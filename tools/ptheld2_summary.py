@@ -118,6 +118,12 @@ def check_run(r, code_sha, c):
     if not blk_ok or (ho.get("layer_rows") or {}).get("hi") != 216 or (ho.get("layer_rows") or {}).get("lo_rare") != 324:
         bad.append("H construction (54 h, 3 + 3 per block, block = h // 100, layer rows hi 216 / lo_rare 324)")
     dp_tol = {"H_one": 1.0, "H_both": 1.5, "H_ans": 1.5}
+    mks = {L: np.array([c_ == "1" for c_ in m]) for L, m in ((ho.get("sets") or {}).get("H_one") or {}).get("masks", {}).items()}
+    for e in r["curve"][-3:]:   # double path of the layers read: the logged H_one_<L> = the per-row hits on the layer's mask
+        hits = np.array([c_ == "1" for c_ in e.get("hits_H_one", "")])
+        for L in ("hi", "lo_rare"):
+            if L not in mks or len(hits) != len(mks[L]) or abs(float(hits[mks[L]].mean()) - e.get(f"H_one_{L}", -1)) > 1e-9:
+                bad.append(f"H_one_{L} at step {e['step']} != its rows' hits"); break
     for e in r["curve"]:
         st = e["step"]
         if e.get("held_lines_scanned") != LINES_PER_STEP * (st + 1):
@@ -387,7 +393,7 @@ def summarise(root, code_sha):
 
 # ---------------------------------------------------------------------------------------------------------------- selftest
 def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_sha_tag="", diverge=False, bad_lines=False,
-             lm_share=0.9, lam_bad=False):
+             lm_share=0.9, lam_bad=False, layer_bad=False):
     """a fake ptheld2 run JSON on the template's H / rows; accs = final accuracies of the four row groups
     {'hr': blocks 7-9 rare, 'hc': 7-9 common, 'lr': blocks 1-6 rare, 'lc': 1-6 common}; every layer's accuracy is
     computed from per-row hits and the template's own masks (the trainer's computation), ramping up over training"""
@@ -430,6 +436,8 @@ def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_s
             e[f"logp_H_one_{L}"] = -9.0 + 8.0 * e[f"H_one_{L}"]
         for b in BUCK:
             e[f"held_{b}"] = held * fr if st > 0 else 0.0
+        if layer_bad and st == steps - 1:   # a logged layer that does not match its rows (read-out double path)
+            e["H_one_hi"] += 0.01
         if a["site"] == "emb" and prior:
             e["grad_prior_emb_rows"] = 1000
         curve.append(e)
@@ -504,6 +512,10 @@ def selftest(tpl_path):
     scenario("S4c lam_now wrong", {"win-emb-always@2e-3": {"acc": GOOD}, "win-emb-decay@2e-3": {"kw": {"lam_bad": True}}},
              lambda o: all(V(o, L).startswith("WITHHELD") for L in ("hi", "lo_rare"))
              and any("lam_now" in b for b in o["problems"]["win-emb-decay@2e-3"]))
+    # S4d a logged H_one_hi that does not match its rows' hits (layer double path) -> WITHHELD
+    scenario("S4d layer != its rows", {"win-emb-always@2e-3": {"acc": GOOD}, "none@2e-3": {"kw": {"layer_bad": lambda s: s == 4}}},
+             lambda o: all(V(o, L).startswith("WITHHELD") for L in ("hi", "lo_rare"))
+             and any("!= its rows' hits" in b for b in o["problems"]["none@2e-3"]))
     # S5 the selection on 0-3 picks win-text-always; on 4-7 win-emb-always would be best: confirm uses the 0-3 pick only
     scenario("S5 selection only on 0-3", {"win-text-always@2e-3": {"acc": lambda s: GOOD if s < 4 else LOW},
                                           "win-emb-always@2e-3": {"acc": lambda s: {"hr": 0.6, "hc": 0.6, "lr": 0.6, "lc": 0.7} if s < 4 else GOOD}},
