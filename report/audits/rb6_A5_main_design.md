@@ -1139,3 +1139,16 @@ A8's 25% sat at chance; replaced by A8.2 (below).
 - Read-out command: `python tools/rainbow6_summary.py results/401-rb6pb-* results/404-rb6pb-* results/415-rb6pb-* results/419-rb6pb-* results/4[3-6][0-9]-rb6*-* results/47[0-8]-rb6*-* results/49[0-3]-rb6mb-* results/49[4-9]-rb6mb-* results/50[0-9]-rb6mb-* results/479-rb6mb-* results/51[0-9]-rb6mb-* results/52[01]-rb6mb-* results/52[2-9]-rb6*-* results/53[0-7]-rb6*-* --ref 'results/35[0-3]-pt2b-lr1e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr8e-3-none-s?' --ref 'results/35[0-3]-pt2b-lr1e-3-win-ctx-s?' --json rb6m_a83_summary.json`
   (exclude 440 and 508, whose re-runs are 478 / 479). Only the strict mode decides; any partial flag makes every A8.3
   verdict PROVISIONAL. The A8 command alone (522-529 only) now ends with the A8.3 refusal unless --a83_partial is given.
+
+### A8.3 code audit (2026-10-21, fresh agent; notes/batch1_build/audit_rb6_a83.md; no A8 / A8.3 values read)
+- No blocker: tasks 530-537 differ from the A8 seed-8 tasks only in seed and references (references independently
+  re-checked); the read-out matches A8.3 on 12 known-answer scenarios (incl. p .0499 vs .0502 at the threshold, a missing
+  seed refused in strict mode, PROVISIONAL with --a83_partial); pilot / A5 / A6 / A7 outputs byte-identical.
+- Text correction to the implementation note: only --allow_partial and --a83_partial make the A8.3 verdict
+  PROVISIONAL (not "any partial flag"). The A8 command alone (522-529 only) exits rc 1 with the A8.3 refusal; this is not
+  an A8 failure. The A8 section's "CONFIRMED / SIGNIFICANT" lines are the demoted secondary rule; the only decision is the
+  A8.3 strict-mode s4_hard area test over seeds 8-15.
+- Known limits: a diverged all6 run would make check() assert (rainbow6_summary.py:342 / :354) instead of counting as
+  data; a diverged none run counted as data biases toward the prior (no run diverged in seeds 0-7).
+- Timing, as audited: the A8.3 rule and its erratum were committed at 01:50Z / 02:01Z, before the first A8 result entered
+  git (02:34Z); the A8.3 implementation was committed at 07:09Z, after 5 A8 results had entered git but before any was read.
