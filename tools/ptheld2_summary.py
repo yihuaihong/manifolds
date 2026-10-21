@@ -4,11 +4,17 @@ spec and rules: llmadd_torch/runs/ptheld2/AUDIT.md (written 2026-10-21 before an
 the same day, before any run). Written and tested on FAKE results only (--selftest) before any result existed.
 
 Cells (keyed on r["args"]): none@2e-3, none@8e-3 (seeds 0-7), none@8e-3-4x (seeds 0-3), win-emb-always@2e-3,
-win-emb-decay@2e-3, win-text-always@2e-3, win-ctx-always@2e-3 (seeds 0-7). final3 = the mean of the last three evals
-(1x: 17750 / 18000 / 18309; 4x: 72750 / 73000 / 73241). acc_L = H_one_<L> (exact match on the rows of layer L, the same
-rows / forward as H_one). bpb = val_bits_per_byte final3. held6 = mean of the six filtered held_bXY.
-Co-primary layers (user, 2026-10-21): A = hi (blocks 7-9, 18 h), B = lo_rare (the rare halves of all blocks, 27 h). Every
-rule runs per layer; the verdicts are printed separately, never merged.
+win-emb-decay@2e-3, win-text-always@2e-3, win-ctx-always@2e-3 (seeds 0-7); amendment SUPP (rendered, the user's call):
+none@1.6e-2, none@8e-3-wd0.01, none@8e-3-wd1 (seeds 0-3), win-emb-hremap-always@2e-3 (seeds 0-7). final3 = the mean of
+the last three evals (1x: 18000 / 18250 / 18309; 4x: 72750 / 73000 / 73241). acc_L = H_one_<L> (exact match on the rows
+of layer L, the same rows / forward as H_one). bpb = val_bits_per_byte final3. held6 = mean of the six filtered held_bXY.
+win-ctx-always never gives h a value label (its target Gram has seen operands only), but its gradient still reaches E[h]
+through attention when h is in the text of the row: the non-specific control, not "cannot touch H".
+Co-primary layers (user, 2026-10-21): A = hi (blocks 7-9, 18 h; it mixes large values with two-token answers: 35% of its
+rows have a sum >= 1000 vs 6% in block 1), B = lo_rare = rare by standalone occurrences in the text (the text-site count,
+27 h); in block 1 this is not token rarity (year prefixes: Spearman(text-site, raw token count) = -0.18). Every rule
+runs per layer; the verdicts are printed separately, never merged. Descriptive only (pre-registered 2026-10-21): B' = B
+without block 1, every layer split by sum < 1000 / >= 1000, the '+' / '=' contexts of H in the text (--textarith).
   informative seed (as ptheld): held6 final3 >= 0.80, not diverged, not unstable (final val_loss <= the same seed's
       none@2e-3 + 0.5 nats). A prior-arm seed failing the held6 / divergence gate counts as a failure of (b) and keeps its
       measured value in the paired tests.
@@ -22,10 +28,14 @@ rule runs per layer; the verdicts are printed separately, never merged.
           informative (>= 3): wins >= ceil(3/4 m), one-sided paired t; p_L = max of the three (intersection-union);
           specificity: chosen - win-ctx-always paired mean >= +0.30;
       Holm over the two layers: the smaller p_L < .0125, the other < .025 (and only if the first passed).
-      RESCUE (tier L) iff (a), (b), (c) with its Holm threshold, and specificity. Printed with the rescue_standard
-      criteria this batch does not run: (a) none's lr x wd bracket, (b) the prior arm's own lr sweep, (d) a shuffled target.
-  Beside it (no claim): held6 of the chosen arm, its bpb minus none@2e-3 (paired), the median grad_lm_share / clip_coef
-  over the on-evals per prior-arm seed (FLAG when < 0.5: the prior gradient exceeds the LM's).
+      rescue_standard (amendment SUPP): (a) bracket = the LC cells at the floor (seeds 0-3) and neither none axis OPEN;
+      (d) win-emb-hremap-always fails (an emb arm chosen; NOT RUN for the text arm); (b) one prior lr, state reported.
+      Verdict: the ptheld2 criteria above fail -> "no rescue"; SUPP runs invalid -> WITHHELD (whole verdict); they hold
+      and (a) or (d) is not met -> "no rescue (rescue_standard not met)"; (a) and (d) met -> RESCUE (tier L); (a) or (d)
+      not run / incomplete -> "PROVISIONAL (partial)", never RESCUE (audit I4).
+  Beside it (no claim): held6 of the chosen arm, its bpb minus none@2e-3 (paired), the median grad_lm_share, prior / LM
+  norm ratio, the prior's norm on the embedding and clip_coef over the on-evals per seed -- GLOBAL norms, descriptive
+  only: they cannot show whether the prior dominates the 1000 number rows under AdamW (audit I1), no threshold.
   Descriptive: every arm's full-H acc_H1 and every layer (v1..v9, rare, common, hi, lo_rare) final3 over seeds 0-3 / 4-7 /
   0-7; acc at step 7250 (ptheld's window end) vs the final eval vs final3 (the window 0.05,1.0 ends with the run); logp per
   layer; the arm a selection on seeds 4-7 alone would pick (shown, never used).
@@ -129,6 +139,14 @@ def check_run(r, code_sha, c):
         bad.append("H construction (54 h, 3 + 3 per block, block = h // 100, layer rows hi 216 / lo_rare 324)")
     dp_tol = {"H_one": 1.0, "H_both": 1.5, "H_ans": 1.5}
     mks = {L: np.array([c_ == "1" for c_ in m]) for L, m in ((ho.get("sets") or {}).get("H_one") or {}).get("masks", {}).items()}
+    if blk_ok:   # double path of the layer masks: re-derived from the H_one pairs and each h's block / half (audit M6)
+        half_of, Hs = dict(zip(H, ho["half"])), set(H)
+        prs = ho["sets"]["H_one"]["pairs"]
+        hrow = [x if x in Hs else y for x, y in prs]
+        want = {"hi": np.array([h >= 700 for h in hrow]), "lo_rare": np.array([half_of[h] == "rare" for h in hrow])}
+        if any(((x in Hs) + (y in Hs)) != 1 for x, y in prs) or any(L not in mks or len(mks[L]) != len(prs)
+                                                                      or (mks[L] != want[L]).any() for L in want):
+            bad.append("layer masks != the masks re-derived from the H_one pairs and the h's block / half")
     for e in r["curve"][-3:]:   # double path of the layers read: the logged H_one_<L> = the per-row hits on the layer's mask
         hits = np.array([c_ == "1" for c_ in e.get("hits_H_one", "")])
         for L in ("hi", "lo_rare"):
@@ -212,8 +230,10 @@ def ref_of(runs, s):
 
 
 def informative(runs, c, s):
-    r = runs[c][s]
-    return held6_final3(r) >= 0.80 and RR.diverged_at(r) is None and not RR.unstable(r, ref_of(runs, s))
+    r, ref = runs[c][s], ref_of(runs, s)
+    if ref is None:   # audit M5: no none@2e-3 reference -> the unstable gate cannot run -> not informative (never skipped)
+        return False
+    return held6_final3(r) >= 0.80 and RR.diverged_at(r) is None and not RR.unstable(r, ref)
 
 
 def x_gate(r):
@@ -251,7 +271,8 @@ def layer_reading(runs, probs, L):
     lines.append(f"[{L}] selection (seeds 0-3): mean acc_{L} final3 " + ", ".join(f"{k.split('@')[0]} {v:.3f}" for k, v in m.items())
                  + "; bpb " + ", ".join(f"{k.split('@')[0]} {v:.4f}" for k, v in b.items())
                  + f"; within {TIE} of the top {[t.split('@')[0] for t in tied]} -> chosen {x}")
-    st, msg = needed(runs, probs, [(x, CONF), ("none@2e-3", CONF), ("none@8e-3", CONF), ("none@8e-3-4x", SEL), (CTRL, CONF)])
+    # none@2e-3 seeds 0-3 too: the 'unstable' gate of none@8e-3-4x (seeds 0-3) needs them (audit M5: never skipped silently)
+    st, msg = needed(runs, probs, [(x, CONF), ("none@2e-3", SEL + CONF), ("none@8e-3", CONF), ("none@8e-3-4x", SEL), (CTRL, CONF)])
     if st:
         out.update(status=st, verdict=msg); lines.append(f"[{L}] confirmation: {msg}"); return out, lines
     fails = []
@@ -399,37 +420,126 @@ def holm(outs):
         f = list(o["fails"])
         if not o["holm_pass"]:
             f.append(f"Holm: p_{L} {o['p']:.4g} not < {thr}" + ("" if i == 0 or outs[order[0]]["holm_pass"] else " (first layer failed)"))
-        std = (f"rescue_standard: (a) none's lr x wd bracket {o['std_a']}; (b) the prior arm's own lr sweep NOT RUN; "
-               f"(d) remapped-target control {o['std_d']} -- a rescue claim needs (a), (b), (d) met")
-        std_fail = [k for k in ("std_a", "std_d") if o[k].startswith("not met")]
-        if f:
-            o["verdict"] = "no rescue: " + "; ".join(f) + f" [{std}]"
-        elif std_fail:
-            o["verdict"] = f"no rescue (ptheld2 criteria hold with {o['chosen']}, rescue_standard not met) [{std}]"
-        else:
+        std = (f"rescue_standard: (a) none's lr x wd bracket {o['std_a']}; (b) prior-arm lr: one lr (2e-3), not swept "
+               f"(bracket state reported); (d) remapped-target control {o['std_d']}")
+        core = "ptheld2 criteria " + ("FAIL: " + "; ".join(f) if f else f"hold with {o['chosen']}")
+        # audit I4: RESCUE only with (a) and (d) both met; SUPP invalid -> the whole verdict WITHHELD; SUPP not run /
+        # incomplete (or no control for the chosen arm) -> at most PROVISIONAL
+        sup = [o[k] for k in ("std_a", "std_d")]
+        if any(v.startswith("WITHHELD") for v in sup):
+            o["verdict"] = f"WITHHELD (invalid SUPP runs) [{core}] [{std}]"
+        elif f:
+            o["verdict"] = f"no rescue: {'; '.join(f)} [{std}]"
+        elif any(v.startswith("not met") for v in sup):
+            o["verdict"] = f"no rescue ({core}; rescue_standard not met) [{std}]"
+        elif all(v == "met" for v in sup):
             o["verdict"] = f"RESCUE (tier L) on layer {L} with {o['chosen']} [{std}]"
+        else:   # NOT RUN / INCOMPLETE
+            o["verdict"] = f"PROVISIONAL (partial; {core}; rescue_standard (a) / (d) not run or incomplete -> not a rescue) [{std}]"
     return order
 
 
+GRAD_CAVEAT = ("gradient split = GLOBAL L2 norms over all parameters, descriptive only (no criterion): it cannot show whether "
+               "the prior dominates the update of the 1000 number embedding rows (AdamW normalises per coordinate), and the "
+               "LM share |g_LM| / |g_LM + g_prior| is 0.71 for equal orthogonal norms, so no share threshold means 'the "
+               "prior exceeds the LM' (audit I1)")
+
+
 def grad_split(r):
-    """medians over the evals with a prior term in the loss (lam_now > 0): grad_lm_share, clip_coef; None if none"""
-    rows = [(e["grad_lm_share"], e["clip_coef"]) for e in r["curve"] if e.get("lam_now", 0) > 0 and e.get("grad_lm_share") is not None]
+    """medians over the evals with a prior term in the loss (lam_now > 0): grad_lm_share, clip_coef, grad_prior / grad_lm
+    (global norms), grad_prior_emb (the prior's gradient norm on the embedding, emb site); None if no such eval"""
+    rows = [(e["grad_lm_share"], e["clip_coef"], (e.get("grad_prior") or float("nan")) / max(e.get("grad_lm") or float("nan"), 1e-12),
+             e.get("grad_prior_emb", float("nan"))) for e in r["curve"] if e.get("lam_now", 0) > 0 and e.get("grad_lm_share") is not None]
     if not rows:
         return None
-    return float(np.median([v[0] for v in rows])), float(np.median([v[1] for v in rows])), len(rows)
+    return tuple(float(np.nanmedian([v[i] for v in rows])) if not all(math.isnan(v[i]) for v in rows) else float("nan")
+                 for i in range(4)) + (len(rows),)
 
 
 def grad_split_txt(runs, c, seeds):
     t = []
     for s in seeds:
         g = grad_split(runs[c][s]) if s in runs.get(c, {}) else None
-        t.append(f"s{s} -" if g is None else f"s{s} LM share {g[0]:.3f} clip {g[1]:.3f}{' FLAG' if g[0] < 0.5 else ''}")
-    return "; ".join(t)
+        t.append(f"s{s} -" if g is None else f"s{s} LM share {g[0]:.3f} prior/LM {g[2]:.2f}"
+                 + ("" if math.isnan(g[3]) else f" prior-on-emb {g[3]:.3g}") + f" clip {g[1]:.3f}")
+    return "; ".join(t) + " (global norms, descriptive)"
 
 
 def at_step(r, k, step):
     e = [x for x in r["curve"] if x["step"] == step]
     return e[0].get(k) if e else None
+
+
+TEXTARITH = None   # {number: count of '+' / '=' contexts in train.bin} (tools/ptheld2_textarith.py), set by --textarith
+
+
+def row_masks(r):
+    """per-row masks of a run's H_one rows: the two layers, B' = lo_rare without block 1, sum < 1000 / >= 1000"""
+    ho = r["held_operands"]
+    mk = {k: np.array([c_ == "1" for c_ in v]) for k, v in ho["sets"]["H_one"]["masks"].items()}
+    sums = np.array([a + b for a, b in ho["sets"]["H_one"]["pairs"]])
+    return {"hi": mk["hi"], "lo_rare": mk["lo_rare"], "lo_rare_nob1": mk["lo_rare"] & ~mk["v1"], "full": np.ones(len(sums), bool)}, \
+        sums < 1000
+
+
+def rows_final3(r, m):
+    """mean over the final3 evals of the hit rate on the rows in mask m (from hits_H_one; nan if m is empty)"""
+    if not m.any():
+        return float("nan")
+    return float(np.mean([np.array([c_ == "1" for c_ in e["hits_H_one"]])[m].mean() for e in r["curve"][-3:]]))
+
+
+def split_lines(runs):
+    """audit I2 / I3 / M3 (descriptive, pre-registered 2026-10-21 before any result): B' = the rare halves of blocks 2-9
+    (block 1's text-site 'rare' is not token-rare: year prefixes); every layer split by sum < 1000 (one answer token) /
+    >= 1000 (two tokens: layer A mixes value with answer length), next to the seen references held_b33 / held_b23
+    lt1000 / ge1000; block 1's Spearman(text-site count, raw token count); the '+' / '=' contexts of H in the text"""
+    lines = ["== descriptive splits (no claim): final3, seeds 0-3 | 4-7; lt = sum < 1000 (one answer token), ge = sum >= 1000"]
+    fmt = lambda v: "  -  " if v is None or (isinstance(v, float) and math.isnan(v)) else f"{v:.3f}"
+    any_r = next((runs[c][s] for c in ALL_CELLS if c in runs for s in sorted(runs[c])), None)
+    if any_r is None:
+        return lines
+    ho = any_r["held_operands"]
+    if ho.get("count_raw"):
+        from scipy import stats as _st
+        st_, raw_ = np.array(ho["count_text_site"]), np.array(ho["count_raw"])
+        rho = {b: float(_st.spearmanr(st_[100 * b:100 * b + 100], raw_[100 * b:100 * b + 100])[0]) for b in range(1, 10)}
+        lines.append("  B = 'rare by standalone occurrences in the text' (text-site count), NOT by token exposure: "
+                     "Spearman(text-site count, raw token count) per block " + ", ".join(f"b{b} {v:+.2f}" for b, v in rho.items())
+                     + " (block 1: 4-digit years split as '17x' + 'd')")
+    m0, lt0 = row_masks(any_r)
+    lines.append("  share of rows with sum >= 1000 (two answer tokens): " + ", ".join(f"{k} {float((~lt0)[m].mean()):.2f}" for k, m in m0.items()))
+    for c in ALL_CELLS:
+        if c not in runs:
+            continue
+        parts = []
+        for k in ("hi", "lo_rare", "lo_rare_nob1", "full"):
+            for tag, sel in (("lt", True), ("ge", False), ("all", None)):
+                v = []
+                for ss in (SEL, CONF):
+                    xs = []
+                    for s in ss:
+                        if s in runs[c]:
+                            m, lt = row_masks(runs[c][s])
+                            xs.append(rows_final3(runs[c][s], m[k] if sel is None else (m[k] & (lt if sel else ~lt))))
+                    v.append(float(np.nanmean(xs)) if xs and not all(math.isnan(x) for x in xs) else None)
+                parts.append(f"{k}/{tag} {fmt(v[0])}|{fmt(v[1])}")
+        ref = [f"{b}_{t} {fmt(float(np.mean([final3(runs[c][s], f'{b}_{t}') for s in sorted(runs[c])])))}"
+               for b in ("held_b33", "held_b23") for t in ("lt1000", "ge1000")
+               if all(runs[c][s]["curve"][-1].get(f"{b}_{t}") is not None for s in runs[c])]
+        lines.append(f"  {c}: " + "  ".join(parts) + "; seen refs (all seeds) " + ", ".join(ref))
+    if TEXTARITH is not None:   # audit M3: arithmetic statements with h in the natural text (every arm sees them)
+        seeds = sorted({s for c in runs for s in runs[c]})
+        for s in seeds:
+            r = next(runs[c][s] for c in ALL_CELLS if c in runs and s in runs[c])
+            H, half = r["held_operands"]["H"], r["held_operands"]["half"]
+            grp = {"hi": [h for h in H if h >= 700], "lo_rare": [h for h, hf in zip(H, half) if hf == "rare"],
+                   "lo_rare_nob1": [h for h, hf in zip(H, half) if hf == "rare" and h >= 200], "all H": H}
+            lines.append(f"  seed {s}: h next to '+' / '=' in train.bin text (tools/ptheld2_textarith.py): " + "; ".join(
+                f"{k} total {sum(TEXTARITH[h] for h in v)} median {int(np.median([TEXTARITH[h] for h in v]))}" for k, v in grp.items()))
+    else:
+        lines.append("  ('+' / '=' contexts of H in the text: not computed; pass --textarith runs/ptheld2/textarith.json)")
+    return lines
 
 
 def descriptive(runs, probs):
@@ -458,6 +568,8 @@ def descriptive(runs, probs):
                      f"{[round(final3(runs[c][s], 'val_bits_per_byte'), 4) for s in sorted(runs[c])]}")
         if not c.startswith("none"):
             lines.append(f"    gradient split (on-evals): {grad_split_txt(runs, c, sorted(runs[c]))}")
+    lines.append("    note: " + GRAD_CAVEAT)
+    lines += split_lines(runs)
     for _, L in LAYERS:   # what a selection on the confirm seeds alone would pick: shown only, never used
         if all(s in runs.get(x, {}) for x in PRIOR_X for s in CONF):
             x4, m4, _, _ = select(runs, L, CONF)
@@ -485,7 +597,7 @@ def summarise(root, code_sha):
 
 # ---------------------------------------------------------------------------------------------------------------- selftest
 def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_sha_tag="", diverge=False, bad_lines=False,
-             lm_share=0.9, lam_bad=False, layer_bad=False, logp_shift=0.0, hremap_share=0.0):
+             lm_share=0.9, lam_bad=False, layer_bad=False, logp_shift=0.0, hremap_share=0.0, mask_bad=False):
     """a fake ptheld2 run JSON on the template's H / rows; accs = final accuracies of the four row groups
     {'hr': blocks 7-9 rare, 'hc': 7-9 common, 'lr': blocks 1-6 rare, 'lc': 1-6 common}; every layer's accuracy is
     computed from per-row hits and the template's own masks (the trainer's computation), ramping up over training;
@@ -505,6 +617,9 @@ def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_s
     if arm == "win-emb-decay":
         a["lam_decay"] = True
     ho = json.loads(json.dumps(tpl["held_operands"]))
+    if mask_bad:   # a layer mask that is not the rows of its h (the trainer would have mis-assigned one row)
+        m_ = ho["sets"]["H_one"]["masks"]["hi"]
+        ho["sets"]["H_one"]["masks"]["hi"] = ("0" if m_[0] == "1" else "1") + m_[1:]
     u = dict(zip(ho["H"], ho["remap_H"]))
     pairs = ho["sets"]["H_one"]["pairs"]
     mk = {k: np.array([c_ == "1" for c_ in v]) for k, v in ho["sets"]["H_one"]["masks"].items()}
@@ -594,8 +709,9 @@ def selftest(tpl_path):
 
     V = lambda o, L: o["layers"][L].get("verdict", "")
     # S1 the emb prior works on both layers, none and win-ctx at the floor -> RESCUE on A and B
-    scenario("S1 rescue (both layers)", {"win-emb-always@2e-3": {"acc": GOOD}},
-             lambda o: V(o, "hi").startswith("RESCUE") and V(o, "lo_rare").startswith("RESCUE")
+    scenario("S1 core holds, SUPP absent -> PROVISIONAL", {"win-emb-always@2e-3": {"acc": GOOD}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL") and V(o, "lo_rare").startswith("PROVISIONAL")
+             and "RESCUE" not in V(o, "hi") + V(o, "lo_rare")
              and o["layers"]["hi"]["chosen"] == "win-emb-always@2e-3" and "NOT RUN" in V(o, "hi"))
     # S2 none not at the floor (none@2e-3 at ~0.25 on both layers) -> no rescue, (a) named
     scenario("S2 none not at the floor", {"win-emb-always@2e-3": {"acc": GOOD}, "none@2e-3": {"acc": LOW}},
@@ -624,29 +740,30 @@ def selftest(tpl_path):
              lambda o: all(o["layers"][L]["chosen"] == "win-text-always@2e-3" and V(o, L).startswith("no rescue")
                            and "(b) win-text-always@2e-3" in V(o, L) for L in ("hi", "lo_rare")))
     # S6 layer A rescues, layer B does not (none is not at the floor on the rare halves: its rare 1xx-6xx at 0.35)
-    o6, l6 = scenario("S6 A rescue, B not", {"win-emb-always@2e-3": {"acc": GOOD},
+    o6, l6 = scenario("S6 A passes, B not (SUPP absent)", {"win-emb-always@2e-3": {"acc": GOOD},
                                              **{y: {"acc": {"hr": 0.02, "hc": 0.04, "lr": 0.35, "lc": 0.5}} for y in NONES}},
-                      lambda o: V(o, "hi").startswith("RESCUE") and V(o, "lo_rare").startswith("no rescue")
+                      lambda o: V(o, "hi").startswith("PROVISIONAL") and V(o, "lo_rare").startswith("no rescue")
                       and "(a) none@2e-3 not at the floor" in V(o, "lo_rare"))
     assert sum(l_.startswith("VERDICT") for l_ in l6) == 2   # two separate verdicts
     # S7 tie within 0.02 on seeds 0-3 -> the lower bpb (win-emb-decay, bpb 1.20 vs 1.25) is chosen
     scenario("S7 tie -> lower bpb", {"win-emb-always@2e-3": {"acc": GOOD, "kw": {"bpb": 1.25}},
                                      "win-emb-decay@2e-3": {"acc": {g: v - 0.01 for g, v in GOOD.items()}, "kw": {"bpb": 1.20}}},
-             lambda o: all(o["layers"][L]["chosen"] == "win-emb-decay@2e-3" and V(o, L).startswith("RESCUE") for L in ("hi", "lo_rare")))
+             lambda o: all(o["layers"][L]["chosen"] == "win-emb-decay@2e-3" and V(o, L).startswith("PROVISIONAL") for L in ("hi", "lo_rare")))
     # S8 two confirm seeds of none@8e-3 never learn seen addition -> (a) uninformative (no vacuous floor)
     scenario("S8 uninformative none", {"win-emb-always@2e-3": {"acc": GOOD}, "none@8e-3": {"kw": {"held": lambda s: 0.5 if s in (4, 5) else 0.97}}},
              lambda o: all("(a) none@8e-3 uninformative" in V(o, L) for L in ("hi", "lo_rare")))
     # S9 the prior gradient dominates in the text arm: the FLAG is printed beside / in the descriptive lines
-    _, l9 = scenario("S9 gradient FLAG", {"win-emb-always@2e-3": {"acc": GOOD}, "win-text-always@2e-3": {"kw": {"lm_share": 0.4}}},
-                     lambda o: V(o, "hi").startswith("RESCUE"))
-    assert any("win-text-always" in l_ for l_ in l9) and any("FLAG" in l_ for l_ in l9), "FLAG not printed"
-    print("selftest S9: FLAG printed for the text arm (LM share 0.4)")
+    _, l9 = scenario("S9 gradient split descriptive", {"win-emb-always@2e-3": {"acc": GOOD}, "win-text-always@2e-3": {"kw": {"lm_share": 0.4}}},
+                     lambda o: V(o, "hi").startswith("PROVISIONAL"))
+    assert any("LM share 0.400" in l_ and "global norms, descriptive" in l_ for l_ in l9) and not any("FLAG" in l_ for l_ in l9)
+    assert any("GLOBAL L2 norms" in l_ and "no criterion" in l_ for l_ in l9)
+    print("selftest S9: gradient split printed as global-norm description (no FLAG, no threshold)")
     # amendment SUPP: the LC cells and the remapped-target control run
     HRM = {"acc": {"hr": 0.10, "hc": 0.12, "lr": 0.10, "lc": 0.5}, "kw": {"hremap_share": 0.5}}
     # S10 supp run: LC at the floor, bracket closed, hremap fails -> RESCUE with (a) met, (d) met, (b) NOT RUN
     scenario("S10 supp: (a) and (d) met", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
              lambda o: all(V(o, L).startswith("RESCUE") and "bracket met" in V(o, L) and "control met" in V(o, L)
-                           and "lr sweep NOT RUN" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
+                           and "not swept" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
     # S11 none@1.6e-2 answers H (0.3 on every group) -> (a) not met -> no rescue although the ptheld2 criteria hold
     scenario("S11 supp: LC not at the floor", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM,
                                                "none@1.6e-2": {"acc": {"hr": 0.3, "hc": 0.3, "lr": 0.3, "lc": 0.6}}},
@@ -661,7 +778,22 @@ def selftest(tpl_path):
              lambda o: all("lr axis OPEN at none@1.6e-2" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
     # S14 the text arm is chosen: (d) has no control at the text site -> NOT RUN, the rest as S10
     scenario("S14 supp: text chosen", {"win-text-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
-             lambda o: all(V(o, L).startswith("RESCUE") and "control NOT RUN" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
+             lambda o: all(V(o, L).startswith("PROVISIONAL") and "control NOT RUN" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
+    # S15 SUPP present but invalid (an hremap run with a wrong held_lines_scanned) -> the whole verdict WITHHELD
+    scenario("S15 supp invalid", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: {**HRM, "kw": {"hremap_share": 0.5, "bad_lines": lambda s: s == 5}}},
+             lambda o: all(V(o, L).startswith("WITHHELD (invalid SUPP") for L in ("hi", "lo_rare")), supp=True)
+    # S16 SUPP incomplete (none@1.6e-2 seed 2 missing) -> PROVISIONAL with (a) INCOMPLETE, never RESCUE (audit I4)
+    scenario("S16 supp incomplete", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
+             lambda o: all(V(o, L).startswith("PROVISIONAL") and "bracket INCOMPLETE" in V(o, L) and not V(o, L).startswith("RESCUE")
+                           for L in ("hi", "lo_rare")), supp=True, skip={("none@1.6e-2", 2)})
+    # S17 none@2e-3 seed 1 missing: the 4x cell's unstable gate has no reference -> INCOMPLETE, not skipped (audit M5)
+    scenario("S17 none@2e-3 seed missing", {"win-emb-always@2e-3": {"acc": GOOD}},
+             lambda o: all(V(o, L).startswith("INCOMPLETE") and "none@2e-3 s1" in V(o, L) for L in ("hi", "lo_rare")),
+             skip={("none@2e-3", 1)})
+    # S18 a layer mask that is not the rows of its h (re-derived from the pairs and the h's block / half) -> WITHHELD (M6)
+    scenario("S18 layer mask != its h", {"win-emb-always@2e-3": {"acc": GOOD}, "none@8e-3": {"kw": {"mask_bad": lambda s: s == 6}}},
+             lambda o: all(V(o, L).startswith("WITHHELD") for L in ("hi", "lo_rare"))
+             and any("layer masks" in b for b in o["problems"]["none@8e-3"]))
     print("selftest: all scenarios pass")
 
 
@@ -670,7 +802,11 @@ if __name__ == "__main__":
     ap.add_argument("--root", default="/scratch/yh6210/llmadd_torch/runs/ptheld2/out")
     ap.add_argument("--code_sha", default=None, help="expected code_sha (default: sha256[:12] of runs/ptheld2/code/tools/pretrain_range.py)")
     ap.add_argument("--selftest", default=None, metavar="RUN_JSON", help="a Rev D value_freq CPU run JSON as the template of the fakes")
+    ap.add_argument("--textarith", default="/scratch/yh6210/llmadd_torch/runs/ptheld2/textarith.json",
+                    help="per-number '+' / '=' context counts (tools/ptheld2_textarith.py); descriptive, skipped if absent")
     args = ap.parse_args()
+    if Path(args.textarith).exists():
+        TEXTARITH = json.loads(Path(args.textarith).read_text())["count"]
     if args.selftest:
         selftest(args.selftest)
         sys.exit(0)
