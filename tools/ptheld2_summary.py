@@ -64,21 +64,30 @@ PRIOR_X = ("win-emb-always@2e-3", "win-emb-decay@2e-3", "win-text-always@2e-3")
 CTRL = "win-ctx-always@2e-3"
 NONES = ("none@2e-3", "none@8e-3", "none@8e-3-4x")
 Y_PAIRED = ("none@2e-3", "none@8e-3", CTRL)
-ALL_CELLS = NONES + PRIOR_X + (CTRL,)
+MAIN_CELLS = NONES + PRIOR_X + (CTRL,)
+# amendment SUPP (2026-10-21, before any result; rendered by make_jobs_ptheld2.py --supp, the user's call): rescue_standard
+# (a) none's lr x wd bracket on this H (seeds 0-3) and (d) the remapped-target control of the emb arms (seeds 0-7)
+LC = ("none@1.6e-2", "none@8e-3-wd0.01", "none@8e-3-wd1")
+HREMAP = "win-emb-hremap-always@2e-3"
+LR_AXIS, WD_AXIS = ("none@2e-3", "none@8e-3", "none@1.6e-2"), ("none@8e-3-wd0.01", "none@8e-3", "none@8e-3-wd1")
+WD_OF = {"none@8e-3-wd0.01": 0.01, "none@8e-3-wd1": 1.0}
+ALL_CELLS = MAIN_CELLS + LC + (HREMAP,)
 LAYERS = (("A", "hi"), ("B", "lo_rare"))
 ALL_LAYERS = tuple(f"v{j}" for j in range(1, 10)) + ("rare", "common", "hi", "lo_rare")
 SEL, CONF = (0, 1, 2, 3), (4, 5, 6, 7)
-SEEDS = {c: (SEL if c == "none@8e-3-4x" else SEL + CONF) for c in ALL_CELLS}
+SEEDS = {c: (SEL if c == "none@8e-3-4x" or c in LC else SEL + CONF) for c in ALL_CELLS}
 HOLM = (0.0125, 0.025)
 FLOOR, BAR, SPEC, TIE = 0.10, 0.50, 0.30, 0.02
-NOT_RUN = ("rescue_standard criteria NOT RUN in ptheld2: (a) none's lr x wd bracket on this H, (b) the prior arm's own lr "
-           "sweep, (d) a shuffled-target arm -- a rescue claim also needs them")
+BR_LOGP, BR_ACC, BR_ACC_MIN, D_MARGIN = 0.25, 0.02, 0.05, 0.20   # bracket margins (as ptheld R1); (d) margin (as ptheld R3b)
 
 
 def cell_of(a):
     """cell name of a run's args, or None (not a ptheld2 cell)"""
     if a["target"] == "none":
-        return f"none@{lrs(a['lr'])}" + ("-4x" if a["tokens"] == 1.2e9 else "")
+        wd = a.get("wd", 0.1)
+        return f"none@{lrs(a['lr'])}" + (f"-wd{wd:g}" if wd != 0.1 else "") + ("-4x" if a["tokens"] == 1.2e9 else "")
+    if a["target"] == "helix3_hremap" and a.get("site") == "emb" and not a.get("lam_decay", False):
+        return f"win-emb-hremap-always@{lrs(a['lr'])}" + ("-4x" if a["tokens"] == 1.2e9 else "")
     if a["target"] != "helix3":
         return None
     arm = {("emb", False): "win-emb-always", ("emb", True): "win-emb-decay", ("text", False): "win-text-always",
@@ -99,6 +108,7 @@ def check_run(r, code_sha, c):
     if code_sha and r.get("code_sha") != code_sha:
         bad.append(f"code_sha {r.get('code_sha')} != {code_sha}")
     for k, v in BASE.items():
+        v = WD_OF.get(c, v) if k == "wd" else v   # the SUPP wd cells
         if a.get(k, v if k not in ("held_strat", "held_operands") else None) != v:
             bad.append(f"arg {k}={a.get(k)} != {v}")
     if c not in ALL_CELLS:
@@ -180,7 +190,7 @@ def load(root, code_sha):
         sha0 = {e["step"]: e.get("held_data_sha") for e in r0["curve"]}
         for c, r in rs[1:]:
             h = r["held_operands"]
-            for k in ("H", "count_text_site", "block", "half"):
+            for k in ("H", "count_text_site", "block", "half", "remap_H"):
                 if h.get(k) != h0.get(k):
                     probs.setdefault(c, []).append(f"s{s}: held_operands.{k} differs from {c0}")
             if h["sets"]["H_one"]["pairs"] != h0["sets"]["H_one"]["pairs"]:
@@ -291,12 +301,87 @@ def layer_reading(runs, probs, L):
     lines.append(f"[{L}] (c) p_{L} = max over the three controls = {p_l:.4g}; specificity {x} - {CTRL} "
                  f"{'n/a' if spec is None else f'{spec:+.3f}'} (need >= +{SPEC})")
     out.update(status="done", fails=fails)
+    out["std_a"], la = std_a(runs, probs, L)
+    out["std_d"], ld = std_d(runs, probs, L, x)
+    lines += la + ld
     # beside the verdict: held6, LM cost, gradient split of the chosen arm
     db = [final3(runs[x][s], "val_bits_per_byte") - final3(runs["none@2e-3"][s], "val_bits_per_byte") for s in CONF]
     lines.append(f"[{L}] beside: {x} held6 final3 {[round(hb[s], 3) for s in CONF]} (seen addition preserved: "
                  f"{'yes' if all(v >= 0.80 for v in hb.values()) else 'NO'}); bpb - none@2e-3 (paired) {np.mean(db):+.4f} "
                  f"{[round(v, 4) for v in db]}; grad split {grad_split_txt(runs, x, CONF)}")
     return out, lines
+
+
+def floor_state(runs, y, ss, L):
+    """(a)'s floor rule on cell y over seeds ss: 'holds' / 'not at the floor' / 'uninformative', and the counts"""
+    inf = [s for s in ss if informative(runs, y, s)]
+    low = [s for s in inf if acc(runs[y][s], L) <= FLOOR]
+    need = math.ceil(0.75 * len(ss))
+    return ("uninformative" if len(inf) < need else ("holds" if len(low) >= need else "not at the floor")), inf, low, need
+
+
+def std_a(runs, probs, L):
+    """rescue_standard (a), amendment SUPP: the LC cells at the floor (seeds 0-3, the (a) rule) and none's optimum
+    bracketed on both axes (seeds 0-3): an axis is OPEN when its best cell is at an edge and beats its neighbour by
+    > 0.25 nats on logp_H_one_<L> final3 (or, when the best mean acc_L > 0.05, by > 0.02 on acc_L) with >= 3/4 paired wins"""
+    if not any(c in runs for c in LC):
+        return "NOT RUN", [f"[{L}] rescue_standard (a) bracket: NOT RUN (cells {list(LC)} absent)"]
+    st, msg = needed(runs, probs, [(c, SEL) for c in LC + ("none@2e-3", "none@8e-3")])
+    if st:
+        return msg, [f"[{L}] rescue_standard (a) bracket: {msg}"]
+    lines, bad = [], []
+    for y in LC:
+        fs, inf, low, need = floor_state(runs, y, SEL, L)
+        lines.append(f"[{L}] rescue_standard (a) {y} seeds 0-3: acc_{L} final3 {[round(acc(runs[y][s], L), 3) for s in SEL]}, "
+                     f"informative {len(inf)}/4, informative and <= {FLOOR}: {len(low)} (need {need}) -> {fs}")
+        if fs != "holds":
+            bad.append(f"{y} {fs}")
+    for name, axis in (("lr", LR_AXIS), ("wd", WD_AXIS)):
+        for key, margin, gate in ((f"logp_H_one_{L}", BR_LOGP, None), (f"H_one_{L}", BR_ACC, BR_ACC_MIN)):
+            m = {c: float(np.mean([final3(runs[c][s], key) for s in SEL])) for c in axis}
+            best = max(axis, key=lambda c: m[c])
+            i = axis.index(best)
+            state = "closed"
+            if (gate is None or m[best] > gate) and i in (0, len(axis) - 1):
+                nb = axis[1]
+                d = [final3(runs[best][s], key) - final3(runs[nb][s], key) for s in SEL]
+                if np.mean(d) > margin and sum(v > 0 for v in d) >= 3:
+                    state = f"OPEN at {best} (+{np.mean(d):.3f} vs {nb})"
+                    bad.append(f"{name} axis {state} on {key}")
+            lines.append(f"[{L}] rescue_standard (a) {name} axis on {key} (seeds 0-3): " + ", ".join(f"{c} {m[c]:.3f}" for c in axis)
+                         + f" -> {state}" + ("" if gate is None or m[best] > gate else f" (acc rule off: best mean <= {gate})"))
+    return ("met" if not bad else "not met: " + "; ".join(bad)), lines
+
+
+def remap_share(r, L, evs=3):
+    """share of layer-L rows whose greedy answer (pred_H_one) equals u_h + y, pooled over the last `evs` evals"""
+    ho = r["held_operands"]
+    u = dict(zip(ho["H"], ho["remap_H"]))
+    m = np.array([c_ == "1" for c_ in ho["sets"]["H_one"]["masks"][L]])
+    want = np.array([(u[a] + b) if a in u else (u[b] + a) for a, b in ho["sets"]["H_one"]["pairs"]])
+    ps = [np.array(e["pred_H_one"]) for e in r["curve"][-evs:] if e.get("pred_H_one") is not None]
+    return float(np.mean([(p == want)[m].mean() for p in ps])) if ps else float("nan")
+
+
+def std_d(runs, probs, L, x):
+    """rescue_standard (d), amendment SUPP: for an emb arm, win-emb-hremap-always (h at the helix position of u_h) must
+    fail: acc_L final3 < 0.50 in >= 3/4 of seeds 4-7 AND chosen - hremap paired mean >= +0.20 with >= 3/4 wins"""
+    if not x.startswith("win-emb"):
+        return "NOT RUN", [f"[{L}] rescue_standard (d): NOT RUN (no shuffled / remapped control at the text site for {x})"]
+    if HREMAP not in runs:
+        return "NOT RUN", [f"[{L}] rescue_standard (d): NOT RUN ({HREMAP} absent)"]
+    st, msg = needed(runs, probs, [(HREMAP, CONF)])
+    if st:
+        return msg, [f"[{L}] rescue_standard (d): {msg}"]
+    vh = {s: acc(runs[HREMAP][s], L) for s in CONF}
+    d = [acc(runs[x][s], L) - vh[s] for s in CONF]
+    low, w = sum(v < BAR for v in vh.values()), sum(v > 0 for v in d)
+    ok = low >= need_wins(4) and np.mean(d) >= D_MARGIN and w >= need_wins(4)
+    sh = {c: [round(remap_share(runs[c][s], L), 3) for s in CONF] for c in (HREMAP, x, "none@2e-3")}
+    lines = [f"[{L}] rescue_standard (d) {HREMAP} seeds 4-7: acc_{L} final3 {[round(vh[s], 3) for s in CONF]} (< {BAR} in {low}/4); "
+             f"{x} - hremap mean {np.mean(d):+.3f}, wins {w}/4 (need mean >= +{D_MARGIN}) -> {'met' if ok else 'not met'}",
+             f"[{L}]   descriptive: share of rows answered u_h + y (final3): " + "; ".join(f"{c} {v}" for c, v in sh.items())]
+    return ("met" if ok else f"not met: hremap < {BAR} in {low}/4, {x} - hremap {np.mean(d):+.3f}, wins {w}/4"), lines
 
 
 def holm(outs):
@@ -314,8 +399,15 @@ def holm(outs):
         f = list(o["fails"])
         if not o["holm_pass"]:
             f.append(f"Holm: p_{L} {o['p']:.4g} not < {thr}" + ("" if i == 0 or outs[order[0]]["holm_pass"] else " (first layer failed)"))
-        o["verdict"] = (f"RESCUE (tier L) on layer {L} with {o['chosen']} [{NOT_RUN}]" if not f
-                        else "no rescue: " + "; ".join(f))
+        std = (f"rescue_standard: (a) none's lr x wd bracket {o['std_a']}; (b) the prior arm's own lr sweep NOT RUN; "
+               f"(d) remapped-target control {o['std_d']} -- a rescue claim needs (a), (b), (d) met")
+        std_fail = [k for k in ("std_a", "std_d") if o[k].startswith("not met")]
+        if f:
+            o["verdict"] = "no rescue: " + "; ".join(f) + f" [{std}]"
+        elif std_fail:
+            o["verdict"] = f"no rescue (ptheld2 criteria hold with {o['chosen']}, rescue_standard not met) [{std}]"
+        else:
+            o["verdict"] = f"RESCUE (tier L) on layer {L} with {o['chosen']} [{std}]"
     return order
 
 
@@ -393,21 +485,28 @@ def summarise(root, code_sha):
 
 # ---------------------------------------------------------------------------------------------------------------- selftest
 def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_sha_tag="", diverge=False, bad_lines=False,
-             lm_share=0.9, lam_bad=False, layer_bad=False):
+             lm_share=0.9, lam_bad=False, layer_bad=False, logp_shift=0.0, hremap_share=0.0):
     """a fake ptheld2 run JSON on the template's H / rows; accs = final accuracies of the four row groups
     {'hr': blocks 7-9 rare, 'hc': 7-9 common, 'lr': blocks 1-6 rare, 'lc': 1-6 common}; every layer's accuracy is
-    computed from per-row hits and the template's own masks (the trainer's computation), ramping up over training"""
+    computed from per-row hits and the template's own masks (the trainer's computation), ramping up over training;
+    greedy answers (last three evals): the sum on a hit, else u_h + y with probability hremap_share, else a random number"""
     arm, rest = cell.split("@")
     tokens = 1.2e9 if rest.endswith("-4x") else 3e8
-    lr = float(rest.split("-4x")[0])
+    lr = float(rest.split("-4x")[0].split("-wd")[0])
+    wd = float(rest.split("-wd")[1].split("-")[0]) if "-wd" in rest else 0.1
     prior = arm != "none"
-    a = dict(BASE, target="helix3" if prior else "none", site={"none": "ctx", "win-emb-always": "emb", "win-emb-decay": "emb",
-             "win-text-always": "text", "win-ctx-always": "ctx"}[arm], lr=lr, tokens=tokens, seed=seed,
+    a = dict(BASE, target="helix3_hremap" if arm == "win-emb-hremap-always" else ("helix3" if prior else "none"),
+             site={"none": "ctx", "win-emb-always": "emb", "win-emb-decay": "emb", "win-text-always": "text", "win-ctx-always": "ctx",
+                   "win-emb-hremap-always": "emb"}[arm], lr=lr, tokens=tokens, seed=seed,
              lam=1.0 if prior else 5.0, schedule="window" if prior else "whole", window="0.05,1.0" if prior else "0.05,0.4")
     a.pop("wd")
+    if wd != 0.1:
+        a["wd"] = wd
     if arm == "win-emb-decay":
         a["lam_decay"] = True
     ho = json.loads(json.dumps(tpl["held_operands"]))
+    u = dict(zip(ho["H"], ho["remap_H"]))
+    pairs = ho["sets"]["H_one"]["pairs"]
     mk = {k: np.array([c_ == "1" for c_ in v]) for k, v in ho["sets"]["H_one"]["masks"].items()}
     hi, rare = mk["hi"], mk["rare"]
     grp = {"hr": hi & rare, "hc": hi & ~rare, "lr": ~hi & rare, "lc": ~hi & ~rare}
@@ -433,7 +532,10 @@ def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_s
                  grad_lm_share=lm_share if on else 1.0)
         for L in ALL_LAYERS:
             e[f"H_one_{L}"] = float(hits[mk[L]].mean())
-            e[f"logp_H_one_{L}"] = -9.0 + 8.0 * e[f"H_one_{L}"]
+            e[f"logp_H_one_{L}"] = -9.0 + 8.0 * e[f"H_one_{L}"] + logp_shift
+        if k >= len(evs) - 3:
+            e["pred_H_one"] = [(x + y) if hit else ((u[x] + y) if x in u else (u[y] + x)) if rng.random() < hremap_share
+                               else int(rng.integers(0, 1999)) for (x, y), hit in zip(pairs, hits)]
         for b in BUCK:
             e[f"held_{b}"] = held * fr if st > 0 else 0.0
         if layer_bad and st == steps - 1:   # a logged layer that does not match its rows (read-out double path)
@@ -464,10 +566,10 @@ def selftest(tpl_path):
     def jit(d, s, ci):   # small seed- and cell-dependent jitter (no constant paired differences)
         return {g: min(1.0, max(0.0, v + 0.01 * ((s * 7 + ci * 3 + len(g)) % 3 - 1))) for g, v in d.items()}
 
-    def scenario(name, spec, check, skip=(), **kw):
+    def scenario(name, spec, check, skip=(), supp=False, **kw):
         with tempfile.TemporaryDirectory() as d:
             rng = np.random.default_rng(1)
-            for c in ALL_CELLS:
+            for c in (ALL_CELLS if supp else MAIN_CELLS):
                 for s in SEEDS[c]:
                     if (c, s) in skip:
                         continue
@@ -539,6 +641,27 @@ def selftest(tpl_path):
                      lambda o: V(o, "hi").startswith("RESCUE"))
     assert any("win-text-always" in l_ for l_ in l9) and any("FLAG" in l_ for l_ in l9), "FLAG not printed"
     print("selftest S9: FLAG printed for the text arm (LM share 0.4)")
+    # amendment SUPP: the LC cells and the remapped-target control run
+    HRM = {"acc": {"hr": 0.10, "hc": 0.12, "lr": 0.10, "lc": 0.5}, "kw": {"hremap_share": 0.5}}
+    # S10 supp run: LC at the floor, bracket closed, hremap fails -> RESCUE with (a) met, (d) met, (b) NOT RUN
+    scenario("S10 supp: (a) and (d) met", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
+             lambda o: all(V(o, L).startswith("RESCUE") and "bracket met" in V(o, L) and "control met" in V(o, L)
+                           and "lr sweep NOT RUN" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
+    # S11 none@1.6e-2 answers H (0.3 on every group) -> (a) not met -> no rescue although the ptheld2 criteria hold
+    scenario("S11 supp: LC not at the floor", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM,
+                                               "none@1.6e-2": {"acc": {"hr": 0.3, "hc": 0.3, "lr": 0.3, "lc": 0.6}}},
+             lambda o: all(V(o, L).startswith("no rescue (ptheld2 criteria hold") and "none@1.6e-2 not at the floor" in V(o, L)
+                           for L in ("hi", "lo_rare")), supp=True)
+    # S12 the remapped target works as well as the true one -> (d) not met
+    scenario("S12 supp: hremap also works", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: {"acc": GOOD}},
+             lambda o: all(V(o, L).startswith("no rescue (ptheld2") and "control not met" in V(o, L) for L in ("hi", "lo_rare")),
+             supp=True)
+    # S13 none's likelihood of H is best at the lr edge 1.6e-2 by 1 nat (exact match still at the floor) -> bracket OPEN
+    scenario("S13 supp: bracket open", {"win-emb-always@2e-3": {"acc": GOOD}, HREMAP: HRM, "none@1.6e-2": {"kw": {"logp_shift": 1.0}}},
+             lambda o: all("lr axis OPEN at none@1.6e-2" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
+    # S14 the text arm is chosen: (d) has no control at the text site -> NOT RUN, the rest as S10
+    scenario("S14 supp: text chosen", {"win-text-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
+             lambda o: all(V(o, L).startswith("RESCUE") and "control NOT RUN" in V(o, L) for L in ("hi", "lo_rare")), supp=True)
     print("selftest: all scenarios pass")
 
 
