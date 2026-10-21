@@ -807,9 +807,11 @@ def unit_tests():
     holm(outs)
     assert outs["hi"]["verdict"].startswith("NOT ESTABLISHED") and outs["lo_rare"]["verdict"].startswith("no rescue: C2"), outs
     n += 1
-    vals = [0.1] * 71 + [0.2, 0.4, 0.6, 0.9]   # final3 = the last three evals
-    r = {"curve": [{"H_one_hi": v} for v in vals]}
-    assert abs(acc(r, "hi") - (0.4 + 0.6 + 0.9) / 3) < 1e-12, acc(r, "hi")
+    vals = [0.1] * 71 + [0.2, 0.4, 0.6, 0.9]   # final3 = the last three evals, of the layer's own key (every key present)
+    r = {"curve": [{"H_one": 0.07, **{f"H_one_{L_}": 0.05 + 0.01 * i for i, L_ in enumerate(ALL_LAYERS)},
+                    "H_one_hi": v, "H_one_lo_rare": 1 - v, "H_one_rare": 1 - v} for v in vals]}   # rare = lo_rare (same rows)
+    assert abs(acc(r, "hi") - (0.4 + 0.6 + 0.9) / 3) < 1e-12, ("final3 / layer key", acc(r, "hi"))
+    assert abs(acc(r, "lo_rare") - (0.6 + 0.4 + 0.1) / 3) < 1e-12, ("final3 / layer key", acc(r, "lo_rare"))
     n += 1
     for nan_arm in PRIOR_X:   # a non-finite bpb inside the tie never wins (RR.worst; ptheld B5)
         runs = {x: {s: {"curve": [{"H_one_hi": 0.80, "val_bits_per_byte": float("nan") if x == nan_arm else
