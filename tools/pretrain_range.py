@@ -65,6 +65,24 @@ the Rev C flags at their defaults).
   H sets also log a continuous score (the answer's teacher-forced log-prob, per row for H_one; the first answer
   token's log-prob and rank), a running sha256 of the training batches (identical across the arms of a seed) and the
   cosine of the embedding rows of h and u_h.
+Rev D 2026-10-21 (ptheld2, wall 1 follow-up; opt-in, intent spec llmadd_torch/runs/ptheld2/AUDIT.md). Without --held_strat
+value_freq and --lam_decay the trainer is Rev C1 (default path and every Rev C / C1 path bit-identical; the run JSON's
+args omit the two flags at their defaults).
+  --held_strat value_freq  (needs --held_operands N, N = 18 k; ptheld2: 54) H = 2 k numbers per hundreds block 100-199 ..
+             900-999: inside a block the 100 numbers are ranked by their text-site count (ties by value, as the
+             quintile strata), split into a lower ("rare") and upper ("common") half of 50, and k are drawn from each half
+             on the held stream 6000 + seed (blocks ascending, rare then common). Every Rev C guarantee is unchanged (H
+             never in a line, scanned every step, data sha, same H for every arm of a seed). Logged per h: block, half,
+             count; H_one masks v1..v9 (block), rare, common, hi (blocks 7-9) and lo_rare (the rare halves = rare); for
+             each of these layers the accuracy H_one_<layer> and the mean answer log-prob logp_H_one_<layer> at every eval
+             (the same rows and forward as H_one; rows per layer in held_operands.layer_rows).
+  --lam_decay  (needs --schedule window) inside the window lambda_t = lambda (1 - p), p = (s - s_on) / (s_off - s_on),
+             s_on / s_off = the first step with the prior on / off (s_off = steps when the window ends with the run):
+             lambda at the first on step, lambda / (s_off - s_on) at the last one.
+  With either flag, every eval also logs the consumed lambda (lam_now; 0 when no prior term is in that step's loss), the
+  pre-clip norm of the total gradient as clip_grad_norm_ saw it (grad_total), the clip coefficient min(1, 1 / (grad_total
+  + 1e-6)) (clip_coef), and the LM share grad_lm / |g_lm + g_prior| (grad_lm_share; g_prior lambda_t-weighted; 1.0 when
+  the loss is the LM alone) with |g_lm + g_prior| itself (grad_T; double path of grad_total).
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -97,6 +115,8 @@ HELD_ONE_PER = 12     # H_one rows per held number: partner of 1 / 2 / 3 digits 
 HELD_BOTH_N = 150     # H_both rows (two different held numbers, either order)
 HELD_ANS_PER = 3      # H_ans rows per held number with sum h (+3 with a 4-digit sum whose first token is h, h < 200)
 REVC_DEFAULTS = {"held_operands": 0, "wd": 0.1}   # Rev C flags: kept out of the run JSON's args at these values
+HELD_BLOCKS = 9       # Rev D (--held_strat value_freq): the hundreds blocks 100-199 .. 900-999, two halves each
+REVD_DEFAULTS = {"held_strat": "freq", "lam_decay": False}   # Rev D flags: kept out of the run JSON's args at these values
 
 
 def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
@@ -365,6 +385,11 @@ def main() -> None:
                     help="Rev C: N three-digit numbers (per seed, N / 5 per text-count quintile) never in a training line, "
                          "as operand or answer token; 0 = off (the pinned trainer)")
     ap.add_argument("--wd", type=float, default=0.1, help="Rev C: AdamW weight decay (0.1 = the pinned value)")
+    ap.add_argument("--held_strat", choices=("freq", "value_freq"), default="freq",
+                    help="Rev D (needs --held_operands): freq = N / 5 per quintile of the text-site count (Rev C); value_freq "
+                         "= N / 9 per hundreds block, half from its rarer and half from its commoner 50 numbers (N = 18 k)")
+    ap.add_argument("--lam_decay", action="store_true",
+                    help="Rev D (needs --schedule window): lambda_t = lambda (1 - p), p = linear progress through the window")
     ap.add_argument("--n_prefix", type=int, default=256, help="--site prefix: 'Q: x' prompts per step")
     ap.add_argument("--text_min", type=int, default=16, help="--site text: skip the prior on batches with fewer numbers")
     ap.add_argument("--ckpt_every", type=int, default=0, help="resumable checkpoint every N steps (0 = off)")
@@ -441,9 +466,17 @@ def main() -> None:
         assert args.schedule in ("window", "whole"), "--domains: one shared window / whole schedule (the gate EMA is numbers-only)"
     HO = args.held_operands > 0   # Rev C (wall 1)
     REVC = HO or args.site == "emb" or args.wd != REVC_DEFAULTS["wd"]   # Rev C logging (lr_now / wd_now) only then
+    VF = args.held_strat == "value_freq"   # Rev D
+    REVD = VF or args.lam_decay            # Rev D logging (lam_now, grad_total, clip_coef, grad_lm_share) only then
     if HO:
         assert args.tokenization == "whole" and not DOM, "--held_operands: whole-number tokens, no --domains"
-        assert args.held_operands % HELD_STRATA == 0 and args.held_operands <= 300, args.held_operands
+        if not VF:
+            assert args.held_operands % HELD_STRATA == 0 and args.held_operands <= 300, args.held_operands
+        else:   # k per half per block, k <= 25 (a half has 50 numbers)
+            assert args.held_operands % (2 * HELD_BLOCKS) == 0 and args.held_operands <= 2 * HELD_BLOCKS * 25, args.held_operands
+    assert HO or not VF, "--held_strat value_freq needs --held_operands"
+    assert not args.lam_decay or (args.schedule == "window" and args.target != "none" and not DOM), \
+        "--lam_decay: a window prior on the numbers (no --domains)"
     if args.site == "emb":
         assert args.tokenization == "whole" and not DOM, "--site emb: whole-number tokens (0..999 single tokens), no --domains"
     assert HO or args.target != "helix3_farshuf", "--target helix3_farshuf needs --held_operands (its search uses the text counts)"
@@ -942,7 +975,24 @@ def main() -> None:
         order = cand[np.lexsort((cand, cnt_st[cand]))]   # by text-site count, ties by value
         strata = np.array_split(order, HELD_STRATA)
         hr = np.random.default_rng(6000 + args.seed)
-        H = sorted(int(v) for st_ in strata for v in hr.choice(st_, args.held_operands // HELD_STRATA, replace=False))
+        if not VF:
+            H = sorted(int(v) for st_ in strata for v in hr.choice(st_, args.held_operands // HELD_STRATA, replace=False))
+        else:   # Rev D: k per half of every hundreds block (ranked by text-site count, ties by value), same stream
+            k_vf, vf, vf_edges = args.held_operands // (2 * HELD_BLOCKS), {}, {}
+            for blk in range(1, HELD_BLOCKS + 1):
+                nb = np.arange(100 * blk, 100 * blk + 100)
+                ob = nb[np.lexsort((nb, cnt_st[nb]))]
+                halves = {"rare": ob[:50], "common": ob[50:]}
+                assert cnt_st[halves["rare"]].max() <= cnt_st[halves["common"]].min() and len(set(ob.tolist())) == 100
+                vf_edges[blk] = {hf: [int(cnt_st[p].min()), int(cnt_st[p].max())] for hf, p in halves.items()}
+                for hf, part in halves.items():
+                    for v in hr.choice(part, k_vf, replace=False):
+                        vf[int(v)] = (blk, hf)
+            H = sorted(vf)
+            assert len(H) == args.held_operands == len(vf) and all(100 <= h <= 999 and vf[h][0] == h // 100 for h in H)
+            for blk in range(1, HELD_BLOCKS + 1):   # k rare + k common in every block
+                for hf in ("rare", "common"):
+                    assert sum(1 for h in H if vf[h] == (blk, hf)) == k_vf, (blk, hf)
         Hs = frozenset(H)
         stratum = {int(v): k for k, st_ in enumerate(strata) for v in st_}
         H_tok = np.array(sorted(int(num_ids[h]) for h in H), dtype=np.int64)
@@ -980,6 +1030,8 @@ def main() -> None:
         seen_num = {L: [v for v in range(*RANGE[L]) if v not in Hs] for L in (1, 2, 3)}
         one, one_m = [], {f"p{L}": [] for L in (1, 2, 3)}
         one_m.update(hfirst=[], **{f"q{k + 1}": [] for k in range(HELD_STRATA)})
+        VF_LAYERS = [f"v{j}" for j in range(1, HELD_BLOCKS + 1)] + ["rare", "common", "hi", "lo_rare"] if VF else []
+        one_m.update({k: [] for k in VF_LAYERS})   # Rev D: block / half layers of H_one (masks of the same rows)
         for h in H:   # one operand in H, the other seen, every answer token seen
             for L in (1, 2, 3):
                 for _ in range(HELD_ONE_PER // 6):
@@ -994,6 +1046,21 @@ def main() -> None:
                         one_m["hfirst"].append(first)
                         for k in range(HELD_STRATA):
                             one_m[f"q{k + 1}"].append(stratum[h] == k)
+                        if VF:
+                            for j in range(1, HELD_BLOCKS + 1):
+                                one_m[f"v{j}"].append(vf[h][0] == j)
+                            one_m["rare"].append(vf[h][1] == "rare"); one_m["common"].append(vf[h][1] == "common")
+                            one_m["hi"].append(vf[h][0] >= 7); one_m["lo_rare"].append(vf[h][1] == "rare")
+        if VF:   # every layer = the rows of its h (12 per h); blocks partition H_one, rare / common too
+            hrow = np.repeat(np.array(H), HELD_ONE_PER)
+            assert len(hrow) == len(one) and all(h_ in pr_ for h_, pr_ in zip(hrow.tolist(), one))
+            M_ = {k: np.array(one_m[k]) for k in VF_LAYERS}
+            assert (sum(M_[f"v{j}"].astype(int) for j in range(1, HELD_BLOCKS + 1)) == 1).all() and (M_["rare"] ^ M_["common"]).all()
+            assert (M_["hi"] == (hrow >= 700)).all() and (M_["lo_rare"] == M_["rare"]).all()
+            for k in VF_LAYERS:
+                hk = {h for h in H if (vf[h][0] == int(k[1:]) if k[0] == "v" and k[1:].isdigit() else
+                                       vf[h][0] >= 7 if k == "hi" else vf[h][1] == ("common" if k == "common" else "rare"))}
+                assert set(hrow[M_[k]].tolist()) == hk and M_[k].sum() == HELD_ONE_PER * len(hk), k
         both = []
         while len(both) < HELD_BOTH_N:   # both operands in H (answer tokens unrestricted)
             a, b = (int(v) for v in hp.choice(H, 2, replace=False))
@@ -1078,6 +1145,16 @@ def main() -> None:
                  "eval_filtered_rows": filt,
                  "sets": {k: {"pairs": v[3].tolist(), "masks": {m: "".join("1" if b_ else "0" for b_ in mv) for m, mv in v[4].items()}}
                           for k, v in hsets.items()}, "count_sec": round(time.time() - t_c, 1)}
+        if VF:   # Rev D: per h its block, half and text-site count; the layers' rows (masks in sets.H_one.masks)
+            HINFO.update(held_strat="value_freq", block=[vf[h][0] for h in H], half=[vf[h][1] for h in H],
+                         count=[int(cnt_st[h]) for h in H], per_half=k_vf, half_count_edges=vf_edges,
+                         layer_rows={k: int(np.sum(hsets["H_one"][4][k])) for k in VF_LAYERS},
+                         layer_h={k: int(len({int(h) for h in hrow[hsets["H_one"][4][k]]})) for k in VF_LAYERS},
+                         layer_def={"v<j>": "block j = h in 100 j .. 100 j + 99", "rare / common": "lower / upper 50 of the "
+                                    "block by text-site count", "hi": "blocks 7-9", "lo_rare": "the rare halves (= rare)"})
+            print(f"held_strat value_freq: {k_vf} rare + {k_vf} common per block; " + "; ".join(
+                f"b{blk} " + " ".join(f"{h}{'r' if vf[h][1] == 'rare' else 'c'}({int(cnt_st[h])})" for h in H if vf[h][0] == blk)
+                for blk in range(1, HELD_BLOCKS + 1)) + f"; layer rows {HINFO['layer_rows']}", flush=True)
         print(f"held operands: N {len(H)} {H}; text-site counts {[int(cnt_st[h]) for h in H]}; rehearsal {n_reh0} -> "
               f"{len(rehearsal_all)}; eval rows kept {filt}; H_one {len(one)} H_both {len(both)} H_ans {len(ans)}; "
               f"helix3_shuf CKA to helix3 {h_cka_all:.4f} (text mix {h_cka_text:.4f}); far permutation {far[2][0]:.4f} "
@@ -1330,6 +1407,9 @@ def main() -> None:
                 lp_, lp1_, rk_ = (torch.cat([c_[j] for c_ in sc_]).cpu() for j in range(3))
                 res[f"logp_{name}"] = float(lp_.mean()); res[f"logp1_{name}"] = float(lp1_.mean())
                 res[f"rank1med_{name}"] = float(rk_.float().median())
+                if VF and name == "H_one":   # Rev D: the continuous score per layer (accuracy: H_one_<layer> above)
+                    for k in VF_LAYERS:
+                        res[f"logp_H_one_{k}"] = float(lp_[torch.from_numpy(mk[k])].mean())
                 if name == "H_one":
                     res["logp_rows_H_one"] = [round(float(v), 4) for v in lp_.tolist()]
                     res["rank1_rows_H_one"] = [int(v) for v in rk_.tolist()]
@@ -1387,6 +1467,15 @@ def main() -> None:
         return res
 
     w0, w1 = (float(v) for v in args.window.split(","))
+    if args.lam_decay:   # Rev D: the window's first on step and first off step (prior_on's own comparisons)
+        s_on0 = next(s for s in range(steps + 1) if w0 * steps <= s)
+        s_on1 = next(s for s in range(s_on0, steps + 1) if not s < w1 * steps)
+        assert 0 <= s_on0 < s_on1 <= steps, (s_on0, s_on1)
+        print(f"lam_decay: lambda {lam_num} x (1 - (s - {s_on0}) / {s_on1 - s_on0}) at the window steps {s_on0}..{s_on1 - 1}", flush=True)
+
+    def lam_at(s):
+        """Rev D: the prior's weight in step s's loss (default: lam_num, the same float object as before)."""
+        return lam_num * (1.0 - (s - s_on0) / (s_on1 - s_on0)) if args.lam_decay else lam_num
     dyn = {"ema1": 0.0, "on": 0, "ema_b": np.zeros(len(BUCKETS)), "toggles": 0, "last_on": None,
            "gate_open": True, "events": []}   # events: [step, 1 = prior switched on / 0 = off]
     assert args.schedule == "gate" or (args.gate_start == 0 and args.gate_hyst == 0), "--gate_start / --gate_hyst need --schedule gate"
@@ -1538,7 +1627,7 @@ def main() -> None:
         print(f"[held] this arm's pi = {HINFO['pi_of']}")
         for h, k in zip(H, HINFO["stratum"]):
             print(f"  h {h}: q{k + 1}, text-site count {int(cnt_st[h])}, raw {int(cnt_raw[h])}, pi(h) {int(pi_t[h])}, "
-                  f"u_h {int(rmap[h])}")
+                  f"u_h {int(rmap[h])}" + (f", block {vf[h][0]} {vf[h][1]} (half counts {vf_edges[vf[h][0]][vf[h][1]]})" if VF else ""))
         Ht = set(H_tok.tolist())
         for name, (ids, lens, sums, prs, mk) in hsets.items():
             for rr in range(2):
@@ -1772,10 +1861,11 @@ def main() -> None:
                 print(f"text site: {len(batch.tmeta)} numbers in the first batch, e.g. {show}", flush=True)
         on = prior_on(s)
         usable = args.site != "text" or text_ok()
+        lam_t = lam_at(s) if on else lam_num   # Rev D: = lam_num unless --lam_decay (then only inside the window)
         with torch.autocast(dev, dtype=torch.bfloat16):
             lm_loss, logits_at = lm_forward(x)
             gl = site_prior(ops) if (on and usable and Ftab is not None) else torch.zeros((), device=dev)
-            loss = lm_loss + (lam_num * gl if (on and usable and Ftab is not None) else 0.0)
+            loss = lm_loss + (lam_t * gl if (on and usable and Ftab is not None) else 0.0)
             dgeo = {}
             if DOM and on:   # Rev B: every active domain prior on its own sites (same schedule), weight LAMD[d]
                 for d in DPRI:
@@ -1817,13 +1907,16 @@ def main() -> None:
         elif (s % eval_every == 0 or s == steps - 1) and on and usable:   # LM vs prior pull, before clipping
             params = [q for q in model.parameters() if q.requires_grad]
             g1 = torch.autograd.grad(lm_loss, params, retain_graph=True, allow_unused=True)
-            g2 = torch.autograd.grad(args.lam * gl, params, retain_graph=True, allow_unused=True)
+            g2 = torch.autograd.grad(lam_t * gl, params, retain_graph=True, allow_unused=True)   # Rev D: lam_t (= args.lam by default)
             v1 = torch.cat([(g if g is not None else torch.zeros_like(q)).flatten().float() for g, q in zip(g1, params)])
             v2 = torch.cat([(g if g is not None else torch.zeros_like(q)).flatten().float() for g, q in zip(g2, params)])
             grad_info = dict(grad_lm=float(v1.norm()), grad_prior=float(v2.norm()), grad_cos=float(v1 @ v2 / (v1.norm() * v2.norm() + 1e-12)))
+            if REVD:   # Rev D: |g_lm + g_prior| (the decomposition's total; grad_total below is the backward's) and the LM share
+                grad_info["grad_T"] = float((v1 + v2).norm())
+                grad_info["grad_lm_share"] = grad_info["grad_lm"] / max(grad_info["grad_T"], 1e-12)
             del g1, g2, v1, v2
             if args.site == "emb":   # Rev C: the emb prior moves exactly the 1000 number rows of the embedding (H too)
-                ge = torch.autograd.grad(args.lam * gl, model.get_input_embeddings().weight, retain_graph=True)[0]
+                ge = torch.autograd.grad(lam_t * gl, model.get_input_embeddings().weight, retain_graph=True)[0]
                 nz = ge.abs().sum(1) > 0
                 assert int(nz.sum()) == 1000 and bool(nz[num_tok].all()), ("emb prior rows", int(nz.sum()))
                 grad_info.update(grad_prior_emb_rows=int(nz.sum()), grad_prior_emb=float(ge.float().norm()))
@@ -1832,7 +1925,7 @@ def main() -> None:
                 del ge
         opt.zero_grad(set_to_none=True)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        g_total = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)   # Rev D: its pre-clip total norm is logged
         opt.step()
         if s % eval_every == 0 or s == steps - 1:
             if Ftab is not None and not (on and usable) and usable:   # prior off: still log the fit at its site
@@ -1857,13 +1950,27 @@ def main() -> None:
             if REVC:   # Rev C: the consumed optimiser values (lesson 2026-10-18: a new flag must be seen to act)
                 r.update(lr_now=opt.param_groups[0]["lr"], wd_now=opt.param_groups[0]["weight_decay"])
                 assert r["wd_now"] == args.wd and r["lr_now"] == args.lr * sched(s), (r["wd_now"], r["lr_now"])
+            if REVD:   # Rev D: the consumed lambda, the clip, the LM share of the update (manifold_aux_loss_principle)
+                applied = bool(on and usable and Ftab is not None)
+                gt_ = float(g_total)
+                r.update(lam_now=float(lam_t) if applied else 0.0, grad_total=gt_, clip_coef=min(1.0, 1.0 / (gt_ + 1e-6)))
+                if not applied:   # the loss is the LM alone: its gradient is the total
+                    r["grad_lm_share"] = 1.0
+                want_lam = (args.lam * (1.0 - (s - math.ceil(w0 * steps)) / (math.ceil(w1 * steps) - math.ceil(w0 * steps)))
+                            if args.lam_decay else args.lam) if applied else 0.0
+                assert abs(r["lam_now"] - want_lam) <= 1e-12 * max(1.0, args.lam), (s, r["lam_now"], want_lam)
+                if applied and r.get("grad_T") is not None:   # double path: decomposition vs the backward's own norm
+                    r["grad_T_reldiff"] = abs(r["grad_T"] - gt_) / max(gt_, 1e-12)
+                    if dev == "cpu":
+                        assert r["grad_T_reldiff"] < 0.05, (s, r["grad_T"], gt_)
             if HO:
                 r.update(held_rej=dyn["held"]["rej"], held_lines_scanned=dyn["held"]["lines"],
                          held_data_sha=dyn["held"]["data_sha"][:16])
             curve.append(r)
             print(json.dumps(r), flush=True)
             res_ = {"args": {k: v for k, v in vars(args).items() if (DOM or k not in DOM_ARGS)
-                             and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])}, "steps": steps,
+                             and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])
+                             and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])}, "steps": steps,
                     "geo_layers": geo_layers, "read_layers": read_layers,
                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
