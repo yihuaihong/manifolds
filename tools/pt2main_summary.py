@@ -36,6 +36,10 @@ tools/pt999_summary.py:
        else is wrong, and its offline entry may hold NaN). A results dir of a pt2 block that the generator does not make
        (not in tasks(), e.g. a re-run not yet in EXTRA) is listed as IGNORED.
     python tools/pt2main_summary.py [<results dir>]   (default: results/ of this repo)
+Scale ladder (2026-10-22, llmadd_torch/runs/pt2s505/AUDIT.md): the same read-out of another batch generated with
+make_pt2main_tasks.py's interface (BLOCKS, SEEDS, LM0, tasks(); a job dir = <res>/<task name>/<tag>/run_*.json):
+    python tools/pt2main_summary.py --gen <generator .py> --res <dir of the task dirs> [--json <best lrs per block>]
+Without these flags the output is byte-identical to before (regression on the Burst pt2main results).
 """
 import json
 import math
@@ -48,13 +52,26 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import make_pt2main_tasks as G   # noqa: E402  (blocks, cells, seeds, EXTRA: one source of truth with the task files)
+if "--gen" in sys.argv:   # scale ladder: another generator with make_pt2main_tasks.py's interface (and its own results root)
+    import importlib.util
+    _spec = importlib.util.spec_from_file_location("pt2gen", sys.argv[sys.argv.index("--gen") + 1])
+    G = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(G)
+else:
+    import make_pt2main_tasks as G   # noqa: E402  (blocks, cells, seeds, EXTRA: one source of truth with the task files)
 import readout_rules as R        # noqa: E402  (the shared definitions)
 
 B, B5 = R.B, R.B5
 MAIN, CONFIRM = tuple(G.SEEDS), R.CONFIRM
 assert MAIN == R.MAIN, MAIN
-RES = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent / "results"
+if "--gen" in sys.argv:
+    assert "--res" in sys.argv, "--gen needs --res <dir of the task dirs>"
+    RES = Path(sys.argv[sys.argv.index("--res") + 1])
+    JSON_OUT = sys.argv[sys.argv.index("--json") + 1] if "--json" in sys.argv else None
+else:
+    RES = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent / "results"
+    JSON_OUT = None
+SELECTION = {}   # --json: per block the best lr per arm (rule 1), the arms without one and why, the open brackets
 LM0_TOL = 1e-3
 
 # ---------------------------------------------------------------- collect
@@ -205,6 +222,8 @@ for base, block, size, data, tokens, plan_h, tlim, _ in G.BLOCKS:
               + (f"  OPEN BRACKET at the {br[1]} edge" if br and br[0] == "open" else "")
               + (f"  (note: area argmax {lrs[-1] if br[1] == 'upper' else lrs[0]} at the {br[1]} edge by <= 2: not an "
                  f"open bracket by rule 1)" if br and br[0] == "note" else ""))
+    SELECTION[block] = {"best": dict(best), "nobest": dict(nobest), "open": dict(openbr),
+                        "grid": {a: sorted(v, key=float) for a, v in grid[block].items()}}
     for arm in ("win-ctx", "win-text"):
         if arm not in grid[block]:
             continue
@@ -299,3 +318,5 @@ for base, block, size, data, tokens, plan_h, tlim, _ in G.BLOCKS:
             d = x - y
             print(f"  CONTROL win-ctx@1e-3 - win-shuf-ctx@1e-3: {d.mean():+.1f} (wins {int((d > 0).sum())}/4) -> "
                   f"{'passes (shuffled geometry below the helix)' if d.mean() > 0 and (d > 0).sum() >= 3 else 'FAILS: geometry specificity not shown'}")
+if JSON_OUT:
+    Path(JSON_OUT).write_text(json.dumps(SELECTION, indent=1))
