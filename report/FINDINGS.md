@@ -3503,7 +3503,7 @@
 - **墙①不成立**：none@2e-3 0.21（0.12–0.28，8/8 > 0.10），none@8e-3 0.20，lr 1.6e-2 0.12，wd 0.01 0.17，4 倍 token 0.25（logp 仍在上升）；已见留出对约 0.94–0.99。错答多在 ±9 以内（百位对的占 81%），准确率主要随 h 的数值下降（1xx 0.57 → 9xx 0.04）；控制数值后与正文频率几乎无关（partial ρ +0.01 / +0.19）。没有找到泄漏或捷径（prefix 泄漏 ≤ 0.7% 的行）。
 - **R1 不成立**：(a) 先验组 0/16 个 seed ≥ 0.50；(b) 每个对照都 > 0.10。
 - **预注册的 partial**：够到 H 的先验把终值 acc_H1 提到 0.39（win-text 0.388，win-emb 0.389），比 none@2e-3 高 +0.18（8/8，p < 1e-4）。**但碰不到 H 的操作数先验（win-ctx）也有 0.31（+0.10），够到 H 的特异增量只有 +0.08**（text 7/8，p .003；emb 8/8，p .001），按 R2（要求 ≥ +0.30）不足以支持「先验让未见项可用」。
-- **瞬时增益**：先验开着时（窗口末 7250 步）acc_H1 为 0.60（text）/ 0.94（emb），同一步 none 0.06；关窗后约 0.5–2.5k 步跌破 0.5，两组都收敛到约 0.39，与峰值高低无关。
+- **瞬时增益**：先验开着时（窗口末 7250 步）acc_H1 为 0.60（text）/ 0.94（emb），同一步 none 0.06；关窗后约 0.5–2.5k 步跌破 0.5，两组都收敛到约 0.39，与峰值高低无关【2026-10-22：这只在 lr 2e-3 成立；lr 1e-3 上是 0.45 / 0.53，见 F90 补记（PLR）】。
 - **机制（R3：先验开着时成立）**：hremap 组（把 H 的 embedding 目标换成另一个已见数 u_h 的 helix 位置）在窗口末有 0.90 的 H 行答成 u_h + y（decoy 0.003，p = 1e-4，4/4 seed）：先验开着时模型确实按 embedding 给的坐标做加法。到 final3 这个比例是 0，acc 0.25 ≈ none：先验写进 H 行的坐标约 1.5k 步内被改写。R3b：final3 时 emb − hremap = +0.15（4/4），未达 +0.20，判「对数字 embedding 的先验，不特指 h 自己的值」。
 - **R3c 不能当几何证据**：text − farshuf = +0.34，但 farshuf 自己的已见加法也坏了（held6 0.59，0/4 informative）。
 - **按挽救标准**：(a) 不满足（none 不在地板上，lr 区间开着），(b) 待 PLR，最多 L 级。**不是挽救**，只能写「部分（主要是非特异的）增益 + 先验开着时的瞬时增益」。
@@ -3992,3 +3992,59 @@
 - 未提交的补跑（由用户决定）：190M 的 all6 和只开数字再加一个 lr（如 1.2e-3）；只开钟表或 all6 去钟表的格子；none 加高 lr（9.6e-3 / 1.92e-2），回答 S4 / 量纲格上「不加先验能不能学会」。
 
 **审查状态**：一轮结果层对抗审查（全新子 agent，独立重算 288 个逐 seed 值和 56 行配对检验，0 分歧；notes/batch1_build/audit_rb6_190m_results.md）。七项：i ✓、ii ✓、iii ✓（拉丁方填表者水平、seen）、iv 部分（4 个选 lr 用的 seed，没有 confirm seed）、v ✓、vi 部分（lr 未调导致的混淆；tier E 星期只有 12 题）、vii ✓。
+
+### F90 补记（2026-10-22，Amendment PLR 读数，16 个 run，已过结果层对抗审查）：两个先验组在 lr {1e-3, 2e-3, 4e-3} 里都是 1e-3 最好，最优 lr 在网格下沿、区间开着；1e-3 上 win-emb 的 final3 刚过 0.50（4/4，就是选 lr 用的 seed），但三个对照仍 > 0.10，判「no wall claim」；win-text 仍是 partial（0.45）；对照没在 1e-3 跑，这个提升不能归给先验；不是挽救
+
+- **设置**：
+  - 预注册：Amendment PLR 10-20 写定，早于任何本批结果；读数实现和审查修订在 10-21，当时 16/16 仍在排队。
+  - 内容：win-text / win-emb 在 lr 1e-3、4e-3 上各跑 seed 0–3。代码快照同 MAIN（3c99f6f8cb17），sbatch 只差 --lr。全部 L40S，每个 run 一个作业，没有续跑。
+  - 读数：tools/ptheld_summary.py（origin/main e1b054b，含 R05）。
+  - 有效性 16/16：
+    - DP：step 0 ≤ 0.05，之后 ≤ 1.0 / 1.5；
+    - pred_mismatch、rank_hit_bad 全 0；
+    - emb 先验行在窗口内每次 eval 都是 1000；
+    - lr_now 在 75/75 次 eval 上都是同 seed 2e-3 run 的 0.5 / 2 倍；
+    - H、remap、数据 sha 与同 seed 的其他组逐项相同。
+  - 审查：独立重算 area、final3、bpb、选 lr 和 R1-best，0 处不符（notes/batch1_build/audit_ptheld_plr_results.md）。
+- **选 lr**（seed 0–3，按预注册的 H_one area）：
+  - win-text：1e-3 0.397 > 2e-3 0.360 > 4e-3 0.300；
+  - win-emb：1e-3 0.563 > 2e-3 0.505 > 4e-3 0.443。
+  - 领先 0.037 / 0.058，超过 0.02 的平局线，没有用到 bpb 平局判定。
+  - final3 和 logp_H1 的排序与 area 相同，相邻 lr 之间 4/4 seed 同向。
+  - 结论：两组都选 1e-3，区间 OPEN（下沿）。最优 lr ≤ 1e-3，没有定位到。
+- **R1-best**（seed 0–3 就是选 lr 用的 seed，有 winner's curse；1e-3 没有确认 seed）：
+  - win-text@1e-3：final3 0.45（0.42–0.49），(a) 0/4。比 none@2e-3 高 +0.20，比 none@8e-3 高 +0.24，都是 4/4，p ≤ .0004，判 partial「提到 45%」。比 win-ctx@2e-3 只高 +0.14，而且 lr 不同。
+  - win-emb@1e-3：final3 0.53（0.506–0.546），(a) 4/4 ≥ 0.50。
+    - 余量只有 +0.006 到 +0.046；用最后 5 或 8 次 eval 是 3/4。
+    - 三个对照在 8/8 seed 上都 > 0.10，判「no wall claim」，配对平均 +0.27。这一判词表示 (a) 过了、(b) 没过，不比 partial 差。
+    - R2 要求比 win-ctx 高 ≥ +0.30，实际 +0.215，不满足。
+- **挽救**：两组都是 NO。
+  - R1（2e-3）和 R1-best 都不 HOLDS；1e-3 没有确认 seed；text 的 farshuf 对照 0/4 informative。
+  - 挽救标准 (b) 现在是「已报告区间状态：OPEN」。最好对最好只能写成 best tested 对 best tested，因为 none 自己的 lr 区间也在 2e-3 的下沿开着（logp，预注册要求先跑 none@1e-3）。
+- **1e-3 的增益大多出现在关窗之后**（描述）：
+  - 窗口末 acc_H1，1e-3 比 2e-3 只高 +0.02（emb 0.960 / 0.938）和 +0.035（text 0.646 / 0.611）；final3 高 +0.127 / +0.067。
+  - 关窗后的谷底，emb 是 0.42–0.45 对 0.30–0.34。
+  - emb@1e-3 关窗后 2–4k 步跌破 0.5，lr 退火阶段回升到 0.51–0.55。
+  - 可能的原因是 lr 小、H 行坐标被改写得慢，没有检验过。
+- **F90 正文要改的一处**：「两组都收敛到约 0.39」只在 2e-3 上成立，1e-3 上是 0.45 / 0.53。
+- **F90 正文不变的**：R1 在 2e-3 上 (a) 0/16；partial；特异增量 +0.08（2e-3 对 2e-3）；不是挽救。
+- **读数警告**：「Mean of empty slice」来自 bracket 的 wd 轴。none@8e-3-wd1 有 0/4 个 informative seed，均值是 nan，被打印成「closed」，应为 incomplete。不影响任何判词，也不影响 R1-best 的数字（既有缺陷，audit_ptheld_r1best.md #13）。
+
+**不得写**：
+- 「先验在调 lr 后更强」「调 lr 后先验效应 / 特异增量变大」。none 和 win-ctx 没有在 1e-3 跑，none 的 logp 区间同样指向更低的 lr；+0.14 到 +0.31 的配对差里混着 lr 效应。
+- 「先验的最优 lr 是 1e-3」「先验的 lr 已夹住」。只能写「所试最好的是 1e-3，区间在下沿开着」。
+- 「调 lr 后 win-emb 过了 R1(a)」或「win-emb 稳定超过 50%」，而不注明以下几点：用的是选 lr 的 seed；余量 ≤ 0.046；没有确认 seed；对照 > 0.10。
+- 「win-emb 用的是 h 自己的 helix 值」。R3b 只在 2e-3 测过，1e-3 没有 hremap 组。
+- 把「no wall claim」读成比 partial 差。
+- 「1e-3 的 LM 也更好」。训练内 bpb 只差 0.004–0.006（65k token），配对只有 2/4 和 3/4 个 seed 更低，p > .3。
+- 用 1e-3 的 0.45 / 0.53（seed 0–3）直接对比 F90 的 0.388 / 0.389（8 seed）。同在 seed 0–3 上，2e-3 是 0.385 / 0.399。
+- 「挽救 / rescue」（任何一级）。
+
+**审查状态**：一轮结果层对抗审查（全新子 agent，独立重算 0 处不符）。七项：
+- i ✓：area、final3、bpb、选 lr、t 检验都用自写代码重算；hits 字符串对标量。
+- ii ✓：lr_now 比值；R05 故障注入在真实 PLR run 上逐条触发。
+- iii ✓：已知答案（pred_mismatch / rank_hit_bad 都为 0）；选 lr 对打分量的选择不敏感。
+- iv 部分：只有 seed 0–3，而且就是选 lr 用的 seed；1e-3 没有确认 seed。
+- v ✓。
+- vi 部分：对照没有调 lr；wd 轴的 nan 被打印成「closed」；读数不查 rank_hit_bad 和 lr_now。
+- vii：沿用构建审查。
