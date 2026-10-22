@@ -29,6 +29,11 @@ from pathlib import Path
 import numpy as np
 
 CKPTS = (("9B", "PRIMARY"), ("42B", "secondary"))
+CK_DIR = {"9B": "stage1-step2000-tokens9B", "42B": "stage1-step10000-tokens42B"}
+# floor rule (fixed 2026-10-22 before any result, after the adversarial review): if the seed-mean final held-out accuracy
+# of none at a checkpoint is below FLOOR, "helix3 - none ~ 0" there means "nothing learned", not "the prior does not help"
+FLOOR = 0.05
+SHARE_FLAG = 0.5   # median |grad lam L_geo| / (|grad lam L_geo| + |grad CE|) above this: the prior dominates the update
 ARMS = ("none", "helix3", "helix3_shuf")
 SEEDS = (0, 1, 2)
 SPLITS = (("all", "test"), ("lt1000", "test_lt1000"), ("ge1000", "test_ge1000"))
@@ -78,6 +83,14 @@ def run_metrics(r: dict) -> dict:
     m["steps"] = [c["step"] for c in curve]
     m["curve_all"] = [c["test"] for c in curve]
     m["train_final"] = float(r["eval"]["train"])
+    m["base_all"] = next((float(c["test"]) for c in r["curve"] if c["step"] == 0), None)
+    g = r.get("grad_log", [])
+    sh = [x["geo_share"] for x in g if "geo_share" in x]
+    m["geo_share_median"] = float(np.median(sh)) if sh else None
+    m["geo_share_max"] = float(np.max(sh)) if sh else None
+    m["grad_ce_median"] = float(np.median([x["grad_ce"] for x in g])) if g else None
+    m["grad_lam_geo_median"] = float(np.median([x["grad_lam_geo"] for x in g if "grad_lam_geo" in x])) if sh else None
+    m["geo_loss_last_epoch"] = float(r["train_log"][-1]["geo_loss"]) if r.get("train_log") else None
     return m
 
 
@@ -87,7 +100,7 @@ def first_reach(steps: list, ys: np.ndarray, thr: float):
 
 
 def summarize(root: Path, strict_lam: bool = True) -> dict:
-    res, shas = {}, set()
+    res, shas, tshas, ns = {}, set(), set(), set()
     for ckpt, role in CKPTS:
         res[ckpt] = {"role": role, "arms": {}, "pairs": {}, "missing": []}
         for arm in ARMS:
@@ -99,9 +112,14 @@ def summarize(root: Path, strict_lam: bool = True) -> dict:
                     continue
                 assert r["geom"] == arm and r["seed"] == s and r.get("add3"), (ckpt, arm, s)
                 assert not strict_lam or r["lam"] == LAM, ("lam", r["lam"])
-                shas.add(r["add3"]["test_sha"])
+                assert Path(r["model"]).name == CK_DIR[ckpt], (ckpt, arm, s, r["model"])
+                assert r["steps"] == r["epochs"] * math.ceil(r["train_pairs"] / r["bs"]), ("steps", r["steps"])
+                shas.add(r["add3"]["test_sha"]); tshas.add(r["add3"]["train_sha"])
+                ns.add((r["add3"]["n_test"], round(r["add3"]["n_test"] * r["add3"]["test_frac_ge1000"])))
                 runs[s] = run_metrics(r)
             res[ckpt]["arms"][arm] = runs
+        nf = [v["final_all"] for v in res[ckpt]["arms"]["none"].values()]
+        res[ckpt]["floor"] = bool(nf) and float(np.mean(nf)) < FLOOR
         for a, b in PAIRS:
             A, B = res[ckpt]["arms"][a], res[ckpt]["arms"][b]
             common = [s for s in SEEDS if s in A and s in B]
@@ -111,7 +129,10 @@ def summarize(root: Path, strict_lam: bool = True) -> dict:
                 f"{kind}_{sp}": paired(np.array([A[s][f"{kind}_{sp}"] for s in common]), np.array([B[s][f"{kind}_{sp}"] for s in common]))
                 for kind in ("area", "final") for sp, _ in SPLITS} | {"seeds": common}
     assert len(shas) <= 1, f"runs do not share one held-out test set: {shas}"
+    assert len(tshas) <= 1, f"runs do not share one training set: {tshas}"
+    assert len(ns) <= 1, ns
     res["test_sha"] = next(iter(shas)) if shas else None
+    res["n"] = next(iter(ns)) if ns else None   # (n test, n test with sum >= 1000)
     return res
 
 
@@ -120,17 +141,27 @@ def fmt(v: float) -> str:
 
 
 def report(res: dict) -> str:
-    L = [f"# ft999 read-out (held-out accuracy in %, test set sha {res['test_sha']}); statistic: paired t-test over seeds, "
-         "df = n - 1 = 2 for n = 3 -> descriptive only (min two-sided sign-test p = 0.25)\n"]
+    n = res.get("n") or (None, None)
+    L = [f"# ft999 read-out (held-out accuracy in %, test set sha {res['test_sha']}, n test = {n[0]} "
+         f"(sum < 1000: {n[0] - n[1] if n[0] else None}, >= 1000: {n[1]})); statistic: paired t-test over seeds, df = n - 1 = 2 for "
+         "n = 3 -> descriptive only (min two-sided sign-test p = 0.25)",
+         "All seeds share ONE train/test set, ONE prior-sample sequence and ONE shuffle permutation: the seed spread is init /"
+         " order / dropout only (no data or permutation sampling variance).",
+         "helix3_shuf is matched to helix3 in lambda only, not in gradient size: compare the geo_share columns before reading"
+         " helix3 > helix3_shuf as 'the right geometry helps'.\n"]
     for ckpt, role in CKPTS:
         R = res[ckpt]
         L.append(f"\n## {ckpt} ({role}){'  MISSING: ' + ', '.join(R['missing']) if R['missing'] else ''}\n")
-        L.append("| arm | n | split | area mean [per seed] | final mean [per seed] | to50 | to90 | train final |")
-        L.append("|---|---|---|---|---|---|---|---|")
+        if R.get("floor"):
+            L.append(f"**FLOOR: none's seed-mean final held-out accuracy < {100 * FLOOR:.0f}% at {ckpt}: a helix3 - none difference near 0 "
+                     "means nothing was learned, not that the prior does not help.**\n")
+        L.append("| arm | n | split | area mean [per seed] | final mean [per seed] | to50 | to90 | train final | base | "
+                 "geo_share median (max) | grad CE / lam*geo median | geo_loss last epoch |")
+        L.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
         for arm in ARMS:
             runs = R["arms"][arm]
             if not runs:
-                L.append(f"| {arm} | 0 | - | - | - | - | - | - |")
+                L.append(f"| {arm} | 0 | - | - | - | - | - | - | - | - | - | - |")
                 continue
             ss = sorted(runs)
             steps = runs[ss[0]]["steps"]
@@ -143,8 +174,21 @@ def report(res: dict) -> str:
                     r50, r90 = first_reach(steps, mc, 0.5), first_reach(steps, mc, 0.9)
                     r50, r90 = ("not reached" if r50 is None else r50), ("not reached" if r90 is None else r90)
                 tr = fmt(np.mean([runs[s]["train_final"] for s in ss])) if k == 0 else ""
+                extra = " | | | | |"
+                if k == 0:
+                    bs = [runs[s]["base_all"] for s in ss if runs[s]["base_all"] is not None]
+                    gs = [runs[s]["geo_share_median"] for s in ss if runs[s]["geo_share_median"] is not None]
+                    gm = [runs[s]["geo_share_max"] for s in ss if runs[s]["geo_share_max"] is not None]
+                    gc = [runs[s]["grad_ce_median"] for s in ss if runs[s]["grad_ce_median"] is not None]
+                    gl = [runs[s]["grad_lam_geo_median"] for s in ss if runs[s]["grad_lam_geo_median"] is not None]
+                    lo = [runs[s]["geo_loss_last_epoch"] for s in ss if runs[s]["geo_loss_last_epoch"] is not None]
+                    flag = " PRIOR DOMINATES" if gs and np.median(gs) > SHARE_FLAG else ""
+                    extra = (f" | {fmt(np.mean(bs)) if bs else '-'} | "
+                             f"{f'{np.median(gs):.2f} ({np.max(gm):.2f}){flag}' if gs else '-'} | "
+                             f"{f'{np.median(gc):.2f}' if gc else '-'} / {f'{np.median(gl):.2f}' if gl else '-'} | "
+                             f"{f'{np.mean(lo):.3f}' if lo else '-'} |")
                 L.append(f"| {arm} | {len(ss)} | {sp} | {fmt(np.mean(ar))} [{', '.join(fmt(v).strip() for v in ar)}] | "
-                         f"{fmt(np.mean(fi))} [{', '.join(fmt(v).strip() for v in fi)}] | {r50} | {r90} | {tr} |")
+                         f"{fmt(np.mean(fi))} [{', '.join(fmt(v).strip() for v in fi)}] | {r50} | {r90} | {tr}" + extra)
         for name, P in R["pairs"].items():
             L.append(f"\n{ckpt} {name} (seeds {P['seeds']}; difference in percentage points):")
             for kind in ("area", "final"):
@@ -172,8 +216,14 @@ def selftest() -> None:
                               "test_ge1000": 0.0 if t == 0 else off - 0.1 + t / 1000} for t in steps]
                     ev = {"test": off + 0.2, "test_lt1000": off + 0.3, "test_ge1000": off + 0.1, "train": 0.9}
                     d = root / ckpt / f"{arm}-s{s}"; d.mkdir(parents=True)
+                    share = {"none": None, "helix3": 0.4, "helix3_shuf": 0.7}[arm]
+                    gl = [{"step": t, "ce": 1.0, "geo_loss": 0.5, "lam": LAM, "grad_ce": 1.0,
+                           **({} if share is None else {"grad_geo": share / (1 - share) / LAM, "grad_lam_geo": share / (1 - share),
+                                                         "geo_share": share})} for t in (0, 250, 500)]
                     (d / f"run_{arm}_seed{s}.json").write_text(json.dumps(
-                        {"geom": arm, "seed": s, "lam": LAM, "curve": curve, "eval": ev, "add3": {"test_sha": "abc"}}))
+                        {"geom": arm, "seed": s, "lam": LAM, "curve": curve, "eval": ev, "grad_log": gl,
+                         "train_log": [{"epoch": 0, "geo_loss": 0.5}], "model": f"/x/{CK_DIR[ckpt]}", "steps": 4380, "epochs": 10,
+                         "train_pairs": 7000, "bs": 16, "add3": {"test_sha": "abc", "train_sha": "def", "n_test": 2000, "test_frac_ge1000": 0.5155}}))
         res = summarize(root)
         R = res["9B"]
         # area over steps 50, 100, 150 = off + 0.1
@@ -194,6 +244,24 @@ def selftest() -> None:
         assert res["42B"]["missing"] == ["helix3-s1"] and res["42B"]["pairs"]["helix3-none"]["seeds"] == [0, 2]
         txt = report(res)
         assert "MISSING: helix3-s1" in txt and "9B (PRIMARY)" in txt
+        assert res["n"] == (2000, 1031) and "n test = 2000 (sum < 1000: 969, >= 1000: 1031)" in txt, res["n"]
+        assert abs(R["arms"]["helix3_shuf"][0]["geo_share_median"] - 0.7) < 1e-9 and R["arms"]["none"][0]["geo_share_median"] is None
+        assert txt.count("PRIOR DOMINATES") == 2 and not res["9B"]["floor"] and "FLOOR" not in txt   # shuf at 9B and 42B only
+        # floor rule: none final < 5% at 9B
+        for s in SEEDS:
+            p = root / "9B" / f"none-s{s}" / f"run_none_seed{s}.json"
+            r = json.loads(p.read_text()); r["eval"]["test"] = 0.01; p.write_text(json.dumps(r))
+        res = summarize(root); txt = report(res)
+        assert res["9B"]["floor"] and not res["42B"]["floor"] and "FLOOR: none's seed-mean" in txt
+        # a run from the wrong checkpoint is refused
+        p = root / "42B" / "none-s0" / "run_none_seed0.json"
+        r = json.loads(p.read_text()); r["model"] = "/x/" + CK_DIR["9B"]; p.write_text(json.dumps(r))
+        try:
+            summarize(root)
+            raise AssertionError("wrong checkpoint not refused")
+        except AssertionError as e:
+            assert "/x/stage1-step2000" in str(e), e
+        r["model"] = "/x/" + CK_DIR["42B"]; p.write_text(json.dumps(r))
         # a run on a different test set is refused
         p = root / "9B" / "none-s0" / "run_none_seed0.json"
         r = json.loads(p.read_text()); r["add3"]["test_sha"] = "zzz"; p.write_text(json.dumps(r))
