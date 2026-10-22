@@ -4,18 +4,27 @@ llmadd_torch/runs/rb6_190m/AUDIT.md (and runs/rb6_505m/AUDIT.md). A thin wrapper
 metric definitions (A5 READ), integrity check, strict dim set, s4_hard (A8.3), seed-level gate, paired test and BH are
 used as they are; rainbow6_summary's own output is unchanged (this file does not edit it).
 
-Cells per size (roles): none@low = none at the prior arms' lr, none@best = none at its pt2 numbers-best lr, all6 = the six
-priors (lambda 1 each), only-numbers = the numbers prior alone; seeds 0-3.
+Cells per size (roles; every cell is labelled none@<lr> etc. by its actual lr, never "none@best": none's lr was chosen on
+the numbers domain only, not tuned for any other domain): none_plr = none at the prior arms' lr (the lr-matched baseline),
+none_nlr = none at the lr selected on the numbers area of the pt2 single-prior setting, all6 = the six priors (lambda 1
+each), only-numbers = the numbers prior alone; seeds 0-3.
   53m   none@1e-3 (rb6pb-53m-2pct-k2-none), none@8e-3 (rb6mb-...-none-lr8e-3), all6-lam1@1e-3 (rb6pb-...-all6-lam1),
         only-numbers@1e-3 (rb6mb-...-only-numbers): the F88 cells (Burst; identity by rainbow6_summary.run_identity)
   190m  none@6e-4, none@4.8e-3, all6-lam1@6e-4, only-numbers@6e-4 (tags rb6tb-190m-2pct-k2-<arm>-lr<lr>; the pt2s190 lrs)
   505m  none@<all6's pick>, none@<none's pick>, all6-lam1@<all6's pick>, only-numbers@<all6's pick> (--picks: the JSON of
         tools/rb6scale_select.py over the 505M sweep)
 Output: per size and cell the A5 READ metric per domain (mean over seeds 0-3, per-seed values in seed order, the seed-level
-90% t interval and gate verdict), s4_hard area, offline bpb x1e3, seen, the gradient split; the sizes side by side (no
-statistic across sizes: F87); per size the paired families S1 / S1b / SE / S2 / S3 / SH / SL, every line "on the
-lr-selection seeds 0-3: descriptive, no confirmatory claim". A missing / excluded / unfinished run -> PROVISIONAL (n=k of 4)
-on every line that needs it; without --allow_partial the read-out refuses. A diverged Torch run is data (A6 rule).
+90% t interval and gate verdict; A5's INVALID rule for the none cells: a domain whose seen final3 < 80 in any seed is
+INVALID, and an INVALID baseline never makes a test one-sided), s4_hard area, offline bpb x1e3, per-domain seen, the
+gradient split of every prior cell (LM share, prior / LM, clip factor, share of on-evals with prior > LM; A5's FLAG when a
+seed's median prior / LM > 1; NOT LOGGED when the run has no decomposition); the sizes side by side (no statistic across
+sizes: F87); per size the paired families S1 / S1b / SE / S2 / S3 / SH / SL, every line "on the lr-selection seeds 0-3:
+descriptive, no confirmatory claim", every non-numbers line with the caveat that none's lr was not tuned for that domain
+(and what the 53M S4 / dim / clock findings compared instead); the caveats also in the JSON. A missing / excluded /
+unfinished run -> PROVISIONAL (n=k of 4) on every line that needs it; without --allow_partial the read-out refuses. A
+diverged Torch run is data (A6 rule).
+Build audit 2026-10-22 (notes/batch1_build/audit_rb6_190m_build.md), applied before any 190M result was read: Q4 INVALID,
+Q5 labels / caveats, Q7 the SH / S4 / dim / clock wording, Q8 the gradient report, the 53M SE label (not F88's FE).
     python tools/rb6scale_summary.py <dirs with run_*.json ...> [--picks picks.json] [--allow_partial] [--json out.json]
 """
 import argparse
@@ -33,29 +42,81 @@ import rainbow6_summary as R6   # noqa: E402
 import make_rb6m_tasks as G      # noqa: E402
 
 SEEDS = (0, 1, 2, 3)
-ROLES = ("none_low", "none_best", "all6", "only_numbers")
-ROLE_LAB = {"none_low": "none@low", "none_best": "none@best", "all6": "all6-lam1", "only_numbers": "only-numbers"}
-ROLE_BASE = {"none_low": "none", "none_best": "none", "all6": "all6-lam1", "only_numbers": "only-numbers"}
+ROLES = ("none_plr", "none_nlr", "all6", "only_numbers")
+ROLE_BASE = {"none_plr": "none", "none_nlr": "none", "all6": "all6-lam1", "only_numbers": "only-numbers"}
+ROLE_DESC = {"none_plr": "none at the prior arms' lr (the lr-matched baseline)",
+             "none_nlr": "none at the lr selected on the numbers area (pt2 single-prior 2%, seeds 0-3)",
+             "all6": "the six priors, lambda 1 each", "only_numbers": "the numbers prior alone, lambda 1"}
+NONE_ROLES = ("none_plr", "none_nlr")
 DOMS = R6.DOM6   # numbers, months, weekdays, clock, s4, dim
-DESIGN53 = {"none_low": ("none", "1e-3"), "none_best": ("none-lr8e-3", "8e-3"), "all6": ("all6-lam1", "1e-3"),
+DESIGN53 = {"none_plr": ("none", "1e-3"), "none_nlr": ("none-lr8e-3", "8e-3"), "all6": ("all6-lam1", "1e-3"),
             "only_numbers": ("only-numbers", "1e-3")}   # 53M arm names (as in the F88 tags) and lrs
 # the Torch sizes: model facts (the generator's, written again here as a second path) and their lrs per role
 SIZE_FACTS = {"190m": dict(dims=(768, 12, 12, 3072), n_params=190297344, layers=[4, 8]),
               "505m": dict(dims=(1024, 24, 16, 4096), n_params=505437184, layers=[8, 16])}
 TORCH_SHA = {"code_sha": "93e22bf4c4c0", "toy_struct.py": "d182ce548bcc"}
-DESIGN = {"190m": {"none_low": "6e-4", "none_best": "4.8e-3", "all6": "6e-4", "only_numbers": "6e-4"}}
+DESIGN = {"190m": {"none_plr": "6e-4", "none_nlr": "4.8e-3", "all6": "6e-4", "only_numbers": "6e-4"}}
 TORCH_ARM = re.compile(r"^(none|all6-lam1|only-numbers)-lr(.+)$")
 LABEL = "[on the lr-selection seeds 0-3: descriptive, no confirmatory claim]"
 FAMILIES = [   # (name, contrast (role a, role b), rows)
-    ("S1", ("all6", "none_low"), ("numbers", "clock", "s4", "dim")),
-    ("S1b", ("all6", "none_best"), ("numbers", "clock", "s4", "dim")),
-    ("SE", None, (("all6", "none_low", "months"), ("all6", "none_low", "weekdays"), ("all6", "none_best", "months"),
-                  ("all6", "none_best", "weekdays"))),
-    ("S2", ("only_numbers", "none_low"), DOMS),
+    ("S1", ("all6", "none_plr"), ("numbers", "clock", "s4", "dim")),
+    ("S1b", ("all6", "none_nlr"), ("numbers", "clock", "s4", "dim")),
+    ("SE", None, (("all6", "none_plr", "months"), ("all6", "none_plr", "weekdays"), ("all6", "none_nlr", "months"),
+                  ("all6", "none_nlr", "weekdays"))),
+    ("S2", ("only_numbers", "none_plr"), DOMS),
     ("S3", ("all6", "only_numbers"), DOMS),
-    ("SH", None, (("all6", "none_low", "s4_hard"), ("all6", "none_best", "s4_hard"))),
-    ("SL", None, (("all6", "none_low", "bpb"), ("only_numbers", "none_low", "bpb"))),
+    ("SH", None, (("all6", "none_plr", "s4_hard"), ("all6", "none_nlr", "s4_hard"))),
+    ("SL", None, (("all6", "none_plr", "bpb"), ("only_numbers", "none_plr", "bpb"))),
 ]
+FAM_DESC = {   # the family headers (Q7: SH is A8.3's METRIC, never 'the A8.3 comparison'; Q5 / minor: what each row is)
+    "S1": "all6 - none at the prior arms' lr (same lr)",
+    "S1b": "all6 - none at the numbers-selected lr (none's lr NOT tuned for clock / s4 / dim)",
+    "SE": "tier E months / weekdays vs both none cells, seeds 0-3, descriptive",
+    "S2": "only-numbers - none at the prior arms' lr",
+    "S3": "all6 - only-numbers (the five domain priors on top of the numbers prior)",
+    "SH": "s4_hard area vs none@<lr>, seeds 0-3, descriptive (A8.3's METRIC, NOT the A8.3 comparison: A8.3 = all6@1e-3 vs "
+          "the S4-tuned none@1.6e-2 on the fresh seeds 8-15)",
+    "SL": "offline bpb x1e3, prior cell - none at the prior arms' lr",
+}
+SE53 = ("53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); "
+        "descriptive only")
+NOT_TUNED = "none's lr not tuned for {d} (chosen on numbers)"
+CAVEATS = {
+    "lr_provenance": "the Torch sizes' lrs are reused from the pt2 single-prior 2% setting (chosen on the numbers area over seeds "
+                     "0-3); none's lr is NOT tuned for S4, dim, clock, months or weekdays: a none cell is 'none at the numbers-"
+                     "selected lr' or 'none at the prior's lr', never 'none at its best lr' for a domain",
+    "selection_seeds": "seeds 0-3 share the init and the numbers lines with the lr-selection runs (winner's curse on the numbers "
+                       "rows); every paired line is descriptive, no confirmatory claim",
+    "size_trend": "no size-trend claim (F87): sizes are printed side by side, never tested against each other",
+    "s4_53m": "53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison "
+              "(A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not "
+              "learnable without the prior' NOT ESTABLISHED",
+    "s4_torch": "{size} has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show "
+                "'not learnable without the prior'",
+    "dim_53m": "53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+    "dim_torch": "{size} has no none whose lr was tuned on dim",
+    "clock_53m": "53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+    "clock_torch": "{size}: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "se_53m": SE53,
+}
+
+
+def cell_label(design, sz, ro):
+    """A cell's label: its arm at its actual lr (Q5: never 'none@best')."""
+    lr = DESIGN53[ro][1] if sz == "53m" else design[sz][ro]
+    return f"{ROLE_BASE[ro]}@{lr}"
+
+
+def dom_caveat(sz, d, b=None):
+    """The caveat printed next to a domain's verdict / test line (and stored in the JSON): None for numbers (its lr was
+    selected on it; the selection-seed caveat is global) and for a test whose baseline is not a none cell."""
+    if d in ("numbers", "bpb") or (b is not None and b not in NONE_ROLES):
+        return None
+    dd = "s4" if d == "s4_hard" else d
+    parts = [NOT_TUNED.format(d=dd)]
+    if dd in ("s4", "dim", "clock"):
+        parts.append(CAVEATS[f"{dd}_53m" if sz == "53m" else f"{dd}_torch"].format(size=sz))
+    return "; ".join(parts)
 
 
 def fmt(v, w=6, p=1):
@@ -156,23 +217,24 @@ def main():
         pk = json.loads(Path(opt.picks).read_text())
         assert pk.get("status") == "picked" and pk["size"] == "505m", ("not a completed 505M selection", pk.get("status"))
         a_, n_ = pk["pick"]["all6-lam1"], pk["pick"]["none"]
-        design["505m"] = {"none_low": a_, "none_best": n_, "all6": a_, "only_numbers": a_}
+        design["505m"] = {"none_plr": a_, "none_nlr": n_, "all6": a_, "only_numbers": a_}
     for sz, d in design.items():
-        assert float(d["none_low"]) != float(d["none_best"]), (sz, "none@low = none@best: one cell, not two")
+        assert float(d["none_plr"]) != float(d["none_nlr"]), (sz, "the two none cells have one lr: one cell, not two")
     runs = R6.load(opt.roots)
     cells, ignored, info = assign(runs, design)
     sizes = [s for s in ("53m", "190m", "505m") if s in cells]
     print(f"rb6 scale summary: sizes {sizes}; {sum(len(v) for c in cells.values() for v in c.values())} runs in the design, "
           f"{len(ignored)} ignored; mode {'PARTIAL (--allow_partial: every verdict PROVISIONAL)' if opt.allow_partial else 'strict'}")
-    print(f"  design lrs: 53m {dict((ROLE_LAB[k], v[1]) for k, v in DESIGN53.items())}; "
-          + "; ".join(f"{s} {dict((ROLE_LAB[k], v) for k, v in design[s].items())}" for s in design))
-    print("  NOTE (pre-registered): the Torch sizes' lrs are reused from the pt2 single-prior 2% setting (chosen on the numbers"
-          " area over seeds 0-3); none is not tuned for S4 or any other domain; seeds 0-3 share the init and the numbers lines"
-          " with the lr-selection runs (winner's curse on the numbers rows). No size-trend claim (F87).")
+    print("  cells per size: " + "; ".join(f"{s} " + ", ".join(cell_label(design, s, ro) for ro in ROLES) for s in ("53m",) + tuple(design)))
+    print("  roles: " + "; ".join(f"{ro} = {ROLE_DESC[ro]}" for ro in ROLES))
+    for k in ("lr_provenance", "selection_seeds", "size_trend"):
+        print(f"  NOTE (pre-registered): {CAVEATS[k]}")
     for lab in ignored:
         print(f"  IGNORED (not a design cell / seed): {lab}")
-    out = {"sizes": sizes, "design": {"53m": {k: v[1] for k, v in DESIGN53.items()}, **design}, "ignored": ignored,
-           "excluded": [], "warnings": [], "cells": {}, "families": {}, "missing": {}}
+    out = {"sizes": sizes, "design": {"53m": {k: v[1] for k, v in DESIGN53.items()}, **design}, "roles": ROLE_DESC,
+           "labels": {s: {ro: cell_label(design, s, ro) for ro in ROLES} for s in ("53m",) + tuple(design)},
+           "caveats": {k: v.format(size="the Torch sizes") for k, v in CAVEATS.items()}, "ignored": ignored,
+           "excluded": [], "warnings": [], "cells": {}, "families": {}, "missing": {}, "grad_split": {}}
     # ---- run identity (53M: rainbow6_summary.run_identity, the F88 read-out's; Torch: torch_identity)
     excluded = []
     if "53m" in cells:
@@ -193,7 +255,7 @@ def main():
                 _, _, base, lr = info[id(x)]
                 bad = torch_identity(x, sz, base, lr)
                 if bad:
-                    excluded.append((sz, f"{ROLE_LAB[ro]} s{s} ({Path(x['path']).parent.parent.name})", bad))
+                    excluded.append((sz, f"{cell_label(design, sz, ro)} s{s} ({Path(x['path']).parent.parent.name})", bad))
                     del cells[sz][ro][s]
     for sz, lab, why in excluded:
         print(f"  EXCLUDED run {sz} {lab}: " + "; ".join(why))
@@ -229,7 +291,7 @@ def main():
     # ---- missing seeds
     missing = {sz: {ro: [s for s in SEEDS if s not in cells[sz].get(ro, {})] for ro in ROLES} for sz in sizes}
     out["missing"] = missing
-    miss_txt = [f"{sz} {ROLE_LAB[ro]} {v}" for sz in sizes for ro, v in missing[sz].items() if v]
+    miss_txt = [f"{sz} {cell_label(design, sz, ro)} {v}" for sz in sizes for ro, v in missing[sz].items() if v]
     if miss_txt and not opt.allow_partial:
         print("  missing seeds: " + "; ".join(miss_txt))
         raise AssertionError("rb6 scale read-out REFUSED (strict): missing / excluded / unfinished seeds " + "; ".join(miss_txt)
@@ -240,34 +302,61 @@ def main():
     METRICS = DOMS + ("s4_hard", "bpb", "seen")
     for sz in sizes:
         print(f"\n== {sz}: per cell, the A5 READ metric per domain (numbers area; months / weekdays tier-E final3; clock wrap; "
-              "s4 fresh non-id; dim strict), s4_hard area, offline bpb x1e3, seen; mean over seeds [per seed, seed order] "
-              "and the seed-level gate (90% t interval vs [chance + 5, 90])")
+              "s4 fresh non-id; dim strict), s4_hard area, offline bpb x1e3, seen (mean of the 5 domains); mean over seeds [per "
+              "seed, seed order], the seed-level gate (90% t interval vs [chance + 5, 90]) and, for the none cells, A5's INVALID "
+              f"rule (a domain's seen final3 < {R6.SEEN_MIN:.0f} in any seed)")
         for ro in ROLES:
             c = cells[sz].get(ro, {})
             seeds = sorted(c)
             lr = DESIGN53[ro][1] if sz == "53m" else design[sz][ro]
             tag = f"PROVISIONAL (n={len(seeds)} of 4)" if missing[sz][ro] else f"n=4"
-            print(f"  {ROLE_LAB[ro]:13s} lr {lr:7s} {tag}")
+            print(f"  {cell_label(design, sz, ro):22s} ({ROLE_DESC[ro]}) {tag}")
             for mt in METRICS:
                 vals = [value(c[s], mt) for s in seeds]
                 ok = [v for v in vals if v is not None and math.isfinite(v)]
                 mean = float(np.mean(ok)) if len(ok) == len(vals) and vals else None
-                gate = ""
-                g = None
+                gate, g, seen_d, cav = "", None, None, None
                 if mt in R6.EXTRA and seeds:
                     key = R6.READ[mt][0]
                     g = R6.gate_key([c[s]["r"] for s in seeds], mt, key)
+                    seen_d = [R6.metrics(c[s]["r"], f"{mt}_seen")["final3"] for s in seeds]
+                    if ro in NONE_ROLES and min(seen_d) < R6.SEEN_MIN:   # A5 (rainbow6_summary main_readout / domain_gate)
+                        g["verdict"] = f"INVALID (seen {min(seen_d):.0f} < {R6.SEEN_MIN:.0f})"
                     ci = g["seed_ci"]
+                    cav = dom_caveat(sz, mt) if ro in NONE_ROLES else None
                     gate = (f" | seed CI [{fmt(ci[0], 5)},{fmt(ci[1], 5)}] vs floor {g['floor']:.1f} -> {g['verdict']}; "
-                            f"heuristic {fmt(g['heuristic'], 4) if g.get('heuristic') is not None else 'n/a'}")
+                            f"heuristic {fmt(g['heuristic'], 4) if g.get('heuristic') is not None else 'n/a'}; seen "
+                            f"[{' '.join(fmt(v, 5) for v in seen_d)}]" + (f" [{cav}]" if cav else ""))
                 print(f"    {mt:8s} {fmt(mean)} [{' '.join(fmt(v, 5) for v in vals)}]{gate}")
-                out["cells"][f"{sz}|{ro}|{mt}"] = {"lr": lr, "seeds": seeds, "values": vals, "mean": mean,
+                out["cells"][f"{sz}|{ro}|{mt}"] = {"label": cell_label(design, sz, ro), "lr": lr, "seeds": seeds, "values": vals,
+                                                    "mean": mean, "seen_per_seed": seen_d, "caveat": cav,
                                                     "gate": g and {k: g[k] for k in ("verdict", "seed_ci", "floor", "chance")},
                                                     "provisional": bool(missing[sz][ro])}
-            gs = [R6.grad_split(c[s]["r"]) for s in seeds]
-            if any(gs):
-                print("    grad split (window medians: LM share / prior over LM): "
-                      + " ".join(f"s{s} {g['lm_share']:.2f}/{g['prior_over_lm']:.2f}" if g else f"s{s} -" for s, g in zip(seeds, gs)))
+            if ro in NONE_ROLES:
+                continue
+            # Q8 (manifold_aux_loss_principle: every prior cell reports the LM share and the clip): window medians at the
+            # on-evals of the logged pre-clip decomposition (grad_lm, grad_prior, grad_cos; T = |g_lm + g_prior|, clip =
+            # 1 / max(1, T)); rainbow6_summary.grad_split. The trainer's own pre-clip norm (grad_total / clip_coef) is logged
+            # only on its Rev D path: printed when present, else NOT LOGGED.
+            rows, flag = [], []
+            for s in seeds:
+                gsp = R6.grad_split(c[s]["r"])
+                own = [e["clip_coef"] for e in c[s]["r"]["curve"] if e.get("prior_on") and e.get("clip_coef") is not None]
+                if gsp is None:
+                    rows.append(f"s{s} NOT LOGGED (no grad_lm / grad_prior at the on-evals)")
+                    out["grad_split"][f"{sz}|{ro}|s{s}"] = "NOT LOGGED"
+                    continue
+                if gsp["prior_over_lm"] > 1:
+                    flag.append(s)
+                rows.append(f"s{s} LM share {gsp['lm_share']:.2f} prior/LM {gsp['prior_over_lm']:.2f} clip {gsp['clip']:.2f} "
+                            f"prior>LM {gsp['frac_prior_gt_lm']:.2f} (n {gsp['n']})"
+                            + (f" trainer clip_coef {float(np.median(own)):.2f}" if own else ""))
+                out["grad_split"][f"{sz}|{ro}|s{s}"] = dict(gsp, trainer_clip_coef=float(np.median(own)) if own else "NOT LOGGED")
+            print("    gradient split (window medians at the on-evals; clip from the logged decomposition, the trainer's own "
+                  "grad_total / clip_coef " + ("logged" if any("trainer clip_coef" in r_ for r_ in rows) else "NOT LOGGED")
+                  + "): " + "; ".join(rows))
+            print("    " + (f"FLAG: median prior / LM > 1 at seeds {flag} (A5: the prior is auxiliary)" if flag else
+                            "no seed with a median prior / LM > 1 (A5 FLAG not raised)"))
         if sz != "53m":
             h = {s: R6.s4_hard(x["r"]) for c in cells[sz].values() for s, x in c.items()}
             print("    s4_hard per seed (n / chance / Latin level, the same for every arm of a seed): "
@@ -275,20 +364,23 @@ def main():
 
     # ---- sizes side by side (descriptive; no statistic across sizes)
     print("\n== sizes side by side (means over seeds 0-3; no statistic across sizes: F87)")
-    print("  " + "cell".ljust(14) + "metric".ljust(9) + "".join(s.rjust(9) for s in sizes))
+    print("  " + "cell (lr per size)".ljust(34) + "metric".ljust(9) + "".join(s.rjust(9) for s in sizes))
     for ro in ROLES:
+        rl = ROLE_BASE[ro] + "@" + "/".join((DESIGN53[ro][1] if sz == "53m" else design[sz][ro]) for sz in sizes)
         for mt in METRICS:
             row = [out["cells"].get(f"{sz}|{ro}|{mt}", {}).get("mean") for sz in sizes]
             pv = ["*" if missing[sz][ro] else " " for sz in sizes]
-            print("  " + ROLE_LAB[ro].ljust(14) + mt.ljust(9) + "".join(f"{fmt(v, 8)}{p}" for v, p in zip(row, pv)))
-    print("  (* = PROVISIONAL: fewer than 4 seeds)")
+            print("  " + rl.ljust(34) + mt.ljust(9) + "".join(f"{fmt(v, 8)}{p}" for v, p in zip(row, pv)))
+    print("  (* = PROVISIONAL: fewer than 4 seeds. none's lr is not tuned for any non-numbers domain at any size; the 53M S4 "
+          "column is NOT F88's A8.3 comparison)")
 
     # ---- paired families per size
     for sz in sizes:
         print(f"\n== {sz}: paired by seed, A5 style (paired t df n-1, exact sign-flip p, 95% CI, BH q .05 within the family) {LABEL}")
-        s4_floor = {}
-        for ro in ("none_low", "none_best"):
+        s4_floor, s4_gate = {}, {}
+        for ro in NONE_ROLES:   # one-sided only against a FLOOR baseline; INVALID / BORDERLINE / ... -> two-sided (Q4)
             gk = out["cells"].get(f"{sz}|{ro}|s4", {}).get("gate")
+            s4_gate[ro] = gk["verdict"] if gk else None
             s4_floor[ro] = bool(gk) and gk["verdict"] == "FLOOR"
         for fam, con, rows in FAMILIES:
             items = [(con[0], con[1], d) for d in rows] if con else list(rows)
@@ -306,16 +398,24 @@ def main():
                     continue
                 pr = R6.paired([p - q for p, q in zip(va, vb)], side)
                 res.append(dict(a=a, b=b, m=mt, side=side, seeds=seeds, **pr))
+            for r_ in res:
+                r_["label"] = f"{cell_label(design, sz, r_['a'])} - {cell_label(design, sz, r_['b'])}"
+                cav = dom_caveat(sz, r_["m"], r_["b"])
+                if r_["m"] in ("s4", "s4_hard") and r_["b"] in NONE_ROLES and s4_gate.get(r_["b"]) and r_["side"] == "two":
+                    cav = (cav + "; " if cav else "") + f"two-sided: the baseline's s4 gate is {s4_gate[r_['b']]}"
+                if fam == "SE" and sz == "53m":
+                    cav = (cav + "; " if cav else "") + SE53
+                r_["caveat"] = cav
             adj = R6.bh([r_.get("p_t") for r_ in res])
             for r_, q in zip(res, adj):
                 r_["p_bh"] = q
-            print(f"  -- {fam}" + (f" ({ROLE_LAB[con[0]]} - {ROLE_LAB[con[1]]})" if con else ""))
+            print(f"  -- {fam}: {FAM_DESC[fam]}" + (f" ({cell_label(design, sz, con[0])} - {cell_label(design, sz, con[1])})" if con else "")
+                  + (f" [{SE53}]" if fam == "SE" and sz == "53m" else ""))
             for r_ in res:
                 pv = prov(sz, (r_["a"], r_["b"]))
-                lab = f"{ROLE_LAB[r_['a']]} - {ROLE_LAB[r_['b']]}"
-                head = f"    {r_['m']:8s} {lab:27s}"
+                head = f"    {r_['m']:8s} {r_['label']:34s}"
                 if r_.get("note"):
-                    print(head + " " + r_["note"])
+                    print(head + " " + r_["note"] + (f" [{r_['caveat']}]" if r_.get("caveat") else ""))
                     continue
                 ci = r_.get("ci") or [None, None]
                 flag = " LM COST FLAG (mean > +4)" if r_["m"] == "bpb" and r_["mean"] is not None and r_["mean"] > 4 else ""
@@ -323,7 +423,8 @@ def main():
                 sig = (" sig. at BH .05 (descriptive)" if r_["p_bh"] is not None and r_["p_bh"] < 0.05 else "") if not pv else ""
                 print(f"{head} {fmt(r_['mean'], 7)} [{' '.join(fmt(v, 6) for v in r_['diffs'])}] wins {r_['wins']}/{r_['n']} "
                       f"t-p {fmt(r_['p_t'], 5, 3)} ({r_['side']}) sf-p {fmt(r_['p_sf'], 5, 3)} BH {fmt(r_['p_bh'], 5, 3)} "
-                      f"95% CI [{fmt(ci[0], 6)},{fmt(ci[1], 6)}]{sig}{flag}{pmark}")
+                      f"95% CI [{fmt(ci[0], 6)},{fmt(ci[1], 6)}]{sig}{flag}{pmark}"
+                      + (f" [{r_['caveat']}]" if r_.get("caveat") else ""))
             out["families"][f"{sz}|{fam}"] = res
     status = "PROVISIONAL" if (opt.allow_partial or miss_txt or excluded) else "complete"
     print(f"\n== rb6 scale read-out status: {status}" + (f" (missing: {'; '.join(miss_txt)})" if miss_txt else "")
