@@ -152,6 +152,11 @@ FORBIDDEN = ("discovered the structure", "learned h's value", "learned the value
              "did not learn seen addition", "middle layers")
 
 
+def finite(v):
+    """a logged number: present, numeric (not bool), finite (AUDIT R05, 2026-10-22)"""
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
 def cell_of(a):
     """cell name of a run's args, or None (not a ptheld2 cell)"""
     x4 = "-4x" if a["tokens"] == 1.2e9 else ""
@@ -239,10 +244,14 @@ def check_run(r, code_sha, c):
         st = e["step"]
         if e.get("held_lines_scanned") != LINES_PER_STEP * (st + 1):
             bad.append(f"held_lines_scanned {e.get('held_lines_scanned')} at step {st}"); break
-        if site == "emb" and prior and e.get("grad_prior_emb_rows") not in (None, 1000):
-            bad.append(f"grad_prior_emb_rows {e.get('grad_prior_emb_rows')} at step {st}"); break
+        # AUDIT R05 (2026-10-22, external review): a missing or non-finite diagnostic is never a pass (see ptheld_summary)
+        if site == "emb" and prior and (e.get("prior_on") is None or (e["prior_on"] and e.get("grad_prior_emb_rows") != 1000)):
+            bad.append(f"grad_prior_emb_rows {e.get('grad_prior_emb_rows')} (prior_on {e.get('prior_on')}) at step {st}"); break
         # amendment DP (ptheld, 2026-10-20): step 0 <= 0.05 for every H set; later <= 1.0 / 1.5 / 1.5 nats
-        dp_bad = [s for s in dp_tol if not e.get(f"logp_dp_maxdiff_{s}", 0.0) <= (0.05 if st == 0 else dp_tol[s])]
+        dp_bad = [s for s in dp_tol if not (finite(e.get(f"logp_dp_maxdiff_{s}")) and
+                                            e[f"logp_dp_maxdiff_{s}"] <= (0.05 if st == 0 else dp_tol[s]))]
+        if not finite(e.get("pred_mismatch_H_one")) or e["pred_mismatch_H_one"] != 0:
+            bad.append(f"pred_mismatch_H_one {e.get('pred_mismatch_H_one')} at step {st}"); break
         if dp_bad:
             bad.append(f"logp double path {[(s, e.get(f'logp_dp_maxdiff_{s}')) for s in dp_bad]} at step {st}"); break
         miss = [k for k in [f"H_one_{L}" for L in ALL_LAYERS] + [f"logp_H_one_{L}" for L in ALL_LAYERS] +

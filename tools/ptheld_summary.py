@@ -118,6 +118,11 @@ def held6(e):
     return float(np.mean([e[f"held_{b}"] for b in BUCK]))
 
 
+def finite(v):
+    """a logged number: present, numeric (not bool), finite"""
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
 def check_run(r, code_sha):
     """reasons why a run is not valid (empty = valid); r3_ok False if its greedy answers may not be used"""
     a, bad, r3_ok = r["args"], [], True
@@ -135,16 +140,20 @@ def check_run(r, code_sha):
     for e in r["curve"]:
         if e.get("held_lines_scanned") != LINES_PER_STEP * (e["step"] + 1):
             bad.append(f"held_lines_scanned {e.get('held_lines_scanned')} at step {e['step']}"); break
-        if a["site"] == "emb" and a["target"] != "none" and e.get("grad_prior_emb_rows") not in (None, 1000):
-            bad.append(f"grad_prior_emb_rows {e.get('grad_prior_emb_rows')} at step {e['step']}"); break
+        # AUDIT R05 (2026-10-22, external review): a missing or non-finite diagnostic is never a pass. The emb row count is
+        # logged exactly when the prior is on (prior_on), so it is required there; prior_on itself must be logged.
+        if a["site"] == "emb" and a["target"] != "none" and (e.get("prior_on") is None or
+                                                             (e["prior_on"] and e.get("grad_prior_emb_rows") != 1000)):
+            bad.append(f"grad_prior_emb_rows {e.get('grad_prior_emb_rows')} (prior_on {e.get('prior_on')}) at step {e['step']}"); break
         # AUDIT amendment DP (2026-10-20): step 0 (near-uniform model) <= 0.05 for every H set = the span check the hits
         # share; later evals <= 0.5 nat per scored token (H_one 1.0, H_both / H_ans 1.5) = two bf16 ulps per token on GPU
         dp_tol = {"H_one": 1.0, "H_both": 1.5, "H_ans": 1.5}
-        dp_bad = [s for s in dp_tol if not e.get(f"logp_dp_maxdiff_{s}", 0.0) <= (0.05 if e["step"] == 0 else dp_tol[s])]
+        dp_bad = [s for s in dp_tol if not (finite(e.get(f"logp_dp_maxdiff_{s}")) and
+                                            e[f"logp_dp_maxdiff_{s}"] <= (0.05 if e["step"] == 0 else dp_tol[s]))]
         if dp_bad:
             bad.append(f"logp double path {[(s, e.get(f'logp_dp_maxdiff_{s}')) for s in dp_bad]} at step {e['step']}"); break
-        if any(e.get(f"pred_mismatch_{s}", 0) for s in ("H_one", "H_both", "H_ans")):
-            r3_ok = False
+        if any(not finite(e.get(f"pred_mismatch_{s}")) or e[f"pred_mismatch_{s}"] != 0 for s in ("H_one", "H_both", "H_ans")):
+            r3_ok = False   # a missing count cannot vouch for the greedy answers either
     if not r["curve"][-1].get("held_rej", 0) > 0:
         bad.append("held_rej 0")
     last = r["curve"][-1]
@@ -700,12 +709,14 @@ def fake_run(tpl, cell, seed, rng, acc, logp, held=0.97, hremap_share=0.0, sha="
                  pred_H_one=preds, logp_H_one=logp * (0.5 + 0.5 * fr) + float(rng.normal(0, 0.05)), H_both=0.0, H_ans_single=0.0, H_ans_chunk=0.0,
                  held_lines_scanned=LINES_PER_STEP * (st + 1), held_rej=10 + st, held_data_sha=f"sha{seed}{data_sha_tag}{st}",
                  prior_used_frac=0.0 if tgt == "none" else 0.35, prior_on_frac=6408 / 18310 if tgt != "none" else 0.0,
-                 logp_dp_maxdiff_H_one=0.0, pred_mismatch_H_one=0)
+                 logp_dp_maxdiff_H_one=0.0, logp_dp_maxdiff_H_both=0.0, logp_dp_maxdiff_H_ans=0.0,
+                 pred_mismatch_H_one=0, pred_mismatch_H_both=0, pred_mismatch_H_ans=0,
+                 prior_on=int(tgt != "none" and 916 <= st < 7324))   # as the trainer logs them (AUDIT R05)
         for kq in range(1, 6):
             e[f"H_one_q{kq}"] = acc_k
         for b in BUCK:
             e[f"held_{b}"] = held * fr if st > 0 else 0.0
-        if site == "emb" and tgt != "none":
+        if site == "emb" and tgt != "none" and e["prior_on"]:   # the trainer logs it only while the prior is on
             e["grad_prior_emb_rows"] = 1000
         curve.append(e)
     ex = {"st": tpl["held_exposure"]["st"], "st_on": tpl["held_exposure"]["st_on"], "raw": tpl["held_exposure"]["raw"]}
