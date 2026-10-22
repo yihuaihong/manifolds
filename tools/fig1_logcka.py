@@ -1,6 +1,7 @@
 """Figure 1, all seeds from existing logs (2026-10-22; no new runs): the CKA curves that pretrain_range.py logs at every
 eval, for F86's pt2b cells at their area-best lr (none@8e-3, win-ctx@2e-3, seeds 0-7; Burst results/<task>/<tag>/run_*.json),
-at the evals nearest the Figure 1 checkpoints, plus the full curves.
+at the primary eval of each Figure 1 checkpoint (the nearest; at the window edges 916 / 7324 the latest eval <= S) and the
+eval on the other side of it, plus the full curves.
 Logged keys (pretrain_range.py, eval step s):
   cka_ops_helix3  mean over read_layers [2, 4] of pretrain_helix.cka(states at the operand positions of step s's TRAINING
                   batch, centred_gram(helix3(operand values))): 32 rows x 1 line x 2 operands = 64 positions (the operand's
@@ -25,8 +26,16 @@ CELLS = (("none", "8e-3"), ("win-ctx", "2e-3"))
 B6 = ("b11", "b12", "b13", "b22", "b23", "b33")
 
 
+EDGES = (916, 7324)   # the window's first on / first off step (prior_events of the prior arms)
+
+
 def nearest(steps, S):
-    """the logged eval step nearest S (ties: the earlier); S = 18310 -> the last eval 18309"""
+    """the primary logged eval for the state after S updates: at a window edge (S = 916 / 7324: the state the regime
+    BEFORE S produced) the latest eval <= S, so the eval is in the same regime (audit 2026-10-22: the nearest eval to
+    916 is 1000, already 84 prior updates into the window); otherwise the nearest eval (ties: the earlier); S = 18310 ->
+    the last eval 18309"""
+    if S in EDGES:
+        return max(s for s in steps if s <= S)
     return min(steps, key=lambda s: (abs(s - S), s))
 
 
@@ -70,14 +79,16 @@ def main() -> None:
                 for _, _, _, sd, r, _ in sel:
                     e = {q["step"]: q for q in r["curve"]}[s]
                     v.append(float(np.mean([e[f"held_{b}"] for b in B6])) if key == "held6" else e[key])
-                rows.append({"S": S, "eval_step": s, "nearest": int(s == s0), "source": lab, "key": key, "n_seeds": len(v),
+                e0 = {q["step"]: q for q in sel[0][4]["curve"]}[s]
+                rows.append({"S": S, "eval_step": s, "primary": int(s == s0), "prior_on_at_eval": e0.get("prior_on"),
+                             "state_updates": s if key == "cka_ops_helix3" else s + 1, "source": lab, "key": key, "n_seeds": len(v),
                              "seeds": ",".join(str(x[3]) for x in sel), "mean": float(np.mean(v)), "min": float(min(v)),
                              "max": float(max(v)), "values": ";".join(f"{x:.4f}" for x in v)})
     with open(out / "fig1_logged_cka_at_ckpts.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader(); w.writerows(rows)
     for r in rows:
-        print(f"S {r['S']:5d} eval {r['eval_step']:5d}{'*' if r['nearest'] else ' '} {r['source']:28s} {r['key']:15s} "
+        print(f"S {r['S']:5d} eval {r['eval_step']:5d}{'*' if r['primary'] else ' '} {r['source']:28s} {r['key']:15s} "
               f"n {r['n_seeds']} mean {r['mean']:.3f} [{r['min']:.3f}, {r['max']:.3f}]")
     print(f"{len(runs)} runs -> {out}")
 

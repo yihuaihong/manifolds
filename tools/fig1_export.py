@@ -15,6 +15,10 @@ Layers: the output of decoder block L (1-based; the trainer's forward hooks on m
 the last block's output, before the final norm). Also the input-embedding rows of the number tokens (tied = output rows).
 CKA: pretrain_helix.cka(H, centred_gram(helix3(0..999))), the trainer's implementation and its K1000 (cka_emb_helix3);
 states in fp32 (no autocast), stored as float16 (the CKA of the float16 states is asserted equal within 1e-3).
+cka_opmix (audit 2026-10-22): the same states at operand VALUES drawn like one training batch's 64 operands (1 / 3
+one-digit), mean over 200 draws: the logged cka_ops_helix3's value population; the uniform-0..999 CKA is a DIFFERENT
+quantity (small numbers dominate the batch estimate). The qx prompt at position 0 is never a training form in --site
+ctx runs (every training line follows ~490 text tokens): a position-transfer probe.
 Double paths (--replay): rebuild a logged step's TRAINING batch by replaying the trainer's RNG streams (held-out split
 and rehearsal on seed, pairs on 1000 + seed, formats and text offsets on 2000 + seed; default path, no --domains /
 --held_operands), take the operand states at the ops positions under bf16 autocast as the trainer does, and compare
@@ -43,6 +47,7 @@ from pretrain_range import BUCKETS, FORMATS, RANGE, features, held_out
 
 CARRIER_SEED = 20261022   # text chunk k of the ctx carrier: default_rng(CARRIER_SEED + k).integers(0, len(val) - n)
 N_ALT_CTX = 3             # alternative text chunks k = 1..3 (CKA only)
+OPMIX_SEED, OPMIX_DRAWS = 0, 200   # cka_opmix: 200 draws of one training batch's 64 operand values
 
 
 def load_state(p):
@@ -154,6 +159,27 @@ def main() -> None:
     num_tok = np.array([t[0] for t in num_tok], dtype=np.int64)
     K1000 = centred_gram(features("helix3", xs), "cpu")
     dec = lambda ids: [tok.decode([int(t)]) for t in ids]
+    # cka_opmix (audit 2026-10-22: the logged cka_ops_helix3 is NOT the uniform-0..999 CKA): the same export states, but
+    # at operand VALUES drawn as one training batch's 64 operands (32 pairs: a bucket of BUCKETS uniformly, the order
+    # swapped with p 0.5, values uniform in RANGE: 1 / 3 of the operands are one-digit; the 5% rehearsal pool and the
+    # held-out exclusion ignored), CKA(states[v], helix3(v)) per draw, mean over OPMIX_DRAWS draws: the logged
+    # estimator's value population (and n = 64 bias) on the export's fixed carrier
+    og = np.random.default_rng(OPMIX_SEED)
+    opmix_v = []
+    for _ in range(OPMIX_DRAWS):
+        v = []
+        for _ in range(a.bs * a.arith_lines):
+            la, lb = BUCKETS[int(og.integers(len(BUCKETS)))]
+            if og.random() < 0.5:
+                la, lb = lb, la
+            v += [int(og.integers(*RANGE[la])), int(og.integers(*RANGE[lb]))]
+        opmix_v.append(np.array(v))
+    opmix_K = [centred_gram(features("helix3", v), "cpu") for v in opmix_v]
+    one_digit = float(np.mean([np.mean(v < 10) for v in opmix_v]))
+    assert 0.30 < one_digit < 0.37, one_digit   # 1 / 3 of the operands are one-digit numbers
+
+    def cka_opmix(St):
+        return float(np.mean([float(cka(St[torch.from_numpy(v)], K_)) for v, K_ in zip(opmix_v, opmix_K)]))
 
     # ------------------------------------------------------------------ site qx: "Q: x" at position 0 (the trainer's PRE)
     QX = np.array([enc(f"Q: {v}") for v in xs], dtype=np.int64)   # ragged would fail here: one length for every x
@@ -245,22 +271,45 @@ def main() -> None:
            "device": dev, "ckpt": []}
     arrays = {f"{site}__L{L}": [] for site in ("ctx", "qx") for L in layers}
     emb, ups = [], []
-    loaded, rep_of = [], {}   # rep_of[S]: the logged step whose training batch is replayed for the state after S updates
+    # rep_of[S] = (the training step whose batch is replayed for the state after S updates, wrong-batch controls): the
+    # state's own step S (exact: step S's forward used this state; logged only when S is an eval step), the final state
+    # the last logged step (one update earlier); controls = 2 neighbouring batches, only where a logged value exists
+    loaded, rep_of = [], {}
     for i, sp in enumerate(o.states):
         sd, S = load_state(sp)
         if S is None:   # a --save_model file: the final state
             S = steps
         loaded.append((sp, S))
-        if o.replay and S in curve:          # exact: eval step S's cka_ops_helix3 used the state after S updates
-            rep_of[S] = S
-        elif o.replay and S == steps:        # the final state: one update after the last logged forward
-            rep_of[S] = steps - 1
+        if o.replay:
+            Sr = S if S < steps else steps - 1
+            neg = ([Sr + 1, Sr + 2] if Sr + 2 < steps else [Sr - 1, Sr - 2]) if Sr in curve else []
+            rep_of[S] = (Sr, neg)
     rep_steps = {}
     if rep_of:
-        print(f"replaying the trainer's batches up to step {max(rep_of.values())} ...", flush=True)
+        want_ = sorted({s for Sr, neg in rep_of.values() for s in [Sr] + neg})
+        print(f"replaying the trainer's batches {want_} ...", flush=True)
         t_r = time.time()
-        rep_steps = replay_batches(a, enc, train, sorted(set(rep_of.values())))
+        rep_steps = replay_batches(a, enc, train, want_)
         print(f"replayed in {time.time() - t_r:.0f}s", flush=True)
+
+    def replay_cka(s_):
+        """CKA at the operand positions of training batch s_ (the trainer's read_layers): bf16 autocast forward of the
+        decoder (no LM head: its 32 x 512 x 100k logits do not fit a 24 GB CPU job; on the CPU regression runs the
+        trainer's own sequence, train mode + grad + labels, gave the same values), then the CKA (a) under bf16 autocast
+        as the trainer's cka_ops_h3 (on CPU this quantises the CKA to bf16; CUDA keeps the norms in fp32) and (b) in fp32"""
+        rows, ops = rep_steps[s_]
+        assert all(tok.decode([int(rows[r, p])]) == str(v) for r, p, v in ops.tolist()), "replayed ops decode"
+        with torch.autocast(dev, dtype=torch.bfloat16):
+            model.model(input_ids=torch.tensor(rows, device=dev), use_cache=False)
+        r_, p_ = torch.tensor(ops[:, 0], device=dev), torch.tensor(ops[:, 1], device=dev)
+        with torch.autocast(dev, dtype=torch.bfloat16):
+            Kb = centred_gram(features("helix3", ops[:, 2]), dev)
+            c16 = {L: float(cka(H.got[L][r_, p_], Kb)) for L in read_layers}
+        K32 = centred_gram(features("helix3", ops[:, 2]), dev)
+        c32 = {L: float(cka(H.got[L][r_, p_].float(), K32)) for L in read_layers}
+        H.got.clear()
+        return {"bf16": float(np.mean(list(c16.values()))), "fp32": float(np.mean(list(c32.values()))),
+                "fp32_per_layer": c32, "n_ops": int(len(ops))}
     for i, (sp, S) in enumerate(loaded):
         sd, _ = load_state(sp)
         model.load_state_dict(sd)
@@ -295,24 +344,23 @@ def main() -> None:
         if S - 1 in curve and "cka_emb_helix3" in curve[S - 1]:
             ent["checks"]["emb_vs_logged(step S-1)"] = [ent["cka"]["emb"], curve[S - 1]["cka_emb_helix3"]]
         if S in rep_of:
-            Sr = rep_of[S]
-            rows, ops = rep_steps[Sr]
-            assert all(tok.decode([int(rows[r, p])]) == str(v) for r, p, v in ops.tolist()), "replayed ops decode"
-            x = torch.tensor(rows, device=dev)
-            # bf16 autocast forward of the decoder only (the hooked block outputs; no LM head: its 32 x 512 x 100k logits do
-            # not fit a 24 GB CPU job). Tested on the CPU regression runs: the trainer's own sequence (train mode, grad on,
-            # labels) gives the same CKA bit for bit; the read-out then as the trainer's cka_ops_h3 (no_grad + autocast)
-            with torch.autocast(dev, dtype=torch.bfloat16):
-                model.model(input_ids=x, use_cache=False)
-            with torch.autocast(dev, dtype=torch.bfloat16):
-                Kb = centred_gram(features("helix3", ops[:, 2]), dev)
-                cs = {L: float(cka(H.got[L][torch.tensor(ops[:, 0], device=dev), torch.tensor(ops[:, 1], device=dev)], Kb))
-                      for L in read_layers}
-            H.got.clear()
-            ent["checks"]["replay"] = {"batch_step": Sr, "state_updates": S, "n_ops": int(len(ops)),
-                                       "cka_per_layer": cs, "mine_mean": float(np.mean(list(cs.values()))),
-                                       "logged_cka_ops_helix3": curve[Sr]["cka_ops_helix3"],
-                                       "exact_state": Sr == S}
+            Sr, neg = rep_of[S]
+            rc = replay_cka(Sr)
+            rp = {"batch_step": Sr, "state_updates": S, "exact_state": Sr == S, **rc,
+                  "logged_cka_ops_helix3": curve[Sr]["cka_ops_helix3"] if Sr in curve else None}
+            # the logged evals around S (cka_ops at eval s used the state after s updates): continuity where S is no eval
+            ev = sorted(curve)
+            rp["logged_bracket"] = {str(s): curve[s]["cka_ops_helix3"] for s in
+                                    {max([s for s in ev if s <= Sr], default=ev[0]), min([s for s in ev if s >= Sr], default=ev[-1])}}
+            if neg:   # wrong-batch negative controls on the same state: the right batch must be the closest to the log
+                rp["wrong_batches"] = {str(s): replay_cka(s)["fp32"] for s in neg}
+                lg = rp["logged_cka_ops_helix3"]
+                rp["right_closer_than_every_wrong"] = bool(abs(rc["fp32"] - lg) < min(abs(v - lg) for v in rp["wrong_batches"].values()))
+            ent["checks"]["replay"] = rp
+        for site, St in (("ctx", Sc), ("qx", Sq)):   # the logged estimator's value population on the export states
+            for L in layers:
+                ent["cka"][f"{site}@L{L}_opmix"] = cka_opmix(St[L])
+            ent["cka"][f"{site}@mean_read_layers_opmix"] = float(np.mean([ent["cka"][f"{site}@L{L}_opmix"] for L in read_layers]))
         res["ckpt"].append(ent)
         print(json.dumps({k: v for k, v in ent.items() if k != "file"}), flush=True)
     outp = Path(o.out); outp.parent.mkdir(parents=True, exist_ok=True)
@@ -320,6 +368,7 @@ def main() -> None:
              updates=np.array(ups), tokens=np.array(ups) * a.bs * a.seq, layers=np.array(layers),
              sites=np.array(["ctx", "qx"]), values=xs,
              cka=np.array([[[e["cka"][f"{s}@L{L}"] for L in layers] for s in ("ctx", "qx")] for e in res["ckpt"]]),
+             cka_opmix=np.array([[[e["cka"][f"{s}@L{L}_opmix"] for L in layers] for s in ("ctx", "qx")] for e in res["ckpt"]]),
              cka_emb=np.array([e["cka"]["emb"] for e in res["ckpt"]]),
              labels=np.array([e["label"] for e in res["ckpt"]]))
     res["sec"] = round(time.time() - t0, 1)
