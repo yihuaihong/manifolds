@@ -66,8 +66,9 @@ STAGED = ("sep_then_helix", "helix_gated")   # sep_ce then helix (kappa gate); h
 ALL_GEOMS = GEOMS + GEOMS3 + tuple(TEACHER) + STAGED + MULT_GEOMS + NOISY_GEOMS + DIGIT_GEOMS
 
 
-def geom_range(G: str) -> np.ndarray:
-    return np.arange(10, 1000) if G.startswith(("helix3", "digit3")) else np.arange(10, 100)
+def geom_range(G: str, lo3: int = 10) -> np.ndarray:
+    """Numbers of geometry G; lo3 = 0 (--add3) extends the three-digit geometries to 0..999."""
+    return np.arange(lo3, 1000) if G.startswith(("helix3", "digit3")) else np.arange(10, 100)
 
 
 def is_three(G: str) -> bool:
@@ -224,9 +225,9 @@ def target_grams(perm: np.ndarray, dev) -> dict:
     return out
 
 
-def target_features(G: str, perm: np.ndarray, dev) -> torch.Tensor:
-    """Standardised ideal coordinates, row x for x in 0..999 (rows outside geom_range(G) are unused)."""
-    xs = geom_range(G)
+def target_features(G: str, perm: np.ndarray, dev, lo3: int = 10) -> torch.Tensor:
+    """Standardised ideal coordinates, row x for x in 0..999 (rows outside geom_range(G, lo3) are unused)."""
+    xs = geom_range(G, lo3)
     F = geom_features(G, xs, perm)
     F = F[:, F.std(0) > 1e-9]
     F = (F - F.mean(0)) / F.std(0)
@@ -371,6 +372,11 @@ def main() -> None:
                     help="two-digit geometries over all of 10..99, or only over the operand values seen in training")
     ap.add_argument("--save_preds", action="store_true", help="store every predicted answer of the eval sets (not train)")
     ap.add_argument("--device_map", default=None, help="'auto': split the model over all visible GPUs (e.g. 32B on 2 x 40 GB); inputs and losses live on the first GPU")
+    ap.add_argument("--add3", action="store_true",
+                    help="three-digit addition (ft999): operands 0..999, held-out test pairs disjoint as UNORDERED pairs, answer "
+                         "= the exact tokens of the sum + newline (s >= 1000 is two tokens [s // 10][s % 10]), teacher-forced exact "
+                         "match; the 3-digit geometries (helix3 / helix3_shuf / digit3...) and --save_states_every cover 0..999")
+    ap.add_argument("--grad_check_every", type=int, default=250, help="--add3: log |grad CE| and |grad lam * L_geo| every K steps (and at step 0)")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     lr = args.lr or {"lora": 1e-4, "reft": 1e-3, "full": 1e-5}[args.mode]
@@ -383,6 +389,14 @@ def main() -> None:
     man_layers = [int(v) for v in args.layers.split(",")]
     op = OPS[args.task]
     t0 = time.time()
+    lo3 = 10   # first number of the three-digit geometries / prefixes (0 with --add3)
+    if args.add3:
+        assert args.task == "add" and args.split == "random" and args.fixed_test and not args.mixed_formats, "--add3: add, random, --fixed_test"
+        assert args.geo_site == "layers" and args.geo_numbers == "all" and not args.emb_delta and args.emb_init == "orig", "--add3: prior on layer states"
+        assert not args.gpt3_arith and not args.main_model and not args.general_eval and args.mode == "lora", "--add3: lora, no gpt3 / general / teacher"
+        assert all(G == "none" or G in GEOMS3 for G in geoms), ("--add3 arms: none or a 0..999 geometry", geoms)
+        lo3 = 0
+        print(f"[add3] operands 0..999, geometries over {lo3}..999, lam {args.lam}, layers {man_layers}, geo_sample {args.geo_sample}", flush=True)
 
     # ---------------------------------------------------------------- tokenizer, prefixes, teacher states
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -393,7 +407,9 @@ def main() -> None:
     slot_pos = {"A": len(toks) - 6, "B": len(toks) - 3}
     enc = lambda ps: nl.encode(tok, ps, dev)
     prefix_all = torch.zeros(1000, slot_pos["A"] + 1, dtype=torch.long, device=dev)
-    prefix_all[10:] = enc([f"Q: {x}" for x in range(10, 1000)])      # A-slot state of x depends only on this prefix
+    prefix_all[lo3:] = enc([f"Q: {x}" for x in range(lo3, 1000)])      # A-slot state of x depends only on this prefix
+    if args.add3:   # every "Q: x" (x = 0..999) has the same length and x at the A slot
+        assert all(int(tok.decode(prefix_all[x, slot_pos["A"]])) == x for x in range(1000)), "add3: A slot of Q: x is not x"
     num_prefix = prefix_all[10:100]
     teach: dict = {}    # {"main" | "self": {L | "emb": [1000, d] float32}}, rows 0..9 unused
     if args.main_model:
@@ -518,96 +534,167 @@ def main() -> None:
         with autocast:
             return model(input_ids=ids, logits_to_keep=1).logits[:, -1].float().to(dev)
 
+    def forward_k(ids: torch.Tensor, reft: bool, k: int) -> torch.Tensor:
+        """Logits of the last k positions [n, k, V] (--add3: teacher-forced multi-token answers)."""
+        reft_on["v"] = reft
+        with autocast:
+            return model(input_ids=ids, logits_to_keep=k).logits[:, -k:].float().to(dev)
+
     # ---------------------------------------------------------------- data
-    ans_of = lambda P: answers("add" if args.task == "mixed" else args.task, P)
-    rng = np.random.default_rng(0)
-    pairs = np.array([(a, b) for a in range(10, 100) for b in range(10, 100)
-                      if (args.task != "sub" or a >= b) and (args.task != "mul" or a * b <= 999)])
-    pairs = pairs[rng.permutation(len(pairs))]
-    heldout = np.array([], dtype=int)
-    if args.split == "random":
-        if args.fixed_test:
-            test = pairs[1500: 1500 + args.test_pairs]
-            train = np.concatenate([pairs[: min(args.train_pairs, 1500)], pairs[1500 + args.test_pairs:][: max(0, args.train_pairs - 1500)]])
+    A3: dict = {}
+    if args.add3:
+        # ft999: operands uniform over 0..999. The test set (--test_pairs) is drawn first, the training set after it from
+        # the same stream with every UNORDERED test pair {a, b} excluded (b + a of a test pair is never trained). Both
+        # depend only on this fixed generator: the same for every arm, seed and checkpoint (a smaller --train_pairs is a prefix).
+        r3 = np.random.default_rng(2026)
+
+        def draw(n: int, banned: set, unordered: bool) -> np.ndarray:
+            rows, keys = [], set()
+            while len(rows) < n:
+                a, b = (int(v) for v in r3.integers(0, 1000, 2))
+                u, k = (min(a, b), max(a, b)), ((min(a, b), max(a, b)) if unordered else (a, b))
+                if u in banned or k in keys:
+                    continue
+                keys.add(k); rows.append((a, b))
+            return np.array(rows)
+        test = draw(args.test_pairs, set(), unordered=True)
+        test_keys = {(min(a, b), max(a, b)) for a, b in test.tolist()}
+        train = draw(args.train_pairs, test_keys, unordered=False)
+        assert not test_keys & {(min(a, b), max(a, b)) for a, b in train.tolist()}, "add3: a test pair (either order) is in training"
+        assert len(train) == args.train_pairs and len(test) == args.test_pairs and train.min() >= 0 and train.max() <= 999
+        nid = nl.number_token_ids(tok, 999)
+        NL = tok("\n", add_special_tokens=False)["input_ids"]
+        assert len(NL) == 1, NL
+        NL = NL[0]
+
+        def seq3(P: np.ndarray):
+            """Teacher-forced inputs [n, len(prompt) + 2] and targets [n, 3] (-100 = not scored) of "Q: a + b = " -> "<a + b>\\n"."""
+            s = P.sum(1)
+            prompts = enc([two_prompt(a, b, "+") for a, b in P])
+            sh = s < 1000
+            tgt = np.full((len(P), 3), -100, dtype=np.int64)
+            tgt[sh, 0], tgt[sh, 1] = nid[s[sh]], NL
+            tgt[~sh, 0], tgt[~sh, 1], tgt[~sh, 2] = nid[s[~sh] // 10], nid[s[~sh] % 10], NL
+            pl = prompts.tolist()
+            for i, (a, b) in enumerate(P.tolist()):   # intent: the targets are exactly the tokenizer's tokens of "<sum>\n"
+                full = tok(f"{two_prompt(a, b, '+')}{a + b}\n")["input_ids"]
+                assert full == pl[i] + [t for t in tgt[i].tolist() if t != -100], (a, b, tok.convert_ids_to_tokens(full))
+            T = torch.tensor(tgt, device=dev)
+            return torch.cat([prompts, T[:, :2]], 1), T, s
+        for name, P in (("test", test), ("train", train)):
+            A3[name] = seq3(P)
+        plen = A3["test"][0].shape[1] - 2
+        assert plen == slot_pos["A"] + 6, plen
+
+        def show(name: str, i: int) -> str:   # vii: the decoded model input, scored target tokens in brackets
+            inp, T, s = A3[name]
+            n_t = int((T[i] != -100).sum())
+            seq = inp[i, :plen].tolist() + T[i, :n_t].tolist()
+            cells = [repr(tok.decode([t]))[1:-1] for t in seq]
+            cells = [f"⟦{c}⟧" if j >= plen else c for j, c in enumerate(cells)]
+            return (f"{name:5s} {A3[name + '_P'][i, 0]:3d} + {A3[name + '_P'][i, 1]:3d} = {s[i]:4d} | " + "|".join(cells)
+                    + f" | scored token idx {list(range(plen, plen + n_t))} (logits at {list(range(plen - 1, plen - 1 + n_t))}), "
+                      f"input len {inp.shape[1]}, full len {plen + n_t}")
+        A3["test_P"], A3["train_P"] = test, train
+        for i in range(3):
+            print("[vii]", show("train", i), flush=True)
+            print("[vii]", show("test", i), flush=True)
+        jl, jg = int(np.argmax(A3["test"][2] < 1000)), int(np.argmax(A3["test"][2] >= 1000))
+        print("[vii]", show("test", jl), "\n[vii]", show("test", jg), flush=True)
+        print(f"[add3] train {len(train)} pairs ({(A3['train'][2] >= 1000).mean():.3f} with sum >= 1000), test {len(test)} "
+              f"({(A3['test'][2] >= 1000).mean():.3f}); unordered train/test overlap 0 (asserted)", flush=True)
+        heldout, seen, items, evalsets = np.array([], dtype=int), np.unique(train), {"test": test}, {}
+        train_ans = None
+    else:
+        ans_of = lambda P: answers("add" if args.task == "mixed" else args.task, P)
+        rng = np.random.default_rng(0)
+        pairs = np.array([(a, b) for a in range(10, 100) for b in range(10, 100)
+                          if (args.task != "sub" or a >= b) and (args.task != "mul" or a * b <= 999)])
+        pairs = pairs[rng.permutation(len(pairs))]
+        heldout = np.array([], dtype=int)
+        if args.split == "random":
+            if args.fixed_test:
+                test = pairs[1500: 1500 + args.test_pairs]
+                train = np.concatenate([pairs[: min(args.train_pairs, 1500)], pairs[1500 + args.test_pairs:][: max(0, args.train_pairs - 1500)]])
+            else:
+                train, test = pairs[: args.train_pairs], pairs[args.train_pairs: args.train_pairs + args.test_pairs]
         else:
-            train, test = pairs[: args.train_pairs], pairs[args.train_pairs: args.train_pairs + args.test_pairs]
-    else:
-        if args.split == "holdout_operand":
-            heldout = np.sort(np.random.default_rng(7).choice(np.arange(10, 100), 15, replace=False))
-            in_train = ~np.isin(pairs, heldout).any(1)
-        else:   # units carry (add) / borrow (sub) only in the test set
-            u = pairs % 10
-            assert args.task in ("add", "sub"), "--split carry: add / sub only"
-            in_train = (u[:, 0] + u[:, 1] < 10) if args.task == "add" else (u[:, 0] >= u[:, 1])
-        train, test = pairs[in_train][: args.train_pairs], pairs[~in_train][: args.test_pairs]
-    mixed = {}
-    if args.task == "mixed":   # per-operation splits; "test" stays the addition test set
-        mrng = np.random.default_rng(0)
-        for o, ntr, nte in (("add", 1500, 1000), ("sub", 1500, 1000), ("mul", 900, 500)):
-            P = np.array([(a, b) for a in range(10, 100) for b in range(10, 100) if (o != "sub" or a >= b) and (o != "mul" or a * b <= 999)])
-            P = P[mrng.permutation(len(P))]
-            mixed[o] = (P[:ntr], P[ntr:ntr + nte])
-        train = np.concatenate([mixed[o][0] for o in mixed])
-        train_op = sum(([OPS[o]] * len(mixed[o][0]) for o in mixed), [])
-        train_ans = np.concatenate([answers(o, mixed[o][0]) for o in mixed])
-        test = mixed["add"][1]
-    else:
-        assert len(train) == args.train_pairs and len(test) == args.test_pairs, (len(train), len(test))
-        train_op, train_ans = [op] * len(train), ans_of(train)
-    # per-number means are taken per slot, so every value must occur in every slot of the probe prompts
-    # a small --fixed_test train set (E1) misses some values: probe on the default 1500 train pairs (never test pairs)
-    probe_is_train = args.task == "add" and args.split == "random" and len(train) >= 1500
-    probe = train if probe_is_train else (pairs[:1500] if args.fixed_test else pairs)
-    for j in range(2):
-        assert set(np.unique(probe[:, j])) >= set(range(10, 100)), f"slot {j}: some operand value never occurs in the probe prompts"
-    seen = np.unique(train)
-    if args.task == "add":
-        trip = np.array([(a, b, c) for a in range(10, 100) for b in range(10, 100) for c in range(10, 100) if a + b + c <= 199])
-        big = np.array([(a, b) for a in range(100, 500) for b in range(100, 500)])
-    else:
-        trip = np.array([(a, b, c) for a in range(10, 100) for b in range(10, 100) for c in range(10, 100) if a - b - c >= 0])
-        big = np.array([(a, b) for a in range(100, 500) for b in range(100, 500) if a >= b])
-    three = trip[rng.permutation(len(trip))][:400]
-    big = big[rng.permutation(len(big))][:400]
+            if args.split == "holdout_operand":
+                heldout = np.sort(np.random.default_rng(7).choice(np.arange(10, 100), 15, replace=False))
+                in_train = ~np.isin(pairs, heldout).any(1)
+            else:   # units carry (add) / borrow (sub) only in the test set
+                u = pairs % 10
+                assert args.task in ("add", "sub"), "--split carry: add / sub only"
+                in_train = (u[:, 0] + u[:, 1] < 10) if args.task == "add" else (u[:, 0] >= u[:, 1])
+            train, test = pairs[in_train][: args.train_pairs], pairs[~in_train][: args.test_pairs]
+        mixed = {}
+        if args.task == "mixed":   # per-operation splits; "test" stays the addition test set
+            mrng = np.random.default_rng(0)
+            for o, ntr, nte in (("add", 1500, 1000), ("sub", 1500, 1000), ("mul", 900, 500)):
+                P = np.array([(a, b) for a in range(10, 100) for b in range(10, 100) if (o != "sub" or a >= b) and (o != "mul" or a * b <= 999)])
+                P = P[mrng.permutation(len(P))]
+                mixed[o] = (P[:ntr], P[ntr:ntr + nte])
+            train = np.concatenate([mixed[o][0] for o in mixed])
+            train_op = sum(([OPS[o]] * len(mixed[o][0]) for o in mixed), [])
+            train_ans = np.concatenate([answers(o, mixed[o][0]) for o in mixed])
+            test = mixed["add"][1]
+        else:
+            assert len(train) == args.train_pairs and len(test) == args.test_pairs, (len(train), len(test))
+            train_op, train_ans = [op] * len(train), ans_of(train)
+        # per-number means are taken per slot, so every value must occur in every slot of the probe prompts
+        # a small --fixed_test train set (E1) misses some values: probe on the default 1500 train pairs (never test pairs)
+        probe_is_train = args.task == "add" and args.split == "random" and len(train) >= 1500
+        probe = train if probe_is_train else (pairs[:1500] if args.fixed_test else pairs)
+        for j in range(2):
+            assert set(np.unique(probe[:, j])) >= set(range(10, 100)), f"slot {j}: some operand value never occurs in the probe prompts"
+        seen = np.unique(train)
+        if args.task == "add":
+            trip = np.array([(a, b, c) for a in range(10, 100) for b in range(10, 100) for c in range(10, 100) if a + b + c <= 199])
+            big = np.array([(a, b) for a in range(100, 500) for b in range(100, 500)])
+        else:
+            trip = np.array([(a, b, c) for a in range(10, 100) for b in range(10, 100) for c in range(10, 100) if a - b - c >= 0])
+            big = np.array([(a, b) for a in range(100, 500) for b in range(100, 500) if a >= b])
+        three = trip[rng.permutation(len(trip))][:400]
+        big = big[rng.permutation(len(big))][:400]
+        evalsets = {
+            "test": (enc([two_prompt(*x, op) for x in test]), ans_of(test)),
+            "train": (enc([two_prompt(a, b, o) for (a, b), o in zip(train, train_op)]), train_ans),
+            "test_terse": (enc([terse_prompt(*x, op) for x in test]), ans_of(test)),
+        }
+        items = {"test": test, "test_terse": test}
+        for o in ("sub", "mul") if mixed else ():
+            evalsets[f"test_{o}"] = (enc([two_prompt(a, b, OPS[o]) for a, b in mixed[o][1]]), answers(o, mixed[o][1]))
+            items[f"test_{o}"] = mixed[o][1]
+        if mixed and args.gpt3_arith:   # GPT-3 arithmetic, pairs unseen in that operation's training set
+            for o in mixed:
+                seen_o = {tuple(x) for x in mixed[o][0].tolist()}
+                P = np.array([x for x in gpt3_items(args.gpt3_arith, o) if tuple(x) not in seen_o])
+                evalsets[f"gpt3_unseen_{o}"] = (enc([gpt3_prompt(a, b, GPT3_FILES[o][1]) for a, b in P]), answers(o, P))
+                items[f"gpt3_unseen_{o}"] = P
+        if args.task in ("add", "sub"):
+            evalsets["three_term"] = (enc([three_prompt(*x, op) for x in three]), ans_of(three))
+            evalsets["three_digit"] = (enc([two_prompt(*x, op) for x in big]), ans_of(big))
+            items.update(three_term=three, three_digit=big)
+        for k, tpl in enumerate(WORD.get(args.task, ())):   # natural-language templates on the test pairs
+            evalsets[f"word{k}"] = (enc([tpl.format(a=a, b=b) for a, b in test]), ans_of(test))
+            items[f"word{k}"] = test
+        if args.gpt3_arith and args.task in GPT3_FILES:    # GPT-3 arithmetic benchmark (two-digit items)
+            g3 = gpt3_items(args.gpt3_arith, args.task)
+            seen_pairs = {tuple(x) for x in train.tolist()}
+            g3u = np.array([x for x in g3 if tuple(x) not in seen_pairs])
+            for name, P in (("gpt3", g3), ("gpt3_unseen", g3u)):
+                evalsets[name] = (enc([gpt3_prompt(a, b, GPT3_FILES[args.task][1]) for a, b in P]), ans_of(P))
+                items[name] = P
+        train_ids = evalsets["train"][0]
+        fmt_ids = [train_ids]
+        if args.mixed_formats:
+            assert args.task in FORMATS and FORMATS[args.task][0] == two_prompt("{a}", "{b}", op), "--mixed_formats: add / sub"
+            fmt_ids = [enc([f.format(a=a, b=b) for a, b in train]) for f in FORMATS[args.task]]
+            for k, f in enumerate(FORMATS[args.task][1:], 1):
+                evalsets[f"fmt{k}"] = (enc([f.format(a=a, b=b) for a, b in test]), ans_of(test))
+                items[f"fmt{k}"] = test
+        probe_ids = train_ids if probe_is_train else enc([two_prompt(*x, op) for x in probe])
     perm = np.arange(100); perm[10:] = 10 + np.random.default_rng(123).permutation(90)
-    evalsets = {
-        "test": (enc([two_prompt(*x, op) for x in test]), ans_of(test)),
-        "train": (enc([two_prompt(a, b, o) for (a, b), o in zip(train, train_op)]), train_ans),
-        "test_terse": (enc([terse_prompt(*x, op) for x in test]), ans_of(test)),
-    }
-    items = {"test": test, "test_terse": test}
-    for o in ("sub", "mul") if mixed else ():
-        evalsets[f"test_{o}"] = (enc([two_prompt(a, b, OPS[o]) for a, b in mixed[o][1]]), answers(o, mixed[o][1]))
-        items[f"test_{o}"] = mixed[o][1]
-    if mixed and args.gpt3_arith:   # GPT-3 arithmetic, pairs unseen in that operation's training set
-        for o in mixed:
-            seen_o = {tuple(x) for x in mixed[o][0].tolist()}
-            P = np.array([x for x in gpt3_items(args.gpt3_arith, o) if tuple(x) not in seen_o])
-            evalsets[f"gpt3_unseen_{o}"] = (enc([gpt3_prompt(a, b, GPT3_FILES[o][1]) for a, b in P]), answers(o, P))
-            items[f"gpt3_unseen_{o}"] = P
-    if args.task in ("add", "sub"):
-        evalsets["three_term"] = (enc([three_prompt(*x, op) for x in three]), ans_of(three))
-        evalsets["three_digit"] = (enc([two_prompt(*x, op) for x in big]), ans_of(big))
-        items.update(three_term=three, three_digit=big)
-    for k, tpl in enumerate(WORD.get(args.task, ())):   # natural-language templates on the test pairs
-        evalsets[f"word{k}"] = (enc([tpl.format(a=a, b=b) for a, b in test]), ans_of(test))
-        items[f"word{k}"] = test
-    if args.gpt3_arith and args.task in GPT3_FILES:    # GPT-3 arithmetic benchmark (two-digit items)
-        g3 = gpt3_items(args.gpt3_arith, args.task)
-        seen_pairs = {tuple(x) for x in train.tolist()}
-        g3u = np.array([x for x in g3 if tuple(x) not in seen_pairs])
-        for name, P in (("gpt3", g3), ("gpt3_unseen", g3u)):
-            evalsets[name] = (enc([gpt3_prompt(a, b, GPT3_FILES[args.task][1]) for a, b in P]), ans_of(P))
-            items[name] = P
-    train_ids = evalsets["train"][0]
-    fmt_ids = [train_ids]
-    if args.mixed_formats:
-        assert args.task in FORMATS and FORMATS[args.task][0] == two_prompt("{a}", "{b}", op), "--mixed_formats: add / sub"
-        fmt_ids = [enc([f.format(a=a, b=b) for a, b in train]) for f in FORMATS[args.task]]
-        for k, f in enumerate(FORMATS[args.task][1:], 1):
-            evalsets[f"fmt{k}"] = (enc([f.format(a=a, b=b) for a, b in test]), ans_of(test))
-            items[f"fmt{k}"] = test
-    probe_ids = train_ids if probe_is_train else enc([two_prompt(*x, op) for x in probe])
     num_of = torch.full((model.config.vocab_size,), -1, dtype=torch.long, device=dev)
     num_of[num_ids[:1000]] = torch.arange(1000, device=dev)
 
@@ -651,6 +738,18 @@ def main() -> None:
         return res
 
     @torch.no_grad()
+    def eval3(name: str, reft: bool, preds: dict | None = None) -> dict:
+        """--add3: teacher-forced exact match of "<sum>\\n" (= greedy decoding of the answer and its newline), overall
+        and split by sum < 1000 (one answer token) / >= 1000 (two); with `preds`: per-item hits + first-token argmax."""
+        model.eval()
+        inp, T, s = A3[name]
+        am = torch.cat([forward_k(inp[i:i + args.eval_bs], reft, 3).argmax(-1) for i in range(0, len(inp), args.eval_bs)])
+        hit = ((am == T) | (T == -100)).all(1).cpu().numpy()
+        if preds is not None:
+            preds[name] = {"hit": hit.astype(int).tolist(), "first_token_number": num_of[am[:, 0]].tolist()}
+        return {name: float(hit.mean()), f"{name}_lt1000": float(hit[s < 1000].mean()), f"{name}_ge1000": float(hit[s >= 1000].mean())}
+
+    @torch.no_grad()
     def number_means(reft: bool) -> dict:
         """{(L, slot): [90, d]} per-number mean state over the probe prompts (the training prompts by default)."""
         model.eval()
@@ -668,8 +767,19 @@ def main() -> None:
 
     grams = target_grams(perm, dev)
     feats2 = {G: target_features(G, perm, dev) for G in grams}
-    perm3 = np.arange(1000); perm3[10:] = 10 + np.random.default_rng(321).permutation(990)
-    feats3 = {G: target_features(G, perm3, dev) for G in GEOMS3}
+    perm3 = np.arange(1000); perm3[lo3:] = lo3 + np.random.default_rng(321).permutation(1000 - lo3)
+    feats3 = {G: target_features(G, perm3, dev, lo3) for G in GEOMS3}
+    far_check = {}
+    if args.add3:   # the shuffled control must be FAR from the true geometry (project rule: CKA(shuffled, true) < 0.15)
+        all3 = torch.arange(1000, device=dev)
+        for G in GEOMS3:
+            if G.endswith("_shuf"):
+                Kt, Ks = gram_of(feats3[G[:-5]][all3]), gram_of(feats3[G][all3])
+                far_check[G] = float((Kt * Ks).sum() / (Kt.norm() * Ks.norm()))
+                assert G not in geoms or far_check[G] < 0.15, ("add3: shuffled target not far from the true one", G, far_check[G])
+        assert int((perm3 == np.arange(1000)).sum()) < 10, "add3: perm3 leaves many numbers in place"
+        print(f"[add3] CKA(shuffled target, true target) over 0..999: {far_check}; fixed points of perm3: "
+              f"{int((perm3 == np.arange(1000)).sum())}; mean |perm3(x) - x| = {np.abs(perm3 - np.arange(1000)).mean():.0f}", flush=True)
     perm_t, perm3_t = torch.tensor(perm, device=dev), torch.tensor(perm3, device=dev)
     geo_xs2 = None if args.geo_numbers == "all" else torch.tensor(seen, device=dev)   # None = all of 10..99
     geo_rng = np.random.default_rng(99)
@@ -697,7 +807,7 @@ def main() -> None:
 
     def geo_loss(G: str, reft: bool) -> torch.Tensor:
         if is_three(G):
-            xs = torch.tensor(np.sort(geo_rng.choice(np.arange(10, 1000), args.geo_sample, replace=False)), device=dev)
+            xs = torch.tensor(np.sort(geo_rng.choice(np.arange(lo3, 1000), args.geo_sample, replace=False)), device=dev)
         else:
             xs = geo_xs2
         Hs = geo_states(reft, xs)
@@ -731,24 +841,44 @@ def main() -> None:
             rep[key(L)].update({"cka_" + G: float(cka(H, gram_of(feats3[G][report_xs3]))) for G in GEOMS3})
             for src in teach:
                 rep[key(L)]["cka_" + src + "3"] = float(cka(H, gram_of(teach[src][L][report_xs3])))
+        if args.add3:   # every number 0..999 (the prior's own range), all layers
+            all3 = torch.arange(1000, device=dev)
+            forward(prefix_all, reft)
+            for L in man_layers:
+                rep[key(L)].update({f"cka_{G}_all1000": float(cka(store[L][:, slot_pos["A"], :].to(dev), gram_of(feats3[G][all3])))
+                                    for G in GEOMS3})
         return rep
 
-    base_preds = {} if args.save_preds else None
-    base_eval = evaluate(reft=False, preds=base_preds)
-    if lm_val_ids is not None:
-        base_eval["lm_val_loss"] = lm_val_loss()
     gsuite = None
-    if args.general_eval:
-        from general_eval import load_suite, run_suite
-        gsuite = load_suite(args.general_eval, args.general_n)
-        base_eval["general"] = run_suite(model, tok, gsuite, dev)
-        print("base general:", base_eval["general"], flush=True)
-    base_means = number_means(reft=False)
-    (out / "base.json").write_text(json.dumps({"eval": base_eval, "manifold": diagnostics(base_means, None, slot_pos),
-                                               "geometry": geometry_report(reft=False), "task": args.task, "split": args.split,
-                                               "heldout": heldout.tolist(), "items": {k: v.tolist() for k, v in items.items()},
-                                               "preds": base_preds}, indent=1))
-    print(f"base: {base_eval} ({time.time() - t0:.0f}s)")
+    add3_info = {}
+    if args.add3:
+        import hashlib
+        sha = lambda P: hashlib.sha256(np.ascontiguousarray(P, dtype=np.int64).tobytes()).hexdigest()[:16]
+        add3_info = {"test_sha": sha(test), "train_sha": sha(train), "n_test": len(test), "n_train": len(train),
+                     "test_frac_ge1000": float((A3["test"][2] >= 1000).mean()), "far_check_cka": far_check, "lo3": lo3,
+                     "perm3_fixed_points": int((perm3 == np.arange(1000)).sum()), "scoring": "teacher-forced exact match of <sum>\\n"}
+        base_preds = {} if args.save_preds else None
+        base_eval = {**eval3("test", False, base_preds), **eval3("train", False)}
+        (out / "base.json").write_text(json.dumps({"eval": base_eval, "geometry": geometry_report(reft=False), "task": "add3",
+                                                   "add3": add3_info, "items": {"test": test.tolist(), "train": train.tolist()},
+                                                   "preds": base_preds}, indent=1))
+        print(f"base: {base_eval} add3 {add3_info} ({time.time() - t0:.0f}s)", flush=True)
+    else:
+        base_preds = {} if args.save_preds else None
+        base_eval = evaluate(reft=False, preds=base_preds)
+        if lm_val_ids is not None:
+            base_eval["lm_val_loss"] = lm_val_loss()
+        if args.general_eval:
+            from general_eval import load_suite, run_suite
+            gsuite = load_suite(args.general_eval, args.general_n)
+            base_eval["general"] = run_suite(model, tok, gsuite, dev)
+            print("base general:", base_eval["general"], flush=True)
+        base_means = number_means(reft=False)
+        (out / "base.json").write_text(json.dumps({"eval": base_eval, "manifold": diagnostics(base_means, None, slot_pos),
+                                                   "geometry": geometry_report(reft=False), "task": args.task, "split": args.split,
+                                                   "heldout": heldout.tolist(), "items": {k: v.tolist() for k, v in items.items()},
+                                                   "preds": base_preds}, indent=1))
+        print(f"base: {base_eval} ({time.time() - t0:.0f}s)")
 
     for seed in seeds:
         for G in geoms:
@@ -765,15 +895,23 @@ def main() -> None:
             ema_acc, gate_on_steps = 0.0, 0
             curve = []
             snaps, snap_steps = [], []
+            grad_log = []
 
             def snapshot():
                 with torch.no_grad():
                     model.eval()
-                    H = geo_states(reft=True)[man_layers[-1]]
+                    if args.add3:   # every number 0..999, row x = number x
+                        H = geo_states(reft=True, xs=torch.arange(1000, device=dev))[man_layers[-1]]
+                        assert H.shape[0] == 1000, H.shape
+                    else:
+                        H = geo_states(reft=True)[man_layers[-1]]
                     snaps.append(H.float().cpu().numpy().astype(np.float16)); snap_steps.append(step)
                     model.train()
             if args.save_states_every:
                 snapshot()
+            if args.add3 and args.curve_every:   # step 0 = the untrained adapter (= base)
+                curve.append({"step": 0, **eval3("test", reft=True)})
+                model.train()
             for ep in range(args.epochs):
                 order = order_rng.permutation(len(train))
                 ce_s = man_s = 0.0; nb = 0
@@ -785,11 +923,16 @@ def main() -> None:
                     # overflowed 140 GB)
                     opt.zero_grad(set_to_none=True)
                     with autocast:
-                        logits = forward(fmt_ids[nb % len(fmt_ids)][torch.tensor(bi, device=dev)], reft=True)   # format rotates per batch
-                        ce = Fn.cross_entropy(logits, num_ids[torch.tensor(train_ans[bi], device=dev)])
+                        if args.add3:   # CE = token mean over the answer tokens and the newline (teacher forced)
+                            bt = torch.tensor(bi, device=dev)
+                            logits, tb = forward_k(A3["train"][0][bt], True, 3), A3["train"][1][bt]
+                            ce = Fn.cross_entropy(logits.flatten(0, 1), tb.flatten(), ignore_index=-100)
+                        else:
+                            logits = forward(fmt_ids[nb % len(fmt_ids)][torch.tensor(bi, device=dev)], reft=True)   # format rotates per batch
+                            ce = Fn.cross_entropy(logits, num_ids[torch.tensor(train_ans[bi], device=dev)])
                         if G == "none":
-                            with torch.no_grad():
-                                ml = geo_loss("helix", reft=True)
+                            with torch.no_grad():   # logged only (add3: the helix3 loss over 0..999)
+                                ml = geo_loss("helix3" if args.add3 else "helix", reft=True)
                             loss = ce
                         elif G == "helix_gated":
                             if ema_acc < args.gate_thr:
@@ -801,14 +944,30 @@ def main() -> None:
                             ml = geo_loss(Gs, reft=True)
                             loss = ce + (args.sep_lam if Gs == "sep_ce" else args.lam) * ml
                     with torch.no_grad():
-                        bacc = float((logits.argmax(-1) == num_ids[torch.tensor(train_ans[bi], device=dev)]).float().mean())
+                        if args.add3:
+                            bacc = float(((logits.argmax(-1) == tb) | (tb == -100)).all(1).float().mean())
+                        else:
+                            bacc = float((logits.argmax(-1) == num_ids[torch.tensor(train_ans[bi], device=dev)]).float().mean())
                         ema_acc = 0.95 * ema_acc + 0.05 * bacc
+                    if args.add3 and args.grad_check_every and step % args.grad_check_every == 0:
+                        # A/B of the two loss terms on this batch: |grad CE| and |grad lam * L_geo| over the trainable params
+                        def gnorm(t):
+                            gs = torch.autograd.grad(t, params, retain_graph=True, allow_unused=True)
+                            return math.sqrt(sum(float((g.float() ** 2).sum()) for g in gs if g is not None))
+                        rec = {"step": step, "ce": float(ce), "geo_loss": float(ml), "lam": args.lam, "grad_ce": gnorm(ce)}
+                        if G != "none":
+                            rec["grad_geo"] = gnorm(ml)   # unscaled; the loss adds args.lam * ml (lambda A/B: smoke lam 0 == none)
+                            assert float(ml) > 0 and math.isfinite(rec["grad_geo"]) and rec["grad_geo"] > 0, ("add3: prior has no gradient", rec)
+                            rec["grad_lam_geo"] = args.lam * rec["grad_geo"]
+                            rec["geo_share"] = rec["grad_lam_geo"] / (rec["grad_lam_geo"] + rec["grad_ce"] + 1e-30)
+                        grad_log.append(rec)
+                        print(f"[grad] {G} seed{seed} {rec}", flush=True)
                     loss.backward()
                     opt.step(); step += 1
                     if args.save_states_every and step % args.save_states_every == 0:
                         snapshot()
                     if args.curve_every and step % args.curve_every == 0:
-                        curve.append({"step": step, "test": test_acc(reft=True)})
+                        curve.append({"step": step, **eval3("test", reft=True)} if args.add3 else {"step": step, "test": test_acc(reft=True)})
                         model.train()
                     ce_s += float(ce.detach()); man_s += float(ml.detach()); nb += 1
                     del logits, loss
@@ -816,22 +975,28 @@ def main() -> None:
             del opt
             if snaps:
                 np.savez_compressed(out / f"states_{G}_seed{seed}.npz", states=np.stack(snaps), steps=np.array(snap_steps),
-                                    layer=man_layers[-1], numbers=np.arange(10, 100))
+                                    layer=man_layers[-1], numbers=np.arange(1000) if args.add3 else np.arange(10, 100))
             preds = {} if args.save_preds else None
-            ev = evaluate(reft=True, preds=preds)
-            if lm_val_ids is not None:
-                ev["lm_val_loss"] = lm_val_loss()
-            if gsuite is not None:
-                ev["general"] = run_suite(model, tok, gsuite, dev)
-            diag = diagnostics(number_means(reft=True), None, slot_pos)
+            if args.add3:
+                ev, diag = {**eval3("test", True, preds), **eval3("train", True)}, {}
+            else:
+                ev = evaluate(reft=True, preds=preds)
+                if lm_val_ids is not None:
+                    ev["lm_val_loss"] = lm_val_loss()
+                if gsuite is not None:
+                    ev["general"] = run_suite(model, tok, gsuite, dev)
+                diag = diagnostics(number_means(reft=True), None, slot_pos)
+            extra = {"add3": add3_info, "grad_log": grad_log, "steps": step, "epochs": args.epochs, "bs": args.bs,
+                     "train_pairs": args.train_pairs, "model": args.model} if args.add3 else {}
             path.write_text(json.dumps({"mode": args.mode, "loss": "v2_cka", "geo_site": args.geo_site, "emb_delta": args.emb_delta,
                                         "task": args.task, "split": args.split, "geo_numbers": args.geo_numbers, "preds": preds,
                                         "emb_init": args.emb_init, "emb_init_info": emb_info, "geom": G, "seed": seed, "lam": args.lam, "lr": lr,
                                         "geo_sample": args.geo_sample if is_three(G) else None,
                                         "layers": man_layers, "train_log": log, "curve": curve, "eval": ev, "manifold": diag,
-                                        "geometry": geometry_report(reft=True)}, indent=1))
+                                        "geometry": geometry_report(reft=True), **extra}, indent=1))
             print(f"{args.mode} {G} seed{seed}: {ev} ({time.time() - t0:.0f}s)")
-    summarize(out)
+    if not args.add3:   # add3 read-out: tools/ft999_summary.py
+        summarize(out)
 
 
 def diagnostics(means: dict, targets: dict, slot_pos: dict) -> dict:
