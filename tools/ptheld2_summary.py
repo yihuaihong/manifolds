@@ -31,10 +31,14 @@ printed separately, never merged. Descriptive only: B' = B without block 1, ever
           (intersection-union); specificity: chosen - win-ctx-always paired mean >= +0.30;
       Holm over the two layers: the smaller p_L < .0125, the other < .025, and only if the first passed.
   rescue_standard (report/audits/rescue_standard.md; tier L at most):
-      RS(a) bracket of none (SUPP): each LC cell passes C1's floor rule on seeds 0-3 and neither none axis (lr 2e-3 / 8e-3 /
-          1.6e-2; wd 0.01 / 0.1 / 1.0 at 8e-3) is OPEN on seeds 0-3, means and paired differences over informative seeds
-          only (>= 3 per cell, else 'uninformative'): OPEN = the best cell is at an edge and beats its neighbour by > 0.25
-          nats on logp_H_one_<L> (or, when the best mean acc_L > 0.05, by > 0.02 on acc_L) with >= 3/4 paired wins;
+      RS(a) bracket of none (SUPP; amendment WD3, POST HOC after the wd 1.0 result): every none configuration that ran
+          passes C1's floor rule on seeds 0-3 (LC = none@1.6e-2, wd 0.01, wd 0.3 required; none@1e-3, none@2e-3-4x when run)
+          and neither axis is OPEN on seeds 0-3, means and paired differences over informative seeds only (>= 3 per cell,
+          else 'uninformative'). lr axis (wd 0.1: [1e-3 if run] / 2e-3 / 8e-3 / 1.6e-2): OPEN = the best cell at an edge
+          beats its neighbour by > 0.02 on acc_L (best mean > 0.05) or > 0.25 nats on logp_H_one_<L>, >= 3/4 paired wins.
+          wd axis (lr 8e-3: 0.01 / 0.1 / 0.3; wd 1.0 reported, not on the axis): the acc rule, or the median first-token
+          rank >= 2x better, or the logp rule only when the seen held_b33 logp is not worse (>= -0.05 nats; audit I4).
+          OPEN -> PROVISIONAL (more cells needed), a configuration not at the floor -> not met (no rescue);
       RS(b) the prior arm's own lr sweep (SUPP-2): the chosen arm at lr 1e-3 / 2e-3 / 4e-3, seeds 0-3, mean acc_L final3:
           2e-3 best or within 0.02 of the best -> met (bracket closed); another lr better -> 'open: best lr X != 2e-3,
           CONF not run there'; cells absent -> NOT RUN ('(b) open: prior at one lr');
@@ -95,7 +99,15 @@ MAIN_CELLS = NONES + PRIOR_X + (CTRL,)
 REF = "none@2e-3"   # the reference cell of the per-seed cross-arm checks (audit m2)
 # amendment SUPP (rendered by make_jobs_ptheld2.py --supp, the user's call): rescue_standard (a) none's lr x wd bracket on
 # this H (seeds 0-3) and (d) the remapped-target control of win-emb-always (seeds 0-7)
-LC = ("none@1.6e-2", "none@8e-3-wd0.01", "none@8e-3-wd1")
+# amendment WD3 (2026-10-22, POST HOC: written after the wd 1.0 result was read, before any wd 0.3 / 1e-3 / 2e-3-4x run;
+# make_jobs_ptheld2.py --site tandon --supp3): the wd axis is 0.01 / 0.1 / 0.3 at lr 8e-3; wd 1.0 is reported as it is
+# (uninformative: the LM is broken) and no longer blocks the axis; none@1e-3 = the lr axis' lower-edge check; none@2e-3-4x =
+# the budget at none's best lr on layer A. Every none configuration that ran passes the C1 floor rule (rescue_standard (a):
+# "none fails at every configuration").
+LC = ("none@1.6e-2", "none@8e-3-wd0.01", "none@8e-3-wd0.3")
+WD1 = "none@8e-3-wd1"
+LR_LOW, NONE_4X2 = "none@1e-3", "none@2e-3-4x"
+EXTRA_NONE = (LR_LOW, NONE_4X2)
 HREMAP = "win-emb-hremap-always@2e-3"
 # amendment AUD2 / SUPP-2 (make_jobs_ptheld2.py --supp2): rescue_standard (b) the prior arms' lr sweep (seeds 0-3) and the
 # same-schedule control of win-emb-decay (seeds 0-7)
@@ -103,21 +115,41 @@ SWEEP_LRS = ("1e-3", "4e-3")
 SWEEP = tuple(f"{x.split('@')[0]}@{lr}" for x in PRIOR_X for lr in SWEEP_LRS)
 HREMAP_DECAY = "win-emb-hremap-decay@2e-3"
 D_CONTROL = {"win-emb-always@2e-3": HREMAP, "win-emb-decay@2e-3": HREMAP_DECAY}   # same schedule; none for the text arm
-LR_AXIS, WD_AXIS = ("none@2e-3", "none@8e-3", "none@1.6e-2"), ("none@8e-3-wd0.01", "none@8e-3", "none@8e-3-wd1")
-WD_OF = {"none@8e-3-wd0.01": 0.01, "none@8e-3-wd1": 1.0}
-SUPP_CELLS = LC + (HREMAP,) + SWEEP + (HREMAP_DECAY,)
+LR_AXIS, WD_AXIS = ("none@2e-3", "none@8e-3", "none@1.6e-2"), ("none@8e-3-wd0.01", "none@8e-3", "none@8e-3-wd0.3")
+WD_OF = {"none@8e-3-wd0.01": 0.01, "none@8e-3-wd1": 1.0, "none@8e-3-wd0.3": 0.3}
+SUPP_CELLS = LC + (WD1,) + EXTRA_NONE + (HREMAP,) + SWEEP + (HREMAP_DECAY,)
 ALL_CELLS = MAIN_CELLS + SUPP_CELLS
 LAYERS = (("A", "hi"), ("B", "lo_rare"))
 ALL_LAYERS = tuple(f"v{j}" for j in range(1, 10)) + ("rare", "common", "hi", "lo_rare")
 SEL, CONF = (0, 1, 2, 3), (4, 5, 6, 7)
-SEEDS = {c: (SEL if c == "none@8e-3-4x" or c in LC or c in SWEEP else SEL + CONF) for c in ALL_CELLS}
+SEEDS = {c: (SEL if c in ("none@8e-3-4x", WD1) + LC + EXTRA_NONE + SWEEP else SEL + CONF) for c in ALL_CELLS}
 HOLM = (0.0125, 0.025)
 FLOOR, BAR, SPEC, TIE = 0.10, 0.50, 0.30, 0.02
 BR_LOGP, BR_ACC, BR_ACC_MIN, D_MARGIN = 0.25, 0.02, 0.05, 0.20   # bracket margins (as ptheld R1); (d) margin (as ptheld R3b)
+# WD3: the wd axis' OPEN rule (audit I4: H logp is confounded by calibration under heavy wd): acc (best mean > 0.05, margin
+# 0.02), OR the median first-token rank on the layer (rank1_rows_H_one, pooled over the final3 evals; best at an edge with a
+# paired mean log2((rank_best + 1) / (rank_nb + 1)) <= -1, i.e. >= 2x better, and >= 3/4 paired wins), OR logp (margin
+# 0.25) only when the best cell's seen held_b33 logp final3 is not worse than its neighbour's (paired mean >= -0.05 nats)
+WD_RANK_LOG2, WD_SEEN_TOL = -1.0, 0.05
 WORDING = {"tier": "tier L = given the structure, the model learns to use it (never 'the model discovered the structure')",
            "hi": "layer A = large h AND (for 35% of its rows) a two-token answer, not value alone",
            "lo_rare": "layer B = rare by standalone occurrences in the text (text-site count), not by token exposure",
-           "emb": "emb arm: injecting h's value coordinates into its embedding substitutes for task exposure"}
+           "emb": "emb arm: injecting h's value coordinates into its embedding substitutes for task exposure",
+           "scope": ("within the none configurations tested (lr x wd cross at wd 0.1 / lr 8e-3, <= 4x tokens) and only while "
+                     "the prior keeps h's coordinates in the embedding (decay: lambda < 0.1 only in the last 9.5% of steps)"),
+           "wd3": ("RS(a) completed after the read-out (amendment WD3: wd 0.3 / none@1e-3 / none@2e-3-4x added after the wd 1.0 "
+                   "result was read; their criteria fixed before their results)"),
+           "never": ("do not write: 'rescue' of any tier before RS(a) is met; 'the model discovered the structure' / 'learned "
+                     "h's value'; 'the prior makes the unlearnable learnable' without the tested-configurations and "
+                     "coordinates-kept qualifiers; 'long tail / rare numbers' (A is defined by value; B is no rescue); 'still "
+                     "usable after the prior fades / persistent'; 'auxiliary loss / LM gradient dominates' for an emb arm; "
+                     "'none is 0' or 'none <= 0.10 in every seed'; 'wd 1.0 none did not learn seen addition'; B's gain as a "
+                     "rescue; numbers against F90 without 'L40S vs A100, H chosen by quintile'; 'helix geometry does the "
+                     "addition in the middle layers'; an hremap share without its layer / seeds")}
+# claims a verdict head (the text before its first ' [') must never contain (audit (ii) 'do not write', asserted in holm())
+FORBIDDEN = ("discovered the structure", "learned h's value", "learned the value", "unlearnable", "long tail", "rare numbers",
+             "persistent", "after the prior fades", "auxiliary loss", "gradient dominates", "none is 0", "in every seed",
+             "did not learn seen addition", "middle layers")
 
 
 def cell_of(a):
@@ -199,6 +231,9 @@ def check_run(r, code_sha, c):
                 bad.append(f"H_one_{L} at step {e['step']} != its rows' hits"); break
             if len(lpr) != len(mks[L]) or abs(float(lpr[mks[L]].mean()) - e.get(f"logp_H_one_{L}", 1e9)) > 1e-3:
                 bad.append(f"logp_H_one_{L} at step {e['step']} != the mean of its rows' logp"); break
+        # WD3: the wd axis also reads the first-token ranks and the seen held_b33 logp of these evals
+        if len(e.get("rank1_rows_H_one") or []) != len(hits) or e.get("logp_held_b33") is None:
+            bad.append(f"rank1_rows_H_one / logp_held_b33 missing at step {e['step']}")
     dp_tol = {"H_one": 1.0, "H_both": 1.5, "H_ans": 1.5}
     for e in r["curve"]:
         st = e["step"]
@@ -398,41 +433,110 @@ def layer_reading(runs, probs, L):
     return out, lines
 
 
+def layer_mask(r, L):
+    return np.array([c_ == "1" for c_ in r["held_operands"]["sets"]["H_one"]["masks"][L]])
+
+
+def rank_med(r, L):
+    """the median first-token rank (rank1_rows_H_one: 0 = argmax) over layer L's rows, pooled over the final3 evals"""
+    m = layer_mask(r, L)
+    return float(np.median(np.concatenate([np.asarray(e["rank1_rows_H_one"])[m] for e in r["curve"][-3:]])))
+
+
+def edge_test(runs, axis, inf_of, val, margin, gate=None, inclusive=False):
+    """the bracket rule on one axis and one score (val(run) -> higher = better; means / paired differences over the
+    informative seeds 0-3): OPEN iff the best cell is at an edge, its mean exceeds `gate` (if given), and it beats its
+    neighbour by a paired mean > margin (>= with inclusive) with >= 3/4 paired wins. -> (state, means, best, neighbour, d)"""
+    m = {c: float(np.mean([val(runs[c][s]) for s in inf_of[c]])) for c in axis}
+    best = max(axis, key=lambda c: m[c])
+    i = axis.index(best)
+    if gate is not None and not m[best] > gate:
+        return f"closed (best mean <= {gate})", m, best, None, []
+    if i not in (0, len(axis) - 1):
+        return "closed", m, best, None, []
+    nb = axis[1] if i == 0 else axis[-2]
+    both = [s for s in SEL if s in inf_of[best] and s in inf_of[nb]]
+    d = [val(runs[best][s]) - val(runs[nb][s]) for s in both]
+    big = d and (np.mean(d) >= margin if inclusive else np.mean(d) > margin)
+    if big and sum(v > 0 for v in d) >= need_wins(len(d)):
+        return f"OPEN at {best} ({np.mean(d):+.3f} vs {nb})", m, best, nb, d
+    return "closed", m, best, nb, d
+
+
 def std_a(runs, probs, L, x):
-    """RS(a), amendment SUPP: the LC cells pass the C1 floor rule on seeds 0-3 and none's optimum is bracketed on both
-    axes (seeds 0-3; means and paired differences over informative seeds only, audit m4)"""
+    """RS(a), amendments SUPP / AUD2 / WD3: every none configuration that ran passes the C1 floor rule on seeds 0-3 (the LC
+    cells none@1.6e-2, wd 0.01, wd 0.3 are required; none@1e-3 and none@2e-3-4x when they ran) and none's optimum is
+    bracketed on both axes, over informative seeds only (audit m4):
+      lr axis (wd 0.1): none@1e-3 (if run) / 2e-3 / 8e-3 / 1.6e-2, the AUD2 rules (acc with best mean > 0.05 and margin
+          0.02, or logp margin 0.25 nats); with none@1e-3 run, 2e-3 is no longer an edge (WD3 lower-edge check);
+      wd axis (lr 8e-3): 0.01 / 0.1 / 0.3, the WD3 rules (acc as above, or the median first-token rank >= 2x better, or logp
+          only when the seen held_b33 logp is not worse); wd 1.0 is reported as it is and is not on the axis."""
     if not any(c in runs for c in LC):
         return "NOT RUN", [f"[{L}] RS(a) bracket: NOT RUN (cells {list(LC)} absent)"]
-    st, msg = needed(runs, probs, [(c, SEL) for c in LC + (REF, "none@8e-3")])
+    extra = tuple(c for c in EXTRA_NONE if c in runs)
+    st, msg = needed(runs, probs, [(c, SEL) for c in LC + extra + (REF, "none@8e-3")])
     if st:
         return msg, [f"[{L}] RS(a) bracket: {msg}"]
-    lines, bad, uninf = [], [], []
-    for y in LC:
+    lines, bad, opens, uninf = [], [], [], []
+    for y in LC + extra:
         fs, inf, high, need = floor_state(runs, y, SEL, L)
         lines.append(f"[{L}] RS(a) {y} seeds 0-3: acc_{L} final3 {[round(acc(runs[y][s], L), 3) for s in SEL]}, "
                      f"informative {len(inf)}/4 (need {need}), informative seeds > {FLOOR}: {high} -> {fs}")
-        (uninf if fs == "uninformative" else bad).append(f"{y} {fs}") if fs != "holds" else None
-    inf_of = {c: [s for s in SEL if informative(runs, c, s)] for c in set(LR_AXIS + WD_AXIS)}
-    for name, axis in (("lr", LR_AXIS), ("wd", WD_AXIS)):
+        if fs == "uninformative":
+            uninf.append(f"{y} uninformative")
+        elif fs != "holds":
+            bad.append(f"{y} {fs}")
+    for c in EXTRA_NONE:
+        if c not in runs:
+            lines.append(f"[{L}] RS(a) {c}: not run (WD3: {'the lr lower-edge check' if c == LR_LOW else 'budget at lr 2e-3'}"
+                         " is applied only when it ran)")
+    lr_axis = ((LR_LOW,) if LR_LOW in runs else ()) + LR_AXIS
+    inf_of = {c: [s for s in SEL if s in runs.get(c, {}) and informative(runs, c, s)] for c in set(lr_axis + WD_AXIS)}
+    acc_v = lambda r: acc(r, L)
+    logp_v = lambda r: final3(r, f"logp_H_one_{L}")
+    rank_v = lambda r: -math.log2(rank_med(r, L) + 1)
+    for name, axis in (("lr", lr_axis), ("wd", WD_AXIS)):
         if any(len(inf_of[c]) < 3 for c in axis):
             uninf.append(f"{name} axis ({ {c: len(inf_of[c]) for c in axis} } informative seeds)")
             lines.append(f"[{L}] RS(a) {name} axis: < 3 informative seeds in a cell -> uninformative"); continue
-        for key, margin, gate in ((f"logp_H_one_{L}", BR_LOGP, None), (f"H_one_{L}", BR_ACC, BR_ACC_MIN)):
-            m = {c: float(np.mean([final3(runs[c][s], key) for s in inf_of[c]])) for c in axis}
-            best = max(axis, key=lambda c: m[c])
-            i = axis.index(best)
-            state = "closed"
-            if (gate is None or m[best] > gate) and i in (0, len(axis) - 1):
-                nb = axis[1]
+        rules = [("acc", acc_v, BR_ACC, BR_ACC_MIN, False), ("logp", logp_v, BR_LOGP, None, False)]
+        if name == "wd":
+            rules.insert(1, ("rank", rank_v, -WD_RANK_LOG2, None, True))
+        for rn, val, margin, gate, incl in rules:
+            state, m, best, nb, d = edge_test(runs, axis, inf_of, val, margin, gate, incl)
+            note = ""
+            if name == "wd" and rn == "logp" and state.startswith("OPEN"):   # WD3 / audit I4: the seen-logp gate
                 both = [s for s in SEL if s in inf_of[best] and s in inf_of[nb]]
-                d = [final3(runs[best][s], key) - final3(runs[nb][s], key) for s in both]
-                if d and np.mean(d) > margin and sum(v > 0 for v in d) >= need_wins(len(d)):
-                    state = f"OPEN at {best} (+{np.mean(d):.3f} vs {nb})"
-                    bad.append(f"{name} axis {state} on {key}")
-            lines.append(f"[{L}] RS(a) {name} axis on {key} (informative seeds 0-3): " + ", ".join(f"{c} {m[c]:.3f}" for c in axis)
-                         + f" -> {state}" + ("" if gate is None or m[best] > gate else f" (acc rule off: best mean <= {gate})"))
+                ds = float(np.mean([final3(runs[best][s], "logp_held_b33") - final3(runs[nb][s], "logp_held_b33") for s in both]))
+                if ds < -WD_SEEN_TOL:
+                    note = f" -- not counted: seen held_b33 logp {ds:+.3f} nats vs {nb} (calibration, audit I4)"
+                    state = "closed (logp not counted)"
+                else:
+                    note = f" (seen held_b33 logp {ds:+.3f} vs {nb}: counted)"
+            if state.startswith("OPEN"):
+                opens.append(f"{name} axis {state} on {rn}")
+            shown = (lambda v: f"{-v:.2f} log2(rank+1)") if rn == "rank" else (lambda v: f"{v:.3f}")
+            lines.append(f"[{L}] RS(a) {name} axis on {rn} (informative seeds 0-3): " + ", ".join(f"{c} {shown(m[c])}" for c in axis)
+                         + f" -> {state}{note}")
+    if WD1 in runs:   # WD3: reported as it is, not on the axis
+        r1 = runs[WD1]
+        ref = {s: ref_of(runs, s) for s in r1}
+        dv = [round(r1[s]["curve"][-1]["val_loss"] - ref[s]["curve"][-1]["val_loss"], 3) if ref[s] else None for s in sorted(r1)]
+        ninf = sum(informative(runs, WD1, s) for s in r1)
+        why = ("uninformative: the LM is broken (val_loss > none@2e-3 + 0.5 nats)" if all(v is not None and v > RR.UNSTABLE_NATS for v in dv)
+               else "uninformative" if ninf < math.ceil(0.75 * len(r1)) else "informative (reported only)")
+        lines.append(f"[{L}] RS(a) {WD1} (WD3: reported, not on the wd axis): informative {ninf}/{len(r1)}; val_loss - none@2e-3 "
+                     f"{dv}; held6 {[round(held6_final3(r1[s]), 3) for s in sorted(r1)]}; acc_{L} "
+                     f"{[round(acc(r1[s], L), 3) for s in sorted(r1)]} -> {why} (never 'did not learn seen addition')")
+    if NONE_4X2 in runs:   # WD3: descriptive budget line at none's best lr on layer A
+        ss = [s for s in SEL if s in runs[NONE_4X2] and s in runs.get(REF, {})]
+        lines.append(f"[{L}] descriptive {NONE_4X2} vs {REF} (seeds {ss}): acc_{L} "
+                     f"{[round(acc(runs[NONE_4X2][s], L), 3) for s in ss]} vs {[round(acc(runs[REF][s], L), 3) for s in ss]}; "
+                     f"logp_{L} {[round(logp_v(runs[NONE_4X2][s]), 2) for s in ss]} vs {[round(logp_v(runs[REF][s]), 2) for s in ss]}")
     if bad:
         return "not met: " + "; ".join(bad), lines
+    if opens:
+        return "open: " + "; ".join(opens), lines
     return ("uninformative: " + "; ".join(uninf) if uninf else "met"), lines
 
 
@@ -514,6 +618,7 @@ def holm(outs):
                f"RS(d) same-schedule remapped control {rs['rs_d']}")
         x = o["chosen"]
         words = WORDING[L] + ("; " + WORDING["tier"] + ("; " + WORDING["emb"] if x.startswith("win-emb") else ""))
+        words += "; " + WORDING["scope"] + ("" if rs["rs_a"].startswith("NOT RUN") else "; " + WORDING["wd3"])
         subst = [t for k, t in f if k == "fail"]
         if any(v.startswith("WITHHELD") for v in rs.values()):
             v = f"WITHHELD (invalid SUPP runs) [{std}]"
@@ -530,6 +635,8 @@ def holm(outs):
         else:
             v = (f"PROVISIONAL (partial; core criteria hold with {x}; rescue_standard criteria not run / incomplete / "
                  f"uninformative / open -> not a rescue) [{std}] [wording: {words}]")
+        head_ = v.split(" [")[0].lower()   # audit (ii) 'do not write': the claim itself never carries these phrases
+        assert not any(p_ in head_ for p_ in FORBIDDEN), ("forbidden wording in a verdict", v[:120])
         o["verdict"] = v
     return order
 
@@ -687,6 +794,7 @@ def summarise(root, code_sha):
         o = outs[L]
         lines.append(f"VERDICT layer {name} (H_one_{L}): {o['verdict']}  (p_{L} {o['p']:.4g}, Holm alpha {o.get('holm_alpha')}, "
                      f"rank {order.index(L) + 1} of 2)")
+    lines.append("WORDING: " + WORDING["never"])
     return {"layers": outs, "problems": probs}, lines + descriptive(runs, probs)
 
 
@@ -699,7 +807,7 @@ ARM_SITE = {"none": "ctx", "win-emb-always": "emb", "win-emb-decay": "emb", "win
 
 def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_sha_tag="", diverge=False, bad_lines=False,
              lm_share=0.9, lam_bad=False, layer_bad=False, logp_shift=0.0, hremap_share=0.0, mask_bad=False,
-             text_inert=False, half_swap=False, val_last=None):
+             text_inert=False, half_swap=False, val_last=None, rank_base=20, seen_logp=-0.73):
     """a fake ptheld2 run JSON on the template's H / rows; accs = final accuracies of the four row groups
     {'hr': blocks 7-9 rare, 'hc': 7-9 common, 'lr': blocks 1-6 rare, 'lc': 1-6 common}; every layer's accuracy (and its
     logp) is computed from per-row hits / logp and the template's own masks (the trainer's computation), ramping up over
@@ -760,12 +868,13 @@ def fake_run(tpl, cell, seed, rng, accs, held=0.97, bpb=1.22, sha="fake", data_s
                  text_numbers=120 if ARM_SITE[arm] == "text" else None,
                  logp_dp_maxdiff_H_one=0.0, logp_dp_maxdiff_H_both=0.0, logp_dp_maxdiff_H_ans=0.0, pred_mismatch_H_one=0,
                  lam_now=lam + (0.5 if lam_bad and on else 0.0), grad_total=1.2, clip_coef=1 / 1.2,
-                 grad_lm_share=lm_share if lam > 0 else 1.0)
+                 grad_lm_share=lm_share if lam > 0 else 1.0, logp_held_b33=seen_logp)
         for L in ALL_LAYERS:
             e[f"H_one_{L}"] = float(hits[mk[L]].mean())
             e[f"logp_H_one_{L}"] = float(lrows[mk[L]].mean())
         if k >= len(evs) - 3:
             e["logp_rows_H_one"] = [round(float(v), 4) for v in lrows]
+            e["rank1_rows_H_one"] = [0 if v else int(rank_base) for v in hits]
             e["pred_H_one"] = [(x + y) if hit else ((u[x] + y) if x in u else (u[y] + x)) if rng.random() < hremap_share
                                else int(rng.integers(0, 1999)) for (x, y), hit in zip(pairs, hits)]
         for b in BUCK:
@@ -842,7 +951,7 @@ def selftest(tpl_path):
     GOOD = {"hr": 0.80, "hc": 0.85, "lr": 0.82, "lc": 0.9}
     FLAT = lambda v: {g: v for g in ("hr", "hc", "lr", "lc")}
     HRM = {"acc": {"hr": 0.10, "hc": 0.12, "lr": 0.10, "lc": 0.5}, "kw": {"hremap_share": 0.5}}
-    GROUPS = {"a": LC, "d": (HREMAP,), "b": SWEEP, "e": (HREMAP_DECAY,)}
+    GROUPS = {"a": LC, "d": (HREMAP,), "b": SWEEP, "e": (HREMAP_DECAY,), "w": (WD1,), "x": EXTRA_NONE}
     count = [0]
 
     def jit(d, s, ci):   # small seed- and cell-dependent jitter (no constant paired differences)
@@ -942,7 +1051,7 @@ def selftest(tpl_path):
              lambda o: all(V(o, L).startswith("no rescue (core") and "control not met" in V(o, L) for L in BOTH), supp="adb")
     scenario("S13 bracket open", {EA: {"acc": GOOD}, HREMAP: HRM, "none@1.6e-2": {"kw": {"logp_shift": 1.0}}},
              lambda o: all("lr axis OPEN at none@1.6e-2" in V(o, L) for L in BOTH), supp="adb")
-    scenario("S32 an LC cell uninformative -> PROVISIONAL, not no rescue", {EA: {"acc": GOOD}, HREMAP: HRM, "none@8e-3-wd1": {"kw": {"val_last": 4.5}}},
+    scenario("S32 an LC cell uninformative -> PROVISIONAL, not no rescue", {EA: {"acc": GOOD}, HREMAP: HRM, "none@8e-3-wd0.3": {"kw": {"val_last": 4.5}}},
              lambda o: all(V(o, L).startswith("PROVISIONAL (partial") and "bracket uninformative" in V(o, L) for L in BOTH), supp="adb")
     scenario("S14 text chosen -> RS(d) NOT RUN", {"win-text-always@2e-3": {"acc": GOOD}, HREMAP: HRM},
              lambda o: all(V(o, L).startswith("PROVISIONAL (partial") and "control NOT RUN" in V(o, L) for L in BOTH), supp="adb")
@@ -965,6 +1074,41 @@ def selftest(tpl_path):
              lambda o: all(V(o, L).startswith("WITHHELD") for L in BOTH) and any("lam_now" in b for b in o["problems"]["win-text-always@2e-3"]))
     scenario("S31 half labels and masks agree but not with the counts", {EA: {"acc": GOOD}, "none@8e-3": {"kw": {"half_swap": lambda s: s == 5}}},
              lambda o: all(V(o, L).startswith("WITHHELD") for L in BOTH) and any("half labels" in b for b in o["problems"]["none@8e-3"]))
+    # --- amendment WD3 (wd axis 0.01 / 0.1 / 0.3; wd 1.0 reported; none@1e-3 lower edge; none@2e-3-4x); the real pattern:
+    # wd 1.0 uninformative (the LM broken: val_loss +0.75 nats), layer B's none not at the floor
+    W1 = {"none@8e-3-wd1": {"kw": {"val_last": 3.95}}, **{y: {"acc": {"hr": 0.02, "hc": 0.04, "lr": 0.35, "lc": 0.5}}
+                                                       for y in NONES + LC + EXTRA_NONE}}
+    WOK = {EA: {"acc": GOOD}, HREMAP: HRM, **W1}
+    H35 = {"hr": 0.02, "hc": 0.04, "lr": 0.35, "lc": 0.5}
+    scenario("W1 wd 0.3 informative and at the floor -> layer A RESCUE (tier L), B no rescue", WOK,
+             lambda o: V(o, "hi").startswith("RESCUE (tier L)") and "amendment WD3" in V(o, "hi") and "lr 1e-3" not in V(o, "hi")[:20]
+             and "within the none configurations tested" in V(o, "hi") and V(o, "lo_rare").startswith("no rescue")
+             and "uninformative: the LM is broken" not in V(o, "hi"), supp="adbwx")
+    scenario("W2 wd 0.3 uninformative -> PROVISIONAL", {**WOK, "none@8e-3-wd0.3": {"acc": H35, "kw": {"val_last": 4.5}}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "none@8e-3-wd0.3 uninformative" in V(o, "hi"), supp="adbwx")
+    scenario("W3 wd 0.3 OPEN on acc (0.085, at the floor) -> PROVISIONAL", {**WOK, "none@8e-3-wd0.3": {"acc": {"hr": 0.085, "hc": 0.085, "lr": 0.35, "lc": 0.5}}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "wd axis OPEN at none@8e-3-wd0.3" in V(o, "hi") and "on acc" in V(o, "hi"),
+             supp="adbwx")
+    scenario("W3b wd 0.3 OPEN on the first-token rank (4x better) -> PROVISIONAL", {**WOK, "none@8e-3-wd0.3": {"acc": H35, "kw": {"rank_base": 4}}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "wd axis OPEN at none@8e-3-wd0.3" in V(o, "hi") and "on rank" in V(o, "hi"),
+             supp="adbwx")
+    scenario("W3c wd 0.3 better on H logp but worse on seen logp -> logp not counted -> RESCUE",
+             {**WOK, "none@8e-3-wd0.3": {"acc": H35, "kw": {"logp_shift": 1.0, "seen_logp": -2.6}}},
+             lambda o: V(o, "hi").startswith("RESCUE (tier L)"), supp="adbwx")
+    scenario("W3d wd 0.3 better on H logp, seen logp unchanged -> OPEN -> PROVISIONAL",
+             {**WOK, "none@8e-3-wd0.3": {"acc": H35, "kw": {"logp_shift": 1.0}}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "wd axis OPEN at none@8e-3-wd0.3" in V(o, "hi") and "on logp" in V(o, "hi"),
+             supp="adbwx")
+    scenario("W4 wd 0.3 with an informative seed > 0.10 -> no rescue", {**WOK, "none@8e-3-wd0.3": {"acc": lambda s: FLAT(0.3) if s == 2 else H35}},
+             lambda o: V(o, "hi").startswith("no rescue (core criteria hold") and "none@8e-3-wd0.3 not at the floor" in V(o, "hi"), supp="adbwx")
+    scenario("W5 none@1e-3 best on the lr axis and OPEN -> PROVISIONAL", {**WOK, "none@1e-3": {"acc": {"hr": 0.085, "hc": 0.085, "lr": 0.35, "lc": 0.5}}},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "lr axis OPEN at none@1e-3" in V(o, "hi"), supp="adbwx")
+    scenario("W6 none@2e-3-4x with an informative seed > 0.10 -> no rescue (every none configuration that ran)",
+             {**WOK, "none@2e-3-4x": {"acc": lambda s: FLAT(0.3) if s == 1 else H35}},
+             lambda o: V(o, "hi").startswith("no rescue (core criteria hold") and "none@2e-3-4x not at the floor" in V(o, "hi"), supp="adbwx")
+    scenario("W7 wd 0.3 not run yet (wd 1.0 only, the post-read state) -> PROVISIONAL", {EA: {"acc": GOOD}, HREMAP: HRM, **W1},
+             lambda o: V(o, "hi").startswith("PROVISIONAL (partial") and "none@8e-3-wd0.3" in V(o, "hi") and "INCOMPLETE" in V(o, "hi"),
+             supp="dbw" + "a", skip={("none@8e-3-wd0.3", s_) for s_ in SEL})
     print(f"selftest: all {count[0]} scenarios pass")
 
 
