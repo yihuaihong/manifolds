@@ -83,6 +83,13 @@ args omit the two flags at their defaults).
   pre-clip norm of the total gradient as clip_grad_norm_ saw it (grad_total), the clip coefficient min(1, 1 / (grad_total
   + 1e-6)) (clip_coef), and the LM share grad_lm / |g_lm + g_prior| (grad_lm_share; g_prior lambda_t-weighted; 1.0 when
   the loss is the LM alone) with |g_lm + g_prior| itself (grad_T; double path of grad_total).
+Rev E 2026-10-22 (fig1 representation export; opt-in). Without --save_at the trainer is Rev D (default path and every
+earlier path bit-identical; the run JSON's args omit the flag at its default '').
+  --save_at S1,S2,..  the model state after S updates (S = 0: the initialisation, before any update; S = steps: the final
+             model, the same tensors as --save_model's) saved to <out>/save_at/model_<tok>_<target>_seed<s><tag>_upd<S>.pt
+             as {"model": state_dict, "updates": S, "steps", "code_sha"}. Update S is the step whose forward the logged
+             cka_ops_helix3 / geo of eval step S use (eval step S itself evaluates the state after S + 1 updates).
+             Saving reads the weights only (no RNG, no parameter change). The run JSON gets save_at {requested, files}.
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -117,6 +124,7 @@ HELD_ANS_PER = 3      # H_ans rows per held number with sum h (+3 with a 4-digit
 REVC_DEFAULTS = {"held_operands": 0, "wd": 0.1}   # Rev C flags: kept out of the run JSON's args at these values
 HELD_BLOCKS = 9       # Rev D (--held_strat value_freq): the hundreds blocks 100-199 .. 900-999, two halves each
 REVD_DEFAULTS = {"held_strat": "freq", "lam_decay": False}   # Rev D flags: kept out of the run JSON's args at these values
+REVE_DEFAULTS = {"save_at": ""}   # Rev E flag: kept out of the run JSON's args at this value
 
 
 def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
@@ -421,6 +429,9 @@ def main() -> None:
     ap.add_argument("--eval_every", type=int, default=250)
     ap.add_argument("--n_eval", type=int, default=150, help="held-out items per bucket in the eval sets")
     ap.add_argument("--save_model", action="store_true")
+    ap.add_argument("--save_at", default="",
+                    help="Rev E: comma list of update counts S (0 <= S <= steps); the model state after S updates is saved to "
+                         "<out>/save_at/ (one file per S); '' = off (the pinned trainer)")
     ap.add_argument("--dry_inputs", action="store_true")
     ap.add_argument("--grad_ckpt", choices=("auto", "on", "off"), default="auto",
                     help="gradient checkpointing of the transformer blocks (same math, less memory, ~1/3 slower); auto = on "
@@ -924,6 +935,12 @@ def main() -> None:
     for L in sorted(set(geo_layers) | set(read_layers)):
         model.model.layers[L - 1].register_forward_hook(lambda _m, _i, o, L=L: store.__setitem__(L, nl._hidden(o)))
     steps = int(args.tokens // (args.bs * args.seq))
+    SAVE_AT = sorted({int(v) for v in args.save_at.split(",") if v.strip()})   # Rev E (--save_at); [] = off
+    if SAVE_AT:
+        assert all(0 <= v <= steps for v in SAVE_AT), ("--save_at outside 0..steps", SAVE_AT, steps)
+        save_dir = out / "save_at"
+        save_file = lambda S: save_dir / f"model_{args.tokenization}_{args.target}_seed{args.seed}{args.tag}_upd{S:05d}.pt"
+        print(f"save_at: the model state after {SAVE_AT} updates (of {steps}) -> {save_dir}", flush=True)
     warm = max(1, steps // 100)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.wd, fused=(dev == "cuda"))
     sched = lambda s: min(1.0, (s + 1) / warm) * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(1.0, s / steps))))
@@ -1827,7 +1844,17 @@ def main() -> None:
         if dev == "cuda" and st.get("cuda_rng") is not None:
             torch.cuda.set_rng_state(st["cuda_rng"].cpu())
         print(f"resumed from {ck.name} at step {start} of {steps}", flush=True)
+
+    def save_state(S):
+        """Rev E: the model state after S updates (weights only read; temp file + rename)."""
+        save_dir.mkdir(parents=True, exist_ok=True)
+        f_, tmp_ = save_file(S), save_file(S).with_name(save_file(S).name + ".tmp")
+        torch.save({"model": model.state_dict(), "updates": S, "steps": steps, "code_sha": code_sha}, tmp_)
+        tmp_.replace(f_)
+        print(f"save_at: saved the state after {S} updates -> {f_.name}", flush=True)
     for s in range(start, steps):
+        if SAVE_AT and s in SAVE_AT:   # Rev E: before step s's forward = after s updates (s = 0: the initialisation)
+            save_state(s)
         for g in opt.param_groups:
             g["lr"] = args.lr * sched(s)
         x, ops, ans = batch(s)
@@ -1970,7 +1997,8 @@ def main() -> None:
             print(json.dumps(r), flush=True)
             res_ = {"args": {k: v for k, v in vars(args).items() if (DOM or k not in DOM_ARGS)
                              and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])
-                             and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])}, "steps": steps,
+                             and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])
+                             and not (k in REVE_DEFAULTS and v == REVE_DEFAULTS[k])}, "steps": steps,
                     "geo_layers": geo_layers, "read_layers": read_layers,
                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
@@ -1999,6 +2027,14 @@ def main() -> None:
         ck.unlink()
     if args.save_model:
         torch.save(model.state_dict(), out / f"model_{args.tokenization}_{args.target}_seed{args.seed}{args.tag}.pt")
+    if SAVE_AT:   # Rev E: the final state, then every requested S must be on disk (this process or before a resume)
+        if steps in SAVE_AT:
+            save_state(steps)
+        miss = [S for S in SAVE_AT if not save_file(S).exists()]
+        assert not miss, ("--save_at states missing", miss)
+        res_ = json.loads(path.read_text())
+        res_["save_at"] = {"requested": SAVE_AT, "files": [save_file(S).name for S in SAVE_AT]}
+        path.write_text(json.dumps(res_, indent=1))
     print(f"done in {time.time() - t0:.0f}s")
 
 
