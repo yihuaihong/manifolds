@@ -3866,3 +3866,9 @@
 - Figure 1 (f)(g) 用的 states：runs/ft999/out 下 9B seed 0 每个 arm 的 layer-16 states，每 50 步一份，[88, 1000, 4096] fp16，格式同 viz-9B-n7000。
 
 **审查状态**：一轮结果层对抗审查（全新子 agent；notes/batch1_build/audit_ft999_results.md）。用 preds 重算 18 个 run，与 eval 完全一致；默认路径回归由审查自己 cmp 复核，逐字节一致。七项：i ✓（重算；双路：preds 与 eval）、ii ✓、iii ✓（查表基线、shuf 对照）、iv 部分（3 seed 共用数据和置换）、v ✓、vi 部分（area 与 final 混用要分清；shuf 的梯度大小未与 helix3 对齐）、vii ✓。
+
+### F92 补记（2026-10-22，Figure 1 (d) 的打乱对照，8 个 seed，描述性）
+- 打乱对照 win-shuf-ctx（helix3_shuf，用先验的 lr 2e-3，窗口 [0.05, 0.4)）在 pt2b 设置下 seed 0–7 的曲线面积（held6 × 100，75 次 eval 的均值）：10.75 / 4.58 / 8.04 / 9.19 / 10.45 / 10.12 / 8.38 / 7.64，**均值 8.64**。终值 held6 均值 15.4 [6.4, 26.1]。用 readout_rules.area 和直接对 held6 求均值两条路径算，逐 seed 相同。
+- 对照（F86 补记，8 个 seed）：none@8e-3 18.43，先验 win-ctx@2e-3 69.91。打乱对照在这个 lr 上低于 none，与 F82 补记的方向一致：错误的数值和几何对应有害。
+- 限定：打乱对照用的是先验的 lr，不是它自己的最优 lr；它跑在 Torch A100-80GB（a100_tandon）上，none 和先验那两条是 Burst A100-40GB。每个 seed 启动时都核对过，数据行与 pt2b 同一 seed 的 Burst 任务哈希一致。seed 0 是 F92 主条里那个带 checkpoint 的 run，seed 1–7 各用自己的输出目录（runs/fig1_pt2b/out/fig1-pt2b-lr2e-3-win-shuf-ctx-s<seed>）。
+- 不得写：「打乱对照在各自最优 lr 上也比 none 差」（没调它的 lr）；把三条曲线说成同一硬件。
