@@ -55,8 +55,13 @@ prior_on_frac 0.349973 and prior_events [[916, 1], [7324, 0]] where logged, none
 every verdict that uses the cell ('WITHHELD: <reason>'), as pt2main_summary's rule 6. Ceiling (seen_bXY near 1 at the
 end): printed for every counted non-diverged run below 0.9, descriptive only (the AUDIT names no threshold, and
 reference cells sit below any 'near 1': pt999 sens-lr5e-4-none s1 0.75, ptsize999 190m-7pct-none s0 0.88).
+ladder-1b (2026-10-22, runs/ptlr_1b/AUDIT.md): a 1B size (d1280 x 36, 20 heads, d_ff 5120; N_nonemb 943.9M) read from
+<root>/ptlr_1b/out when that dir exists (its OWN_FAILURES.txt too). 1B's lrs are selected on seeds 0-1 (SEL); seeds 2-3
+run only at the picks, so rule 7 / 4 / 8 use seeds 0-3 at the picks and 'incomplete' until seeds 2-3 exist; other 1B lrs
+are listed with their seeds 0-1. Seed 0's step-0 lm is also checked against the B200 smoke value (LM0_1B). --json writes
+each (size, arm)'s best-lr status for the ptlr_1b selection job. Without ptlr_1b/out the output is byte-identical.
     python tools/ptscale_summary.py [--root /scratch/yh6210/llmadd_torch/runs] [--dirs d1 d2 ...] [--extra_dirs ...]
-                                    [--offline f.json ...] [--own_failures runs/ptlr/OWN_FAILURES.txt]
+                                    [--offline f.json ...] [--own_failures runs/ptlr/OWN_FAILURES.txt] [--json sel.json]
 """
 import argparse
 import collections
@@ -81,10 +86,15 @@ ap.add_argument("--extra_dirs", nargs="*", default=[], help="inserted right afte
 ap.add_argument("--offline", nargs="*", help="offline_lm.py output files (default: <root>/*/offline_lm*.json, <root>/*/out/offline_lm*.json)")
 ap.add_argument("--own_failures", help="'<tag> <seed>' lines: unfinished runs that stopped on an error of their own "
                                        "(default <root>/ptlr/OWN_FAILURES.txt)")
+ap.add_argument("--json", help="ladder-1b: also write each (size, arm)'s best-lr status / pick / open edge here (for the "
+                               "runs/ptlr_1b selection job); the printed read-out is unchanged")
 A = ap.parse_args()
 root = Path(A.root)
 DIRS = [Path(d) for d in (A.dirs if A.dirs is not None else
-                          [root / f"{x}/out" for x in ("ptlr", "ptgw", "pt999", "ptsize999", "ptrangeg", "pt999b")])]
+                          [root / f"{x}/out" for x in ("ptlr", "ptgw", "pt999", "ptsize999", "ptrangeg", "pt999b")]
+                          # 2026-10-22 ladder-1b: the 1B cells (runs/ptlr_1b, B200), last in priority (no other source
+                          # has 1B runs); only when present, so the read-out of the older results is unchanged
+                          + [root / "ptlr_1b/out"] * (root / "ptlr_1b/out").exists())]
 if A.extra_dirs:
     DIRS = DIRS[:1] + [Path(d) for d in A.extra_dirs] + DIRS[1:]
 OFFLINE = A.offline if A.offline is not None else sorted(glob.glob(f"{root}/*/offline_lm*.json") + glob.glob(f"{root}/*/out/offline_lm*.json"))
@@ -93,10 +103,16 @@ OWNF = Path(A.own_failures) if A.own_failures else root / "ptlr/OWN_FAILURES.txt
 V = 100278                                    # vocabulary rows (tied embeddings): N_nonemb = n_params - V * d_model
 SIZES = {(384, 6, 6, 1536): ("53M", 14165376, "1e-3"), (768, 12, 12, 3072): ("190M", 113283840, "6e-4"),
          (1024, 24, 16, 4096): ("500M", 402752512, "3e-4")}   # name, N_nonemb, base lr (divergence reference)
+# 2026-10-22 ladder-1b (runs/ptlr_1b/AUDIT.md): the next GPT-2-shaped rung (d 1280, 36 layers, 20 heads of 64, d_ff 4d),
+# 1,072,259,840 parameters (tied embedding counted once); base lr = the lowest none lr of its grid. Its lrs are selected
+# on seeds 0-1 (SEL); seeds 2-3 run at the picks only, so a 1B pick has seeds 0-3, the other lrs 0-1; confirm seeds 4-7.
+SIZES[(1280, 36, 20, 5120)] = ("1B", 943904000, "2.4e-3")
+SEL = {"1B": (0, 1)}
 # step-0 lm of seeds 0-3 (runs/ptlr/AUDIT.md 'Controls'; lr- and arm-independent: measured before the first update)
 LM0 = {"53M": (11.60809, 11.59907, 11.57956, 11.59710), "190M": (11.65420, 11.67774, 11.65268, 11.64366)}
+LM0_1B = {0: 11.73940}   # ladder-1b: seed 0 from the B200 smoke (scale_work/b200/smoke, 4 runs agree to all digits)
 SNAP = {"ptlr": {"a3bce3ab63c1"}, "ptgw": {"a3bce3ab63c1"}, "pt999": {"79e9b410dcc3"}, "ptsize999": {"79e9b410dcc3"},
-        "ptrangeg": {None}, "pt999b": {"44ce3fef0c29"}}
+        "ptrangeg": {None}, "pt999b": {"44ce3fef0c29"}, "ptlr_1b": {"a3bce3ab63c1"}}
 SNAP_OTHER = {"a3bce3ab63c1", "79e9b410dcc3"}  # a dir not named above (e.g. batch 2's T1b)
 DEFAULTS = {"site": "ctx", "untie": False, "text_min": 16, "n_prefix": 256, "gate_start": 0.0, "gate_hyst": 0.0,
             "geo_layers": None, "tokenization": "whole"}
@@ -141,11 +157,12 @@ def why_out(a):
 
 # ---------------------------------------------------------------- collect
 own = set()
-if OWNF.exists():
-    for line in OWNF.read_text().splitlines():
-        if line.strip() and not line.startswith("#"):
-            t, s = line.split()
-            own.add((t, int(s)))
+for of_ in [OWNF] + ([] if A.own_failures else [root / "ptlr_1b/OWN_FAILURES.txt"]):   # ladder-1b: its own list
+    if of_.exists():
+        for line in of_.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                t, s = line.split()
+                own.add((t, int(s)))
 off_entries, off_tail = {}, collections.defaultdict(list)   # resolved run path -> entry; its last 4 parts -> [entries]
 for f in OFFLINE:
     for k, v in json.loads(Path(f).read_text()).items():
@@ -237,14 +254,17 @@ def pick(key, seeds):
 
 main = {k: pick(k, R.MAIN) for k in cells}
 conf = {k: pick(k, R.CONFIRM) for k in cells}
+selp = {k: pick(k, SEL[k[0]]) if k[0] in SEL else main[k] for k in cells}   # ladder-1b: the lr-selection seeds
 for key, src, seed, f, r in unfin:   # after the picks, so the note says what the cell uses meanwhile
     pk = main.get(key) if seed in R.MAIN else conf.get(key) if seed in R.CONFIRM else None
     which = "seeds 0-3" if seed in R.MAIN else "seeds 4-7" if seed in R.CONFIRM else None
+    if key[0] in SEL and seed in SEL[key[0]]:
+        pk, which = selp.get(key), f"selection seeds {SEL[key[0]][0]}-{SEL[key[0]][-1]}"
     use = (f"seeds outside 0-7 are not used" if which is None else
            f"its cell's {which} are not selectable (incomplete)" if pk is None else
            f"its cell's {which} come from {pk[0]} meanwhile (the first source with all four)")
     notes.append(f"unfinished: {f} (last eval {r['curve'][-1]['step']} of {r['steps']}): {use}; it counts once it "
-                 f"finishes, or as an own failure if listed in {OWNF}")
+                 f"finishes, or as an own failure if listed in {OWNF if key[0] not in SEL or A.own_failures else root / 'ptlr_1b/OWN_FAILURES.txt'}")
 
 
 def area_of(fr):
@@ -266,7 +286,7 @@ bad = collections.defaultdict(list)   # (key, seed) -> reasons, for the counted 
 lm0 = collections.defaultdict(dict)
 ceil_low = []
 for k in cells:
-    for pk in (main[k], conf[k]):
+    for pk in (main[k], conf[k]) + ((selp[k],) if k[0] in SEL and main[k] is None else ()):   # ladder-1b: seeds 0-1
         if not pk:
             continue
         src, rs = pk
@@ -301,6 +321,8 @@ for (size, s), d in lm0.items():
     for ks, v in d.items():
         if not (math.isfinite(v) and abs(v - med) <= 1e-3):
             bad[ks].append(f"step-0 lm {v:.6f} is {v - med:+.4f} off the {size} seed-{s} median (pairing broken)")
+        if size == "1B" and s in LM0_1B and not abs(v - LM0_1B[s]) <= 1e-3:
+            bad[ks].append(f"step-0 lm {v:.6f} is {v - LM0_1B[s]:+.4f} off the B200 smoke reference {LM0_1B[s]}")
         if size in LM0 and s < 4 and not abs(v - LM0[size][s]) <= 1e-3:
             bad[ks].append(f"step-0 lm {v:.6f} is {v - LM0[size][s]:+.4f} off the reference {LM0[size][s]}")
 
@@ -347,7 +369,7 @@ print(f"(double path: {checked} cell means agree with pt999_summary.py within 0.
 
 # ---------------------------------------------------------------- per cell
 def vals(k, f, seeds=R.MAIN):
-    pk = main[k] if seeds == R.MAIN else conf[k]
+    pk = main[k] if seeds == R.MAIN else conf[k] if seeds == R.CONFIRM else selp[k] if seeds == SEL.get(k[0]) else None
     return None if pk is None else np.array([f(pk[1][s]) for s in seeds])
 
 
@@ -369,7 +391,8 @@ def med_txt(t):
 
 ref_run = {}   # (size, seed) -> the counted none@base-lr run of that seed (the 'unstable' reference)
 for size, _, base_lr in SIZES.values():
-    for pk in (main.get((size, "none", base_lr)), conf.get((size, "none", base_lr))):
+    for pk in ((selp.get((size, "none", base_lr)),) if size in SEL else ()) + (main.get((size, "none", base_lr)),
+                                                                                 conf.get((size, "none", base_lr))):
         for s, fr in (pk[1].items() if pk else ()):
             if fr[1]["curve"]:
                 ref_run[(size, s)] = fr[1]
@@ -382,6 +405,23 @@ for k in sorted(cells, key=lambda k: (ORDER[k[0]], ARMS.index(k[1]), float(k[2])
     grid[(k[0], k[1])][k[2]] = k
     pk = main[k]
     lab = f"{k[0]} {k[1]}@{k[2]}"
+    if pk is None and k[0] in SEL and selp[k] is not None:   # ladder-1b: an lr with its selection seeds only
+        ss = SEL[k[0]]
+        src, rs = selp[k]
+        ar = vals(k, area_of, ss)
+        bp = [bpb_of(rs[s]) for s in ss]
+        offl = all(b[0] is not None for b in bp)
+        dv = [(s, R.diverged_at(rs[s][1])) for s in ss if R.diverged_at(rs[s][1]) is not None]
+        un = [s for s in ss if not rs[s][2] and R.unstable(rs[s][1], ref_run.get((k[0], s)))]
+        ow = [s for s in ss if rs[s][2]]
+        print(f"  {lab:22s} {src:9s} {next(iter(src_tag[(k, src)])):26s} area {ar.mean():5.1f}±{ar.std():4.1f} "
+              f"[selection seeds {ss[0]}-{ss[-1]} only] t90 {med_txt(tt(k, 0.9, ss))} t50 {med_txt(tt(k, 0.5, ss))} "
+              f"bpb {np.mean([R.worst(b[0] if offl else b[1]) for b in bp]):.4f}{'' if offl else '*'}"
+              + (f" | diverged {', '.join(f's{s}@{st}' for s, st in dv)}" if dv else "")
+              + (f" | unstable (final val_loss > none@base + 0.5) s{', s'.join(map(str, un))}" if un else "")
+              + (f" | own failure s{', s'.join(map(str, ow))}" if ow else "")
+              + (" | [integrity: verdicts on this cell are withheld]" if withheld([k], ss) else ""))
+        continue
     if pk is None:
         have = {src: sorted(rs) for src, rs in cells[k].items()}
         print(f"  {lab:22s} incomplete: seeds {have}")
@@ -401,6 +441,8 @@ for k in sorted(cells, key=lambda k: (ORDER[k[0]], ARMS.index(k[1]), float(k[2])
           + (f" | unstable (final val_loss > none@base + 0.5) s{', s'.join(map(str, un))}" if un else "")
           + (f" | own failure s{', s'.join(map(str, ow))}" if ow else "")
           + (f" | seeds 4-7 ({conf[k][0]}) {cf.mean():5.1f}" if cf is not None else "")
+          + (f" | selection seeds {SEL[k[0]][0]}-{SEL[k[0]][-1]} {vals(k, area_of, SEL[k[0]]).mean():5.1f}"
+             if k[0] in SEL else "")
           + (" | [integrity: verdicts on this cell are withheld]" if withheld([k], R.MAIN + R.CONFIRM) else ""))
     for s2, rs2 in cells[k].items():
         if s2 == src or (conf[k] and s2 == conf[k][0] and not set(rs2) & set(rs)):
@@ -418,13 +460,14 @@ def best_of(size, arm):
     g = grid.get((size, arm), {})
     if not g:
         return "missing", [], None
-    if any(main[k] is None for k in g.values()):
+    ss, pkd = (SEL[size], selp) if size in SEL else (R.MAIN, main)   # ladder-1b: 1B selects on seeds 0-1
+    if any(pkd[k] is None for k in g.values()):
         return "incomplete", [], None
-    wh = withheld(list(g.values()))
+    wh = withheld(list(g.values()), ss)
     if wh:
         return "withheld", wh, None
-    inp = {lr: {"area": vals(k, area_of), "off": [bpb_of(main[k][1][s])[0] for s in R.MAIN],
-                "intr": [bpb_of(main[k][1][s])[1] for s in R.MAIN]} for lr, k in g.items()}
+    inp = {lr: {"area": vals(k, area_of, ss), "off": [bpb_of(pkd[k][1][s])[0] for s in ss],
+                "intr": [bpb_of(pkd[k][1][s])[1] for s in ss]} for lr, k in g.items()}
     sel = R.best_lr(inp, near_rule="top2")   # runs/ptlr/AUDIT.md rule 1 as pre-registered
     sel["proposed"] = R.best_lr(inp, near_rule="within")
     return "ok", sel["best"], sel
@@ -441,13 +484,14 @@ def ratio_line(label, kn, ka, theta):
     return sp, ci
 
 
-best, openbr = {}, {}
+best, openbr, status = {}, {}, {}
 for size, nne, base_lr in SIZES.values():
     if not any(k[0] == size for k in cells):
         continue
     print(f"\n## {size} (N_nonemb {nne / 1e6:.1f}M; divergence / instability reference: none@{base_lr} of the same seed)")
     for arm in ARMS:
         st, b, sel = best_of(size, arm)
+        status[(size, arm)] = (st, b if st in ("ok", "withheld") else None)
         lrs = sorted(grid.get((size, arm), {}), key=float)
         if st == "missing":
             continue
@@ -486,6 +530,16 @@ for size, nne, base_lr in SIZES.values():
             say_withheld(lab, (bn[1] if bn[0] == "withheld" else []) + (ba[1] if ba[0] == "withheld" else []))
             continue
         kn, ka = grid[(size, "none")][bn[1]], grid[(size, arm)][ba[1]]
+        if size in SEL:   # ladder-1b: the test is on seeds 0-3 at the picks; seeds 2-3 run only there
+            print(f"  ({size}: the lrs were selected on seeds {SEL[size][0]}-{SEL[size][-1]}; the best-vs-best test below is "
+                  f"on seeds 0-3 at the picks, confirm seeds 4-7)")
+            if main[kn] is None or main[ka] is None:
+                print(f"  {arm}@{ba[1]} - none@{bn[1]}: seeds 0-3 at the picks incomplete (seeds 2-3 pending)")
+                continue
+            wh = withheld([kn, ka], R.MAIN)
+            if wh:
+                say_withheld(f"{lab} (seeds 0-3)", wh)
+                continue
         has_c = conf[kn] is not None and conf[ka] is not None
         wh = withheld([kn, ka], R.CONFIRM) if has_c else []
         if wh:
@@ -515,13 +569,25 @@ for size, nne, base_lr in SIZES.values():
                   + ("; gap < 10: seeds 4-7 (8 runs) before any claim" if sv["main"][0] < 10 and not sv["confirm"] else ""))
         # descriptive: the lrs picked by median t90 (the pt2long headline's selection)
         sel_t = {}
+        ss, pkd = (SEL[size], selp) if size in SEL else (R.MAIN, main)   # ladder-1b: over the selection seeds
         for a in ("none", arm):
             g = grid[(size, a)]
-            med = {lr: R.median_at_budget(tt(k, 0.9), R.budget_M(main[k][1][0][1])) for lr, k in g.items()}
-            sel_t[a] = R.best_lr_t90(med, {lr: vals(k, area_of).mean() for lr, k in g.items()})
+            med = {lr: R.median_at_budget(tt(k, 0.9, ss), R.budget_M(pkd[k][1][ss[0]][1])) for lr, k in g.items()}
+            sel_t[a] = R.best_lr_t90(med, {lr: vals(k, area_of, ss).mean() for lr, k in g.items()})
         if (sel_t["none"], sel_t[arm]) != (bn[1], ba[1]):
-            ratio_line("    (descriptive, lrs by median t90)", grid[(size, "none")][sel_t["none"]],
-                       grid[(size, arm)][sel_t[arm]], 0.9)
+            kt_n, kt_a = grid[(size, "none")][sel_t["none"]], grid[(size, arm)][sel_t[arm]]
+            if main[kt_n] is None or main[kt_a] is None:
+                print(f"    (descriptive, lrs by median t90 on seeds {ss[0]}-{ss[-1]}: none@{sel_t['none']} / "
+                      f"{arm}@{sel_t[arm]}; no ratio: seeds 2-3 ran only at the area picks)")
+            else:
+                ratio_line("    (descriptive, lrs by median t90)", kt_n, kt_a, 0.9)
+
+if A.json:   # ladder-1b: the selection job's input (runs/ptlr_1b/AUDIT.md); open = the edge of an open bracket
+    Path(A.json).write_text(json.dumps({f"{s_}|{a_}": {"status": st, "best": b if st == "ok" else None,
+                                                        "reasons": b if st == "withheld" else None,
+                                                        "open": openbr.get((s_, a_)),
+                                                        "grid": sorted(grid.get((s_, a_), {}), key=float)}
+                                        for (s_, a_), (st, b) in status.items()}, indent=1))
 
 # ---------------------------------------------------------------- rule 8: size trend
 print("\n## size trend (rule 8): slope of log R vs log N_nonemb, best-vs-best, sizes where none has >= 2 lrs")
@@ -542,6 +608,10 @@ for arm in PRIORS:
             continue
         if not bn or not ba or bn[0] != "ok" or ba[0] != "ok":
             print(f"  {arm}: {size} {'withheld' if (bn and bn[0] == 'withheld') or (ba and ba[0] == 'withheld') else 'incomplete'}")
+            pts = None
+            break
+        if size in SEL and (main[grid[(size, "none")][bn[1]]] is None or main[grid[(size, arm)][ba[1]]] is None):
+            print(f"  {arm}: {size} incomplete (seeds 0-3 at the picks: seeds 2-3 pending)")   # ladder-1b
             pts = None
             break
         pts.append((size, nne, grid[(size, "none")][bn[1]], grid[(size, arm)][ba[1]]))
