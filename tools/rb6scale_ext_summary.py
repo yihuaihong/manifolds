@@ -27,8 +27,17 @@ cells; then the pre-registered questions (rules: AUDIT.md "Read-out"):
                    s4_hard area + A8.2 learned k/4 beside it; the best tested none per metric (highest mean; INVALID
                    excluded; tie -> the lower lr) is the 190M comparison for S4 / dim: all6@6e-4 (and all6@1.2e-3) - that
                    none, labelled "best tested, chosen on these seeds 0-3".
+Amendment E1 (AUDIT.md, after the build audit, before any result): M1 Q1 prints that only 1.2e-3 was added (3e-4 untested);
+M2 the Q2 labels say "not necessary / involved, with the other four priors on" (redundancy, dose 6 -> 5 priors and the
+global clip not separated; the gradient split of the two cells printed beside); M3 a Q2 verdict other than UNDETERMINED
+needs >= 3/4 seeds on the same side of the threshold (per-seed f), else UNDETERMINED (seed-inconsistent); M4 the Q3
+answer lines say "the tested none configs at 3e8 tokens, not learnable / not learnable" and "YES = any of four configs,
+no multiplicity correction"; r or f outside [0, 1] flagged REVERSED (< 0) / OVERSHOOT (> 1) beside the pre-registered
+label (build audit L3); the finiteness assert of rainbow6_summary.check is relaxed ONLY for none@1.92e-2 (the cell that
+may diverge; L6), whose lm curve is summarised (a soft blow-up with finite loss is checked there before reading).
 A missing / excluded / unfinished run -> PROVISIONAL (n=k of 4) on every line that needs it; without --allow_partial the
-read-out refuses. A diverged run is data (A6 rule: its values over all evals count, its bpb is NOT TESTED).
+read-out refuses. A diverged none@1.92e-2 run is data (A6 rule: its values over all evals count, its bpb is NOT TESTED);
+a non-finite value in any other cell is an integrity failure (the read-out stops).
     python tools/rb6scale_ext_summary.py <runs/rb6_190m/out> <runs/rb6_190m_ext/out> [--allow_partial] [--json out.json]
 """
 import argparse
@@ -66,6 +75,18 @@ LABEL = "[seeds 0-3 (the main batch's lr-selection seeds): descriptive, no confi
 METRICS = DOMS + ("s4_hard", "bpb", "seen")
 THIRD = (1 / 3, 2 / 3)
 MIN_GAP = 10.0
+EXPECT_DIVERGE = ("none-lr1.92e-2",)   # E1 / build audit L6: the only arm whose non-finite values are data
+SEED_GATE = 0.75                       # E1 M3: a Q2 verdict needs >= 3/4 seeds on the same side of the threshold
+Q1_SCOPE = ("E1 M1: only 1.2e-3 was added above 6e-4 (the bottom of pt2s190's grid); the lower lr 3e-4 is NOT tested: "
+            "PERSISTS / LARGELY GONE answer 'at 1.2e-3', never 'the lr was tuned'")
+Q2_MEANING = ("E1 M2: f >= 2/3 only says 'with the other four domain priors on, the clock prior is not necessary for the "
+              "gap'; f <= 1/3 'the clock prior is involved (with the others)', never 'the clock prior alone causes it'; "
+              "neither separates redundancy, dose (six -> five priors) or the global-clip effect; no 'minus another prior' "
+              "control")
+Q3_MEANING = ("E1 M4: about the tested none configs (lr 6e-4 / 4.8e-3 / 9.6e-3 / 1.92e-2) at 3e8 tokens on seeds 0-3, never "
+              "'learnable / not learnable without a prior'; YES = any one of the four configs left the floor, no "
+              "multiplicity correction; LEFT the floor != learned (s4_hard learned k/4 beside); an INVALID config (a seen "
+              "< 80, e.g. after a divergence) is not counted")
 NOTES = [
     "lrs: none's 6e-4 / 4.8e-3 and the prior arms' 6e-4 are reused from pt2s190 (chosen on the numbers area, seeds 0-3); "
     "1.2e-3 / 9.6e-3 / 1.92e-2 are one grid step (x2) further; no cell is 'at its best lr' for a domain",
@@ -138,11 +159,40 @@ def attribution(mc, a6, on):
     gap = a6 - on
     if abs(gap) < MIN_GAP:
         return f"UNDETERMINED (|all6 - only-numbers| = {abs(gap):.1f} < {MIN_GAP:.0f} points: no gap to attribute)", None
-    f = (mc - on) / gap
-    lab = thirds(f, "~ all6: the clock gap is NOT from the clock prior (removing it leaves the gap)",
-                 "~ only-numbers: the clock prior (together with the other four domain priors) is involved in the gap",
+    f = (mc - on) / gap + 0.0   # + 0.0: no "-0.00" when mc = on
+    lab = thirds(f, "~ all6: with the other four domain priors on, the clock prior is NOT NECESSARY for the gap "
+                    "(removing it leaves the gap)",
+                 "~ only-numbers: the clock prior is INVOLVED in the gap (together with the other four domain priors)",
                  "UNDETERMINED (in between)")
     return lab, f
+
+
+def range_flag(x):
+    """build audit L3: a ratio outside [0, 1] beside its pre-registered label (the label is unchanged)."""
+    if x is None:
+        return None
+    return "REVERSED (< 0)" if x < -1e-9 else "OVERSHOOT (> 1)" if x > 1 + 1e-9 else None
+
+
+def q2_reading(mc, a6, on, per_seed):
+    """Q2 with E1 M3: the mean-level attribution label stands only if >= 3/4 of the paired seeds are on the same side of
+    its threshold (per-seed f_s >= 2/3 for '~ all6', <= 1/3 for '~ only-numbers'; a seed without a 10-point gap counts as
+    not on the side); otherwise UNDETERMINED (seed-inconsistent). per_seed {s: (mc_s, a6_s, on_s)}.
+    -> (label, f, {s: f_s}, k on the side, n)"""
+    lab, f = attribution(mc, a6, on)
+    fs = {s: attribution(*v)[1] for s, v in per_seed.items()}
+    n = len(fs)
+    if lab.startswith("~ all6"):
+        k = sum(v is not None and v >= THIRD[1] - 1e-9 for v in fs.values())
+    elif lab.startswith("~ only-numbers"):
+        k = sum(v is not None and v <= THIRD[0] + 1e-9 for v in fs.values())
+    else:
+        return lab, f, fs, None, n
+    if n == 0 or k < math.ceil(SEED_GATE * n - 1e-9):
+        side = ">= 2/3" if lab.startswith("~ all6") else "<= 1/3"
+        return (f"UNDETERMINED (seed-inconsistent: the mean f is past the line but only {k}/{n} seeds have f_s {side}; "
+                f"E1 M3 needs >= 3/4)"), f, fs, k, n
+    return lab, f, fs, k, n
 
 
 def persistence(d12, d6, diffs12):
@@ -186,7 +236,8 @@ def load_cells(roots, allow_partial):
                 excluded.append((f"{c} s{s} ({Path(x['path']).parent.parent.name})", bad))
                 del cells[c][s]
     xs = [x for c in cells.values() for x in c.values()]
-    R6.A6_ARMS = R6.A6_ARMS + tuple(sorted({x["arm"] for x in xs} - set(R6.A6_ARMS)))   # a diverged run is data (A6)
+    # E1 / build audit L6: only none@1.92e-2 may diverge as data (A6 rule); every other cell keeps the A5 finiteness assert
+    R6.A6_ARMS = R6.A6_ARMS + tuple(a for a in EXPECT_DIVERGE if a not in R6.A6_ARMS)
     warn = R6.check(xs, allow_partial) if xs else []
     for c in cells:   # unfinished = missing (A5.1 rule 1)
         cells[c] = {s: x for s, x in cells[c].items() if x["r"]["curve"][-1]["step"] == x["r"]["steps"] - 1}
@@ -331,10 +382,19 @@ def main():
     else:
         lab, r = "NOT DETERMINED (a clock row is not tested)", None
     pv = prov("all6-lam1@6e-4", "only-numbers@6e-4", "all6-lam1@1.2e-3", "only-numbers@1.2e-3")
+    rf = range_flag(r)
+    rs = {s: (d12_ / d6_ if abs(d6_) >= MIN_GAP else None) for s, d12_, d6_ in
+          zip(r12["seeds"], r12["diffs"], r6["diffs"])} if (r12 and r6 and not r12.get("note") and not r6.get("note")
+                                                             and r12["seeds"] == r6["seeds"]) else {}
+    rs_flag = {s: range_flag(v) for s, v in rs.items() if range_flag(v)}
     print(f"  Q1 READING (clock, pre-registered): d(6e-4) {fmt(r6 and r6.get('mean'), 6)}, d(1.2e-3) {fmt(r12 and r12.get('mean'), 6)}, "
-          f"r = {fmt(r, 5, 2)} -> {lab}" + (" PROVISIONAL" if pv else "")
+          f"r = {fmt(r, 5, 2)} -> {lab}" + (f" | FLAG r {rf}" if rf else "") + (" PROVISIONAL" if pv else "")
           + " [two lrs per prior arm: still not 'all6 at its best lr'; descriptive]")
-    out["readings"]["Q1"] = {"d6": r6 and r6.get("mean"), "d12": r12 and r12.get("mean"), "r": r, "label": lab, "provisional": pv}
+    print("    per seed r_s: " + " ".join(f"s{s} {fmt(v, 5, 2)}" for s, v in rs.items())
+          + (f"; outside [0, 1]: {', '.join(f's{s} {v}' for s, v in rs_flag.items())}" if rs_flag else "; all within [0, 1]"))
+    print(f"    NOTE {Q1_SCOPE}")
+    out["readings"]["Q1"] = {"d6": r6 and r6.get("mean"), "d12": r12 and r12.get("mean"), "r": r, "label": lab, "provisional": pv,
+                             "r_flag": rf, "per_seed_r": rs, "per_seed_flags": rs_flag, "scope": Q1_SCOPE}
 
     # ---- Q2
     print(f"\n== Q2 (attribution of the clock gap at 6e-4) {LABEL}")
@@ -347,26 +407,54 @@ def main():
     mc, a6, on = (out["cells"].get(f"{c}|clock", {}) for c in ("all6-minus-clock@6e-4", "all6-lam1@6e-4", "only-numbers@6e-4"))
     pv = prov("all6-minus-clock@6e-4", "all6-lam1@6e-4", "only-numbers@6e-4")
     if all(x.get("mean") is not None for x in (mc, a6, on)):
-        lab, f = attribution(mc["mean"], a6["mean"], on["mean"])
         ss = [s for s in SEEDS if s in mc["seeds"] and s in a6["seeds"] and s in on["seeds"]]
         val = lambda x, s: x["values"][x["seeds"].index(s)]
-        per = {s: attribution(val(mc, s), val(a6, s), val(on, s)) for s in ss}
-        same = sum(per[s][0] == lab for s in ss)
-        print(f"  Q2 READING (pre-registered): gap all6 - only-numbers {a6['mean'] - on['mean']:+.1f}; all6-minus-clock - "
-              f"only-numbers {mc['mean'] - on['mean']:+.1f}; f = {fmt(f, 5, 2)} -> {lab}" + (" PROVISIONAL" if pv else ""))
-        print("    per seed f_s: " + " ".join(f"s{s} {fmt(per[s][1], 5, 2)}" for s in ss)
-              + f"; {same}/{len(ss)} seeds give the same reading (descriptive)")
-        out["readings"]["Q2"] = {"label": lab, "f": f, "gap": a6["mean"] - on["mean"], "per_seed": {s: per[s][1] for s in ss},
-                                 "seeds_same": same, "provisional": pv}
+        lab, f, fs, k, n = q2_reading(mc["mean"], a6["mean"], on["mean"], {s: (val(mc, s), val(a6, s), val(on, s)) for s in ss})
+        ff = range_flag(f)
+        fs_flag = {s: range_flag(v) for s, v in fs.items() if range_flag(v)}
+        print(f"  Q2 READING (pre-registered, E1 M3 seed gate): gap all6 - only-numbers {a6['mean'] - on['mean']:+.1f}; "
+              f"all6-minus-clock - only-numbers {mc['mean'] - on['mean']:+.1f}; f = {fmt(f, 5, 2)} -> {lab}"
+              + (f" | FLAG f {ff}" if ff else "") + (" PROVISIONAL" if pv else ""))
+        print("    per seed f_s: " + " ".join(f"s{s} {fmt(v, 5, 2)}" for s, v in fs.items())
+              + (f"; {k}/{n} seeds on the side of the mean's threshold" if k is not None else "")
+              + (f"; outside [0, 1]: {', '.join(f's{s} {v}' for s, v in fs_flag.items())}" if fs_flag else "; all within [0, 1]"))
+        print(f"    NOTE {Q2_MEANING}")
+        gsp = lambda c: " ".join(f"s{s} LM {g['lm_share']:.2f} clip {g['clip']:.2f}" if isinstance(g, dict) else f"s{s} {g}"
+                                 for s, g in ((s, out["grad_split"].get(f"{c}|s{s}")) for s in SEEDS) if g is not None)
+        print(f"    gradient split beside Q2 (dose / clip, E1 M2; window medians): all6-lam1@6e-4 {gsp('all6-lam1@6e-4')} | "
+              f"all6-minus-clock@6e-4 {gsp('all6-minus-clock@6e-4')}")
+        out["readings"]["Q2"] = {"label": lab, "f": f, "f_flag": ff, "gap": a6["mean"] - on["mean"], "per_seed": fs,
+                                 "per_seed_flags": fs_flag, "seeds_on_side": k, "n": n, "provisional": pv, "meaning": Q2_MEANING}
     else:
         print("  Q2 READING: NOT DETERMINED (a cell has no complete mean)")
-        out["readings"]["Q2"] = {"label": "NOT DETERMINED", "provisional": True}
+        out["readings"]["Q2"] = {"label": "NOT DETERMINED", "provisional": True, "meaning": Q2_MEANING}
     family("Q2-other", "what the two new prior cells do elsewhere (descriptive): all6-minus-clock - all6, only-clock - none@6e-4",
            [("all6-minus-clock@6e-4", "all6-lam1@6e-4", d) for d in DOMS + ("s4_hard", "bpb") if d != "clock"]
            + [("only-clock@6e-4", "none@6e-4", d) for d in DOMS + ("bpb",) if d != "clock"])
 
     # ---- Q3
     print(f"\n== Q3 (none at higher lrs: S4 / dim at 190M) {LABEL}")
+    # E1: none@1.92e-2 may diverge; a soft blow-up with finite loss is checked on its lm curve before reading
+    print("  none@1.92e-2 lm curve (training lm at the evals; val_loss last): step-0, 1000, 5000, 9000, 13000, last; min (step); "
+          "max rise above the running minimum after it (step); DIVERGED step")
+    out["lm_curve"] = {}
+    for s, x in sorted(cells.get("none@1.92e-2", {}).items()):
+        c_ = x["r"]["curve"]
+        at = lambda st: next((e["lm"] for e in c_ if e["step"] >= st), None)
+        lms = [(e["step"], e["lm"]) for e in c_ if e["lm"] is not None and math.isfinite(e["lm"])]
+        mn = min(lms, key=lambda z: z[1]) if lms else (None, None)
+        run_min, rise, rise_st = float("inf"), 0.0, None
+        for st, v in lms:
+            run_min = min(run_min, v)
+            if v - run_min > rise:
+                rise, rise_st = v - run_min, st
+        div = R6.diverged_at(x["r"])
+        out["lm_curve"][s] = dict(at={st: at(st) for st in (0, 1000, 5000, 9000, 13000)}, last=c_[-1]["lm"],
+                                  val_last=c_[-1]["val_loss"], min=mn, max_rise=rise, rise_step=rise_st, diverged_at=div)
+        print(f"    s{s} " + " ".join(fmt(at(st), 6, 3) for st in (0, 1000, 5000, 9000, 13000)) + f" {fmt(c_[-1]['lm'], 6, 3)}; "
+              f"val_loss last {fmt(c_[-1]['val_loss'], 6, 3)}; min {fmt(mn[1], 6, 3)} ({mn[0]}); max rise {rise:.3f} ({rise_st})"
+              + (" <- inspect: a rise > 0.5 nats above the running minimum (possible soft blow-up)" if rise > 0.5 else "")
+              + (f"; DIVERGED at step {div}" if div is not None else "; finite throughout"))
     ans, best = {}, {}
     for mt in ("s4", "dim"):
         labels = {}
@@ -377,8 +465,11 @@ def main():
             print(f"    {mt:4s} {c:14s} {fmt(mean_of(c, mt))} seed CI [{fmt(ci[0], 5)},{fmt(ci[1], 5)}] vs floor "
                   f"{(g['floor'] if g else float('nan')):.1f}: {g['verdict'] if g else '-'} -> {labels[c]}")
         ans[mt] = floor_answer(labels)
-        print(f"  Q3 ANSWER {mt}: {ans[mt]}" + (" PROVISIONAL" if prov(*NONE_GRID) else ""))
-        out["readings"][f"Q3_{mt}"] = {"labels": labels, "answer": ans[mt], "provisional": prov(*NONE_GRID)}
+        inv = [c for c, l in labels.items() if l.startswith("INVALID")]
+        print(f"  Q3 ANSWER {mt}: {ans[mt]}" + (" PROVISIONAL" if prov(*NONE_GRID) else "")
+              + (f" (INVALID, not counted: {', '.join(inv)})" if inv else ""))
+        print(f"    NOTE {Q3_MEANING}")
+        out["readings"][f"Q3_{mt}"] = {"labels": labels, "answer": ans[mt], "provisional": prov(*NONE_GRID), "meaning": Q3_MEANING}
     for c in NONE_GRID:
         hv = out["cells"].get(f"{c}|s4_hard", {})
         cs = cells.get(c, {})

@@ -1,0 +1,34 @@
+E2E all6-lam1@1.2e-3 s2: job rc 0; check PASS; n_params 6615232; code_sha 93e22bf4c4c0 dep {'toy_struct.py': 'd182ce548bcc'}; step-0 lm run 11.52961254119873 vs CPU reference 11.52961254119873
+  PASS run args = intent (45 fields)  ({})
+  PASS code_sha 93e22bf4c4c0  (93e22bf4c4c0)
+  PASS dep_sha toy_struct.py d182ce548bcc  ({'toy_struct.py': 'd182ce548bcc'})
+  PASS run facts = intent {"steps": 40, "n_params": 6615232, "grad_ckpt_on": true, "geo_layers": [1, 2], "read_layers": [1, 2], "lm_chunk": 0, "eval_every_st  ({'steps': 40, 'n_params': 6615232, 'grad_ckpt_on': True, 'geo_layers': [1, 2], 'read_layers': [1, 2], 'lm_chunk': 0, 'eval_every_steps': 10, 'lam_rule)
+  PASS lambda per domain = intent {"numbers": 1.0, "months": 1.0, "weekdays": 1.0, "clock": 1.0, "s4": 1.0, "dim": 1.0}  ({'numbers': 1.0, 'months': 1.0, 'weekdays': 1.0, 'clock': 1.0, 's4': 1.0, 'dim': 1.0})
+  PASS domains.<d> prior / shuf / lam = intent (active numbers,months,weekdays,clock,s4,dim; shuffled none)  ({'numbers': [True, False, 1.0], 'months': [True, False, 1.0], 'weekdays': [True, False, 1.0], 'clock': [True, False, 1.0], 's4': [True, False, 1.0], ')
+  PASS finished: 5 evals, increasing, the last at step 39  ([5, 39])
+  PASS data_sha after step 0 = Torch's 380b9fb3cf4082a9  (380b9fb3cf4082a9)
+  PASS step-0 lm within 1e-3 of the Torch CPU reference (same init and first batch; the prior is off at step 0)  (0.0)
+  PASS the numbers line is the first line after the text in every row (A2)  ({'numbers': 1.0, 'months': 0.0, 'weekdays': 0.0, 'clock': 0.0, 's4': 0.0, 'dim': 0.0})
+  PASS numbers token share in [0.1, 0.25] (the 2% setting; Torch dry 2.12-2.13%)  (0.1707275390625)
+  PASS domain lines per slot after the numbers line: K = 2 slots, every slot within 1/K +- 0.05 of every domain's lines  ({'months': [0.47265625, 0.52734375], 'weekdays': [0.521484375, 0.478515625], 'clock': [0.5, 0.5], 's4': [0.49609375, 0.50390625], 'dim': [0.509765625,)
+  PASS domain splits = Torch's dry run {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_it  ({'months': {'n_train': 118, 'n_held': 106, 'n_heldE': 40, 'n_readout': 106, 'n_readoutE': 40, 'readout': 'held', 'n_items': 12}, 'weekdays': {'n_train)
+  PASS held-out-format templates {'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3}, scored at every eval (36 sets)  ({'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3})
+  PASS prior_events == [[2, 1], [16, 0]]  ([[2, 1], [16, 0]])
+  PASS prior_on_frac == 0.350000  (0.35)
+  PASS prior_on_domains: the active priors (numbers,months,weekdays,clock,s4,dim) on exactly at the evals with prior_on, every other domain never  ({'numbers': 1, 'months': 1, 'weekdays': 1, 'clock': 1, 's4': 1, 'dim': 1})
+  PASS numbers prior applied on every on-step (ctx: prior_used_frac == prior_used_frac_numbers == prior_on_frac)  ([0.35, 0.35, 0.35])
+  PASS every active domain prior applied on >= 95% of the on-steps; every inactive one never  ({'months': 0.35, 'weekdays': 0.35, 'clock': 0.35, 's4': 0.35, 'dim': 0.35})
+  PASS geo_<d> logged at >= 95% of the evals for every active domain prior, never for an inactive one  ({'months': 5, 'weekdays': 5, 'clock': 5, 's4': 5, 'dim': 5})
+  PASS weighted prior gradients at the on-evals from the active priors only (each at >= 90% of the on-evals)  ({'numbers': 1, 'months': 1, 'weekdays': 1, 'clock': 1, 's4': 1, 'dim': 1})
+  PASS gnorm_prior_<d> / gnorm_true_<d> = lambda (rel. 1e-3) at every on-eval, every unshuffled active prior  ({'numbers': [1.0, 1.0, 1], 'months': [1.0, 1.0, 1], 'weekdays': [1.0, 1.0, 1], 'clock': [1.0, 1.0, 1], 's4': [1.0, 1.0, 1], 'dim': [1.0, 1.0, 1]})
+  PASS geo > -0.001 for every active prior (float CKA exceeds 1 at a perfect fit: pilot 411 / 416) and 0 < grad_prior < inf at every eval where the priors ac  (1)
+  PASS CKA to the target USED rises by >= -1 from step 0 to the window's last eval (step 10), every active prior (true target: cka_<d> / cka_ops_helix3; shuf  ({'used': {'numbers': 0.0156, 'months': 0.2559, 'weekdays': 0.2888, 'clock': 0.2059, 's4': 0.071, 'dim': 0.1545}, 'true': {'numbers': 0.0156, 'months':)
+  PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (1.076057341009573e-07)
+E2E PASS
+  RUN numbers  intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+  RUN months   intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+  RUN weekdays intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+  RUN clock    intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+  RUN s4       intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+  RUN dim      intended ON : {'prior': True, 'lam': 1.0, 'used': 0.35, 'geo_evals': 5, 'gnorm_evals': 1, 'mult': [1.0, 1.0]} -> OK
+RUN PRIORS OK (all6-lam1: on = numbers,months,weekdays,clock,s4,dim; lambda per active prior 1; n on-evals 1)

@@ -1,0 +1,54 @@
+===== seed 0: all6-minus-clock@6e-4 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of all6-minus-clock@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior False lam 0.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 1): '1 month after⟦ January⟧ is« February\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 8): '8 months after⟦ January⟧ is« September\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 1): '1 day after⟦ Monday⟧ is« Tuesday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+  SAME |   eval held row 1 (len 512, text 497 tokens, numbers line at 497.., sites at [508], scored 2 tokens at 510..511): ...' open, inclusive and democratic,
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+===== seed 0: only-clock@6e-4 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of only-clock@6e-4: months prior False lam 0.0; weekdays prior False lam 0.0; clock prior True lam 1.0; s4 prior False lam 0.0; dim prior False lam 0.0; numbers prior False lam 0.0 target none
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 1): '1 month after⟦ January⟧ is« February\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 8): '8 months after⟦ January⟧ is« September\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 1): '1 day after⟦ Monday⟧ is« Tuesday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+  SAME |   eval held row 1 (len 512, text 497 tokens, numbers line at 497.., sites at [508], scored 2 tokens at 510..511): ...' open, inclusive and democratic,
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+===== seed 0: none@1.92e-2 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of none@1.92e-2: months prior False lam 0.0; weekdays prior False lam 0.0; clock prior False lam 0.0; s4 prior False lam 0.0; dim prior False lam 0.0; numbers prior False lam 0.0 target none
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 1): '1 month after⟦ January⟧ is« February\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 8): '8 months after⟦ January⟧ is« September\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 1): '1 day after⟦ Monday⟧ is« Tuesday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+  SAME |   eval held row 1 (len 512, text 497 tokens, numbers line at 497.., sites at [508], scored 2 tokens at 510..511): ...' open, inclusive and democratic,
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' delen, learnings uitCompute 92 
+===== seed 3: all6-minus-clock@6e-4 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of all6-minus-clock@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior False lam 0.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 2): '2 months after⟦ January⟧ is« March\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 months after⟦ January⟧ is« April\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 days after⟦ Monday⟧ is« Thursday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 
+  SAME |   eval held row 1 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' trade do not especially encoura
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 
+===== seed 3: only-clock@6e-4 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of only-clock@6e-4: months prior False lam 0.0; weekdays prior False lam 0.0; clock prior True lam 1.0; s4 prior False lam 0.0; dim prior False lam 0.0; numbers prior False lam 0.0 target none
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 2): '2 months after⟦ January⟧ is« March\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 months after⟦ January⟧ is« April\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 days after⟦ Monday⟧ is« Thursday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 
+  SAME |   eval held row 1 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' trade do not especially encoura
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 
+===== seed 3: none@1.92e-2 (left) vs main all6-lam1@6e-4 (right)
+  domains: line of none@1.92e-2: months prior False lam 0.0; weekdays prior False lam 0.0; clock prior False lam 0.0; s4 prior False lam 0.0; dim prior False lam 0.0; numbers prior False lam 0.0 target none
+  domains: line of main all6-lam1@6e-4: months prior True lam 1.0; weekdays prior True lam 1.0; clock prior True lam 1.0; s4 prior True lam 1.0; dim prior True lam 1.0; numbers prior True lam 1.0 target helix3
+  SAME |   train line (0, 2): '2 months after⟦ January⟧ is« March\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 months after⟦ January⟧ is« April\n»' sites [(3, 0)] answer span 2
+  SAME |   train line (0, 3): '3 days after⟦ Monday⟧ is« Thursday\n»' sites [(3, 0)] answer span 2
+  SAME |   eval held row 0 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 
+  SAME |   eval held row 1 (len 512, text 493 tokens, numbers line at 493.., sites at [508], scored 2 tokens at 510..511): ...' trade do not especially encoura
+  SAME |   eval p1_held row 0 (len 512, text 489 tokens, numbers line at 489.., sites at [], scored 2 tokens at 510..511): ...' Xing||River Cruise||The sum of 

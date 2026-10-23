@@ -1,0 +1,25 @@
+E2E none@1.92e-2 s2: job rc 0; check PASS; n_params 6615232; code_sha 93e22bf4c4c0 dep {'toy_struct.py': 'd182ce548bcc'}; step-0 lm run 11.52961254119873 vs CPU reference 11.52961254119873
+  PASS run args = intent (45 fields)  ({})
+  PASS code_sha 93e22bf4c4c0  (93e22bf4c4c0)
+  PASS dep_sha toy_struct.py d182ce548bcc  ({'toy_struct.py': 'd182ce548bcc'})
+  PASS run facts = intent {"steps": 40, "n_params": 6615232, "grad_ckpt_on": true, "geo_layers": [1, 2], "read_layers": [1, 2], "lm_chunk": 0, "eval_every_st  ({'steps': 40, 'n_params': 6615232, 'grad_ckpt_on': True, 'geo_layers': [1, 2], 'read_layers': [1, 2], 'lm_chunk': 0, 'eval_every_steps': 10, 'lam_rule)
+  PASS lambda per domain = intent {"numbers": 0.0, "months": 0.0, "weekdays": 0.0, "clock": 0.0, "s4": 0.0, "dim": 0.0}  ({'numbers': 0.0, 'months': 0.0, 'weekdays': 0.0, 'clock': 0.0, 's4': 0.0, 'dim': 0.0})
+  PASS domains.<d> prior / shuf / lam = intent (active ; shuffled none)  ({'numbers': [False, False, 0.0], 'months': [False, False, 0.0], 'weekdays': [False, False, 0.0], 'clock': [False, False, 0.0], 's4': [False, False, 0.)
+  PASS finished: 5 evals, increasing, the last at step 39  ([5, 39])
+  PASS data_sha after step 0 = Torch's 380b9fb3cf4082a9  (380b9fb3cf4082a9)
+  PASS step-0 lm within 1e-3 of the Torch CPU reference (same init and first batch; the prior is off at step 0)  (0.0)
+  PASS the numbers line is the first line after the text in every row (A2)  ({'numbers': 1.0, 'months': 0.0, 'weekdays': 0.0, 'clock': 0.0, 's4': 0.0, 'dim': 0.0})
+  PASS numbers token share in [0.1, 0.25] (the 2% setting; Torch dry 2.12-2.13%)  (0.1707275390625)
+  PASS domain lines per slot after the numbers line: K = 2 slots, every slot within 1/K +- 0.05 of every domain's lines  ({'months': [0.47265625, 0.52734375], 'weekdays': [0.521484375, 0.478515625], 'clock': [0.5, 0.5], 's4': [0.49609375, 0.50390625], 'dim': [0.509765625,)
+  PASS domain splits = Torch's dry run {"months": {"n_train": 118, "n_held": 106, "n_heldE": 40, "n_readout": 106, "n_readoutE": 40, "readout": "held", "n_it  ({'months': {'n_train': 118, 'n_held': 106, 'n_heldE': 40, 'n_readout': 106, 'n_readoutE': 40, 'readout': 'held', 'n_items': 12}, 'weekdays': {'n_train)
+  PASS held-out-format templates {'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3}, scored at every eval (36 sets)  ({'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3})
+  PASS no prior ever on (prior_on_frac 0, no events, no domain prior on or applied, no prior loss term or gradient)  (0.0)
+  PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (-3.58685778856227e-08)
+E2E PASS
+  RUN numbers  intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+  RUN months   intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+  RUN weekdays intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+  RUN clock    intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+  RUN s4       intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+  RUN dim      intended OFF: {'prior': False, 'lam': 0.0, 'used': 0.0, 'geo_evals': 0, 'gnorm_evals': 0, 'mult': None} -> OK
+RUN PRIORS OK (none: on = none; lambda per active prior 1; n on-evals 0)
