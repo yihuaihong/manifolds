@@ -3,9 +3,14 @@ Intent spec / pre-registration: llmadd_torch/runs/downstream/AUDIT.md. One job p
 already evaluated with the same eval code (or not finished yet), so re-running a group later only adds the new models:
 
     python tools/make_downstream_jobs.py --groups rb6_505m --submit      # e.g. when runs/rb6_505m has finished
+    # if downstream_eval.py changed since the known-answer files were written, first re-run the KA job and chain:
+    python tools/make_downstream_jobs.py --groups ka --submit; python tools/make_downstream_jobs.py --groups rb6_505m --submit --after <ka job id>
 
-The code is snapshotted into runs/downstream/code/ (sha256-pinned in every sbatch; a pending job whose snapshot changed
-exits); runs/downstream/HOLD makes a pending job exit at start (no scancel needed).
+Every group job runs the read-out selftest and the known-answer gate (all KA files of the current eval code, every
+load-check model) before scoring anything. The code is snapshotted into runs/downstream/code_<commit>/ (sha256-pinned in
+every sbatch; the first batch of 2026-10-22 runs from runs/downstream/code = commit 2dc8375); runs/downstream/HOLD makes
+a pending job exit at start (no scancel needed). Comparisons for new groups must be pre-registered (AUDIT.md amendment)
+before their scores are read.
 """
 
 from __future__ import annotations
@@ -60,7 +65,11 @@ def main() -> None:
     commit = subprocess.run(["git", "-C", str(tools), "rev-parse", "--short=12", "HEAD"], capture_output=True, text=True).stdout.strip()
     dirty = subprocess.run(["git", "-C", str(tools), "status", "--porcelain", "--", *FILES], capture_output=True, text=True).stdout.strip()
     assert not dirty, f"commit the eval code first: {dirty}"   # before touching the snapshot (pending jobs pin it)
-    code = R / "code"; code.mkdir(parents=True, exist_ok=True)
+    # A2: one snapshot per commit (code_<commit>): a later batch never rewrites the code a pending job pins (the 2026-10-22
+    # batch 20678044 / 71 / 76 / 80 / 84 runs from runs/downstream/code = commit 2dc8375)
+    from downstream_readout import LOADCHECK_NAMES
+    assert tuple(f"{p.parent.name}_s0" for p in LOADCHECK) == LOADCHECK_NAMES, "LOADCHECK != the gate's LOADCHECK_NAMES"
+    code = R / f"code_{commit}"; code.mkdir(parents=True, exist_ok=True)
     for f in FILES:
         shutil.copy(tools / f, code / f)
     (code / "COMMIT").write_text(f"git {commit} (branch downstream)\n" + "".join(f"{f} {sha(code / f)}\n" for f in FILES))
@@ -81,11 +90,12 @@ def main() -> None:
             globs, tlim = GROUPS[g]
             body = "\n".join([
                 '# pre-registered known-answer gate (AUDIT.md): no project model is scored unless every check passed',
+                '"$PY" downstream_readout.py --selftest > /dev/null || { echo "## read-out selftest FAILED: exiting"; exit 5; }',
                 '"$PY" downstream_readout.py --out_dir "$R/out" --ka_gate || { echo "## known-answer gate FAILED: exiting"; exit 5; }',
                 f'"$PY" downstream_eval.py --out_dir "$R/out" ' + " ".join(f"'{x}'" for x in globs),
                 '# refresh the pre-registered read-out with everything evaluated so far (the last job to finish writes the full one)',
                 '"$PY" downstream_readout.py --out_dir "$R/out" --write "$R/readout" > /dev/null'])
-        job = R / "jobs" / f"job_{g}.sbatch"
+        job = R / "jobs" / f"job_{g}_{commit}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_down_{g}
 #SBATCH --account=torch_pr_520_tandon_priority
@@ -104,7 +114,7 @@ def main() -> None:
 set -euo pipefail
 R={R}; PY={PY}
 if [ -e "$R/HOLD" ]; then echo "HOLD present: exiting"; exit 0; fi
-cd "$R/code"
+cd "{code}"
 {pins}
 GPU=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n 1); echo "GPU: $GPU"
 case "$GPU" in *A100*) ;; *) echo "## not an A100: exiting"; exit 3;; esac

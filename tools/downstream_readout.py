@@ -175,9 +175,30 @@ def reference(cells, group):
         rows[c] = (recs, [bpb_of(r) for r in recs])
     full = all(len(recs) == len(SEEDS) and all(o is not None for o, _ in bp) for recs, bp in rows.values())
     src = "offline bpb_full" if full else "logged final val_bits_per_byte"
+    if not all(len(recs) == len(SEEDS) for recs, _ in rows.values()):   # A2: chosen on partial cells -> provisional
+        src += " (PROVISIONAL: a none cell lacks seeds 0-3)"
     mean_bpb = {c: statistics.fmean((o if full else l) for o, l in bp) for c, (recs, bp) in rows.items() if bp}
     best = min(mean_bpb, key=mean_bpb.get) if mean_bpb else None
     return best, src, mean_bpb
+
+
+def check_pair(cells, cp) -> list:
+    """Amendment A2: identity of the two arms from the records, not only the directory names: the prior arm trains with a
+    target (not none), the none arm without; same lr, same training code, same n_params, same architecture; the model file
+    name carries the run's target and seed. Returns problems (the read-out stops on any)."""
+    P, N = cells.get(cp["prior"], {}), cells.get(cp["none"], {})
+    bad = []
+    for s in sorted(set(P) & set(N)):
+        p, n = P[s], N[s]
+        for r in (p, n):
+            if f"_{r['target']}_seed{r['seed']}_" not in Path(r["model"]).name:
+                bad.append(f"{cp['id']} s{s}: model file {Path(r['model']).name} does not carry target {r['target']} seed {r['seed']}")
+        if p["target"] == "none" or n["target"] != "none":
+            bad.append(f"{cp['id']} s{s}: targets prior {p['target']} / none {n['target']}")
+        for k in ("lr", "train_code_sha", "n_params", "d_model", "n_layers", "seed"):
+            if p.get(k) != n.get(k):
+                bad.append(f"{cp['id']} s{s}: {k} differs ({p.get(k)} vs {n.get(k)})")
+    return bad
 
 
 def analyse(cells: dict) -> dict:
@@ -197,14 +218,19 @@ def analyse(cells: dict) -> dict:
         for s, r in v.items():
             for b in BENCH:
                 ch = r["scores"][b].get("chance", CHANCE.get(b, 0.0))
-                if score(r, b) < ch - 3:
-                    an.append(f"{c} s{s} {b} {PRIMARY[b]} {score(r, b):.2f} < chance {ch:.1f} - 3")
+                for m in ("acc", "acc_norm"):   # A2: every accuracy metric, not only the primary one
+                    v = r["scores"][b].get(m)
+                    if v is not None and not (ch - 3 <= v <= 100):
+                        an.append(f"{c} s{s} {b} {m} {v:.2f} outside [chance {ch:.1f} - 3, 100]")
                 if r["scores"][b]["double_path"].get("greedy_mismatch", 0):
                     an.append(f"{c} s{s} {b}: double path greedy mismatch {r['scores'][b]['double_path']['greedy_mismatch']}/24")
             lc = r.get("load_check") or {}
             if abs(lc.get("replica_minus_logged", 0.0)) > 2e-3:
                 an.append(f"{c} s{s}: load check |replica - logged| {lc['replica_minus_logged']:+.2e} > 2e-3")
     res["anomalies"] = an
+    ident = [x for cp in COMPARISONS for x in check_pair(cells, cp)]
+    assert not ident, ("arm identity check failed (Amendment A2)", ident)
+    res["checks"]["arm_identity"] = "PASS (target / lr / train code / n_params / arch / file name, every common seed)"
     for cp in COMPARISONS:
         e = dict(cp, stats=paired(cells, cp["prior"], cp["none"], BENCH, boot=True))
         ref = res["reference"][cp["group"]]["cell"]
@@ -253,7 +279,9 @@ def report(res: dict, ka: dict | None = None) -> str:
     ck = res["checks"]
     L += [f"eval code sha(s): {ck['eval_code_shas']}; setups (prefix, max_len, dtype): {ck['setups']}; "
           f"n mismatches: {len(ck['n_mismatch'])}; truncated sequences: {ck['n_trunc']}; max double-path |dloglik|: "
-          f"{ck['max_double_path']:.1e}" if ck["max_double_path"] is not None else "no records", ""]
+          f"{ck['max_double_path']:.1e}; arm identity: {ck.get('arm_identity')}; records: "
+          f"{sum(len(v) for v in res['cells'].values())} models in {len(res['cells'])} cells"
+          if ck["max_double_path"] is not None else "no records", ""]
     if ka:
         L += ["## Known-answer checks", ""] + ka["lines"] + [""]
     L += ["## Anomaly flags", ""] + ([f"- {x}" for x in res.get("anomalies", [])] or ["- none"]) + [""]
@@ -265,7 +293,7 @@ def report(res: dict, ka: dict | None = None) -> str:
         L += [f"## {role.upper()} comparisons (prior - none, same lr, same seeds; points; 95% t-CI; margin 1.0)", "",
               "\"undetermined\" means n = 4 seeds cannot tell; it is NOT \"no cost\". The seed x item bootstrap interval is "
               "descriptive (Amendment A1), not a verdict.", "",
-              "| id | comparison | benchmark | prior | none | mean d | 95% t-CI | seed x item bootstrap | wins | per seed | verdict |",
+              "| id | comparison | benchmark | prior | none | mean d | 95% t-CI | seed x item bootstrap | wins (ties) | per seed | verdict |",
               "|---|---|---|---|---|---|---|---|---|---|---|"]
         for e in res["comparisons"]:
             if e["role"] != role:
@@ -279,7 +307,7 @@ def report(res: dict, ka: dict | None = None) -> str:
                 bt = s.get("boot2")
                 L.append(f"| {e['id']} | {e['group']} {e['label']} | {b} {PRIMARY[b]} | {s['prior_mean']:.2f} | "
                          f"{s['none_mean']:.2f} | {s['mean']:+.2f} | [{f(s['lo'])}, {f(s['hi'])}] | "
-                         + (f"[{bt['lo']:.2f}, {bt['hi']:.2f}]" if bt else "–") + f" | {s['wins']}/{s['n']} | "
+                         + (f"[{bt['lo']:.2f}, {bt['hi']:.2f}]" if bt else "–") + f" | {s['wins']}/{s['n']} ({s['ties']} ties) | "
                          + " ".join(f"{x:+.2f}" for x in s["d"]) + f" | {v} |")
             p = e["stats"].get("lambada_ppl_ratio")
             if p:
@@ -303,6 +331,8 @@ def report(res: dict, ka: dict | None = None) -> str:
         cs = []
         for b in BENCH:
             x = r[b]
+            if r["d_model"] < 768 and b not in ("blimp", "lambada"):   # A1 item 7: 53M rows show BLiMP / LAMBADA only
+                cs.append("(53M: not reported)"); continue
             t = f"{x['mean03']:.2f} ± {f(x['sd03'])}" if x["mean03"] is not None else "–"
             if x["n_all"] > x["n03"]:
                 t += f" (all {x['n_all']}: {x['mean_all']:.2f})"
@@ -330,6 +360,8 @@ def tol(n: int, p: float) -> float:
 
 
 LOAD_GATE = 2e-3   # bpb, |in-training replica - logged final| for the load-check-only models (Amendment A1)
+LOADCHECK_NAMES = ("500m-lr1.2e-3-7pct-none_s0", "53m-lr4e-3-7pct-none_s0", "500m-7pct-none_s0", "7pct-none_s0",
+                   "rb6tb-190m-2pct-k2-none-lr6e-4_s0")   # = make_downstream_jobs.LOADCHECK (asserted there)
 
 
 def known_answer(out_dir: Path, sha: str | None = None) -> dict:
@@ -381,9 +413,8 @@ def known_answer(out_dir: Path, sha: str | None = None) -> dict:
                      f"{pq['length_heuristic']['fewest_tokens_acc']:.2f}, n equal {pq['n_equal_len']}), BLiMP all pairs "
                      f"{bl['acc']:.2f} (shorter-good share {bl['length_heuristic']['shorter_good_share']:.1f}, n equal "
                      f"{bl['n_equal_len']})")
-    lcs = sorted(ka.glob("loadcheck_*.json"))
-    if not lcs:
-        ok = False; lines.append("- MISSING loadcheck_*.json")
+    # A2: the full expected set (one model per training-code version, make_downstream_jobs.LOADCHECK); a missing one fails
+    lcs = [ka / f"loadcheck_{n}.json" for n in LOADCHECK_NAMES]
     for p in lcs:
         r = get(p)
         if r is None:
@@ -405,6 +436,7 @@ def _fake_rec(model, seed, lr, d_model, sc, bpb=1.0, ppl=100.0, chance_arc=25.03
     S["arc_easy"]["chance"] = chance_arc
     return {"kind": "project", "limit": 0, "model": model, "run_json": model.replace("model_", "run_").replace(".pt", ".json"),
             "seed": seed, "lr": lr, "d_model": d_model, "eval_code_sha": "fake", "prefix": "eos", "max_len": 512,
+            "target": "none" if "_none_seed" in model else "helix3", "train_code_sha": "t", "n_params": d_model, "n_layers": 1,
             "dtype": "fp32", "val_bpb_logged_final": bpb, "scores": S,
             "tok_stats": {b: {"n_trunc": 0} for b in BENCH}}
 
@@ -417,7 +449,7 @@ def selftest() -> None:
 
         def put(fam, cell, seed, lr, dm, sc, bpb=1.0, ppl=100.0, offline=None):
             md = runs / fam / "out" / cell; md.mkdir(parents=True, exist_ok=True)
-            mp = str(md / f"model_whole_x_seed{seed}_{cell}.pt")
+            mp = str(md / f"model_whole_{'none' if 'none' in cell.split('-') else 'helix3'}_seed{seed}_{cell}.pt")
             r = _fake_rec(mp, seed, lr, dm, sc, bpb, ppl)
             (out / fam).mkdir(parents=True, exist_ok=True)
             (out / fam / f"{Path(mp).stem}.json").write_text(json.dumps(r))
@@ -476,6 +508,17 @@ def selftest() -> None:
         assert len(res["desc7"]) == 1 and abs(res["desc7"][0]["d"]["blimp"] - 1.0) < 1e-9 and "hellaswag" not in res["desc7"][0]["d"]
         txt = report(res)
         assert "| P1 |" in txt and "INCOMPLETE" in txt and "worse" in txt
+        # A2 arm identity: a swapped target, a different lr / training code or a file name without the run's target is caught
+        cells_ = load(out)
+        assert not check_pair(cells_, COMPARISONS[0])
+        x = json.loads(json.dumps(cells_)); x["ptlr/500m-lr1.2e-3-7pct-win-ctx"]["1"]["target"] = "none"
+        assert check_pair({c: {int(k): v for k, v in d.items()} for c, d in x.items()}, COMPARISONS[0])
+        x = json.loads(json.dumps(cells_)); x["ptlr/500m-lr1.2e-3-7pct-none"]["2"]["lr"] = 3e-4
+        assert check_pair({c: {int(k): v for k, v in d.items()} for c, d in x.items()}, COMPARISONS[0])
+        x = json.loads(json.dumps(cells_)); x["ptlr/500m-lr1.2e-3-7pct-none"]["0"]["model"] = "/x/model_whole_helix3_seed0_y.pt"
+        assert check_pair({c: {int(k): v for k, v in d.items()} for c, d in x.items()}, COMPARISONS[0])
+        x = json.loads(json.dumps(cells_)); x["ptlr/500m-lr1.2e-3-7pct-none"]["3"]["train_code_sha"] = "other"
+        assert check_pair({c: {int(k): v for k, v in d.items()} for c, d in x.items()}, COMPARISONS[0])
         # anomaly flag: the 53M win-ctx cell's HellaSwag below chance - 3
         assert any("53m-lr4e-3-7pct-win-ctx" in x and "hellaswag" in x for x in res["anomalies"]), res["anomalies"]
         assert not any("500m" in x for x in res["anomalies"]), res["anomalies"]
@@ -504,7 +547,7 @@ def selftest() -> None:
 
         def wr(name, s, sha="fake", limit=0, key="scores"):
             (kd / name).write_text(json.dumps({key: s, "eval_code_sha": sha, "limit": limit}))
-        wr("hf_gpt2_harness.json", g2); [wr(n, ri) for n in RI]; wr("loadcheck_x_s0.json", lc, key="load_check")
+        wr("hf_gpt2_harness.json", g2); [wr(n, ri) for n in RI]; [wr(f"loadcheck_{n}.json", lc, key="load_check") for n in LOADCHECK_NAMES]
         assert known_answer(out, sha="fake")["pass"], known_answer(out, sha="fake")["lines"]
         assert abs(tol(781, 0.5) - 300 * math.sqrt(0.25 / 781)) < 1e-12 and tol(10042, 0.25) == 3.0
         for name, s, path, bad in (("hf_gpt2_harness.json", g2, ("lambada", "acc"), 30.0),
@@ -521,9 +564,11 @@ def selftest() -> None:
         s2 = json.loads(json.dumps(ri)); s2["piqa"]["acc"] = 54.0; wr(RI[0], s2)   # all-pairs PIQA is descriptive now (A1)
         assert known_answer(out, sha="fake")["pass"]
         wr(RI[0], ri)
-        wr("loadcheck_x_s0.json", {"replica_minus_logged": 2.5e-3}, key="load_check")
+        wr(f"loadcheck_{LOADCHECK_NAMES[2]}.json", {"replica_minus_logged": 2.5e-3}, key="load_check")
         assert not known_answer(out, sha="fake")["pass"]
-        wr("loadcheck_x_s0.json", lc, key="load_check")
+        wr(f"loadcheck_{LOADCHECK_NAMES[2]}.json", lc, key="load_check")
+        (kd / f"loadcheck_{LOADCHECK_NAMES[4]}.json").unlink(); assert not known_answer(out, sha="fake")["pass"]   # A2: 4 of 5
+        wr(f"loadcheck_{LOADCHECK_NAMES[4]}.json", lc, key="load_check")
         wr(RI[1], ri, sha="old"); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
         wr(RI[1], ri, limit=20); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
         (kd / RI[2]).unlink(); assert not known_answer(out, sha="fake")["pass"]; wr(RI[2], ri)
@@ -553,8 +598,9 @@ def main() -> None:
     txt = report(res, ka)
     print(txt)
     if a.write:
-        Path(a.write + ".md").write_text(txt)
-        Path(a.write + ".json").write_text(json.dumps(res, indent=1, default=str))
+        import os
+        for ext, body in ((".json", json.dumps(res, indent=1, default=str)), (".md", txt)):   # atomic (A2)
+            tmp = Path(a.write + ext + f".tmp{os.getpid()}"); tmp.write_text(body); tmp.replace(a.write + ext)
         print("wrote", a.write + ".md", a.write + ".json")
 
 

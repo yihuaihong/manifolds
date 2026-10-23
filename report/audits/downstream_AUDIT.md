@@ -152,3 +152,35 @@ Also from the audit, for the record: 13-gram overlap of the benchmarks with trai
 HellaSwag 0.13%, ARC-E 0.36%, PIQA 0.07%). Seeds 0–3 of each primary pair share the step-0 LM loss bit for bit (same
 init, same first batch), and each pair shares its training code sha.
 Nothing above "Amendment A1" was changed.
+
+## Amendment A2 (2026-10-23, BEFORE any project-model benchmark score; the KA job 20678044 still pending)
+Trigger: a second fresh adversarial audit of the A1 code. It found no blocking issue. It confirmed the load-check replica
+on CPU (training code 79e9 53M −3.8e-5, 93e2 190M +1.7e-5, a3bc 53M 3.4e-7 bpb) and random-init 53M HellaSwag acc_norm
+26.16 (uniform model 26.3). It did not score any project model on a benchmark. Changes, all in the READ-OUT and the
+generator; downstream_eval.py is unchanged (eval sha 5d694e38ab75):
+1. **KA gate completeness**: the gate now requires the full expected set of load-check files (one model per
+   training-code version: ptlr 500m and 53m, ptsize999 500m, pt999 7pct-none, rb6_190m none@6e-4, all seed 0). Before,
+   ≥ 1 file was enough, and a model failing the 5e-3 assert leaves no file. The queued batch was already protected by
+   afterok on the KA job (an assert there fails the job); later groups submitted without --after are now protected too.
+2. **Arm identity** (assert; the read-out stops on a failure): for every comparison and common seed, the prior arm has
+   target ≠ none and the none arm target = none. The two arms have the same lr, training-code sha, n_params, d_model and
+   n_layers. Each model file name carries its run's `_<target>_seed<s>_`. Rationale: the audit measured that swapping
+   53M win-ctx s0 weights into the none s0 run moves the load check by only +1.6e-3 bpb, below both thresholds. The
+   load check therefore cannot detect a same-seed prior ↔ none swap. It detects other mix-ups (seed swap −5.1e-3,
+   gate-ctx → none +1.6e-2). The audit verified the current data by hand: no mismatched pair.
+3. **Reporting**: ties printed next to wins. The 53M rows of the every-cell table show BLiMP / LAMBADA only (A1 item 7).
+   Anomaly flags check acc and acc_norm of every benchmark against [chance − 3, 100]. The reference is labelled
+   PROVISIONAL while any none cell lacks seeds 0–3. readout.{md,json} are written atomically. The header shows the model
+   count (94 expected: 28 ptlr 500m, 16 ptsize999 500m, 16 rb6_190m, 34 desc).
+4. **Known limitation (descriptive field)**: `acc_equal_len` of HellaSwag is computed on raw acc, not acc_norm. It is not
+   used by the gate (the gate uses all-items acc_norm for HellaSwag). For ARC-E / PIQA it is the primary acc.
+5. **Generator**: one code snapshot per commit (runs/downstream/code_<commit>/). A later batch therefore never rewrites
+   the code a pending job pins. Every group job runs the read-out selftest and then the gate before scoring. The
+   LOADCHECK list is asserted equal to the gate's list.
+6. **Which read-out is authoritative**: the queued batch (KA 20678044; groups 20678071 / 76 / 80 / 84) runs from
+   runs/downstream/code (commit 2dc8375, read-out 6b1821da0675). Its gate needs all 5 load-check files in practice: each
+   is written or the KA job fails. Its end-of-job readout.md is a snapshot only. The authoritative read-out is the A2
+   read-out (git branch downstream, tools/downstream_readout.py), run once after the last group job finishes, writing
+   runs/downstream/readout.{md,json}. The bootstrap still ignores BLiMP's paradigm clustering (descriptive; intervals
+   somewhat narrow).
+Nothing above "Amendment A2" was changed.
