@@ -614,17 +614,40 @@ for arm in PRIORS:
             print(f"  {arm}: {size} incomplete (seeds 0-3 at the picks: seeds 2-3 pending)")   # ladder-1b
             pts = None
             break
+        # build audit 2026-10-23: the 1B best is picked on seeds 0-1, so its 'ok' says nothing about seeds 2-3 (rule 7
+        # withholds on them; the slope must too)
+        if size in SEL and withheld([grid[(size, "none")][bn[1]], grid[(size, arm)][ba[1]]], R.MAIN):
+            print(f"  {arm}: {size} withheld (seeds 0-3 at the picks)")
+            pts = None
+            break
         pts.append((size, nne, grid[(size, "none")][bn[1]], grid[(size, arm)][ba[1]]))
     if pts is None or len(pts) < 2:
         print(f"  {arm}: fewer than 2 sizes -> no slope" if pts is not None else f"  {arm}: no slope")
         continue
-    for theta in (0.5, 0.9):
-        T = [(tt(kn, theta), tt(ka, theta), R.budget_M(main[kn][1][0][1])) for _, _, kn, ka in pts]
+    # build audit 2026-10-23 (AUDIT amendment B1): with a SEL size in the trend, label its selection protocol and GPU, and
+    # add the slope on confirm seeds 4-7 only (no seed used to pick an lr, at any size)
+    sel_in = [p[0] for p in pts if p[0] in SEL]
+    passes = [(R.MAIN, "")]
+    if sel_in:
+        miss = [p[0] for p in pts if conf[p[2]] is None or conf[p[3]] is None]
+        whc = [] if miss else withheld([k for p in pts for k in p[2:]], R.CONFIRM)
+        if miss:
+            print(f"  {arm}: confirm-only slope (seeds 4-7) not available: confirm seeds missing at {', '.join(miss)}")
+        elif whc:
+            say_withheld(f"{arm}: confirm-only slope (seeds 4-7)", whc)
+        else:
+            passes.append((R.CONFIRM, "confirm seeds 4-7 only: "))
+    for ss, pre in passes:
+      for theta in (0.5, 0.9):
+        T = [(tt(kn, theta, ss), tt(ka, theta, ss), R.budget_M(main[kn][1][0][1])) for _, _, kn, ka in pts]
         sps = [R.speedup(tn, ta, bud) for tn, ta, bud in T]
         x = np.log([nne for _, nne, _, _ in pts])
         untuned = [p[0] for p in pts if len(grid[(p[0], arm)]) == 1]
-        lab = (f"  {arm} ({'primary' if arm == 'win-ctx' else 'secondary'} arm"
+        lab = (f"  {pre}{arm} ({'primary' if arm == 'win-ctx' else 'secondary'} arm"
                + (f"; {', '.join(untuned)} {arm} at a single lr: UNTUNED, not a finding" if untuned else "")
+               + (f"; {', '.join(sel_in)}: lrs picked on seeds 0-1 (other sizes on 0-3), trained on B200 (other sizes "
+                  f"L40S)" if sel_in and ss == R.MAIN else f"; {', '.join(sel_in)} trained on B200 (other sizes L40S)"
+                  if sel_in else "")
                + f"), {'R_0.5 (the rule-8 ratio)' if theta == 0.5 else 'R_0.9 (descriptive)'}: R "
                + ", ".join(f"{p[0]} {sp['text'].split(' ')[0]}" for p, sp in zip(pts, sps)))
         if any(sp["ratio"] is None or sp["mark"] for sp in sps):
@@ -644,7 +667,7 @@ for arm in PRIORS:
         if arm != "win-ctx":
             call = f"secondary{', untuned' if untuned else ''}: {call}"
         print(lab + f" -> slope {slope:+.3f} per log N_nonemb (90% CI {lo:+.3f} to {hi:+.3f}, seed bootstrap; n=4 per size: "
-              f"indicative only) -> " + (call if theta == 0.5 else f"[{call}; descriptive]"))
+              f"indicative only) -> " + (call if theta == 0.5 and ss == R.MAIN else f"[{call}; descriptive]"))
 
 
 # ---------------------------------------------------------------- T2: 53M 2% at lr 1e-3 (rules 9-11)
