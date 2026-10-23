@@ -637,6 +637,7 @@ for arm in PRIORS:
             say_withheld(f"{arm}: confirm-only slope (seeds 4-7)", whc)
         else:
             passes.append((R.CONFIRM, "confirm seeds 4-7 only: "))
+    calls = {}   # seeds -> the R_0.5 call (amendment B1's interpretation rule)
     for ss, pre in passes:
       for theta in (0.5, 0.9):
         T = [(tt(kn, theta, ss), tt(ka, theta, ss), R.budget_M(main[kn][1][0][1])) for _, _, kn, ka in pts]
@@ -648,7 +649,7 @@ for arm in PRIORS:
                + (f"; {', '.join(sel_in)}: lrs picked on seeds 0-1 (other sizes on 0-3), trained on B200 (other sizes "
                   f"L40S)" if sel_in and ss == R.MAIN else f"; {', '.join(sel_in)} trained on B200 (other sizes L40S)"
                   if sel_in else "")
-               + f"), {'R_0.5 (the rule-8 ratio)' if theta == 0.5 else 'R_0.9 (descriptive)'}: R "
+               + f"), {'R_0.5 (the rule-8 ratio)' if theta == 0.5 and ss == R.MAIN else 'R_0.5 (descriptive)' if theta == 0.5 else 'R_0.9 (descriptive)'}: R "
                + ", ".join(f"{p[0]} {sp['text'].split(' ')[0]}" for p, sp in zip(pts, sps)))
         if any(sp["ratio"] is None or sp["mark"] for sp in sps):
             print(lab + " -> slope not determinable (a ratio is a bound or missing)")
@@ -664,10 +665,18 @@ for arm in PRIORS:
             bs.append(np.polyfit(x, yb, 1)[0])
         lo, hi = np.percentile(bs, 5), np.percentile(bs, 95)
         call = "grows with size (a trend)" if lo > 0 else "shrinks with size (a trend)" if hi < 0 else "no trend (CI includes 0)"
+        if theta == 0.5:
+            calls[ss] = call
         if arm != "win-ctx":
             call = f"secondary{', untuned' if untuned else ''}: {call}"
         print(lab + f" -> slope {slope:+.3f} per log N_nonemb (90% CI {lo:+.3f} to {hi:+.3f}, seed bootstrap; n=4 per size: "
-              f"indicative only) -> " + (call if theta == 0.5 and ss == R.MAIN else f"[{call}; descriptive]"))
+              f"indicative only) -> " + (call if theta == 0.5 and ss == R.MAIN else f"[{call}; descriptive]")
+              + (f"  [PROVISIONAL: {', '.join(sel_in)} lrs picked on 2 of its 4 seeds; no confirm-only slope]"
+                 if sel_in and len(passes) == 1 and theta == 0.5 else ""))
+    if len(calls) == 2:
+        print(f"  {arm}: confirm-only R_0.5 call " + ("agrees with the seeds-0-3 call" if calls[R.MAIN] == calls[R.CONFIRM] else
+              f"({calls[R.CONFIRM]}) differs from the seeds-0-3 call ({calls[R.MAIN]}) -> the size trend depends on the "
+              f"seeds used: not a finding"))
 
 
 # ---------------------------------------------------------------- T2: 53M 2% at lr 1e-3 (rules 9-11)
