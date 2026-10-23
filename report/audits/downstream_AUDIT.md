@@ -105,7 +105,7 @@ run's final logged val_loss + 0.5 (a wrongly loaded model would be ~11).
 Seven items: i double path (in code), ii asserts (in code), iii known answers (above), iv only for anomalous results,
 v fresh general-purpose sub-agent after submission (background), vi trap list in the review, vii decoded inputs in logs.
 
-## Amendment A1 (2026-10-22 ~22:00 EDT; BEFORE any project-model benchmark score was computed)
+## Amendment A1 (2026-10-22, committed 23:06 EDT as 261e21f; BEFORE any project-model benchmark score was computed)
 Trigger: the pre-submission adversarial audit (fresh general-purpose sub-agent; CPU checks on random-init models and GPT-2
 only, no project model scored). It found no blocking bug in the scoring code. These changes come from that audit:
 1. **PIQA random-init criterion**: the audit measured (full PIQA, torch seed 0, CPU) 53M 52.34 / **190M 52.99** / 505M 52.61
