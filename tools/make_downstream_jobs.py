@@ -20,7 +20,7 @@ ROOT = Path("/scratch/yh6210/llmadd_torch")
 R = ROOT / "runs/downstream"
 RUNS = ROOT / "runs"
 PY = "/scratch/yh6210/miniconda3/envs/open_r1/bin/python"
-FILES = ("downstream_eval.py", "pretrain_helix.py", "numlib.py")
+FILES = ("downstream_eval.py", "pretrain_helix.py", "numlib.py", "downstream_readout.py")
 KA_ARCH = {"53m": RUNS / "pt999/out/7pct-none/run_whole_none_seed0_7pct-none.json",
            "190m": RUNS / "rb6_190m/out/rb6tb-190m-2pct-k2-none-lr6e-4-s0/rb6tb-190m-2pct-k2-none-lr6e-4/"
                           "run_whole_none_seed0_rb6tb-190m-2pct-k2-none-lr6e-4.json",
@@ -47,6 +47,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--groups", required=True, help="comma list of: ka," + ",".join(GROUPS))
     ap.add_argument("--submit", action="store_true")
+    ap.add_argument("--after", default=None, help="job id: submit with --dependency=afterok:<id> (e.g. the known-answer job)")
     a = ap.parse_args()
     tools = Path(__file__).resolve().parent
     code = R / "code"; code.mkdir(parents=True, exist_ok=True)
@@ -64,11 +65,17 @@ def main() -> None:
             body = "\n".join([
                 f'"$PY" downstream_eval.py --out_dir "$R/out" --hf gpt2 --prefix harness --max_len 1024',
                 f'"$PY" downstream_eval.py --out_dir "$R/out" --hf gpt2 --prefix eos --max_len 1024',
-                f'"$PY" downstream_eval.py --out_dir "$R/out" --random_init {" ".join(str(p) for p in KA_ARCH.values())}'])
+                f'"$PY" downstream_eval.py --out_dir "$R/out" --random_init {" ".join(str(p) for p in KA_ARCH.values())}',
+                '"$PY" downstream_readout.py --out_dir "$R/out" --ka_gate   # exit 1 on a failed check (afterok dependents never run)'])
             tlim = "04:00:00"
         else:
             globs, tlim = GROUPS[g]
-            body = f'"$PY" downstream_eval.py --out_dir "$R/out" ' + " ".join(f"'{x}'" for x in globs)
+            body = "\n".join([
+                '# pre-registered known-answer gate (AUDIT.md): no project model is scored unless every check passed',
+                '"$PY" downstream_readout.py --out_dir "$R/out" --ka_gate || { echo "## known-answer gate FAILED: exiting"; exit 5; }',
+                f'"$PY" downstream_eval.py --out_dir "$R/out" ' + " ".join(f"'{x}'" for x in globs),
+                '# refresh the pre-registered read-out with everything evaluated so far (the last job to finish writes the full one)',
+                '"$PY" downstream_readout.py --out_dir "$R/out" --write "$R/readout" > /dev/null'])
         job = R / "jobs" / f"job_{g}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_down_{g}
@@ -100,7 +107,8 @@ echo "## done $(date -u +%FT%TZ)"
 """)
         print("wrote", job)
         if a.submit:
-            out = subprocess.run(["sbatch", str(job)], capture_output=True, text=True)
+            dep = [f"--dependency=afterok:{a.after}", "--kill-on-invalid-dep=yes"] if a.after else []
+            out = subprocess.run(["sbatch", *dep, str(job)], capture_output=True, text=True)
             print(out.stdout.strip(), out.stderr.strip())
 
 

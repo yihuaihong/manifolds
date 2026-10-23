@@ -386,6 +386,26 @@ def selftest() -> None:
         assert len(res["desc7"]) == 1 and abs(res["desc7"][0]["d"]["blimp"] - 1.0) < 1e-9 and "hellaswag" not in res["desc7"][0]["d"]
         txt = report(res)
         assert "| P1 |" in txt and "INCOMPLETE" in txt and "worse" in txt
+        # known-answer gate: passing fake files -> PASS; one criterion broken at a time -> FAIL
+        kd = out / "known_answer"; kd.mkdir()
+        g2 = {"lambada": {"acc": 32.9, "ppl": 41.5}, "blimp": {"acc": 83.0}, "hellaswag": {"acc_norm": 31.0},
+              "arc_easy": {"acc": 43.0}, "piqa": {"acc": 62.0}}
+        ri = {"hellaswag": {"acc_norm": 26.0}, "arc_easy": {"acc": 23.0, "chance": 25.03}, "piqa": {"acc": 51.0},
+              "blimp": {"acc": 58.0, "acc_equal_len": 49.0, "length_heuristic": {"shorter_good_share": 30.0, "equal_len_share": 50.0}},
+              "lambada": {"acc": 0.0, "ppl": 9e5}}
+        wr = lambda name, s: (kd / name).write_text(json.dumps({"scores": s}))
+        wr("hf_gpt2_harness.json", g2); wr("randinit_d384_L6_eos.json", ri)
+        assert known_answer(out)["pass"]
+        for name, s, path, bad in (("hf_gpt2_harness.json", g2, ("lambada", "acc"), 30.0),
+                                   ("hf_gpt2_harness.json", g2, ("lambada", "ppl"), 43.0),
+                                   ("hf_gpt2_harness.json", g2, ("blimp", "acc"), 75.0),
+                                   ("randinit_d384_L6_eos.json", ri, ("piqa", "acc"), 54.0),
+                                   ("randinit_d384_L6_eos.json", ri, ("blimp", "acc_equal_len"), 46.0),
+                                   ("randinit_d384_L6_eos.json", ri, ("lambada", "acc"), 1.5)):
+            s2 = json.loads(json.dumps(s)); s2[path[0]][path[1]] = bad; wr(name, s2)
+            assert not known_answer(out)["pass"], (name, path, bad)
+            wr(name, s)
+        assert known_answer(out)["pass"]
         print("---- report on the FAKE selftest data ----\n" + txt)
         print("SELFTEST PASS")
     finally:
@@ -397,11 +417,15 @@ def main() -> None:
     ap.add_argument("--out_dir", default="/scratch/yh6210/llmadd_torch/runs/downstream/out")
     ap.add_argument("--write", default=None, help="prefix for <prefix>.md / <prefix>.json")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--ka_gate", action="store_true", help="exit 1 unless every pre-registered known-answer check passes")
     a = ap.parse_args()
     if a.selftest:
         selftest(); return
     out = Path(a.out_dir)
     ka = known_answer(out)
+    if a.ka_gate:
+        print("\n".join(ka["lines"]))
+        raise SystemExit(0 if ka["pass"] else 1)
     res = analyse(load(out))
     res["known_answer"] = ka
     txt = report(res, ka)
