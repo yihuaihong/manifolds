@@ -115,7 +115,35 @@ def verdict(d, mp, mn, ch, margin):
     return "undetermined"
 
 
-def paired(cells, a, b, bench, seeds=SEEDS):
+HITS = {"blimp": "hits", "lambada": "hits", "hellaswag": "hits_acc_norm", "arc_easy": "hits_acc", "piqa": "hits_acc"}
+NBOOT = 2000
+
+
+def boot2(A, B, common, be, nboot=NBOOT, seed=0):
+    """Amendment A1, descriptive: seed x item bootstrap of the mean paired difference (points): resample the common seeds
+    and the items (both with replacement); 95% percentile interval. Covers item sampling and (crudely, 4 seeds) seed
+    variation; not a verdict."""
+    import numpy as np
+    k = HITS[be]
+    if not all(k in A[s]["scores"][be] and k in B[s]["scores"][be] for s in common):
+        return None
+    D = np.stack([np.frombuffer(A[s]["scores"][be][k].encode(), np.uint8).astype(np.int8)
+                  - np.frombuffer(B[s]["scores"][be][k].encode(), np.uint8).astype(np.int8) for s in common])
+    for s in common:   # the hit strings reproduce the stored scores (double path for the bootstrap input)
+        for X in (A, B):
+            assert abs(100 * (np.frombuffer(X[s]["scores"][be][k].encode(), np.uint8) == 49).mean() - score(X[s], be)) < 1e-6
+    rng = np.random.default_rng(seed)
+    n = D.shape[1]
+    vals = np.empty(nboot)
+    for i in range(nboot):
+        it = rng.integers(0, n, n)
+        sd_ = rng.integers(0, len(common), len(common))
+        vals[i] = 100 * D[:, it].mean(1)[sd_].mean()
+    return {"lo": float(np.percentile(vals, 2.5)), "hi": float(np.percentile(vals, 97.5)), "nboot": nboot,
+            "item_only_sd_of_mean": float(100 * D.mean(0).std(ddof=1) / math.sqrt(n))}
+
+
+def paired(cells, a, b, bench, seeds=SEEDS, boot=False):
     A, B = cells.get(a, {}), cells.get(b, {})
     common = [s for s in seeds if s in A and s in B]
     out = {}
@@ -130,7 +158,8 @@ def paired(cells, a, b, bench, seeds=SEEDS):
         m, sd, lo, hi = tci(d)
         out[be] = {"n": len(d), "seeds": common, "d": d, "mean": m, "sd": sd, "lo": lo, "hi": hi,
                    "wins": sum(x > 0 for x in d), "ties": sum(x == 0 for x in d), "prior_mean": mp, "none_mean": mn,
-                   "chance": ch, "verdict": verdict(d, mp, mn, ch, MARGIN[be])}
+                   "chance": ch, "verdict": verdict(d, mp, mn, ch, MARGIN[be]),
+                   "boot2": boot2(A, B, common, be) if boot else None}
     lr = [math.log(A[s]["scores"]["lambada"]["ppl"] / B[s]["scores"]["lambada"]["ppl"]) for s in common]
     if lr:
         m, sd, lo, hi = tci(lr)
@@ -163,8 +192,21 @@ def analyse(cells: dict) -> dict:
     for g in (G505, G190):
         best, src, mb = reference(cells, g)
         res["reference"][g] = {"cell": best, "bpb_source": src, "mean_bpb": mb}
+    an = []   # anomaly flags (AUDIT.md: outside [chance - 3, 100] -> inspect; Amendment A1: load check, double path)
+    for c, v in cells.items():
+        for s, r in v.items():
+            for b in BENCH:
+                ch = r["scores"][b].get("chance", CHANCE.get(b, 0.0))
+                if score(r, b) < ch - 3:
+                    an.append(f"{c} s{s} {b} {PRIMARY[b]} {score(r, b):.2f} < chance {ch:.1f} - 3")
+                if r["scores"][b]["double_path"].get("greedy_mismatch", 0):
+                    an.append(f"{c} s{s} {b}: double path greedy mismatch {r['scores'][b]['double_path']['greedy_mismatch']}/24")
+            lc = r.get("load_check") or {}
+            if abs(lc.get("replica_minus_logged", 0.0)) > 2e-3:
+                an.append(f"{c} s{s}: load check |replica - logged| {lc['replica_minus_logged']:+.2e} > 2e-3")
+    res["anomalies"] = an
     for cp in COMPARISONS:
-        e = dict(cp, stats=paired(cells, cp["prior"], cp["none"], BENCH))
+        e = dict(cp, stats=paired(cells, cp["prior"], cp["none"], BENCH, boot=True))
         ref = res["reference"][cp["group"]]["cell"]
         e["ref_cell"] = ref
         e["vs_ref"] = paired(cells, cp["prior"], ref, BENCH) if ref else None
@@ -190,7 +232,10 @@ def analyse(cells: dict) -> dict:
         if 0 not in cells.get(nc, {}):
             continue
         p, q = v[0], cells[nc][0]
-        assert p["lr"] == q["lr"] and p["d_model"] == q["d_model"], (c, nc)
+        assert p["d_model"] == q["d_model"], (c, nc)
+        if p["lr"] != q["lr"]:   # only same-lr pairs (the fair comparison)
+            continue
+        # the task: BLiMP + LAMBADA for every size, HellaSwag / ARC-E / PIQA for 190M / 505M (Amendment A1 item 7)
         bl = BENCH if p["d_model"] >= 768 else ("blimp", "lambada")
         res["desc7"].append({"cell": c, "none": nc, "d_model": p["d_model"], "lr": p["lr"],
                              "d": {b: score(p, b) - score(q, b) for b in bl}, "prior": {b: score(p, b) for b in bl},
@@ -211,30 +256,35 @@ def report(res: dict, ka: dict | None = None) -> str:
           f"{ck['max_double_path']:.1e}" if ck["max_double_path"] is not None else "no records", ""]
     if ka:
         L += ["## Known-answer checks", ""] + ka["lines"] + [""]
+    L += ["## Anomaly flags", ""] + ([f"- {x}" for x in res.get("anomalies", [])] or ["- none"]) + [""]
     for g, r in res["reference"].items():
         L.append(f"Reference ({g}): {r['cell']} (lowest mean bpb over seeds 0-3, source: {r['bpb_source']}; "
                  + ", ".join(f"{c.split('/')[-1]} {v:.4f}" for c, v in r["mean_bpb"].items()) + ")")
     L.append("")
     for role in ("primary", "descriptive"):
         L += [f"## {role.upper()} comparisons (prior - none, same lr, same seeds; points; 95% t-CI; margin 1.0)", "",
-              "| id | comparison | benchmark | prior | none | mean d | 95% CI | wins | per seed | verdict |",
-              "|---|---|---|---|---|---|---|---|---|---|"]
+              "\"undetermined\" means n = 4 seeds cannot tell; it is NOT \"no cost\". The seed x item bootstrap interval is "
+              "descriptive (Amendment A1), not a verdict.", "",
+              "| id | comparison | benchmark | prior | none | mean d | 95% t-CI | seed x item bootstrap | wins | per seed | verdict |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
         for e in res["comparisons"]:
             if e["role"] != role:
                 continue
             for b in BENCH:
                 s = e["stats"][b]
                 if not s["n"]:
-                    L.append(f"| {e['id']} | {e['group']} {e['label']} | {b} | | | | | | | INCOMPLETE (no records) |")
+                    L.append(f"| {e['id']} | {e['group']} {e['label']} | {b} | | | | | | | | INCOMPLETE (no records) |")
                     continue
                 v = s["verdict"] if role == "primary" else f"({s['verdict']}; descriptive)"
+                bt = s.get("boot2")
                 L.append(f"| {e['id']} | {e['group']} {e['label']} | {b} {PRIMARY[b]} | {s['prior_mean']:.2f} | "
-                         f"{s['none_mean']:.2f} | {s['mean']:+.2f} | [{f(s['lo'])}, {f(s['hi'])}] | {s['wins']}/{s['n']} | "
+                         f"{s['none_mean']:.2f} | {s['mean']:+.2f} | [{f(s['lo'])}, {f(s['hi'])}] | "
+                         + (f"[{bt['lo']:.2f}, {bt['hi']:.2f}]" if bt else "–") + f" | {s['wins']}/{s['n']} | "
                          + " ".join(f"{x:+.2f}" for x in s["d"]) + f" | {v} |")
             p = e["stats"].get("lambada_ppl_ratio")
             if p:
                 L.append(f"| {e['id']} | | LAMBADA ppl ratio prior/none (descriptive) | | | x{p['geo_mean']:.3f} | "
-                         f"[{f(p['lo'], 3)}, {f(p['hi'], 3)}] | | " + " ".join(f"{x:.3f}" for x in p["per_seed"]) + " | |")
+                         f"[{f(p['lo'], 3)}, {f(p['hi'], 3)}] | | | " + " ".join(f"{x:.3f}" for x in p["per_seed"]) + " | |")
         L.append("")
     L += ["## Gap to the reference none (LM-optimal lr; prior - reference, paired by seed; lr differs: descriptive)", "",
           "| id | prior cell | reference | " + " | ".join(BENCH) + " |", "|---|---|---|" + "---|" * len(BENCH)]
@@ -268,13 +318,39 @@ def report(res: dict, ka: dict | None = None) -> str:
     return "\n".join(L) + "\n"
 
 
-def known_answer(out_dir: Path) -> dict:
-    """Pass / fail of the pre-registered known-answer criteria (AUDIT.md)."""
+def eval_sha() -> str:
+    """sha of the downstream_eval.py next to this file (the code snapshot the jobs run)."""
+    import hashlib
+    return hashlib.sha256((Path(__file__).resolve().parent / "downstream_eval.py").read_bytes()).hexdigest()[:12]
+
+
+def tol(n: int, p: float) -> float:
+    """Amendment A1: random-init tolerance = max(3 points, 3 binomial SE at chance p), in points."""
+    return max(3.0, 300 * math.sqrt(p * (1 - p) / n))
+
+
+LOAD_GATE = 2e-3   # bpb, |in-training replica - logged final| for the load-check-only models (Amendment A1)
+
+
+def known_answer(out_dir: Path, sha: str | None = None) -> dict:
+    """Pass / fail of the pre-registered known-answer criteria (AUDIT.md + Amendment A1). Only full-run files (limit 0)
+    written by the current eval code count (sha None: the sha of the downstream_eval.py next to this file)."""
     lines, ok = [], True
     ka = out_dir / "known_answer"
-    g = ka / "hf_gpt2_harness.json"
-    if g.exists():
-        s = json.loads(g.read_text())["scores"]
+    sha = eval_sha() if sha is None else sha
+
+    def get(p: Path):
+        if not p.exists():
+            lines.append(f"- MISSING {p.name}"); return None
+        r = json.loads(p.read_text())
+        if r.get("eval_code_sha") != sha or r.get("limit"):
+            lines.append(f"- STALE {p.name} (eval code {r.get('eval_code_sha')} != {sha}, or a smoke run)"); return None
+        return r
+    r = get(ka / "hf_gpt2_harness.json")
+    if r is None:
+        ok = False
+    else:
+        s = r["scores"]
         c = [("GPT-2 LAMBADA acc within 32.56 +- 1.0", abs(s["lambada"]["acc"] - 32.56) <= 1.0, s["lambada"]["acc"]),
              ("GPT-2 LAMBADA ppl within 40.06 +- 5%", abs(s["lambada"]["ppl"] / 40.0554 - 1) <= 0.05, s["lambada"]["ppl"]),
              ("GPT-2 BLiMP in [81, 87]", 81 <= s["blimp"]["acc"] <= 87, s["blimp"]["acc"])]
@@ -282,27 +358,41 @@ def known_answer(out_dir: Path) -> dict:
             ok &= p; lines.append(f"- {'PASS' if p else 'FAIL'} {name}: {v:.2f}")
         lines.append("- GPT-2 (harness prefix) descriptive: " + ", ".join(
             f"{b} {s[b][PRIMARY[b]]:.2f}" for b in ("hellaswag", "arc_easy", "piqa")))
-    else:
-        ok = False; lines.append("- MISSING hf_gpt2_harness.json")
-    g = ka / "hf_gpt2_eos.json"
-    if g.exists():
-        s = json.loads(g.read_text())["scores"]
+    r = get(ka / "hf_gpt2_eos.json")   # descriptive only (not gating)
+    if r is not None:
+        s = r["scores"]
         lines.append("- GPT-2 (eos prefix, the project setting) descriptive: " + ", ".join(
             f"{b} {s[b][PRIMARY[b]]:.2f}" for b in BENCH) + f", LAMBADA ppl {s['lambada']['ppl']:.2f}")
-    rand = sorted(ka.glob("randinit_*_eos.json"))
-    if not rand:
-        ok = False; lines.append("- MISSING random-init results")
-    for p in rand:
-        s = json.loads(p.read_text())["scores"]
-        c = [("HellaSwag acc_norm", s["hellaswag"]["acc_norm"], 25.0), ("ARC-E acc", s["arc_easy"]["acc"], s["arc_easy"]["chance"]),
-             ("PIQA acc", s["piqa"]["acc"], 50.0), ("BLiMP equal-length pairs", s["blimp"]["acc_equal_len"], 50.0)]
-        res_ = [(n, abs(v - ch) <= 3.0, v) for n, v, ch in c] + [("LAMBADA acc <= 1", s["lambada"]["acc"] <= 1.0, s["lambada"]["acc"])]
+    for name in ("randinit_d384_L6_eos.json", "randinit_d768_L12_eos.json", "randinit_d1024_L24_eos.json"):
+        r = get(ka / name)
+        if r is None:
+            ok = False; continue
+        s = r["scores"]
+        hs, ar, pq, bl = s["hellaswag"], s["arc_easy"], s["piqa"], s["blimp"]
+        c = [("HellaSwag acc_norm", hs["acc_norm"], 25.0, tol(hs["n"], 0.25)),
+             ("ARC-E acc", ar["acc"], ar["chance"], tol(ar["n"], ar["chance"] / 100)),
+             ("PIQA acc, equal-token pairs (A1)", pq["acc_equal_len"], 50.0, tol(pq["n_equal_len"], 0.5)),
+             ("BLiMP equal-token pairs", bl["acc_equal_len"], 50.0, tol(bl["n_equal_len"], 0.5))]
+        res_ = [(f"{n} (|x - {ch:.1f}| <= {t:.1f})", v is not None and abs(v - ch) <= t, v) for n, v, ch, t in c]
+        res_.append(("LAMBADA acc <= 1", s["lambada"]["acc"] <= 1.0, s["lambada"]["acc"]))
         ok &= all(p_ for _, p_, _ in res_)
-        lines.append(f"- {p.stem}: " + "; ".join(f"{'PASS' if p_ else 'FAIL'} {n} {v:.2f}" for n, p_, v in res_)
-                     + f"; BLiMP all pairs {s['blimp']['acc']:.2f} (shorter-good share "
-                     f"{s['blimp']['length_heuristic']['shorter_good_share']:.1f}, equal-length share "
-                     f"{s['blimp']['length_heuristic']['equal_len_share']:.1f})")
-    lines.append(f"- KNOWN-ANSWER OVERALL: {'PASS' if ok else 'FAIL'}")
+        lines.append(f"- {name[:-5]}: " + "; ".join(f"{'PASS' if p_ else 'FAIL'} {n} {v:.2f}" for n, p_, v in res_)
+                     + f"; descriptive: PIQA all pairs {pq['acc']:.2f} (fewest-tokens heuristic "
+                     f"{pq['length_heuristic']['fewest_tokens_acc']:.2f}, n equal {pq['n_equal_len']}), BLiMP all pairs "
+                     f"{bl['acc']:.2f} (shorter-good share {bl['length_heuristic']['shorter_good_share']:.1f}, n equal "
+                     f"{bl['n_equal_len']})")
+    lcs = sorted(ka.glob("loadcheck_*.json"))
+    if not lcs:
+        ok = False; lines.append("- MISSING loadcheck_*.json")
+    for p in lcs:
+        r = get(p)
+        if r is None:
+            ok = False; continue
+        d = r["load_check"]["replica_minus_logged"]
+        ok &= abs(d) < LOAD_GATE
+        lines.append(f"- {'PASS' if abs(d) < LOAD_GATE else 'FAIL'} load check {p.stem} (train code {r.get('train_code_sha')}): "
+                     f"in-training bpb replica - logged = {d:+.2e} (|.| < {LOAD_GATE:g})")
+    lines.append(f"- KNOWN-ANSWER OVERALL (eval code {sha}): {'PASS' if ok else 'FAIL'}")
     return {"pass": ok, "lines": lines}
 
 
@@ -361,7 +451,7 @@ def selftest() -> None:
             put("rb6_190m", "rb6tb-190m-2pct-k2-all6-lam1-lr6e-4", s, 6e-4, 768, {b: base[b] - 1.5 + 0.1 * s for b in BENCH})
         # desc 53M seed 0
         put("ptlr", "53m-lr4e-3-7pct-none", 0, 4e-3, 384, base)
-        put("ptlr", "53m-lr4e-3-7pct-win-ctx", 0, 4e-3, 384, dict(base, blimp=71.0))
+        put("ptlr", "53m-lr4e-3-7pct-win-ctx", 0, 4e-3, 384, dict(base, blimp=71.0, hellaswag=20.0))
         res = analyse(load(out))
         st = {e["id"]: e for e in res["comparisons"]}
         v = {b: st["P1"]["stats"][b]["verdict"] for b in BENCH}
@@ -386,26 +476,58 @@ def selftest() -> None:
         assert len(res["desc7"]) == 1 and abs(res["desc7"][0]["d"]["blimp"] - 1.0) < 1e-9 and "hellaswag" not in res["desc7"][0]["d"]
         txt = report(res)
         assert "| P1 |" in txt and "INCOMPLETE" in txt and "worse" in txt
-        # known-answer gate: passing fake files -> PASS; one criterion broken at a time -> FAIL
+        # anomaly flag: the 53M win-ctx cell's HellaSwag below chance - 3
+        assert any("53m-lr4e-3-7pct-win-ctx" in x and "hellaswag" in x for x in res["anomalies"]), res["anomalies"]
+        assert not any("500m" in x for x in res["anomalies"]), res["anomalies"]
+        # seed x item bootstrap: A right on the first 600 of 1000 items, B on the first 590 -> d = +1.0 at every seed
+        A = {s: {"scores": {"piqa": {"acc": 60.0, "hits_acc": "1" * 600 + "0" * 400}}} for s in range(4)}
+        B = {s: {"scores": {"piqa": {"acc": 59.0, "hits_acc": "1" * 590 + "0" * 410}}} for s in range(4)}
+        bt = boot2(A, B, list(range(4)), "piqa", nboot=500)
+        assert bt["lo"] < 1.0 < bt["hi"] and bt["hi"] - bt["lo"] < 1.5, bt
+        A[2]["scores"]["piqa"]["acc"] = 61.0   # hit string no longer reproduces the stored score -> assert
+        try:
+            boot2(A, B, list(range(4)), "piqa", nboot=10); raise RuntimeError("boot2 accepted inconsistent hits")
+        except AssertionError:
+            pass
+        # known-answer gate: passing fake files -> PASS; one criterion broken at a time -> FAIL; stale / smoke files -> FAIL
         kd = out / "known_answer"; kd.mkdir()
         g2 = {"lambada": {"acc": 32.9, "ppl": 41.5}, "blimp": {"acc": 83.0}, "hellaswag": {"acc_norm": 31.0},
               "arc_easy": {"acc": 43.0}, "piqa": {"acc": 62.0}}
-        ri = {"hellaswag": {"acc_norm": 26.0}, "arc_easy": {"acc": 23.0, "chance": 25.03}, "piqa": {"acc": 51.0},
-              "blimp": {"acc": 58.0, "acc_equal_len": 49.0, "length_heuristic": {"shorter_good_share": 30.0, "equal_len_share": 50.0}},
+        ri = {"hellaswag": {"acc_norm": 26.0, "n": 10042}, "arc_easy": {"acc": 23.0, "chance": 25.03, "n": 2376},
+              "piqa": {"acc": 53.0, "acc_equal_len": 51.0, "n_equal_len": 781, "n": 1838,
+                       "length_heuristic": {"fewest_tokens_acc": 53.9}},
+              "blimp": {"acc": 58.0, "acc_equal_len": 49.0, "n_equal_len": 30000,
+                        "length_heuristic": {"shorter_good_share": 30.0, "equal_len_share": 50.0}},
               "lambada": {"acc": 0.0, "ppl": 9e5}}
-        wr = lambda name, s: (kd / name).write_text(json.dumps({"scores": s}))
-        wr("hf_gpt2_harness.json", g2); wr("randinit_d384_L6_eos.json", ri)
-        assert known_answer(out)["pass"]
+        RI = ("randinit_d384_L6_eos.json", "randinit_d768_L12_eos.json", "randinit_d1024_L24_eos.json")
+        lc = {"replica_minus_logged": 3e-8}
+
+        def wr(name, s, sha="fake", limit=0, key="scores"):
+            (kd / name).write_text(json.dumps({key: s, "eval_code_sha": sha, "limit": limit}))
+        wr("hf_gpt2_harness.json", g2); [wr(n, ri) for n in RI]; wr("loadcheck_x_s0.json", lc, key="load_check")
+        assert known_answer(out, sha="fake")["pass"], known_answer(out, sha="fake")["lines"]
+        assert abs(tol(781, 0.5) - 300 * math.sqrt(0.25 / 781)) < 1e-12 and tol(10042, 0.25) == 3.0
         for name, s, path, bad in (("hf_gpt2_harness.json", g2, ("lambada", "acc"), 30.0),
                                    ("hf_gpt2_harness.json", g2, ("lambada", "ppl"), 43.0),
                                    ("hf_gpt2_harness.json", g2, ("blimp", "acc"), 75.0),
-                                   ("randinit_d384_L6_eos.json", ri, ("piqa", "acc"), 54.0),
-                                   ("randinit_d384_L6_eos.json", ri, ("blimp", "acc_equal_len"), 46.0),
-                                   ("randinit_d384_L6_eos.json", ri, ("lambada", "acc"), 1.5)):
+                                   (RI[1], ri, ("piqa", "acc_equal_len"), 56.0),   # tol(781) = 5.37
+                                   (RI[2], ri, ("hellaswag", "acc_norm"), 28.5),
+                                   (RI[0], ri, ("arc_easy", "acc"), 21.0),
+                                   (RI[0], ri, ("blimp", "acc_equal_len"), 46.0),
+                                   (RI[0], ri, ("lambada", "acc"), 1.5)):
             s2 = json.loads(json.dumps(s)); s2[path[0]][path[1]] = bad; wr(name, s2)
-            assert not known_answer(out)["pass"], (name, path, bad)
+            assert not known_answer(out, sha="fake")["pass"], (name, path, bad)
             wr(name, s)
-        assert known_answer(out)["pass"]
+        s2 = json.loads(json.dumps(ri)); s2["piqa"]["acc"] = 54.0; wr(RI[0], s2)   # all-pairs PIQA is descriptive now (A1)
+        assert known_answer(out, sha="fake")["pass"]
+        wr(RI[0], ri)
+        wr("loadcheck_x_s0.json", {"replica_minus_logged": 2.5e-3}, key="load_check")
+        assert not known_answer(out, sha="fake")["pass"]
+        wr("loadcheck_x_s0.json", lc, key="load_check")
+        wr(RI[1], ri, sha="old"); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
+        wr(RI[1], ri, limit=20); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
+        (kd / RI[2]).unlink(); assert not known_answer(out, sha="fake")["pass"]; wr(RI[2], ri)
+        assert known_answer(out, sha="fake")["pass"]
         print("---- report on the FAKE selftest data ----\n" + txt)
         print("SELFTEST PASS")
     finally:

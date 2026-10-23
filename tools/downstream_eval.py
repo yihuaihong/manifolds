@@ -1,5 +1,6 @@
 """Downstream (general-language) evaluation of saved from-scratch models (pretrain_helix.py / pretrain_range.py
---save_model): BLiMP, LAMBADA (OpenAI), HellaSwag, ARC-Easy, PIQA, zero-shot, full splits, lm-eval-harness definitions.
+--save_model): BLiMP, LAMBADA (OpenAI), HellaSwag, ARC-Easy, PIQA, zero-shot, full splits; lm-eval-harness definitions except BLiMP
+(task definition: no leading space, strict >; the harness scores " " + sentence and counts a tie correct).
 Intent spec and pre-registered read-out: llmadd_torch/runs/downstream/AUDIT.md (copy: report/audits/downstream_AUDIT.md).
 
   BLiMP      67 paradigms x 1000 pairs; acc = sum log p(good) > sum log p(bad) (strict), whole sentence after <eos>
@@ -11,7 +12,8 @@ Intent spec and pre-registered read-out: llmadd_torch/runs/downstream/AUDIT.md (
 Every sequence starts with the document separator <eos> (pretrain_data.py: documents are text + <eos>) for the project
 models (--prefix eos); --prefix harness reproduces lm-eval-harness (a prefix token only for an empty context) for the
 GPT-2 known-answer check. At most --max_len input positions (512 = the models' training windows); longer sequences are
-cut from the left (n_trunc is reported). fp32, TF32 off. Batched right-padded scoring (causal: padding after a sequence
+cut from the left (n_trunc is reported). fp32, TF32 off (the load-check replica of the in-training bpb: bf16 autocast,
+as in training). Batched right-padded scoring (causal: padding after a sequence
 cannot change its logits); double path: 24 random items per benchmark rescored one at a time with full logits.
 
     python tools/downstream_eval.py --out_dir <dir> <model_*.pt | glob> [...]          # saved project models
@@ -136,6 +138,7 @@ def build_requests(tok, items: dict, prefix: str, max_len: int, doc_tok: int):
         stats[b] = {"n_requests": len(R), "n_trunc": ntr, "n_cont_decode_mismatch": nmis, "n_ctx_not_prefix": nsplit,
                     "max_seq": max(len(s) for s, _ in R), "mean_seq": float(np.mean([len(s) for s, _ in R]))}
         assert nsplit <= 0.001 * len(R), (b, "context tokens are not a prefix of the joint tokens", nsplit)
+        assert nmis <= 0.001 * len(R), (b, "scored continuation tokens do not decode back to the continuation", nmis)
     return reqs, stats
 
 
@@ -164,7 +167,7 @@ def print_examples(tok, items, reqs, val=None, eos=None):
 
 # ------------------------------------------------------------------------------------------------------- scoring
 @torch.no_grad()
-def score_batched(model, reqs, dev, tok_budget=16384, head_chunk=4096):
+def score_batched(model, reqs, dev, tok_budget=65536, head_chunk=4096):
     """Summed log-likelihood and all-greedy flag of every request (right-padded batches sorted by length)."""
     base, head = model.base_model, model.get_output_embeddings()
     ll = np.zeros(len(reqs)); gr = np.zeros(len(reqs), dtype=bool)
@@ -251,7 +254,8 @@ def length_heuristics(b, items, reqs):
     if b == "lambada":
         return {}
     hit = [int(np.argmin(n[offs[i]:offs[i + 1]]) == x["gold"]) for i, x in enumerate(items)]
-    return {"fewest_tokens_acc": 100 * float(np.mean(hit))}
+    eq = np.array([len(set(n[offs[i]:offs[i + 1]].tolist())) == 1 for i in range(len(items))])
+    return {"fewest_tokens_acc": 100 * float(np.mean(hit)), "equal_len_share": 100 * float(eq.mean()), "eq_mask": eq}
 
 
 def evaluate(model, tok, items, reqs, dev, rng_seed=0):
@@ -272,11 +276,13 @@ def evaluate(model, tok, items, reqs, dev, rng_seed=0):
         r = metrics(b, items[b], ll, gr)
         r["double_path"] = {"n": len(pick), "max_abs_dloglik": float(max(d)), "greedy_mismatch": int(gm)}
         lh = length_heuristics(b, items[b], reqs[b])
-        if b == "blimp":
+        if b != "lambada":   # accuracy on the items whose choices all have the same number of scored tokens (Amendment A1)
             eq = lh.pop("eq_mask")
-            hits = np.array([c == "1" for c in r["hits"]])
+            hits = np.array([c == "1" for c in r["hits" if b == "blimp" else "hits_acc"]])
             r["acc_equal_len"] = 100 * float(hits[eq].mean()) if eq.any() else None
             r["n_equal_len"] = int(eq.sum())
+            r["chance_equal_len"] = 50.0 if b == "blimp" else (
+                100 * float(np.mean([1 / len(x["conts"]) for x, e in zip(items[b], eq) if e])) if eq.any() else None)
         r["length_heuristic"] = lh
         r["sec"] = time.time() - t0
         res[b] = r
@@ -304,17 +310,29 @@ def load_project_model(mp: Path, dev):
     return model.float().eval(), tok, r
 
 
+LOAD_TOL = 5e-3   # bpb; Amendment A1 (the KA gate requires < 2e-3 on one model per training-code version)
+
+
 @torch.no_grad()
-def load_check(model, data_dir, dev, logged_val_loss):
-    val = np.memmap(Path(data_dir) / "val.bin", dtype=np.uint32, mode="r")
-    w = torch.tensor(np.stack([val[i * 512:i * 512 + 513] for i in range(16)]).astype(np.int64), device=dev)
-    nats = 0.0
-    for a in range(0, 16, 4):
-        lg = model(input_ids=w[a:a + 4, :-1]).logits.float()
-        nats += float(Fn.cross_entropy(lg.flatten(0, 1), w[a:a + 4, 1:].flatten(), reduction="sum"))
-    npt = nats / w[:, 1:].numel()
-    assert npt < logged_val_loss + 0.5, ("loaded model's val nats/token far above the logged final val_loss", npt, logged_val_loss)
-    return npt
+def load_check(model, tok, r, dev):
+    """Replica of the trainer's in-training val_bits_per_byte (pretrain_range.evaluate / offline_lm.py 'orig windows':
+    np.random.default_rng(7), 8 batches x 16 offsets of seq + 1 tokens, eval mode, bf16 autocast) vs the run's last logged
+    value: a wrongly loaded model differs by >> 1e-2 bpb (cells differ by 0.03-0.1)."""
+    a = r["args"]; seq = a["seq"]
+    val = np.memmap(Path(a["data"]) / "val.bin", dtype=np.uint32, mode="r")
+    vrr = np.random.default_rng(7)
+    nats, nbytes = 0.0, 0
+    with torch.autocast("cuda" if str(dev).startswith("cuda") else "cpu", dtype=torch.bfloat16):
+        for _ in range(8):
+            o = vrr.integers(0, len(val) - seq - 1, size=16)
+            x = torch.tensor(np.stack([val[i:i + seq + 1].astype(np.int64) for i in o]), device=dev)
+            nats += float(Fn.cross_entropy(model(input_ids=x[:, :-1]).logits.float().flatten(0, 1), x[:, 1:].flatten(),
+                                           reduction="sum"))
+            nbytes += sum(len(tok.decode(row).encode("utf-8")) for row in x[:, 1:].tolist())
+    bpb = nats / math.log(2) / nbytes
+    logged = r["curve"][-1]["val_bits_per_byte"]
+    assert abs(bpb - logged) < LOAD_TOL, ("in-training bpb replica differs from the logged final value", bpb, logged)
+    return {"bpb_replica": bpb, "bpb_logged_final": logged, "replica_minus_logged": bpb - logged}
 
 
 def finished(rj: Path) -> bool:
@@ -343,6 +361,8 @@ def main() -> None:
     ap.add_argument("--hf", nargs="*", default=[], help="HF model ids (known-answer checks)")
     ap.add_argument("--limit", type=int, default=0, help="smoke tests only: first N items per benchmark")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--load_check_only", nargs="*", default=[],
+                    help="model_*.pt: only the in-training bpb replica (known answer for loading; no benchmark is scored)")
     a = ap.parse_args()
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
@@ -394,6 +414,13 @@ def main() -> None:
         p = out_dir / "known_answer" / f"{name}_{a.prefix}{'_lim' + str(a.limit) if a.limit else ''}.json"
         save(p, dict(common, kind="random_init", arch_from=rjs, tok_stats=st, scores=evaluate(model, tok, items, reqs, dev)))
         del model
+    for mp in map(Path, a.load_check_only):   # known answer for the loading path: LM metric only, NO benchmark score
+        model, tok, r = load_project_model(mp, dev)
+        lc = load_check(model, tok, r, dev)
+        print(f"### load check only {mp}: " + json.dumps(lc), flush=True)
+        save(out_dir / "known_answer" / f"loadcheck_{mp.parent.name}_s{r['args']['seed']}.json",
+             dict(common, kind="load_check", model=str(mp), train_code_sha=r.get("code_sha"), load_check=lc))
+        del model
     paths = sorted({Path(p) for g in a.models for p in (glob.glob(g) or [g])})
     print(f"### {len(paths)} model files", flush=True)
     for mp in paths:
@@ -415,14 +442,14 @@ def main() -> None:
         if new:
             val = np.memmap(Path(ar["data"]) / "val.bin", dtype=np.uint32, mode="r")
             print_examples(tok, items, reqs, val, tok.eos_token_id)
-        npt = load_check(model, ar["data"], dev, r["curve"][-1]["val_loss"])
-        print(f"### {mp}  (lr {ar['lr']}, seed {ar['seed']}, load-check val nats/token {npt:.3f} vs logged final "
-              f"{r['curve'][-1]['val_loss']:.3f})", flush=True)
+        lc = load_check(model, tok, r, dev)
+        print(f"### {mp}  (lr {ar['lr']}, seed {ar['seed']}, load check: in-training bpb replica {lc['bpb_replica']:.5f} vs "
+              f"logged final {lc['bpb_logged_final']:.5f})", flush=True)
         rec = dict(common, kind="project", model=str(mp), run_json=str(rj), model_size=st_m.st_size, model_mtime=st_m.st_mtime,
                    tag=ar["tag"], seed=ar["seed"], lr=ar["lr"], target=ar["target"], schedule=ar.get("schedule"),
                    site=ar.get("site"), d_model=ar["d_model"], n_layers=ar["n_layers"], n_params=r["n_params"],
                    train_code_sha=r.get("code_sha"), val_loss_logged_final=r["curve"][-1]["val_loss"],
-                   val_bpb_logged_final=r["curve"][-1]["val_bits_per_byte"], load_check_val_nats=npt, tok_stats=st,
+                   val_bpb_logged_final=r["curve"][-1]["val_bits_per_byte"], load_check=lc, tok_stats=st,
                    scores=evaluate(model, tok, items, reqs, dev))
         rec["sec_total"] = time.time() - t0
         save(p, rec)
