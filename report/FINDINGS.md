@@ -4112,3 +4112,67 @@
 - vi 部分：读数 confirm 行下面的 R 是 seed 0–3 的；rule 2 不对 seed 4–7 判定；rule 8 的 CI 不含 lr 选择。
 - vii ✓
 - 解除补记一的一条限定：补记一「不得写」第 1 条里的「505M 已确认」「SURVIVES tuning (confirmed)」，在本补记之后对 win-ctx 解除；「三个尺寸都已确认」只对 win-ctx 成立，gate-ctx 仍不行。
+
+## [2026-10-24] F94 新流形筛选 Stage 1（toy，5 个新运算表，1371 run，scout，已过结果层对抗审查）：box5（(Z₅)³ 的加减，训练 6.7% 的格子）上 none 12 个配置 0/36 学会，坐标先验（Tier L）3/3 学会，两个对照 0/3 → 预注册判 CANDIDATE，送 Stage 2。Tier S 在所有墙格都是 floor；d57 两个 tier 都是 floor；2I / A5 / S5 的阳性对照没过（审查判为配置问题，不是管线 bug），按预注册不读。Stage 1 不能判挽救
+
+- **设置**（runs/newmani/AUDIT.md，含 Revision 2026-10-21 与 Amendment A1）：
+  - 5 个闭合运算表：box5 = {−2..2}³ 上的指数向量加减（125 个 item）；2I（600-cell 的 120 个单位 icosian）；D57（二面体，114）；A5（60）；S5（120）。
+  - 每个任务 3 档训练量 m ≈ 6 / 12 / 24 格每 item，外加阳性对照 frac 0.4（box5 另有 0.6）。每格 3 个 seed。
+  - none：lr {1e-3, 3e-3, 1e-2, 3e-2} × wd {0.1, 1, 3}，4 B = 200k 步。6 个先验臂各 lr {1e-3, 3e-3, 1e-2}，B = 50k 步：
+    - Tier L：assign = 真结构（box5 的指数坐标、群的忠实表示）；对照 specrand、shuf。
+    - Tier S：只给形状；对照 sphere、line。
+  - 全部在 L40S 上。code_sha ea797e5321d3；读数 runs/newmani/readout.py（c1ce6fd75bd3，`--selftest` 通过），输出 readout.md / readout.json。1371 个 run 全部读到，每格 n=3。
+- **预注册选择表**：
+
+  | 任务 | 阳性对照 | Tier L | Tier S |
+  |---|---|---|---|
+  | box5 | 通过（4 个 (frac, 配置) 都 3/3） | **m6 → Stage 2** | floor（m6 墙，先验 0/3） |
+  | d57 | 通过（2/3） | floor（m12 墙，0/3） | floor |
+  | 2i | 未过（0/3，终值中位 0.001） | NOT READ | NOT READ |
+  | a5 | 未过（预注册配置 1/3） | NOT READ | NOT READ |
+  | s5 | 未过（0/3，0.008） | NOT READ | NOT READ |
+
+- **box5 m6**（frac 0.067，每 item 约 7.3 格，seed 4 / 10 / 25）：
+  - none：12 个配置 0/36 grok，整条曲线上的留出准确率都 ≤ 0.021（审查 chk2）。
+  - assign：lr 1e-3（lr 区间开在下沿），3/3 grok，AUC_B 0.926；终值留出、strict、non-implied 都是 1.000。
+  - specrand、shuf：0/3，AUC_B 0.009；两者都把自己的目标拟合到了（1 − CKA ≤ 0.002）。
+  - shape / sphere / line：0/3。
+  - 与 best none 的配对 AUC_B（n=3，描述性）：assign 0.926 对 0.012，3/3 wins，p 0.050（n=3 时过不了 0.025）。
+  - 与预注册预期「box5：none 在 m12 失败（不确定）；expo > specrand ≈ shuf ≈ none」方向一致，只是墙格出现在 m6 而不在 m12（box5 的 m12 被单个 seed 的短暂 grok 否掉）。
+- **审查 F1（重要）：A1 的 CE 门读到了训练崩溃的模型。**
+  - 读数的「best none」= grok 最多、再比 AUC。lr 3e-2、wd ≥ 1 在所有 15 个格子里都训不起来，最终 train acc 约 0.02。崩掉的模型停在 chance 附近，而背题模型低于 chance（群表的 Latin 性质保证背出来的答案全错），所以崩溃配置的 AUC 反而最高，被选成 best none。
+  - 这些配置的 late CE 约等于 log(n_out)，A1 的门是开的，CE 漂移被当成「还在学」：
+    - 2i / a5 / d57 的 m6 被它单独否掉 wall；
+    - box5 m6 的 wall 只差 0.009 nats（逐 seed drop +32.9 / −0.024 / +0.001，中位 +0.001，阈值 0.01）。
+  - 事后（post hoc）只在能拟合训练集的配置里选 best：这三格变成墙格，两个 tier 都是 floor，Stage 1 的选择结果不变。
+  - Stage 2 的 G1 会继承这个问题。改规则要在 Stage 2 出数据之前由用户定。
+- **审查 F2（重要）：群任务的阳性对照检验力不够，失败不说明管线坏了。**
+  - 独立核对了四张群乘法表、标签、n_out 和 orbit split，全部正确。
+  - assign 在 2i / s5 的 m24 留出准确率 0.997，说明这两个任务的标签和评测都是对的。
+  - 预注册的 lr 1e-3、wd 1 是网格里最慢的一格：能学会的群在这里也要 65k–153k 步才 grok。
+  - a5 是假警报：同一个 frac 0.4 格里有 6 个配置 ≥ 2/3 学会。
+  - 2i：111 个 none run 的留出准确率都没超过 0.011，「none 能学会 2I」从没被展示过。
+  - 事后记录：读数在 NOT READ 的任务里也列出了 a5 m12、2i m24 两个 Tier L 候选（assign 3/3，AUC_B 0.906 / 0.825，对照 0/3）。按预注册不读。
+- **none 的配置区间**：所有墙格的 best none 都在网格上沿，读数是平的（OPEN，要跑 rule-2 扩展 lr 1e-1、wd 10）。G1 要求扩展后区间闭合。box5 m6 的扩展作业已生成（21 run，约 2.2 L40S-h），**未提交**。
+
+**不得写**：
+1. 「挽救」「先验挽救了 box5」。Stage 1 只有 3 个 seed、没有 confirm seed，none 的区间也没闭合；CANDIDATE 只表示「值得进 Stage 2」。
+2. 「none 在所有优化器设置下都学不会 box5」。lr 3e-2、wd ≥ 1 根本训不起来，可训练的配置实际只有 9 个；而且只在这个单层 toy、这几个优化器、4 B 预算内成立。
+3. 不加 Tier L 限定地写成功：目标编码了整张表，最多只能写「给了结构，模型就会用它」。
+4. 「形状先验无效」这类泛化说法：只是这几个墙格、3 个 seed 上 Tier S 是 floor。
+5. 「2I / S5 没有先验学不会」「A5 m12 / 2I m24 是候选」：阳性对照没过，这两格是事后记录。
+6. 跨任务比较（例如「紧致群能挽救」）：各任务的 m 在信息量上不匹配（AUDIT I4），每个任务单独判。
+7. 「p = 0.05」：n=3 的精确单侧 p 最小就是 0.05，按预注册只是描述性的。
+8. 「2i / a5 / d57 的 m6 不是墙」：这三格是被崩溃模型的 CE 噪声否掉的，事后改读后是墙格，但都是 floor。
+
+**审查状态**：结果层对抗审查（全新子 agent；notes/batch1_build/audit_newmani_results.md，检查脚本在 coordinator scratchpad 的 newmani_audit/）。
+- 独立重建了题目、标签、关系类和 strict 集，与 trainer 一致；没有找到泄漏。
+- 1371 run 齐全，无 NaN、无 resume，只有一个 code_sha，全部在 L40S 上。
+- coordinator 复核了 F1：box5 / 2i / a5 / d57 / 2i m12 / box5 m12 的 lr 3e-2 wd 1、3 两个配置，最终 train 都 < 0.5。
+- 七项：i ✓（独立重建）、ii ✓、iii 部分（群任务阳性对照检验力不够，F2）、iv –（scout，n=3，预注册不复现）、v ✓、vi 部分（F1；box 的带符号重排 twin 没排除，上限约 frac；「best none」一词在不同地方含义不一）、vii ✓。
+
+**下一步（用户定）**：
+1. 提交 box5 m6 的 rule-2 扩展（已生成）。
+2. box5 m6 Tier L 进 Stage 2（预注册新 seed 100 / 103 / 108 / 122 / 126）。
+3. Stage 2 前修 F1：best none 只在能拟合训练集的配置里选，或对崩溃 run 关掉 CE 分量。
+4. 2I / S5 补阳性对照诊断（post hoc）：f0.4 下 lr 3e-3 wd 3 与 lr 1e-2 wd 1 各 3 seed，12 run，约 4.5 L40S-h。
