@@ -1,5 +1,5 @@
 #!/bin/bash
-# Amendments S1.2 / S1.3 (runs/rb6_505m/AUDIT.md): the 505M main read-out for one X1 outcome, as a script. Run only in
+# Amendments S1.2 - S1.4 (runs/rb6_505m/AUDIT.md): the 505M main read-out for one X1 outcome, as a script. Run only in
 # the order of S1 "Reading order", with no llmadd_rb6_505m job queued or running (checked for the real batch dir).
 #     bash runs/rb6_505m/readout_505m.sh a|b|b-pre|c [--allow_partial]
 # --allow_partial exists only for outcome b with none@2.4e-3 s2 / s3 missing after the X1.1 #2 resubmissions; the
@@ -17,6 +17,7 @@ set -uo pipefail
 [ $# -ge 1 ] && [ $# -le 2 ] || { echo "## usage: readout_505m.sh a|b|b-pre|c [--allow_partial]"; exit 2; }
 o=$1
 PARTIAL=${2:-}
+SELF_SHA=$(sha256sum "$(realpath "$0")" | cut -c1-12)   # S1.4: before any cd (a relative $0 breaks after it)
 REAL=/scratch/yh6210/llmadd_torch/runs/rb6_505m
 R=$(realpath -m "${R:-$REAL}")
 if [ "$R" = "$REAL" ]; then PICKS_SHA=8d285d925c66; else PICKS_SHA=${PICKS_SHA:?a test batch dir needs PICKS_SHA}; fi
@@ -55,7 +56,8 @@ ROOTS=("$R/out" "$R190" "$BR"/401-rb6pb-* "$BR"/404-rb6pb-* "$BR"/430-rb6pb-* "$
 for d in "${ROOTS[@]}"; do [ -d "$d" ] || { echo "## root $d is not a directory"; exit 3; }; done
 ts=$(date -u +%Y%m%dT%H%M%SZ)
 TMP=$OUT.running-$ts.txt
-{ echo "== readout_505m.sh (sha256[:12] $(sha256sum "$0" | cut -c1-12)) outcome $o $PARTIAL at $ts; R=$R"
+[ "${#SELF_SHA}" = 12 ] || { echo "## cannot hash the script itself"; exit 3; }
+{ echo "== readout_505m.sh (sha256[:12] $SELF_SHA) outcome $o $PARTIAL at $ts; R=$R"
   echo "== readout_code/COMMIT: $(cat ../COMMIT)"; } > "$TMP"
 "$PY" rb6scale_summary.py "${ROOTS[@]}" --picks "$P" --x1 "$o" --x1_json "$R/picks_x1.json" --json "$OUT.json" $PARTIAL \
   >> "$TMP" 2>&1

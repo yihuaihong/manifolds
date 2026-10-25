@@ -1,5 +1,5 @@
 #!/bin/bash
-# Amendments S1.2 / S1.3 (runs/rb6_505m/AUDIT.md): the X1 selection of Addendum X1.1 #1, once, as a script.
+# Amendments S1.2 - S1.4 (runs/rb6_505m/AUDIT.md): the X1 selection of Addendum X1.1 #1, once, as a script.
 # Runs the frozen runs/rb6_505m/x1_code/tools/rb6scale_select.py --grid_none over runs/rb6_505m/out.
 # A DATA outcome writes these records, read-only:
 #   - picks_x1.json (absent after an integrity failure),
@@ -15,7 +15,8 @@
 #   - a frozen file differs from x1_code/COMMIT or is missing;
 #   - the environment does not import the selection's modules;
 #   - for the real batch dir: squeue fails, or an llmadd_rb6_505m job is queued or running;
-#   - none@2.4e-3 s0 / s1 are not both present and finished. Only once their X1.1 #2 resubmissions are used up may
+#   - none@2.4e-3 s0 / s1 are not both present, finished, and with readable offline_lm.json / check.json (S1.4). Only
+#     once their X1.1 #2 resubmissions are used up may
 #     --x1-runs-final run the selection anyway, which then writes an "incomplete" JSON, i.e. outcome c.
 #     bash runs/rb6_505m/x1_select.sh [--x1-runs-final]        (R=<dir> only for tests on a fake batch dir)
 set -uo pipefail
@@ -25,7 +26,7 @@ FINAL=${1:-}
 { [ $# -le 1 ] && { [ -z "$FINAL" ] || [ "$FINAL" = --x1-runs-final ]; }; } || { echo "## usage: x1_select.sh [--x1-runs-final]"; exit 2; }
 PY=/scratch/yh6210/miniconda3/envs/open_r1/bin/python
 export HF_HOME=/scratch/yh6210/llmadd_torch/hf_cache PYTHONPATH=/scratch/yh6210/llmadd_torch/pylib PYTHONDONTWRITEBYTECODE=1
-echo "== X1 selection $(date -u +%FT%TZ) R=$R $FINAL; script sha256[:12] $(sha256sum "$0" | cut -c1-12)"
+echo "== X1 selection $(date -u +%FT%TZ) R=$R $FINAL; script sha256[:12] $(sha256sum "$(realpath "$0")" | cut -c1-12)"
 for f in picks_x1.json picks_x1.exit picks_x1.sha x1_select.log; do
   [ ! -e "$R/$f" ] || { echo "## $R/$f exists: the X1 selection has a data outcome already (it runs once)"; exit 3; }
 done
@@ -56,7 +57,13 @@ for s in (0, 1):
     r = json.loads(ps[0].read_text())
     if r["curve"][-1]["step"] != r["steps"] - 1:
         bad.append(f"s{s}: unfinished (last eval {r['curve'][-1]['step']})")
-print("X1 runs none@2.4e-3:", "; ".join(bad) if bad else "s0 and s1 present and finished")
+        continue
+    for f in ("offline_lm.json", "check.json"):   # S1.4: the job's steps 3-4 ran (else the job ended early: resubmit)
+        try:
+            json.loads((ps[0].parent.parent / f).read_text())
+        except (OSError, ValueError):
+            bad.append(f"s{s}: no readable {f} (the job did not finish its steps 3-4)")
+print("X1 runs none@2.4e-3:", "; ".join(bad) if bad else "s0 and s1 present and finished (incl. offline_lm.json, check.json)")
 sys.exit(1 if bad else 0)
 PY
 st=$?

@@ -375,6 +375,27 @@ af8b1dab7cce, plus one assert in rb6scale_summary.py f856bd596db4 (scale-ladder 
     rule allows, and that reason is recorded here.
 - Count correction for S1.2: RO S1 TEST was 48/48 with 37 refusals, not "50/50 / 39" as first written.
 
+### S1.4 (2026-10-25, after the fourth build review of the S1.3 scripts; still before any 505M main result was read)
+A fourth fresh review agent (read-only) found no blocking issue and two important ones, both fixed in the scripts.
+rb6scale_summary.py and readout_code/ are unchanged (f856bd596db4 at 02ef110).
+- Important 1, c locked after a late job death. The X1 preflight checked only that training reached its last eval. A
+  job killed during offline_lm / CHECK_PY (TIMEOUT, system CANCEL, a full /scratch) would have passed it, and the
+  selection would then record "incomplete" = c for good. Fix: x1_select.sh also requires a readable offline_lm.json
+  and check.json for none@2.4e-3 s0 and s1 (pass or fail); otherwise the runs are "not final" (resubmit;
+  --x1-runs-final only once the resubmissions are used up).
+- Important 2, empty sha in the header. With a relative path, as AUDIT writes the command, readout_505m.sh hashed $0
+  after its cd, so the txt header held an empty sha. Fix: the script hashes realpath $0 before any cd, refuses if the
+  hash is empty, and does the same in x1_select.sh.
+- Test fix: e2e_s14 runs x1_select's real-dir branch on a fresh dir (failing squeue, '<dir>/./', idle queue), a
+  relative-path read-out, and the "trained but no check.json" case. E2E S1.4 TEST 45/45 PASS.
+- Recorded, fail-closed:
+  - An integrity assert inside a helper of rainbow6_summary.check (e.g. eval_info), or a KeyError / ValueError in
+    check(), counts as a non-data failure. Nothing is recorded, and a re-run fails the same way. That needs a new
+    amendment (the user's call).
+  - If bash is killed in the milliseconds between the selection writing picks_x1.json and the script writing its
+    records, a JSON is left without exit / sha records. Both scripts then refuse, and it has to be cleaned by hand,
+    with the event recorded here.
+
 ### Frozen read-out code and scripts
 runs/rb6_505m/readout_code/: git archive of tools/ at scale-ladder 02ef110, read-only (chmod -R a-w). It was rebuilt
 for S1.3; the e84c909, 9919a83 and 189930c copies were never used. Its COMMIT lists the sha256[:12]:
@@ -393,8 +414,8 @@ read-only, with copies in scale-ladder notes/rb6_505m_s1/:
 
 | script | sha256[:12] |
 |---|---|
-| runs/rb6_505m/x1_select.sh | 1e6f89193b8c |
-| runs/rb6_505m/readout_505m.sh | af8b1dab7cce |
+| runs/rb6_505m/x1_select.sh | 35882378a67b (S1.4) |
+| runs/rb6_505m/readout_505m.sh | fb4374194f5a (S1.4) |
 
 ### Reading order (= Addendum X1.1 #8)
 1. `bash runs/rb6_505m/x1_select.sh`, once X1's two jobs have ended (resubmissions per X1.1 #2) and no llmadd_rb6_505m
@@ -432,4 +453,4 @@ The read-out code derives the outcome from the X1 files and refuses any mismatch
 |---|---|
 | reg_s1.sh, re-run for S1.3: old (04586fb tools, summary e807e43be36b) vs new (f856bd596db4) on the same inputs | S1 REGRESSION PASS. rb6_190m read-out (its AUDIT command): 217 lines + 83777-byte JSON, byte-identical. rb6_190m_ext read-out (rb6scale_ext_summary.py b5f3b5e6156e, which imports this file): 227 lines + 76823-byte JSON, byte-identical |
 | ro_s1_test.py, S1 - S1.3 (fake 505M runs = 53M Burst runs relabelled with the 505M size facts, none@2.4e-3 from a different source than none@4.8e-3; the command's three size roots; synthetic picks files in fake batch dirs, the pick tables from the fake runs, the other lrs planted low) | RO S1 TEST 48/48 PASS. Outcomes a / b / b-pre / c (absent + exit 1) / c (incomplete): cells, (i) / (ii) lines, X1 selection line, binding line, labels (b-pre: every 505M line), JSON; the 53m / 190m sections equal the 190M read-out. Values a = b-pre = c; b reads its own runs; b vs b-pre BH q differ and are labelled. 38 refusals: S1's 17; S1.1's outcome / file cases; S1.2's fixed path, missing / zero exit record, JSON + nonzero exit, incomplete with a wrong grid, replayed rule; binding; two missing sizes; --allow_partial under a, and under b with nothing missing (S1.3). In-process, values not printed: the real picks.json passes x1_check incl. the replay for b-pre / c only; x1_derive on the select tool's own X1 outputs gives b / a / c, and absent + exit 1 gives c |
-| e2e_s13.py (the scripts at their real location on fake batch dirs: 12 sweep + 2 X1 + main + X1 follow-up cells from relabelled 53M runs with planted seeds 0-1 area / bpb; picks.json by the pre-registered select, picks_x1.json by x1_select.sh; the read-out code under test snapshotted into each dir) | E2E S1.3 TEST 40/40 PASS. B (X1 -> b): bad args; a broken environment refused with nothing recorded; x1_select once only; b / b-pre run with the sha header; a / c refused for the right reason; a refused c re-runnable; --allow_partial with nothing missing refused; an edited picks_x1.json refused. Real-dir branch via copies whose REAL is the fake dir: the live squeue (6 llmadd_rb6_505m jobs then) refuses; a failing squeue refuses both scripts; R with '//' is still the real dir; an idle queue runs with the pinned sha, ignoring PICKS_SHA. Bp: strict b refused, then b --allow_partial with no cleaning gives PROVISIONAL in _partial. Bq: one more gap refused (also for b-pre). A: only a runs. C: the integrity assert is a data outcome (exit 1 recorded), c runs. F: a non-data crash (JSONDecodeError) records nothing; after the fix, b. M: X1 s1 missing refused, then --x1-runs-final -> incomplete -> c. N: NaN bpb, binding OK |
+| e2e_s14.py = e2e_s13.py + the S1.4 cases (above); E2E S1.4 TEST 45/45 PASS. e2e_s13.py (the scripts at their real location on fake batch dirs: 12 sweep + 2 X1 + main + X1 follow-up cells from relabelled 53M runs with planted seeds 0-1 area / bpb; picks.json by the pre-registered select, picks_x1.json by x1_select.sh; the read-out code under test snapshotted into each dir) | E2E S1.3 TEST 40/40 PASS. B (X1 -> b): bad args; a broken environment refused with nothing recorded; x1_select once only; b / b-pre run with the sha header; a / c refused for the right reason; a refused c re-runnable; --allow_partial with nothing missing refused; an edited picks_x1.json refused. Real-dir branch via copies whose REAL is the fake dir: the live squeue (6 llmadd_rb6_505m jobs then) refuses; a failing squeue refuses both scripts; R with '//' is still the real dir; an idle queue runs with the pinned sha, ignoring PICKS_SHA. Bp: strict b refused, then b --allow_partial with no cleaning gives PROVISIONAL in _partial. Bq: one more gap refused (also for b-pre). A: only a runs. C: the integrity assert is a data outcome (exit 1 recorded), c runs. F: a non-data crash (JSONDecodeError) records nothing; after the fix, b. M: X1 s1 missing refused, then --x1-runs-final -> incomplete -> c. N: NaN bpb, binding OK |
