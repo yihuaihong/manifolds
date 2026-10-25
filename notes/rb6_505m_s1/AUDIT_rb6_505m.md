@@ -239,7 +239,7 @@ This is the read-out amendment that the Freeze note (last item) and Addendum X1.
 has been read or printed: no read-out or summary has run on the main-stage runs, and every test uses fake or
 relabelled data. The main stage (11 jobs) is still running; X1's two jobs are pending.
 
-### Changes to tools/rb6scale_summary.py (e807e43be36b -> 31c31300c516 at scale-ladder e84c909; with S1.1 / S1.2 below, final 27bb21ee4725 at 189930c)
+### Changes to tools/rb6scale_summary.py (e807e43be36b -> 31c31300c516 at scale-ladder e84c909; with S1.1 - S1.3 below, final f856bd596db4 at 02ef110)
 All changes are 505M-only and take effect only with --picks. Without --picks the 53M / 190M output, text and JSON, is
 byte-identical (tested).
 - (i) lr source, the Freeze note's wrong line:
@@ -335,13 +335,53 @@ rb6scale_summary.py 27bb21ee4725 (scale-ladder 189930c), plus two operator scrip
   nonzero exit); it is a fault to report, not an outcome.
 - Minor 7: the tests below cover --allow_partial, NaN, the absent / exit records and tool-written picks files.
 
+### S1.3 (2026-10-25, after the third S1 build review; still before any 505M main result was read)
+A third fresh review agent (read-only, minimal mode) found no blocking issue. It confirmed that the S1.2 fixes in
+the read-out code hold and that the byte-identity holds from the frozen copies. Its three important findings and
+the useful minor ones were all in the operator scripts. Fixed in x1_select.sh 1e6f89193b8c and readout_505m.sh
+af8b1dab7cce, plus one assert in rb6scale_summary.py f856bd596db4 (scale-ladder 02ef110):
+- I-1: any non-data failure of the X1 selection (environment, imports, a signal, a missing file) was recorded as c
+  for good. x1_select.sh now records only a DATA outcome:
+  - exit 0 with a JSON;
+  - or the integrity AssertionError raised in rainbow6_summary.check (no JSON).
+  Any other failure records nothing, keeps its log as x1_select.failed-<time>.log, and may be re-run. An import
+  preflight runs first.
+- I-2: the queue check could wrongly let a run through. Now:
+  - set -o pipefail, and the squeue exit is checked;
+  - id -un replaces $USER;
+  - R is compared with the real dir after realpath, so a trailing '/' is still the real dir;
+  - x1_select.sh refuses unless none@2.4e-3 s0 / s1 are both present and finished. Once their X1.1 #2
+    resubmissions are used up, `--x1-runs-final` runs the selection anyway, which then records "incomplete" = c.
+    This keeps a not-yet-resubmitted X1 run from locking in c.
+- I-3: a failed read-out locked its output name and blocked the pre-registered `b --allow_partial`. Now:
+  - only a successful read-out is locked;
+  - a refused or failed one is kept as <name>.failed-<time>.txt;
+  - the partial read-out writes readout_505m_x1b_partial.*;
+  - the read-out refuses --allow_partial with nothing missing, so the PRIMARY b read-out is never PROVISIONAL
+    without a gap.
+- m-1: the sha checks refuse a missing file.
+- m-2: x1_select.sh exits with the selection's code.
+- m-4: a third argument is a usage error; the output names are readout_505m_x1{a,b,b_pre,c}[_partial].
+- m-6: every read-out txt starts with the script's sha and readout_code/COMMIT.
+- m-3: e2e_s13 now runs the real-dir branch and checks each refusal's reason.
+- Recorded, not changed:
+  - m-5: if a main-stage seed is permanently lost under a / c, or under b outside 2.4e-3 s2 / s3, there is no
+    pre-registered read-out path. The code refuses, which is fail-closed; a new amendment, decided by the user,
+    would be needed.
+  - m-7: the X1 records are tied to the picks file's directory, not to the out/ root. Only a deliberately built
+    directory or a direct python call could combine them otherwise; the operator path is the script.
+  - m-8: X1.1 #2's "exit 3 -> stop and report" for (b)'s s2 / s3 is a rule for the coordinator. The read-out cannot
+    see why a seed is missing, so `b --allow_partial` is used only after the s2 / s3 jobs ended for a reason the
+    rule allows, and that reason is recorded here.
+- Count correction for S1.2: RO S1 TEST was 48/48 with 37 refusals, not "50/50 / 39" as first written.
+
 ### Frozen read-out code and scripts
-runs/rb6_505m/readout_code/: git archive of tools/ at scale-ladder 189930c, read-only (chmod -R a-w). It was rebuilt
-for S1.2; the e84c909 and 9919a83 copies were never used. Its COMMIT lists the sha256[:12]:
+runs/rb6_505m/readout_code/: git archive of tools/ at scale-ladder 02ef110, read-only (chmod -R a-w). It was rebuilt
+for S1.3; the e84c909, 9919a83 and 189930c copies were never used. Its COMMIT lists the sha256[:12]:
 
 | file | sha256[:12] |
 |---|---|
-| rb6scale_summary.py | 27bb21ee4725 |
+| rb6scale_summary.py | f856bd596db4 |
 | rainbow6_summary.py | f41d8b85a97d |
 | make_rb6m_tasks.py | 9e7f28b3d192 |
 | make_rb6_tasks.py | 7f689a95f000 |
@@ -353,22 +393,27 @@ read-only, with copies in scale-ladder notes/rb6_505m_s1/:
 
 | script | sha256[:12] |
 |---|---|
-| runs/rb6_505m/x1_select.sh | 75f307fc5905 |
-| runs/rb6_505m/readout_505m.sh | 8f6e710f6af9 |
+| runs/rb6_505m/x1_select.sh | 1e6f89193b8c |
+| runs/rb6_505m/readout_505m.sh | af8b1dab7cce |
 
 ### Reading order (= Addendum X1.1 #8)
 1. `bash runs/rb6_505m/x1_select.sh`, once X1's two jobs have ended (resubmissions per X1.1 #2) and no llmadd_rb6_505m
-   job is queued or running (checked). This gives outcome a, b or c. Record picks_x1.exit and picks_x1.sha here.
+   job is queued or running (checked).
+   - A data outcome gives a, b or c. Record picks_x1.exit and picks_x1.sha here.
+   - A refusal or a non-data failure records nothing: fix it and run again.
+   - `--x1-runs-final` only once an X1 run's resubmissions are used up.
 2. Under b: none@2.4e-3 seeds 2-3 (X1 outcome b; X1.1 #5), up to their end.
 3. Only then, with no 505M job of this batch queued or running (checked), the 505M main read-out below. This is the
    first look at any 505M main-stage value. There is no mid-batch look. The only partial read-out is S1.2's b case.
 
 ### Commands and picks-file use (= Addendum X1.1 #4; replaces the S1 / S1.1 hand commands)
 `bash runs/rb6_505m/readout_505m.sh <outcome> [--allow_partial]`. The script:
-- checks readout_code/COMMIT, picks.json (8d285d925c66) and picks_x1.sha;
-- runs the frozen summary with the 18 roots (rb6_505m/out, rb6_190m/out, the 16 53M F88 dirs of
-  runs/rb6_190m/AUDIT.md's command as absolute globs; the count is asserted) and --x1_json runs/rb6_505m/picks_x1.json;
-- writes runs/rb6_505m/readout_505m_x1<outcome>.{json,txt} (stdout + stderr + rc), read-only, never overwritten.
+- checks readout_code/COMMIT, picks.json (8d285d925c66), picks_x1.sha and that the 18 roots exist (rb6_505m/out,
+  rb6_190m/out, the 16 53M F88 dirs of runs/rb6_190m/AUDIT.md's command as absolute globs);
+- runs the frozen summary with --x1_json runs/rb6_505m/picks_x1.json;
+- writes runs/rb6_505m/readout_505m_x1{a,b,b_pre,c}[_partial].{json,txt}: stdout + stderr + rc, headed by the
+  script and code shas, read-only and never overwritten. A refused or failed run is kept as .failed-<time>.txt and
+  can be re-run.
 
 The read-out code derives the outcome from the X1 files and refuses any mismatch. The cases:
 - Outcome a: `readout_505m.sh a` (--picks picks_x1.json) is the only read-out. Same design as picks.json (none 4.8e-3,
@@ -376,13 +421,15 @@ The read-out code derives the outcome from the X1 files and refuses any mismatch
   This replaces X1's "(a): picks.json as pre-registered".
 - Outcome b: `readout_505m.sh b` is PRIMARY. `readout_505m.sh b-pre` (picks.json) is SECONDARY: every one of its 505M
   lines is labelled so; it is never quoted on its own and never used to choose between the two. Seeds 2-3 never
-  choose none's lr. If s2 / s3 are still missing after the resubmissions: `readout_505m.sh b --allow_partial`
-  (PROVISIONAL, n=2 of 4 on the none_nlr lines).
-- Outcome c: `readout_505m.sh c` (picks.json; picks_x1.json incomplete, or absent with a nonzero picks_x1.exit).
+  choose none's lr. If s2 / s3 are still missing after the resubmissions: `readout_505m.sh b --allow_partial` writes
+  readout_505m_x1b_partial.* (PROVISIONAL, n=2 of 4 on the none_nlr lines). The strict b may have been refused before
+  that; refusals do not block it.
+- Outcome c: `readout_505m.sh c` (picks.json; picks_x1.json incomplete, or absent with a nonzero picks_x1.exit from
+  the integrity assert).
 
 ### Tests (scale-ladder notes/rb6_505m_s1/tests/; session scratchpad s1/)
 | test | result |
 |---|---|
-| reg_s1.sh, re-run for S1.2: old (04586fb tools, summary e807e43be36b) vs new (27bb21ee4725) on the same inputs | S1 REGRESSION PASS. rb6_190m read-out (its AUDIT command): 217 lines + 83777-byte JSON, byte-identical. rb6_190m_ext read-out (rb6scale_ext_summary.py b5f3b5e6156e, which imports this file): 227 lines + 76823-byte JSON, byte-identical |
-| ro_s1_test.py, S1 + S1.1 + S1.2 (fake 505M runs = 53M Burst runs relabelled with the 505M size facts, none@2.4e-3 from a different source than none@4.8e-3; the command's three size roots; synthetic picks files in fake batch dirs, the pick tables from the fake runs, the other lrs planted low) | RO S1 TEST 50/50 PASS. Outcomes a / b / b-pre / c (absent + exit 1) / c (incomplete), all strict complete: cells, the (i) / (ii) lines, X1 selection line, binding line, labels (b-pre: every 505M line), JSON; the 53m / 190m sections equal the 190M read-out. Values a = b-pre = c; b reads its own runs; b vs b-pre BH q differ and are labelled. 39 refusals: S1's 17; S1.1's outcome / file cases; S1.2's fixed path, missing / zero exit record, JSON + nonzero exit, incomplete with a wrong grid, replayed rule; binding; two missing sizes; --allow_partial under a. --allow_partial under b runs. In-process, values not printed: the real picks.json passes x1_check incl. the replay for b-pre / c only; x1_derive on the select tool's own X1 outputs gives b / a / c, and absent + exit 1 gives c |
-| e2e_s12.py (both scripts on fake batch dirs: 12 sweep + 2 X1 + main + X1 follow-up cells from relabelled 53M runs with planted seeds 0-1 area / bpb; picks.json by the pre-registered select, picks_x1.json by x1_select.sh, i.e. every picks file written by the tool) | E2E S1.2 TEST 25/25 PASS. B (X1 -> b): x1_select once only; b and b-pre run; a / c refused; no overwrite; an edited picks_x1.json is refused by its sha; without 2.4e-3 s2 / s3, strict is refused and --allow_partial is PROVISIONAL, but refused with one more gap and for b-pre. A (X1 -> a): only a runs, a --allow_partial refused. C (an integrity failure in the X1 selection): exit 1, no JSON; c runs, b-pre / a refused. N (2.4e-3 s1 bpb NaN): X1 -> b, and readout b passes the binding |
+| reg_s1.sh, re-run for S1.3: old (04586fb tools, summary e807e43be36b) vs new (f856bd596db4) on the same inputs | S1 REGRESSION PASS. rb6_190m read-out (its AUDIT command): 217 lines + 83777-byte JSON, byte-identical. rb6_190m_ext read-out (rb6scale_ext_summary.py b5f3b5e6156e, which imports this file): 227 lines + 76823-byte JSON, byte-identical |
+| ro_s1_test.py, S1 - S1.3 (fake 505M runs = 53M Burst runs relabelled with the 505M size facts, none@2.4e-3 from a different source than none@4.8e-3; the command's three size roots; synthetic picks files in fake batch dirs, the pick tables from the fake runs, the other lrs planted low) | RO S1 TEST 48/48 PASS. Outcomes a / b / b-pre / c (absent + exit 1) / c (incomplete): cells, (i) / (ii) lines, X1 selection line, binding line, labels (b-pre: every 505M line), JSON; the 53m / 190m sections equal the 190M read-out. Values a = b-pre = c; b reads its own runs; b vs b-pre BH q differ and are labelled. 38 refusals: S1's 17; S1.1's outcome / file cases; S1.2's fixed path, missing / zero exit record, JSON + nonzero exit, incomplete with a wrong grid, replayed rule; binding; two missing sizes; --allow_partial under a, and under b with nothing missing (S1.3). In-process, values not printed: the real picks.json passes x1_check incl. the replay for b-pre / c only; x1_derive on the select tool's own X1 outputs gives b / a / c, and absent + exit 1 gives c |
+| e2e_s13.py (the scripts at their real location on fake batch dirs: 12 sweep + 2 X1 + main + X1 follow-up cells from relabelled 53M runs with planted seeds 0-1 area / bpb; picks.json by the pre-registered select, picks_x1.json by x1_select.sh; the read-out code under test snapshotted into each dir) | E2E S1.3 TEST 40/40 PASS. B (X1 -> b): bad args; a broken environment refused with nothing recorded; x1_select once only; b / b-pre run with the sha header; a / c refused for the right reason; a refused c re-runnable; --allow_partial with nothing missing refused; an edited picks_x1.json refused. Real-dir branch via copies whose REAL is the fake dir: the live squeue (6 llmadd_rb6_505m jobs then) refuses; a failing squeue refuses both scripts; R with '//' is still the real dir; an idle queue runs with the pinned sha, ignoring PICKS_SHA. Bp: strict b refused, then b --allow_partial with no cleaning gives PROVISIONAL in _partial. Bq: one more gap refused (also for b-pre). A: only a runs. C: the integrity assert is a data outcome (exit 1 recorded), c runs. F: a non-data crash (JSONDecodeError) records nothing; after the fix, b. M: X1 s1 missing refused, then --x1-runs-final -> incomplete -> c. N: NaN bpb, binding OK |
