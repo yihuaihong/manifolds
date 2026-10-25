@@ -37,6 +37,10 @@ Amendment S1 (llmadd_torch/runs/rb6_505m/AUDIT.md, 2026-10-25, before any 505M m
       file. The three sizes must all be present. The picks file's seeds 0-1 area / bpb at each pick must equal the
       loaded runs. Under b-pre every 505M line carries the SECONDARY label; the none cell at all6-lam1's pick says it
       is not a grid point of none.
+  S1.2 (after the second build review, still before any 505M main result): --x1_json must be picks_x1.json next to
+      --picks; absent counts as c only with picks_x1.exit recording a nonzero selection exit; an incomplete X1 file must
+      carry X1's grid / amendment; the selection rule is replayed on the picks file's own table (= its pick / bracket);
+      NaN = NaN in the binding; a 505M --allow_partial read-out only under b with only none@2.4e-3 s2 / s3 missing.
     python tools/rb6scale_summary.py <dirs with run_*.json ...> [--picks picks.json --x1 {a,b,b-pre,c} --x1_json
         picks_x1.json] [--allow_partial] [--json out.json]
 """
@@ -155,6 +159,12 @@ def x1_check(pk, state):
     assert pk["bracket"]["none"].startswith(st["br"]), (f"--x1 {state}: none's bracket", pk["bracket"]["none"], st["br"])
     assert pk["pick"]["all6-lam1"] == "6e-4" and pk["bracket"]["all6-lam1"] == "closed", \
         ("Amendment X1: all6-lam1 untouched (pick 6e-4, closed)", pk["pick"]["all6-lam1"], pk["bracket"]["all6-lam1"])
+    import rb6scale_select as SEL   # S1.2 (review 2, minor 4); lazy: it imports this module
+    for a in ("none", "all6-lam1"):   # the pre-registered rule replayed on the file's own table = its pick and bracket
+        g = pk.get("grid", PRE_GRID)[a]
+        pick, _, _, _, br = SEL.select({lr: pk["table"][a]["area"][lr] for lr in g}, {lr: pk["table"][a]["bpb"][lr] for lr in g}, g)
+        assert (pick, br) == (pk["pick"][a], pk["bracket"][a]), ("the selection rule on the picks file's own table != its "
+                                                                  "pick / bracket", a, (pick, br), (pk["pick"][a], pk["bracket"][a]))
     per = {a: {k: pk["table"][a][k][pk["pick"][a]] for k in ("area", "bpb")} for a in ("none", "all6-lam1")}
     return {"state": state, "label": st["label"], "grid": pk.get("grid", PRE_GRID),
             "grid_source": "Amendment X1 (--grid_none)" if has else "the pre-registered sweep grid",
@@ -162,19 +172,32 @@ def x1_check(pk, state):
             "pick": pk["pick"], "per_seed": per}
 
 
-def x1_derive(path):
-    """Amendment S1.1 (build review I2): the X1 outcome from the X1 selection's own output (runs/rb6_505m/picks_x1.json):
-    absent or status != 'picked' -> 'c' (X1 incomplete; a nonzero exit of the selection writes no JSON); 'picked' -> 'a'
-    (none 4.8e-3) or 'b' (none 2.4e-3), the file checked as an X1 picks file. An existing file must have the X1 'grid'
-    (else it is not the X1 selection's output). -> (outcome, sha256[:12] or None, status)."""
+def x1_derive(path, picks_path):
+    """Amendment S1.1 (build review I2) + S1.2 (review 2, important 1): the X1 outcome from the X1 selection's own output,
+    at its fixed path: picks_x1.json next to --picks (runs/rb6_505m/picks_x1.json). Absent -> 'c' ONLY with
+    picks_x1.exit beside it recording the selection's nonzero exit (its integrity failure writes no JSON; x1_select.sh
+    writes the exit code); a status != 'picked' -> 'c'; 'picked' -> 'a' (none 4.8e-3) or 'b' (none 2.4e-3), the file
+    checked as an X1 picks file. An existing file must carry Amendment X1's grid and amendment, also when incomplete.
+    -> (outcome, sha256[:12] or None, status)."""
     p = Path(path)
+    want_p = Path(picks_path).resolve().parent / "picks_x1.json"
+    assert p.resolve() == want_p, (f"--x1_json must be the X1 selection's fixed output picks_x1.json next to --picks "
+                                   f"({want_p})", str(p))
+    ex = p.with_suffix(".exit")
+    code = ex.read_text().strip() if ex.exists() else None
     if not p.exists():
-        return "c", None, "absent"
+        assert code is not None, (f"{p} is absent and {ex} does not record the X1 selection's exit: has the X1 selection "
+                                  "(x1_select.sh) run? (Amendment S1.2)")
+        assert code.isdigit() and int(code) != 0, (f"{p} is absent but {ex} records exit {code!r}, not a nonzero exit", code)
+        return "c", None, f"absent (X1 selection exit {code})"
+    assert code is None or code == "0", (f"{p} exists but {ex} records exit {code!r}: not the selection's output", code)
     raw = p.read_bytes()
     xj = json.loads(raw)
     assert "grid" in xj, (f"--x1_json {path} has no 'grid': not written by rb6scale_select.py --grid_none (the X1 "
                           "selection)")
     if xj.get("status") != "picked":
+        assert xj["grid"] == X1_GRID and str(xj.get("amendment", "")).startswith("X1"), \
+            ("an incomplete X1 selection output without Amendment X1's grid / amendment", xj.get("grid"), xj.get("amendment"))
         return "c", hashlib.sha256(raw).hexdigest()[:12], str(xj.get("status"))
     st = "b" if xj["pick"]["none"] == "2.4e-3" else "a"
     x1_check(xj, st)
@@ -191,9 +214,17 @@ def x1_bind(cells, x1, pk):
             assert x is not None, (f"505m {arm}@{lr} s{s} (a selection run of the picks file) is not in the read-out")
             got = (value(x, "numbers"), R6.final_bpb(x["r"]))
             want = (pk["table"][arm]["area"][lr][i], pk["table"][arm]["bpb"][lr][i])
-            same = [(g == w) or (g is not None and w is not None and math.isfinite(g) and math.isfinite(w) and abs(g - w) < 1e-9)
-                    or (g is not None and w is None and not math.isfinite(g)) for g, w in zip(got, want)]
-            assert all(same), (f"the picks file's table != the loaded run at 505m {arm}@{lr} s{s} [run, file]", got, want)
+            assert all(_same(g, w) for g, w in zip(got, want)), \
+                (f"the picks file's table != the loaded run at 505m {arm}@{lr} s{s} [run, file]", got, want)
+
+
+def _same(g, w):
+    """S1.2 (review 2, minor 3): equal values; None = None; NaN = NaN (a diverged run's bpb is NaN in run and table)."""
+    if g is None or w is None:
+        return g is None and w is None
+    if math.isnan(g) or math.isnan(w):
+        return math.isnan(g) and math.isnan(w)
+    return g == w or (math.isfinite(g) and math.isfinite(w) and abs(g - w) < 1e-9)
 
 
 def role_desc(sz, ro):
@@ -340,7 +371,7 @@ def main():
         x1 = dict(x1_check(pk, opt.x1), picks_file=str(opt.picks), picks_sha=hashlib.sha256(raw).hexdigest()[:12])
         # S1.1 (review I2): the outcome is not self-reported: derived from the X1 selection's output, = --x1
         assert opt.x1_json, "a 505M read-out needs --x1_json <runs/rb6_505m/picks_x1.json> (Amendment S1.1; may be absent)"
-        got, xsha, xstat = x1_derive(opt.x1_json)
+        got, xsha, xstat = x1_derive(opt.x1_json, opt.picks)
         want = "b" if opt.x1 == "b-pre" else opt.x1
         assert got == want, (f"--x1 {opt.x1} but the X1 selection's output {opt.x1_json} gives outcome {got} "
                              f"(status {xstat})")
@@ -462,6 +493,11 @@ def main():
         print("  missing seeds: " + "; ".join(miss_txt))
         raise AssertionError("rb6 scale read-out REFUSED (strict): missing / excluded / unfinished seeds " + "; ".join(miss_txt)
                              + " (--allow_partial to look anyway: PROVISIONAL)")
+    if x1 is not None and opt.allow_partial:   # S1.2 (review 2, important 2): the one pre-registered partial 505M read-out
+        gaps = sorted((sz, ro, s) for sz in sizes for ro, v in missing[sz].items() for s in v)
+        assert x1["state"] == "b" and set(gaps) <= {("505m", "none_nlr", 2), ("505m", "none_nlr", 3)}, \
+            ("a 505M --allow_partial read-out is allowed only under outcome b with nothing missing / excluded / unfinished "
+             "but none@2.4e-3 seeds 2-3 (Amendment S1.1 / S1.2)", x1["state"], gaps)
     prov = lambda sz, ros: [ro for ro in ros if missing[sz][ro]]
 
     # ---- per size: the cells (descriptive)

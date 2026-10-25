@@ -1,0 +1,26 @@
+PASS B: the pre-registered select on the fake sweep -> picks.json none 4.8e-3 OPEN lower, all6 6e-4 (as the real one)
+PASS B: x1_select.sh -> picks_x1.json picked none 2.4e-3, exit 0, sha recorded, read-only
+PASS B: x1_select.sh refuses a second run
+PASS B: readout_505m.sh b: exit 0 (want 0)
+PASS B: readout_505m.sh b-pre: exit 0 (want 0)
+PASS B: readout_505m.sh a: exit 1 (want 1); reason: AssertionError: ("--x1 a needs none's pick 4.8e-3", '2.4e-3')
+PASS B: readout_505m.sh c: exit 1 (want 1); reason: AssertionError: --x1 c but the X1 selection's output /state/partition1/job-20284046/claude-4550886/-home-yh6210/74cbe2e4
+PASS B: readout_505m.sh b again: refused (no overwrite)
+PASS B: a picks_x1.json edited after x1_select.sh: refused (sha)
+PASS Bp: strict readout b without 2.4e-3 s2 / s3: refused
+PASS Bp: readout b --allow_partial: PROVISIONAL, only none@2.4e-3 [2, 3] missing
+PASS Bq: readout b --allow_partial with only-numbers s3 missing too: refused (S1.2)
+PASS Bq: readout b-pre --allow_partial: refused (S1.2)
+PASS A: x1_select.sh -> picks_x1.json none 4.8e-3 closed
+PASS A: readout_505m.sh a: exit 0 (want 0)
+PASS A: readout_505m.sh b: exit 1 (want 1)
+PASS A: readout_505m.sh b-pre: exit 1 (want 1)
+PASS A: readout_505m.sh c: exit 1 (want 1)
+PASS A: readout a --allow_partial: refused (S1.2)
+PASS C: x1_select.sh: the selection stops on the integrity assert (exit 1), no JSON
+PASS C: readout_505m.sh c: exit 0 (want 0)
+PASS C: readout_505m.sh b-pre: exit 1 (want 1)
+PASS C: readout_505m.sh a: exit 1 (want 1)
+PASS N: x1_select.sh -> b with a NaN bpb at 2.4e-3 s1 in the table
+PASS N: readout b: the binding takes NaN = NaN
+E2E S1.2 TEST PASS
