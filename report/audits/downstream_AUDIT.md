@@ -215,3 +215,16 @@ paradigm clusters, not over 67,000 independent pairs (the same kind of correctio
   - the selftest includes a hand-computed case.
 - The gate is computed on CPU from the existing KA JSONs; downstream_eval.py is unchanged (5d694e38ab75), so no GPU
   re-run is needed.
+**A3 result** (CPU, `downstream_readout.py --ka_gate` at de7adcd, read-out sha c73e84c9387a, on the existing KA JSONs of
+eval code 5d694e38ab75; the rule above was committed before this was computed):
+| random-init | BLiMP equal-token acc | SE_cl (CR1, G = 67) | tol = max(3, 3 SE_cl) | verdict |
+|---|---|---|---|---|
+| 53M d384 L6 | 49.64 | 1.66 | 4.97 | PASS |
+| 190M d768 L12 | 49.17 | 1.40 | 4.21 | PASS |
+| 505M d1024 L24 | 53.55 | 1.73 | 5.20 | PASS |
+The rebuilt equal-token mask and accuracy match the stored ones (asserted). For comparison only, the coordinator's
+approximation (all-pairs SD/√67) gave 1.59 / 1.43 / 1.63. All other checks are unchanged and PASS: GPT-2 LAMBADA 32.56,
+ppl 40.06, BLiMP 82.52; every other random-init criterion; 5/5 load checks. **KNOWN-ANSWER OVERALL: PASS.** Group jobs
+are resubmitted from the per-commit snapshot of this commit. Each group job re-runs the selftest and this gate itself
+before scoring.
+Nothing above "Amendment A3" was changed.
