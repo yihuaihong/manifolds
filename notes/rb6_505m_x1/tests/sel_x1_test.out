@@ -1,0 +1,29 @@
+PASS default regression on 12 sweep dirs: old / new stdout byte-identical (10 lines) and JSON byte-identical (2048 bytes); rc 0 / 0
+PASS new stdout on the 12 sweep dirs = the selection job's select.log lines 2-11 (job 20599806, the batch snapshot's code)
+PASS new JSON on the 12 sweep dirs = runs/rb6_505m/picks.json byte for byte
+PASS default regression on runs/rb6_505m/out: old / new stdout byte-identical (22 lines) and JSON byte-identical (2887 bytes); rc 0 / 0
+PASS b_clear: with --grid_none pick none 2.4e-3 (want 2.4e-3), bracket 'OPEN at the lower edge (one more step outward only with the user's approval)', tied ['2.4e-3']; all6 6e-4 closed; grid printed + stored
+PASS b_clear: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the selection
+PASS a_lower: with --grid_none pick none 4.8e-3 (want 4.8e-3), bracket 'closed', tied ['4.8e-3', '9.6e-3']; all6 6e-4 closed; grid printed + stored
+PASS a_lower: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the bracket (OPEN -> closed)
+PASS tie_lowbpb: with --grid_none pick none 2.4e-3 (want 2.4e-3), bracket 'OPEN at the lower edge (one more step outward only with the user's approval)', tied ['2.4e-3', '4.8e-3', '9.6e-3']; all6 6e-4 closed; grid printed + stored
+PASS tie_lowbpb: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the selection
+PASS tie_highbpb: with --grid_none pick none 4.8e-3 (want 4.8e-3), bracket 'closed', tied ['2.4e-3', '4.8e-3', '9.6e-3']; all6 6e-4 closed; grid printed + stored
+PASS tie_highbpb: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the bracket (OPEN -> closed)
+PASS tie_samebpb: with --grid_none pick none 2.4e-3 (want 2.4e-3), bracket 'OPEN at the lower edge (one more step outward only with the user's approval)', tied ['2.4e-3', '4.8e-3', '9.6e-3']; all6 6e-4 closed; grid printed + stored
+PASS tie_samebpb: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the selection
+PASS diverged: with --grid_none pick none 4.8e-3 (want 4.8e-3), bracket 'closed', tied ['2.4e-3', '4.8e-3', '9.6e-3']; all6 6e-4 closed; grid printed + stored; s1 DIVERGED (data), its bpb the worst (inf)
+PASS diverged: same data WITHOUT the flag -> pick 4.8e-3 OPEN lower (the 2.4e-3 runs 'not a sweep run (ignored)'): the flag changes the bracket (OPEN -> closed)
+PASS missing_s1: incomplete, no picks; problem 'missing run none@2.4e-3 s1'
+PASS failcheck_s0: incomplete, no picks; problem 'its check FAILED'
+PASS unfinished_s0: incomplete, no picks; problem 'unfinished (last eval'
+PASS wronglr_s1: incomplete, no picks; problem 'trainer args differ from the intent'
+PASS flag on the 12 sweep runs only: incomplete (2 missing none@2.4e-3 runs)
+PASS --grid_none 2.4e-3,4.8e-3,9.6e-3 (missing_preregistered) refused (exit 1, no JSON)
+PASS --grid_none 4.8e-3,2.4e-3,9.6e-3,1.92e-2 (not_ascending) refused (exit 1, no JSON)
+PASS --grid_none 2.4e-3,2.4e-3,4.8e-3,9.6e-3,1.92e-2 (duplicate) refused (exit 1, no JSON)
+PASS --grid_none 2.4e-3,0.0048,9.6e-3,1.92e-2 (respelled) refused (exit 1, no JSON)
+PASS --grid_none 0,4.8e-3,9.6e-3,1.92e-2 (nonpositive) refused (exit 1, no JSON)
+PASS a JSON written without the flag (copy of picks.json) is not overwritten with --grid_none
+PASS an existing X1 JSON is rewritten (same inputs -> same bytes)
+SELECT X1 TEST PASS

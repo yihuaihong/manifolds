@@ -1,0 +1,8 @@
+PASS tools/rb6scale_summary.py is the pre-registered read-out e807e43be36b (unchanged by X1)
+PASS (b) X1 picks JSON (none 2.4e-3): none_nlr = none@2.4e-3, strict status complete, 4 IGNORED lines (all none@4.8e-3)
+PASS (b) S1b rows labelled 'all6-lam1@6e-4 - none@2.4e-3'
+PASS (a) picks none 4.8e-3: none_nlr = none@4.8e-3, the 4 none@2.4e-3 runs IGNORED
+PASS (a) = (b) in every cell value (36 cell-metric entries) and paired statistic: only labels / lr differ
+PASS (b) without none@2.4e-3 s2 / s3: strict read-out REFUSED, naming 505m none@2.4e-3 [2, 3]
+PASS (b) --allow_partial: status PROVISIONAL, none@2.4e-3 PROVISIONAL (n=2 of 4)
+RO X1 TEST PASS
