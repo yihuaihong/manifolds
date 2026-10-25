@@ -1,1 +1,0 @@
-PASS combined 53m + 190m + fake 505m read-out (--x1 b): rc 0, strict complete True; the 53m / 190m cell and paired sections line-identical to the 190M read-out without --picks: True

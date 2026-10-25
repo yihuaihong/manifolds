@@ -32,10 +32,16 @@ Amendment S1 (llmadd_torch/runs/rb6_505m/AUDIT.md, 2026-10-25, before any 505M m
   (iii) a picks file with a 'grid' must carry Amendment X1's grids and a none pick of 2.4e-3 or 4.8e-3;
   (iv) --picks needs --x1 <outcome>: a / b (X1 read-outs) need picks_x1.json (with 'grid'); b-pre / c need picks.json
       (without). Without --picks (53M / 190M) the output, text and JSON, is byte-identical to the pre-S1 version.
-    python tools/rb6scale_summary.py <dirs with run_*.json ...> [--picks picks.json --x1 {a,b,b-pre,c}] [--allow_partial]
-        [--json out.json]
+  S1.1 (after the build review, still before any 505M main result): --x1_json <picks_x1.json path> is required; the outcome
+      is derived from it (absent / not picked -> c; picked -> a / b) and must equal --x1 (b-pre: b); a / b read that very
+      file. The three sizes must all be present. The picks file's seeds 0-1 area / bpb at each pick must equal the
+      loaded runs. Under b-pre every 505M line carries the SECONDARY label; the none cell at all6-lam1's pick says it
+      is not a grid point of none.
+    python tools/rb6scale_summary.py <dirs with run_*.json ...> [--picks picks.json --x1 {a,b,b-pre,c} --x1_json
+        picks_x1.json] [--allow_partial] [--json out.json]
 """
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -156,18 +162,57 @@ def x1_check(pk, state):
             "pick": pk["pick"], "per_seed": per}
 
 
+def x1_derive(path):
+    """Amendment S1.1 (build review I2): the X1 outcome from the X1 selection's own output (runs/rb6_505m/picks_x1.json):
+    absent or status != 'picked' -> 'c' (X1 incomplete; a nonzero exit of the selection writes no JSON); 'picked' -> 'a'
+    (none 4.8e-3) or 'b' (none 2.4e-3), the file checked as an X1 picks file. An existing file must have the X1 'grid'
+    (else it is not the X1 selection's output). -> (outcome, sha256[:12] or None, status)."""
+    p = Path(path)
+    if not p.exists():
+        return "c", None, "absent"
+    raw = p.read_bytes()
+    xj = json.loads(raw)
+    assert "grid" in xj, (f"--x1_json {path} has no 'grid': not written by rb6scale_select.py --grid_none (the X1 "
+                          "selection)")
+    if xj.get("status") != "picked":
+        return "c", hashlib.sha256(raw).hexdigest()[:12], str(xj.get("status"))
+    st = "b" if xj["pick"]["none"] == "2.4e-3" else "a"
+    x1_check(xj, st)
+    return st, hashlib.sha256(raw).hexdigest()[:12], "picked"
+
+
+def x1_bind(cells, x1, pk):
+    """Amendment S1.1 (build review I4): the picks file's seeds 0-1 table = the loaded runs at each pick (numbers area and
+    in-training bpb, the selection's own definitions): the picks file belongs to these runs. -> None (asserts)."""
+    for ro, arm in (("none_nlr", "none"), ("all6", "all6-lam1")):
+        lr = pk["pick"][arm]
+        for i, s in enumerate((0, 1)):
+            x = cells["505m"].get(ro, {}).get(s)
+            assert x is not None, (f"505m {arm}@{lr} s{s} (a selection run of the picks file) is not in the read-out")
+            got = (value(x, "numbers"), R6.final_bpb(x["r"]))
+            want = (pk["table"][arm]["area"][lr][i], pk["table"][arm]["bpb"][lr][i])
+            same = [(g == w) or (g is not None and w is not None and math.isfinite(g) and math.isfinite(w) and abs(g - w) < 1e-9)
+                    or (g is not None and w is None and not math.isfinite(g)) for g, w in zip(got, want)]
+            assert all(same), (f"the picks file's table != the loaded run at 505m {arm}@{lr} s{s} [run, file]", got, want)
+
+
 def role_desc(sz, ro):
     return ROLE_DESC_505[ro] if sz == "505m" else ROLE_DESC[ro]
 
 
 def x1_cell_note(x1, sz, ro):
     """S1 (ii): the note next to a 505M cell ('' elsewhere): none's bracket + the X1 label at the numbers-selected none
-    cell; all6-lam1's bracket at the cells on all6-lam1's pick."""
+    cell; all6-lam1's bracket at the cells on all6-lam1's pick (none_plr: never a grid point of none, S1.1 / review m1);
+    under b-pre every 505M cell carries the SECONDARY label (S1.1 / review I3)."""
     if sz != "505m" or x1 is None:
         return ""
     if ro == "none_nlr":
         return f" [{x1['label']}; none's bracket: {x1['bracket']['none']}]"
-    return f" [at all6-lam1's pick; its bracket: {x1['bracket']['all6-lam1']}]"
+    sec = f"; {x1['label']}" if x1["state"] == "b-pre" else ""
+    if ro == "none_plr":
+        return (f" [none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: "
+                f"{x1['bracket']['all6-lam1']}{sec}]")
+    return f" [at all6-lam1's pick; its bracket: {x1['bracket']['all6-lam1']}{sec}]"
 
 
 def cell_label(design, sz, ro):
@@ -283,22 +328,37 @@ def main():
     ap.add_argument("--x1", default=None, help="505M (with --picks), Amendment S1: the Amendment X1 outcome this read-out is "
                     "for: a / b = picks_x1.json (with 'grid'), b-pre = the secondary picks.json read-out under b, c = X1 "
                     "incomplete (picks.json)")
+    ap.add_argument("--x1_json", default=None, help="505M (with --picks), Amendment S1.1: the X1 selection's output path "
+                    "(runs/rb6_505m/picks_x1.json; may be absent): the outcome is derived from it and must equal --x1")
     opt = ap.parse_args()
     design = dict(DESIGN)
     x1 = None
     if opt.picks:
-        pk = json.loads(Path(opt.picks).read_text())
+        raw = Path(opt.picks).read_bytes()
+        pk = json.loads(raw)
         assert pk.get("status") == "picked" and pk["size"] == "505m", ("not a completed 505M selection", pk.get("status"))
-        x1 = dict(x1_check(pk, opt.x1), picks_file=str(opt.picks))
+        x1 = dict(x1_check(pk, opt.x1), picks_file=str(opt.picks), picks_sha=hashlib.sha256(raw).hexdigest()[:12])
+        # S1.1 (review I2): the outcome is not self-reported: derived from the X1 selection's output, = --x1
+        assert opt.x1_json, "a 505M read-out needs --x1_json <runs/rb6_505m/picks_x1.json> (Amendment S1.1; may be absent)"
+        got, xsha, xstat = x1_derive(opt.x1_json)
+        want = "b" if opt.x1 == "b-pre" else opt.x1
+        assert got == want, (f"--x1 {opt.x1} but the X1 selection's output {opt.x1_json} gives outcome {got} "
+                             f"(status {xstat})")
+        if opt.x1 in ("a", "b"):   # the X1 read-out reads the X1 selection's own file
+            assert xsha == x1["picks_sha"], ("--picks is not the X1 selection's output --x1_json", x1["picks_sha"], xsha)
+        x1.update(x1_json=str(opt.x1_json), x1_json_sha=xsha, x1_json_status=xstat)
         a_, n_ = pk["pick"]["all6-lam1"], pk["pick"]["none"]
         design["505m"] = {"none_plr": a_, "none_nlr": n_, "all6": a_, "only_numbers": a_}
     else:
-        assert opt.x1 is None, "--x1 is the 505M read-out's X1 outcome: it needs --picks"
+        assert opt.x1 is None and opt.x1_json is None, "--x1 / --x1_json are the 505M read-out's X1 outcome: they need --picks"
     for sz, d in design.items():
         assert float(d["none_plr"]) != float(d["none_nlr"]), (sz, "the two none cells have one lr: one cell, not two")
     runs = R6.load(opt.roots)
     cells, ignored, info = assign(runs, design)
     sizes = [s for s in ("53m", "190m", "505m") if s in cells]
+    if x1 is not None:   # S1.1 (review I1): the 505M read-out prints the three sizes side by side; a missing root is an error
+        assert sizes == ["53m", "190m", "505m"], (f"505M read-out: sizes {sizes} != 53m, 190m, 505m (a root missing or "
+                                                  "mistyped? the 53M Burst dirs / rb6_190m/out / rb6_505m/out)")
     print(f"rb6 scale summary: sizes {sizes}; {sum(len(v) for c in cells.values() for v in c.values())} runs in the design, "
           f"{len(ignored)} ignored; mode {'PARTIAL (--allow_partial: every verdict PROVISIONAL)' if opt.allow_partial else 'strict'}")
     print("  cells per size: " + "; ".join(f"{s} " + ", ".join(cell_label(design, s, ro) for ro in ROLES) for s in ("53m",) + tuple(design)))
@@ -318,7 +378,10 @@ def main():
     if x1 is not None:   # S1 (ii): the picks file's grid / amendment / bracket and the X1 label
         pf = lambda a: (f"{a} {x1['pick'][a]} (seeds 0-1 numbers area [{' '.join(fmt(v, 5) for v in x1['per_seed'][a]['area'])}], "
                         f"in-training bpb [{' '.join(fmt(v, 6, 4) for v in x1['per_seed'][a]['bpb'])}])")
-        print(f"  505m picks (Amendment S1): {x1['picks_file']}; X1 outcome {x1['state']}: {x1['label']}")
+        print(f"  505m picks (Amendment S1): {x1['picks_file']} (sha256[:12] {x1['picks_sha']}); X1 outcome {x1['state']}: "
+              f"{x1['label']}")
+        print(f"    X1 selection output (--x1_json): {x1['x1_json']} (status {x1['x1_json_status']}, sha256[:12] "
+              f"{x1['x1_json_sha']}) -> outcome {'b' if x1['state'] == 'b-pre' else x1['state']}")
         print(f"    grid ({x1['grid_source']}): none {' '.join(x1['grid']['none'])}; all6-lam1 {' '.join(x1['grid']['all6-lam1'])}; "
               f"amendment: {x1['amendment']}")
         print(f"    bracket: none {x1['bracket']['none']}; all6-lam1 {x1['bracket']['all6-lam1']}")
@@ -330,7 +393,7 @@ def main():
            "caveats": {k: v.format(size="the Torch sizes") for k, v in CAVEATS.items()}, "ignored": ignored,
            "excluded": [], "warnings": [], "cells": {}, "families": {}, "missing": {}, "grad_split": {}}
     if x1 is not None:   # S1: JSON keys only in a 505M read-out
-        out["roles_505m"] = ROLE_DESC_505
+        out["roles"] = {"53m,190m": ROLE_DESC, "505m": ROLE_DESC_505}   # S1.1 (review m2): no unqualified pt2 roles
         out["caveats"]["lr_provenance"] = LR_PROV_190
         out["caveats"]["lr_provenance_505m"] = lp505
         out["x1"] = x1
@@ -387,6 +450,10 @@ def main():
             n = min(len(ref), len(got))
             assert got[:n] == ref[:n], (s, sz, x["tag"], "the data differ across sizes (data_sha series)")
     print(f"  data identity: per seed every run of every size has the same data_sha at every eval ({len(by_seed)} seeds)")
+    if x1 is not None:   # S1.1 (review I4): the picks file belongs to these runs
+        x1_bind(cells, x1, pk)
+        print(f"  505m picks bound: the picks file's seeds 0-1 numbers area / in-training bpb = the loaded runs at "
+              f"none@{pk['pick']['none']} and all6-lam1@{pk['pick']['all6-lam1']}")
     # ---- missing seeds
     missing = {sz: {ro: [s for s in SEEDS if s not in cells[sz].get(ro, {})] for ro in ROLES} for sz in sizes}
     out["missing"] = missing
@@ -476,7 +543,8 @@ def main():
           "column is NOT F88's A8.3 comparison)")
     if x1 is not None and "505m" in sizes:   # S1 (ii)
         print(f"  (505m: {cell_label(design, '505m', 'none_nlr')} = {ROLE_DESC_505['none_nlr']}: {x1['label']}; none's bracket "
-              f"{x1['bracket']['none']}; the other 505m cells are at all6-lam1's pick, bracket {x1['bracket']['all6-lam1']})")
+              f"{x1['bracket']['none']}; the other 505m cells are at all6-lam1's pick, bracket {x1['bracket']['all6-lam1']} "
+              f"(the none cell there is not a grid point of none and does not close none's bracket))")
 
     # ---- paired families per size
     for sz in sizes:
@@ -509,7 +577,8 @@ def main():
                     cav = (cav + "; " if cav else "") + f"two-sided: the baseline's s4 gate is {s4_gate[r_['b']]}"
                 if fam == "SE" and sz == "53m":
                     cav = (cav + "; " if cav else "") + SE53
-                if sz == "505m" and x1 is not None and "none_nlr" in (r_["a"], r_["b"]):   # S1 (ii): every none_nlr row
+                # S1 (ii): every none_nlr row; S1.1 (review I3): under b-pre every 505M row (its BH q values differ too)
+                if sz == "505m" and x1 is not None and ("none_nlr" in (r_["a"], r_["b"]) or x1["state"] == "b-pre"):
                     cav = (cav + "; " if cav else "") + x1["label"]
                 r_["caveat"] = cav
             adj = R6.bh([r_.get("p_t") for r_ in res])

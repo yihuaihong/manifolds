@@ -1,10 +1,14 @@
-PASS outcome a (P_a.json): rc 0, strict complete; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles (505m) line, no pt2; (i) lr-source NOTEs: 190m pt2 / 505m this sweep + grid; (i) 505m cell header, no pt2; (ii) picks block (file, outcome, grid, amendment, bracket, per-seed); (ii) none_nlr cell note; (ii) other 505m cells: all6's bracket; (ii) every none_nlr row (S1b / SE / SH) carries the label; no other row; (ii) side-by-side footnote + final line; JSON x1 / roles_505m / caveats
-PASS outcome b (P_b.json): rc 0, strict complete; none_nlr = none@2.4e-3; none@4.8e-3 IGNORED (4); (i) roles (505m) line, no pt2; (i) lr-source NOTEs: 190m pt2 / 505m this sweep + grid; (i) 505m cell header, no pt2; (ii) picks block (file, outcome, grid, amendment, bracket, per-seed); (ii) none_nlr cell note; (ii) other 505m cells: all6's bracket; (ii) every none_nlr row (S1b / SE / SH) carries the label; no other row; (ii) side-by-side footnote + final line; JSON x1 / roles_505m / caveats
-PASS outcome b-pre (P_pre.json): rc 0, strict complete; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles (505m) line, no pt2; (i) lr-source NOTEs: 190m pt2 / 505m this sweep + grid; (i) 505m cell header, no pt2; (ii) picks block (file, outcome, grid, amendment, bracket, per-seed); (ii) none_nlr cell note; (ii) other 505m cells: all6's bracket; (ii) every none_nlr row (S1b / SE / SH) carries the label; no other row; (ii) side-by-side footnote + final line; JSON x1 / roles_505m / caveats
-PASS outcome c (P_pre.json): rc 0, strict complete; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles (505m) line, no pt2; (i) lr-source NOTEs: 190m pt2 / 505m this sweep + grid; (i) 505m cell header, no pt2; (ii) picks block (file, outcome, grid, amendment, bracket, per-seed); (ii) none_nlr cell note; (ii) other 505m cells: all6's bracket; (ii) every none_nlr row (S1b / SE / SH) carries the label; no other row; (ii) side-by-side footnote + final line; JSON x1 / roles_505m / caveats
-PASS every cell value and paired statistic equal across a / b / b-pre / c (same source runs): S1 changes labels only
+PASS outcome a (--picks P_a.json --x1 a --x1_json P_a.json): rc 0, strict complete, 3 sizes; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles / lr-source lines; (i) 505m section without pt2; (ii) picks block with sha; S1.1 X1 selection line; S1.1 binding line; (ii) none_nlr cell note; m1 none@6e-4 note; (ii)/I3 labelled rows; I3 b-pre cell headers all labelled; footnote + final line; JSON x1 / roles (m2); 53m / 190m sections = the 190M read-out
+PASS outcome b (--picks P_b.json --x1 b --x1_json P_b.json): rc 0, strict complete, 3 sizes; none_nlr = none@2.4e-3; none@4.8e-3 IGNORED (4); (i) roles / lr-source lines; (i) 505m section without pt2; (ii) picks block with sha; S1.1 X1 selection line; S1.1 binding line; (ii) none_nlr cell note; m1 none@6e-4 note; (ii)/I3 labelled rows; I3 b-pre cell headers all labelled; footnote + final line; JSON x1 / roles (m2); 53m / 190m sections = the 190M read-out
+PASS outcome b-pre (--picks P_pre.json --x1 b-pre --x1_json P_b.json): rc 0, strict complete, 3 sizes; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles / lr-source lines; (i) 505m section without pt2; (ii) picks block with sha; S1.1 X1 selection line; S1.1 binding line; (ii) none_nlr cell note; m1 none@6e-4 note; (ii)/I3 labelled rows; I3 b-pre cell headers all labelled; footnote + final line; JSON x1 / roles (m2); 53m / 190m sections = the 190M read-out
+PASS outcome c_absent (--picks P_pre.json --x1 c --x1_json absent_picks_x1.json): rc 0, strict complete, 3 sizes; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles / lr-source lines; (i) 505m section without pt2; (ii) picks block with sha; S1.1 X1 selection line; S1.1 binding line; (ii) none_nlr cell note; m1 none@6e-4 note; (ii)/I3 labelled rows; I3 b-pre cell headers all labelled; footnote + final line; JSON x1 / roles (m2); 53m / 190m sections = the 190M read-out
+PASS outcome c_incomplete (--picks P_pre.json --x1 c --x1_json P_inc.json): rc 0, strict complete, 3 sizes; none_nlr = none@4.8e-3; none@2.4e-3 IGNORED (4); (i) roles / lr-source lines; (i) 505m section without pt2; (ii) picks block with sha; S1.1 X1 selection line; S1.1 binding line; (ii) none_nlr cell note; m1 none@6e-4 note; (ii)/I3 labelled rows; I3 b-pre cell headers all labelled; footnote + final line; JSON x1 / roles (m2); 53m / 190m sections = the 190M read-out
+PASS values equal across a / b-pre / c (none_nlr = none@4.8e-3 in all): S1 changes labels only
+PASS b reads the none@2.4e-3 runs (its own source, != a's none@4.8e-3 values)
+PASS I3: b vs b-pre BH q of the SE none_plr rows differ ({'months': 0.7102026777789809, 'weekdays': 0.09007592080095073} vs {'months': 0.759507812879076, 'weekdays': 0.09007592080095073}) and under b-pre those rows carry the SECONDARY label
 PASS refused: no --x1 (exit 1; 'needs --x1')
-PASS refused: --x1 without --picks (exit 1; 'it needs --picks')
+PASS refused: --x1 without --picks (exit 1; 'they need --picks')
+PASS refused: --x1_json without --picks (exit 1; 'they need --picks')
 PASS refused: unknown outcome (exit 1; 'needs --x1 one of')
 PASS refused: (iv) a + picks.json (no grid) (exit 1; 'has no 'grid'')
 PASS refused: (iv) b + picks.json (no grid) (exit 1; 'has no 'grid'')
@@ -20,6 +24,19 @@ PASS refused: (iii) no amendment (exit 1; 'not an Amendment X1 picks file')
 PASS refused: all6 pick changed (exit 1; 'all6-lam1 untouched')
 PASS refused: b pick with a closed bracket (exit 1; 'none's bracket')
 PASS refused: a pick with an OPEN bracket (exit 1; 'none's bracket')
-PASS the real runs/rb6_505m/picks.json: accepted for b-pre / c, refused for a / b (no grid)
-PASS rb6scale_select.py --grid_none's own outputs (X1 tests' fake b / a): accepted for b / a only
+PASS refused: S1.1 no --x1_json (exit 1; 'needs --x1_json')
+PASS refused: S1.1 c but the X1 output says b (exit 1; 'gives outcome b')
+PASS refused: S1.1 c but the X1 output says a (exit 1; 'gives outcome a')
+PASS refused: S1.1 b-pre but the X1 output says a (exit 1; 'gives outcome a')
+PASS refused: S1.1 b-pre but the X1 output is absent (exit 1; 'gives outcome c')
+PASS refused: S1.1 a but the X1 output is absent (exit 1; 'gives outcome c')
+PASS refused: S1.1 b but the X1 output is incomplete (exit 1; 'gives outcome c')
+PASS refused: S1.1 a: --picks is another file than --x1_json (exit 1; 'is not the X1 selection's output')
+PASS refused: S1.1 --x1_json without grid (picks.json's form) (exit 1; 'has no 'grid': not written by')
+PASS refused: S1.1 --x1_json picked with a wrong grid (exit 1; 'grid is not Amendment X1's')
+PASS refused (I4): a picks table that is not the loaded runs' (none@2.4e-3 area + 0.5) (exit 1)
+PASS refused (I1): the 53M roots missing (exit 1)
+PASS refused (I1): a 53M glob relative to another cwd (matches nothing) (exit 1)
+PASS the real runs/rb6_505m/picks.json: x1_check accepts b-pre / c, refuses a / b
+PASS x1_derive on rb6scale_select.py's own X1 outputs: b / a / incomplete -> b / a / c; absent -> c; the real picks.json (no grid) refused as an X1 output
 RO S1 TEST PASS
