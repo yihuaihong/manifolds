@@ -1,0 +1,37 @@
+PASS s0: bash -n job_rb6tb-505m-2pct-k2-none-lr2.4e-3-s0.sbatch
+PASS s0: render() = the submitted sweep file job_rb6tb-505m-2pct-k2-none-lr4.8e-3-s0.sbatch and = the X1 file, byte for byte
+PASS s0: token diff vs job_rb6tb-505m-2pct-k2-none-lr4.8e-3-s0.sbatch: 2689 tokens each, 9 differ, all = 4.8e-3 -> 2.4e-3 in {'intent (lr + tag)': 1, 'job name': 1, 'lr': 2, 'out dir': 2, 'tag': 3}; inserted / deleted / unexplained 0; whole file = template with the lr substituted: True
+    [job name] --job-name=llmadd_rb6_505m-none-lr4.8e-3-s0 -> --job-name=llmadd_rb6_505m-none-lr2.4e-3-s0
+    [lr] 4.8e-3, -> 2.4e-3,
+    [out dir] OUT=/scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s0; -> OUT=/scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr2.4e-3-s0;
+    [tag] TAG=rb6tb-505m-2pct-k2-none-lr4.8e-3; -> TAG=rb6tb-505m-2pct-k2-none-lr2.4e-3;
+    [out dir] /scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s0/rb6tb-505m-2pct-k2-none-lr4 -> /scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr2.4e-3-s0/rb6tb-505m-2pct-k2-none-lr2
+    [lr] 4.8e-3 -> 2.4e-3
+    [tag] _rb6tb-505m-2pct-k2-none-lr4.8e-3 -> _rb6tb-505m-2pct-k2-none-lr2.4e-3
+    [tag] "$OUT/$TAG/run_whole_none_seed0_rb6tb-505m-2pct-k2-none-lr4.8e-3.json" -> "$OUT/$TAG/run_whole_none_seed0_rb6tb-505m-2pct-k2-none-lr2.4e-3.json"
+    [intent (lr + tag)] (intent JSON, 1826 chars)
+    line diff: 6 lines changed:   "$OUT/check.json" '{"code; "$PY" - "$OUT/$TAG/run_whol; # rb6_505m: none @ lr 4.8e-; #SBATCH --job-name=llmadd_r; ARGS="--data /scratch/yh621; R=/scratch/yh6210/llmadd_to
+PASS s0: ARGS differ only in the values of ['--lr', '--out', '--tag']; --lr 2.4e-3 --seed 0
+PASS s0: intent differs only in ['args'] / args ['lr', 'tag'] (lr 0.0024, tag _rb6tb-505m-2pct-k2-none-lr2.4e-3); lm0_ref 11.713464 = the 505M CPU reference of seed 0; no active prior; n_params 505437184
+PASS s0: input-check block on the GPU dry log of none-lr4.8e-3-s0: exit 0 (want 0) ## dry_inputs rows = the reference (a9510cdffa6f, 88 lines)
+PASS s0: input-check block on the GPU dry log of none-lr4.8e-3-s1: exit 3 (want 3) ## dry_inputs differ from the reference rows (88 lines, sha256 2450fbb930d246767457f949dc9
+PASS s0: input-check block on the GPU dry log of all6-lam1-lr6e-4-s0: exit 3 (want 3) ## a numbers prior target in a run without one
+PASS s1: bash -n job_rb6tb-505m-2pct-k2-none-lr2.4e-3-s1.sbatch
+PASS s1: render() = the submitted sweep file job_rb6tb-505m-2pct-k2-none-lr4.8e-3-s1.sbatch and = the X1 file, byte for byte
+PASS s1: token diff vs job_rb6tb-505m-2pct-k2-none-lr4.8e-3-s1.sbatch: 2689 tokens each, 9 differ, all = 4.8e-3 -> 2.4e-3 in {'intent (lr + tag)': 1, 'job name': 1, 'lr': 2, 'out dir': 2, 'tag': 3}; inserted / deleted / unexplained 0; whole file = template with the lr substituted: True
+    [job name] --job-name=llmadd_rb6_505m-none-lr4.8e-3-s1 -> --job-name=llmadd_rb6_505m-none-lr2.4e-3-s1
+    [lr] 4.8e-3, -> 2.4e-3,
+    [out dir] OUT=/scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s1; -> OUT=/scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr2.4e-3-s1;
+    [tag] TAG=rb6tb-505m-2pct-k2-none-lr4.8e-3; -> TAG=rb6tb-505m-2pct-k2-none-lr2.4e-3;
+    [out dir] /scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s1/rb6tb-505m-2pct-k2-none-lr4 -> /scratch/yh6210/llmadd_torch/runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr2.4e-3-s1/rb6tb-505m-2pct-k2-none-lr2
+    [lr] 4.8e-3 -> 2.4e-3
+    [tag] _rb6tb-505m-2pct-k2-none-lr4.8e-3 -> _rb6tb-505m-2pct-k2-none-lr2.4e-3
+    [tag] "$OUT/$TAG/run_whole_none_seed1_rb6tb-505m-2pct-k2-none-lr4.8e-3.json" -> "$OUT/$TAG/run_whole_none_seed1_rb6tb-505m-2pct-k2-none-lr2.4e-3.json"
+    [intent (lr + tag)] (intent JSON, 1827 chars)
+    line diff: 6 lines changed:   "$OUT/check.json" '{"code; "$PY" - "$OUT/$TAG/run_whol; # rb6_505m: none @ lr 4.8e-; #SBATCH --job-name=llmadd_r; ARGS="--data /scratch/yh621; R=/scratch/yh6210/llmadd_to
+PASS s1: ARGS differ only in the values of ['--lr', '--out', '--tag']; --lr 2.4e-3 --seed 1
+PASS s1: intent differs only in ['args'] / args ['lr', 'tag'] (lr 0.0024, tag _rb6tb-505m-2pct-k2-none-lr2.4e-3); lm0_ref 11.727497 = the 505M CPU reference of seed 1; no active prior; n_params 505437184
+PASS s1: input-check block on the GPU dry log of none-lr4.8e-3-s1: exit 0 (want 0) ## dry_inputs rows = the reference (2450fbb930d2, 88 lines)
+PASS s1: input-check block on the GPU dry log of none-lr4.8e-3-s0: exit 3 (want 3) ## dry_inputs differ from the reference rows (88 lines, sha256 a9510cdffa6f196a5593bebd08a
+PASS s1: input-check block on the GPU dry log of all6-lam1-lr6e-4-s1: exit 3 (want 3) ## a numbers prior target in a run without one
+JOBCHECK X1 PASS
