@@ -228,3 +228,20 @@ ppl 40.06, BLiMP 82.52; every other random-init criterion; 5/5 load checks. **KN
 are resubmitted from the per-commit snapshot of this commit. Each group job re-runs the selftest and this gate itself
 before scoring.
 Nothing above "Amendment A3" was changed.
+**A3 notes** (minimal-mode audit of the A3 diff, fresh sub-agent: no blocking issue; it recomputed the SEs independently
+as 1.6584 / 1.3980 / 1.7321):
+- Erratum: the tol column above should read 4.98 / 4.19 / 5.20 (3 × the unrounded SE). The gate printed 5.0 / 4.2 / 5.2,
+  and no verdict changes.
+- Disclosure: the coordinator's approximate SE (1.63 → 3 SE ≈ 4.9 > 3.55) was known about 4 minutes before the rule
+  was committed, so the outcome was effectively known. Of the SE variants the audit computed for 505M, CR1 (1.73) is not
+  the widest: CR1 around p0 = 0.5 gives 1.79, CR0 1.72, the unweighted equal-token SD/√67 1.51. All pass, since 505M
+  needs SE ≥ 1.18. The only post-hoc choice is to cluster by paradigm at all.
+- Strength of the check: with this rule, the random-init BLiMP check detects only deviations of about 4–5 points or
+  more, for 53M and 190M too (their tolerances rise from 3 to 5.0 / 4.2).
+- Observation, descriptive: the 505M random init sits at z = 3.55 / 1.73 = 2.05 on equal-token pairs and 54.17 on all
+  pairs (53M 50.79, 190M 50.39).
+- Added after the audit, and stronger: the rebuilt paradigm labels must reproduce the stored all-pairs per-paradigm
+  accuracies exactly (deterministic alignment assert). Gate re-run on CPU: PASS, same numbers.
+- runs/downstream/jobs/job_ka.sbatch is stale (pins read-out 6b1821da0675 = the pre-A3 rule). Re-run the KA job only
+  through `make_downstream_jobs.py --groups ka`, which writes a new per-commit snapshot. Each group job runs the A3 gate
+  itself.

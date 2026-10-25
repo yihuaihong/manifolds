@@ -395,6 +395,9 @@ def blimp_cluster_se(r: dict) -> tuple:
     eq = np.array(eq)
     assert len(hits) == len(eq) == 67000, (len(hits), len(eq))
     assert int(eq.sum()) == bl["n_equal_len"], ("equal-token mask differs from the eval's", int(eq.sum()), bl["n_equal_len"])
+    uid_a = np.array(uid)   # deterministic paradigm-alignment check: the rebuilt labels reproduce the stored per-paradigm acc
+    bad = [u for u, v in bl["per_paradigm"].items() if abs(100 * hits[uid_a == u].mean() - v) > 1e-9]
+    assert not bad and set(bl["per_paradigm"]) == set(uid), ("rebuilt paradigm labels misaligned", bad[:3])
     se, G, N, p = cluster_se(hits, eq, uid)
     assert abs(p - bl["acc_equal_len"]) < 1e-9, ("rebuilt equal-token accuracy differs from the stored one", p, bl["acc_equal_len"])
     return se, G, N, p
