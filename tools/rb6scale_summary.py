@@ -41,6 +41,7 @@ Amendment S1 (llmadd_torch/runs/rb6_505m/AUDIT.md, 2026-10-25, before any 505M m
       --picks; absent counts as c only with picks_x1.exit recording a nonzero selection exit; an incomplete X1 file must
       carry X1's grid / amendment; the selection rule is replayed on the picks file's own table (= its pick / bracket);
       NaN = NaN in the binding; a 505M --allow_partial read-out only under b with only none@2.4e-3 s2 / s3 missing.
+  S1.3 (after the third build review): a 505M --allow_partial read-out with nothing missing is refused.
     python tools/rb6scale_summary.py <dirs with run_*.json ...> [--picks picks.json --x1 {a,b,b-pre,c} --x1_json
         picks_x1.json] [--allow_partial] [--json out.json]
 """
@@ -498,6 +499,8 @@ def main():
         assert x1["state"] == "b" and set(gaps) <= {("505m", "none_nlr", 2), ("505m", "none_nlr", 3)}, \
             ("a 505M --allow_partial read-out is allowed only under outcome b with nothing missing / excluded / unfinished "
              "but none@2.4e-3 seeds 2-3 (Amendment S1.1 / S1.2)", x1["state"], gaps)
+        assert gaps, ("a 505M --allow_partial read-out with nothing missing: run it strict (Amendment S1.3: the PRIMARY b "
+                      "read-out is never labelled PROVISIONAL without a gap)")
     prov = lambda sz, ros: [ro for ro in ros if missing[sz][ro]]
 
     # ---- per size: the cells (descriptive)

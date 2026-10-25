@@ -43,7 +43,7 @@ PASS refused (I4): a picks table that is not the loaded runs' (none@2.4e-3 area 
 PASS refused (I1): the 53M roots missing (exit 1)
 PASS refused (I1): a 53M glob relative to another cwd (exit 1)
 PASS refused (S1.2): --allow_partial under a (exit 1)
-PASS S1.2: --allow_partial under b with nothing missing runs (PROVISIONAL)
+PASS refused (S1.3): --allow_partial under b with nothing missing (exit 1)
 PASS the real runs/rb6_505m/picks.json: x1_check (incl. the replayed rule) accepts b-pre / c, refuses a / b
 PASS x1_derive on rb6scale_select.py's own X1 outputs: b / a / incomplete -> b / a / c; absent with exit 1 -> c
 RO S1 TEST PASS

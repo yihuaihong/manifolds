@@ -274,7 +274,7 @@ say(rc != 0 and "sizes ['190m', '505m'] != 53m, 190m, 505m" in t, f"refused (I1)
 rc, t, J = run(x1p(sA), "a", x1p(sA), name="ref_partial_a", extra=("--allow_partial",))
 say(rc != 0 and "allowed only under outcome b" in t, f"refused (S1.2): --allow_partial under a (exit {rc})")
 rc, t, J = run(x1p(sB), "b", x1p(sB), name="partial_b_full", extra=("--allow_partial",))
-say(rc == 0 and J["status"] == "PROVISIONAL", "S1.2: --allow_partial under b with nothing missing runs (PROVISIONAL)")
+say(rc != 0 and "with nothing missing: run it strict" in t, f"refused (S1.3): --allow_partial under b with nothing missing (exit {rc})")
 
 # ---- the real files, in-process (values never printed)
 real = json.loads(Path("/scratch/yh6210/llmadd_torch/runs/rb6_505m/picks.json").read_text())

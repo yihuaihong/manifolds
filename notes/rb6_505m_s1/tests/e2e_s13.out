@@ -1,0 +1,41 @@
+PASS B: the pre-registered select on the fake sweep -> picks.json none 4.8e-3 OPEN lower, all6 6e-4 (as the real one)
+PASS x1_select.sh with a wrong argument: usage, exit 2
+PASS S1.3 I-1: a broken environment (PYTHONHOME=/nonexistent): refused before the selection, nothing recorded
+PASS B: then x1_select.sh -> picks_x1.json picked none 2.4e-3, exit 0, sha recorded, read-only
+PASS B: x1_select.sh refuses a second run
+PASS S1.3 m-4: readout_505m.sh with a third argument: usage, exit 2
+PASS S1.3 I-3: readout b --allow_partial with nothing missing: refused (AssertionError: a 505M --allow_partial read-out with nothing missing: run it str)
+PASS B: readout_505m.sh b: exit 0 (want 0); header with the shas
+PASS B: readout_505m.sh b-pre: exit 0 (want 0); header with the shas
+PASS B: readout_505m.sh a: exit 1 (want 1); reason: AssertionError: ("--x1 a needs none's pick 4.8e-3", '2.4e-3')
+PASS B: readout_505m.sh c: exit 1 (want 1); reason: AssertionError: --x1 c but the X1 selection's output /state/partition1/job-20284046/claude-4550886/-home-yh621
+PASS B: readout_505m.sh b again: refused (a successful read-out is never overwritten)
+PASS S1.3 I-3: a refused read-out (c) can be re-run: kept as .failed-<time>, never locked
+PASS B: a picks_x1.json edited after x1_select.sh: refused (sha)
+PASS S1.3 I-2: real-dir branch with the live squeue (6 llmadd_rb6_505m jobs now): readout refused
+PASS S1.3 I-2: squeue failing (fake): readout refused, not passed
+PASS S1.3 I-2: squeue failing (fake): x1_select refused
+PASS S1.3 I-2: R spelled with a trailing '//' is still the real dir (realpath): the squeue check runs and refuses
+PASS S1.3 I-2: real-dir branch with an idle queue (fake): runs with the pinned picks sha (a PICKS_SHA from the environment is ignored)
+PASS Bp: strict readout b without 2.4e-3 s2 / s3: refused
+PASS S1.3 I-3: then readout b --allow_partial (no cleaning in between): PROVISIONAL -> readout_505m_x1b_partial.*
+PASS Bq: readout b --allow_partial with only-numbers s3 missing too: refused
+PASS Bq: readout b-pre --allow_partial: refused
+PASS A: x1_select.sh -> picks_x1.json none 4.8e-3 closed
+PASS A: readout_505m.sh a: exit 0 (want 0)
+PASS A: readout_505m.sh b: exit 1 (want 1); reason: AssertionError: ("--x1 b needs none's pick 2.4e-3", '4.8e-3')
+PASS A: readout_505m.sh b-pre: exit 1 (want 1); reason: AssertionError: --x1 b-pre but the X1 selection's output /state/partition1/job-20284046/claude-4550886/-home-y
+PASS A: readout_505m.sh c: exit 1 (want 1); reason: AssertionError: --x1 c but the X1 selection's output /state/partition1/job-20284046/claude-4550886/-home-yh621
+PASS A: readout a --allow_partial: refused
+PASS C: the integrity assert in rainbow6_summary.check is a data outcome: exit 1 recorded, no JSON
+PASS C: readout_505m.sh c: exit 0 (want 0)
+PASS C: readout_505m.sh b-pre: exit 1 (want 1); reason: AssertionError: --x1 b-pre but the X1 selection's output /state/partition1/job-20284046/claude-4550886/-home-y
+PASS C: readout_505m.sh a: exit 1 (want 1); reason: rc 1
+PASS S1.3 I-1: a crash that is not the integrity assert (JSONDecodeError): nothing recorded, the log kept as x1_select.failed-*
+PASS F: after the fix x1_select.sh runs: b
+PASS S1.3 I-2(4): X1 s1 missing: x1_select.sh refuses without --x1-runs-final, nothing recorded
+PASS M: with --x1-runs-final (resubmissions used up): the selection records incomplete (outcome c)
+PASS M: readout c runs (X1 incomplete)
+PASS N: x1_select.sh -> b with a NaN bpb at 2.4e-3 s1 in the table
+PASS N: readout b: the binding takes NaN = NaN
+E2E S1.3 TEST PASS
