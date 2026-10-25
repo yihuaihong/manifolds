@@ -184,3 +184,34 @@ generator; downstream_eval.py is unchanged (eval sha 5d694e38ab75):
    runs/downstream/readout.{md,json}. The bootstrap still ignores BLiMP's paradigm clustering (descriptive; intervals
    somewhat narrow).
 Nothing above "Amendment A2" was changed.
+
+## Amendment A3 (2026-10-24, POST HOC for one known-answer criterion; still no project model scored on any benchmark)
+**Trigger.** KA job 20678044 (eval code 5d694e38ab75) FAILED on one criterion: the 505M random-init (d1024 L24) BLiMP
+accuracy on equal-token pairs is 53.55, against |x − 50| ≤ 3.0. Every other check passed:
+- GPT-2 LAMBADA 32.56 / ppl 40.06, BLiMP 82.52;
+- 53M and 190M random-init, every criterion;
+- 505M random-init HellaSwag, ARC-E, PIQA (A1), LAMBADA;
+- all 5 load checks, |Δ| = 0.
+The rule below was set AFTER seeing that random-init value (not any project-model value), so it is labelled
+**post hoc**. The four group jobs that depended on the KA job were cancelled by Slurm (kill-on-invalid-dep) before
+scoring anything.
+
+**Reason.** All pairs of one paradigm share that paradigm's word or construction contrast. A random-init model's length
+or token preference therefore moves a whole paradigm at once. The coordinator's check (scratchpad/blimp_cluster.py):
+the SD of random-init paradigm accuracies is about 12–13 points. The SE of the BLiMP mean must be computed over the 67
+paradigm clusters, not over 67,000 independent pairs (the same kind of correction as A1's PIQA change).
+
+**New rule (only this criterion changes; no other criterion, comparison, margin or verdict rule changes).**
+- Random-init BLiMP equal-token-pair accuracy must satisfy |x − 50| ≤ max(3, 3 × SE_cl).
+- SE_cl = the cluster-robust (CR1) SE of that same pooled statistic, clusters = paradigms, in points:
+  SE_cl = 100 · sqrt(G/(G−1) · Σ_g (s_g − n_g·p)²) / N.
+  - The sum runs over the G paradigms with ≥ 1 equal-token pair.
+  - n_g = the number of equal-token pairs in paradigm g; s_g = the hits among them; N = Σ n_g; p = Σ s_g / N.
+- The coordinator's SD/√67 of all-pairs paradigm accuracies is an approximation and is printed only for comparison.
+- Implementation (tools/downstream_readout.py: cluster_se, blimp_cluster_se):
+  - each pair's paradigm and the equal-token mask are rebuilt the way downstream_eval builds them (sorted paradigm files,
+    1,000 pairs each, tokens without special tokens, the run's tokenizer);
+  - the rebuilt n_equal_len and acc_equal_len are asserted equal to the stored values;
+  - the selftest includes a hand-computed case.
+- The gate is computed on CPU from the existing KA JSONs; downstream_eval.py is unchanged (5d694e38ab75), so no GPU
+  re-run is needed.

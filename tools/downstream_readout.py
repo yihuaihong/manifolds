@@ -359,12 +359,53 @@ def tol(n: int, p: float) -> float:
     return max(3.0, 300 * math.sqrt(p * (1 - p) / n))
 
 
+def cluster_se(hits, eq, uid) -> tuple:
+    """Amendment A3: cluster-robust (CR1) SE, in points, of the pooled accuracy on the equal-token pairs, clusters =
+    BLiMP paradigms: p = sum_g s_g / N; SE = sqrt(G / (G - 1) * sum_g (s_g - n_g p)^2) / N over the G paradigms with
+    >= 1 equal-token pair (s_g hits among their n_g equal-token pairs, N = sum_g n_g). -> (SE, G, N, p in points)."""
+    import numpy as np
+    hits, eq, uid = np.asarray(hits, bool), np.asarray(eq, bool), np.asarray(uid)
+    us = [u for u in dict.fromkeys(uid.tolist()) if (eq & (uid == u)).any()]
+    n = np.array([(eq & (uid == u)).sum() for u in us], float)
+    s = np.array([(hits & eq & (uid == u)).sum() for u in us], float)
+    N, G = n.sum(), len(us)
+    p = s.sum() / N
+    return 100 * math.sqrt(G / (G - 1) * float(((s - n * p) ** 2).sum())) / N, G, int(N), 100 * p
+
+
+def blimp_cluster_se(r: dict) -> tuple:
+    """A3: rebuild each pair's paradigm and the equal-token mask exactly as downstream_eval does (sorted paradigm files,
+    1000 pairs each; a BLiMP sentence's scored tokens = its tokens without special tokens, the prefix <eos> is not scored)
+    with the random-init run's tokenizer; cross-check against the stored n_equal_len / acc_equal_len; -> cluster_se."""
+    import glob
+    import numpy as np
+    import pandas as pd
+    from transformers import AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(json.loads(Path(r["arch_from"]).read_text())["args"]["tokenizer"])
+    files = sorted(glob.glob(str(Path(r["data"]) / "blimp/*/*.parquet")))
+    assert len(files) == 67, len(files)
+    eq, uid = [], []
+    for f in files:
+        df = pd.read_parquet(f)
+        g = tok(df.sentence_good.tolist(), add_special_tokens=False)["input_ids"]
+        b = tok(df.sentence_bad.tolist(), add_special_tokens=False)["input_ids"]
+        eq += [len(x) == len(y) for x, y in zip(g, b)]; uid += df.UID.tolist()
+    bl = r["scores"]["blimp"]
+    hits = np.frombuffer(bl["hits"].encode(), np.uint8) == 49
+    eq = np.array(eq)
+    assert len(hits) == len(eq) == 67000, (len(hits), len(eq))
+    assert int(eq.sum()) == bl["n_equal_len"], ("equal-token mask differs from the eval's", int(eq.sum()), bl["n_equal_len"])
+    se, G, N, p = cluster_se(hits, eq, uid)
+    assert abs(p - bl["acc_equal_len"]) < 1e-9, ("rebuilt equal-token accuracy differs from the stored one", p, bl["acc_equal_len"])
+    return se, G, N, p
+
+
 LOAD_GATE = 2e-3   # bpb, |in-training replica - logged final| for the load-check-only models (Amendment A1)
 LOADCHECK_NAMES = ("500m-lr1.2e-3-7pct-none_s0", "53m-lr4e-3-7pct-none_s0", "500m-7pct-none_s0", "7pct-none_s0",
                    "rb6tb-190m-2pct-k2-none-lr6e-4_s0")   # = make_downstream_jobs.LOADCHECK (asserted there)
 
 
-def known_answer(out_dir: Path, sha: str | None = None) -> dict:
+def known_answer(out_dir: Path, sha: str | None = None, blimp_se=blimp_cluster_se) -> dict:
     """Pass / fail of the pre-registered known-answer criteria (AUDIT.md + Amendment A1). Only full-run files (limit 0)
     written by the current eval code count (sha None: the sha of the downstream_eval.py next to this file)."""
     lines, ok = [], True
@@ -401,10 +442,12 @@ def known_answer(out_dir: Path, sha: str | None = None) -> dict:
             ok = False; continue
         s = r["scores"]
         hs, ar, pq, bl = s["hellaswag"], s["arc_easy"], s["piqa"], s["blimp"]
+        cse, G, _, _ = blimp_se(r)   # A3 (post hoc): pairs share their paradigm's word contrast -> paradigm-clustered SE
         c = [("HellaSwag acc_norm", hs["acc_norm"], 25.0, tol(hs["n"], 0.25)),
              ("ARC-E acc", ar["acc"], ar["chance"], tol(ar["n"], ar["chance"] / 100)),
              ("PIQA acc, equal-token pairs (A1)", pq["acc_equal_len"], 50.0, tol(pq["n_equal_len"], 0.5)),
-             ("BLiMP equal-token pairs", bl["acc_equal_len"], 50.0, tol(bl["n_equal_len"], 0.5))]
+             (f"BLiMP equal-token pairs (A3: max(3, 3 x cluster SE {cse:.2f}, G {G}))", bl["acc_equal_len"], 50.0,
+              max(3.0, 3 * cse))]
         res_ = [(f"{n} (|x - {ch:.1f}| <= {t:.1f})", v is not None and abs(v - ch) <= t, v) for n, v, ch, t in c]
         res_.append(("LAMBADA acc <= 1", s["lambada"]["acc"] <= 1.0, s["lambada"]["acc"]))
         ok &= all(p_ for _, p_, _ in res_)
@@ -545,10 +588,16 @@ def selftest() -> None:
         RI = ("randinit_d384_L6_eos.json", "randinit_d768_L12_eos.json", "randinit_d1024_L24_eos.json")
         lc = {"replica_minus_logged": 3e-8}
 
+        # A3 cluster SE: hand-computed case (2 paradigms; equal-token pairs 4 + 2; hits 4/4 and 0/2 -> p = 2/3)
+        se, G, N, p = cluster_se([1, 1, 1, 1, 0, 0, 1], [1, 1, 1, 1, 1, 1, 0], ["a"] * 4 + ["b"] * 3)
+        want = 100 * math.sqrt(2 / 1 * ((4 - 4 * 2 / 3) ** 2 + (0 - 2 * 2 / 3) ** 2)) / 6
+        assert (G, N) == (2, 6) and abs(p - 200 / 3) < 1e-9 and abs(se - want) < 1e-9, (se, want, G, N, p)
+        FAKE_SE = lambda r: (2.0, 67, 30000, r["scores"]["blimp"]["acc_equal_len"])   # tol = max(3, 6.0) = 6.0
+
         def wr(name, s, sha="fake", limit=0, key="scores"):
             (kd / name).write_text(json.dumps({key: s, "eval_code_sha": sha, "limit": limit}))
         wr("hf_gpt2_harness.json", g2); [wr(n, ri) for n in RI]; [wr(f"loadcheck_{n}.json", lc, key="load_check") for n in LOADCHECK_NAMES]
-        assert known_answer(out, sha="fake")["pass"], known_answer(out, sha="fake")["lines"]
+        assert known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"], known_answer(out, sha="fake", blimp_se=FAKE_SE)["lines"]
         assert abs(tol(781, 0.5) - 300 * math.sqrt(0.25 / 781)) < 1e-12 and tol(10042, 0.25) == 3.0
         for name, s, path, bad in (("hf_gpt2_harness.json", g2, ("lambada", "acc"), 30.0),
                                    ("hf_gpt2_harness.json", g2, ("lambada", "ppl"), 43.0),
@@ -556,23 +605,23 @@ def selftest() -> None:
                                    (RI[1], ri, ("piqa", "acc_equal_len"), 56.0),   # tol(781) = 5.37
                                    (RI[2], ri, ("hellaswag", "acc_norm"), 28.5),
                                    (RI[0], ri, ("arc_easy", "acc"), 21.0),
-                                   (RI[0], ri, ("blimp", "acc_equal_len"), 46.0),
+                                   (RI[0], ri, ("blimp", "acc_equal_len"), 43.9),   # A3: tol = max(3, 3 x 2.0) = 6.0
                                    (RI[0], ri, ("lambada", "acc"), 1.5)):
             s2 = json.loads(json.dumps(s)); s2[path[0]][path[1]] = bad; wr(name, s2)
-            assert not known_answer(out, sha="fake")["pass"], (name, path, bad)
+            assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"], (name, path, bad)
             wr(name, s)
         s2 = json.loads(json.dumps(ri)); s2["piqa"]["acc"] = 54.0; wr(RI[0], s2)   # all-pairs PIQA is descriptive now (A1)
-        assert known_answer(out, sha="fake")["pass"]
+        assert known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]
         wr(RI[0], ri)
         wr(f"loadcheck_{LOADCHECK_NAMES[2]}.json", {"replica_minus_logged": 2.5e-3}, key="load_check")
-        assert not known_answer(out, sha="fake")["pass"]
+        assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]
         wr(f"loadcheck_{LOADCHECK_NAMES[2]}.json", lc, key="load_check")
-        (kd / f"loadcheck_{LOADCHECK_NAMES[4]}.json").unlink(); assert not known_answer(out, sha="fake")["pass"]   # A2: 4 of 5
+        (kd / f"loadcheck_{LOADCHECK_NAMES[4]}.json").unlink(); assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]   # A2: 4 of 5
         wr(f"loadcheck_{LOADCHECK_NAMES[4]}.json", lc, key="load_check")
-        wr(RI[1], ri, sha="old"); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
-        wr(RI[1], ri, limit=20); assert not known_answer(out, sha="fake")["pass"]; wr(RI[1], ri)
-        (kd / RI[2]).unlink(); assert not known_answer(out, sha="fake")["pass"]; wr(RI[2], ri)
-        assert known_answer(out, sha="fake")["pass"]
+        wr(RI[1], ri, sha="old"); assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]; wr(RI[1], ri)
+        wr(RI[1], ri, limit=20); assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]; wr(RI[1], ri)
+        (kd / RI[2]).unlink(); assert not known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]; wr(RI[2], ri)
+        assert known_answer(out, sha="fake", blimp_se=FAKE_SE)["pass"]
         print("---- report on the FAKE selftest data ----\n" + txt)
         print("SELFTEST PASS")
     finally:
