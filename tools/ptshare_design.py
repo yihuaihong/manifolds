@@ -27,7 +27,9 @@ MAIN, CONFIRM = (0, 1, 2, 3), (4, 5, 6, 7)
 SIZE, HOURS = "53m", "03:00:00"           # ptlr's 53M time limit (runs take 0.96-0.98 L40S-h)
 NICE = 2000                                # after the fixed-tokens-per-parameter batch (nice 20), before rb6_190m_dim (5000)
 REFS = HERE / "ptshare_refs.json"         # CPU references: step-0 lm, dry rows, measured shares per (k, seed)
-RULE5_READING = None                       # 'A' / 'B' (ptshare_rules): the user's pick, set before any ptshare result; None = both printed
+RULE5_READING = "A"   # pre-submission amendment 2026-10-26 (coordinator, user-authorised): P = Delta area for the whole slope,
+#                       S = log R_0.5 with a censored R used as its bound (direction agreement only)
+MAX_JOBS = 120        # 72 main + 6 arms x 4 expansion + 6 arms x 4 confirm (= 118 L40S-h at 0.98 h): the generator never exceeds it
 WINDOW_START_M = 916 * 32 * 512 / 1e6     # the window (0.05, 0.4) opens at step 916 = 15.0M tokens: no prior before it
 # the reused 7% cells, pinned by source and tag (a later run with the same args under another tag is left out, not merged)
 REUSED_TAGS = {("ptlr", "none", lr): f"53m-lr{lr}-7pct-none" for lr in GRID["none"]}
@@ -46,6 +48,18 @@ def grid(k, arm, expanded=False):
     if expanded and k != REUSED:
         g = (EXPAND[arm]["lower"],) + g + (EXPAND[arm]["upper"],)
     return g
+
+
+def share_label(k, shares=None):
+    """the measured share of k lines as printed in every read-out output: the mean over seeds 0-7 of the CPU replay
+    (ptshare_refs.json), e.g. '2.12%'; shares = {k: {seed: share}} (default: this file's references); the nominal LABEL
+    (a name only, used in tags) when no reference exists"""
+    if shares is None:
+        r = refs()
+        shares = {kk: {s: v["share"] for s, v in d.items()} for kk, d in r["share"].items()} if r else {}
+    if k not in shares or not shares[k]:
+        return LABEL[k]
+    return f"{100 * sum(shares[k].values()) / len(shares[k]):.2f}%"
 
 
 def refs():

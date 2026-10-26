@@ -12,9 +12,10 @@ by tools/ptshare_selftest.py:
                                            true slope cross zero)
   decide(p8, p47, s8, n_informative,       rule 5 -> {"label", "zh", "why"}; allow_bound=True is reading B (log R_0.5 for
          allow_bound)                      every share, a censored R used as the bound it is, conservatively)
-Rule 5 has two readings, printed side by side until the user picks one (ptshare_design.RULE5_READING; the user's rule names
-log R_0.5 for the shares >= 7% and Delta area for a censored 2% / 4% share, but one slope needs one metric):
-  A  P = Delta area for the whole slope when the 2% or 4% share switches, else log R_0.5 (a bounded P: not determinable)
+Rule 5 has two readings (the user's rule names log R_0.5 for the shares >= 7% and Delta area for a censored 2% / 4% share,
+but one slope needs one metric); reading A was chosen before submission (amendment 2026-10-26, ptshare_design.RULE5_READING):
+  A  P = Delta area for the whole slope (defined at every share); S = log R_0.5, a censored R used as its bound, direction
+     agreement only (a bound that leaves the direction open counts as disagreement)
   B  P = log R_0.5 for every share; a censored none median at 2% / 4% makes R a lower bound there, so the slope an upper
      bound: with such a share only a negative claim ("the less arithmetic, the larger") can be shown, a positive one is "not
      shown"; S = Delta area

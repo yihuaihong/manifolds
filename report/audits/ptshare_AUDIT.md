@@ -159,6 +159,10 @@ pairs is not checked (F87 printed it only).
 Every win-ctx run: prior_on_frac 0.350; bpb 1.19-1.27; none: prior never on.
 
 ## Known limits
+- (added by the pre-submission amendment, 2026-10-26 19:29 EDT) lambda is fixed, so the prior / LM gradient ratio changes
+  with the share (first on-eval 3.5-7.8 at 2%, 1.3-2.5 at 7% in earlier batches): reported per share as a covariate. The
+  nominal shares are measured as 2.12 / 4.25 / 8.50 / 17.00%: every read-out output uses the measured values. Both ends
+  are biased towards "the lower the share, the larger the gain" (2% / 4%: R censored; 8.5% / 17%: Delta area compressed).
 - At >= 7% the prior is at its speed limit: the window opens at 15.0M tokens and the 7% prior's t50 is 19.9-24.2M (one to
   two evals later; real ptlr / ptgw runs). There R_0.5 is about t50(none) / 20M and Delta area about 89 - area(none), so a
   change of the gain with the share mostly measures a change of none's deficit, not of the prior's effect (audit item 2).
@@ -216,3 +220,33 @@ reading B -> fixed as described above (selftest 105 checks: a diverged prior run
 8. (minor) the ceiling threshold 90 misses a compressed 88.9 -> kept as pre-registered; the area headroom is printed per share.
 9. (minor) slope lines now carry the censored medians and the resample shares bounded each way; the prior-activity check is
    in the validity list; leave-one-share-out slopes are printed (descriptive).
+
+## Pre-submission amendment (2026-10-26 19:29 EDT; before any ptshare job or result)
+Decided by the coordinator, to whom the user delegated the technical calls (the user may overrule; an overrule comes as a
+further amendment). Supersedes the corresponding text above where they differ.
+1. Cost: about 95 L40S-h accepted (nice 2000, low priority, L40S); with every expansion at most about 118 L40S-h, also
+   accepted. Never more: the generator refuses any stage that would bring the batch above 120 training jobs
+   (ptshare_design.MAX_JOBS = 72 main + 6 arms x 4 expansion + 6 arms x 4 confirm = 118 L40S-h at 0.98 h).
+2. Rule 5 = reading A, fixed now (ptshare_design.RULE5_READING = "A"):
+   - P = Delta area for the whole slope (defined at every share). The 3/8 switch is no longer used; none's t50 censored
+     counts are still printed.
+   - S = log R_0.5 with a censored R used as its bound (reading B's treatment), direction agreement only; a bound can
+     support one direction only, and a bound that leaves the direction open counts as "不一致" (-> "方向不稳").
+   - Main test, guardrail (P on seeds 4-7 only, same sign) and the verdict words are unchanged.
+   - Both ends are biased the same way: at 2% / 4% none's R is censored (a lower bound); at 8.5% / 17% the prior sits near
+     its ceiling and the area gain is compressed. Both enlarge "the lower the share, the larger the gain". A shown negative
+     slope is therefore written "增益随占比下降而增大，其中多少来自 none 的缺口、多少来自先验，看两组 arm 的绝对面积", and the
+     attribution line (both arms' absolute-area slopes with CIs and the per-share absolute areas) is mandatory with it.
+3. Edge rule confirmed: expand only when the best lr is at a grid edge and beats its neighbour by more than 2 points (F87's
+   open-bracket definition).
+4. Known limits accepted (added to "Known limits" below by this amendment):
+   - At high shares the prior is near its ceiling (above).
+   - lambda is fixed, so the prior / LM gradient ratio changes with the share (first on-eval: 2% 3.5-7.8, 7% 1.3-2.5, earlier
+     batches); the read-out reports it per share as a covariate (median first-on-eval and all-on-eval |g_prior| / |g_lm|,
+     and the slope of its log against ln(share)), descriptive.
+   - The nominal 2 / 4 / 7 / 14% are measured as 2.12 / 4.25 / 8.50 / 17.00% (CPU replay, seeds 0-7); every read-out output
+     names a share by its measured value (ptshare_design.share_label). The nominal names remain only in tags and job names.
+Code: read-out branch arith-dose (this amendment's commit), ptshare_selftest.py 109 checks PASS (reading A with P = Delta area
+in every scenario, the mandatory attribution line and its identity Delta-area slope = prior slope - none slope, the covariate
+line, measured labels in every output, only the chosen reading computed without --show_both); the job texts are unchanged
+except that they point to the new read-out snapshot; minimal fresh audit of the read-out diff after submission.

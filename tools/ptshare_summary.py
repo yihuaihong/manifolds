@@ -22,9 +22,10 @@ the first source with all four finished (order: the --dirs order), its seeds 4-7
           each arm's absolute area, for seeds 0-3 / 4-7 / all 8; 90% CI = paired seed bootstrap (seeds resampled within
           each share, the arms paired, shares independent; 10000 resamples, numpy default_rng(0)); censored runs at the
           budget; a bounded R makes the slope a bound in the direction its OLS weight gives
-  rule 5  verdict (user 2026-10-26), in two readings printed side by side until the user picks one (ptshare_rules: A = Delta
-          area for the whole slope when the 2% or the 4% share has none's t50 censored in >= 3/8 seeds, else log R_0.5;
-          B = log R_0.5 for every share with a censored R used as its bound); secondary S = the other of the two.
+  rule 5  verdict, reading A (pre-submission amendment 2026-10-26, coordinator, user-authorised; ptshare_design.RULE5_READING):
+          P = Delta area for the whole slope; S = log R_0.5 with a censored R used as its bound (direction agreement only;
+          reading B, P = log R_0.5, is computed only with --show_both, for tests). A mandatory attribution line (both arms'
+          absolute-area slopes) is printed with the verdict; every output names a share by its measured token share.
           main test = P's 8-seed slope, 90% CI excludes 0 -> shown; guardrail = P's slope on the confirm seeds 4-7 only,
           same sign; S's 8-seed slope, same sign (no significance). All three -> 'shown (direction)'; P's CI includes 0 ->
           'not shown' (point estimate and CI printed); guardrail or S of the other sign (or of an undeterminable sign) ->
@@ -71,6 +72,7 @@ OWNF = Path(A.own_failures) if A.own_failures else root / "ptshare/OWN_FAILURES.
 REFS = json.loads(Path(A.refs).read_text()) if A.refs else (json.loads(D.REFS.read_text()) if D.REFS.exists() else None)
 LM0 = {int(k): {int(s): v for s, v in d.items()} for k, d in REFS["lm0"].items()} if REFS else {}
 SHARE = {int(k): {int(s): v["share"] for s, v in d.items()} for k, d in REFS["share"].items()} if REFS else {}
+LAB = {k: D.share_label(k, SHARE) for k in D.LINES}   # every output names a share by its measured token share (amendment 2026-10-26)
 
 PIN_SHA, STEPS, EVALS, N_PARAMS = "a3bce3ab63c1", 18310, 75, 52672128
 SRC_OK = {k: ({"ptlr", "ptgw"} if k == D.REUSED else {"ptshare"}) for k in D.LINES}
@@ -108,7 +110,7 @@ def why_out(a, src):
     if k not in D.LINES:
         return f"arith_lines={k}"
     if src not in SRC_OK[k]:
-        return f"share {D.LABEL[k]} not read from {src}"
+        return f"share {LAB[k]} not read from {src}"
     lr = fmt_lr(a["lr"])
     if lr not in D.grid(k, arm, expanded=True):
         return "lr outside the ptshare grid"
@@ -241,16 +243,16 @@ for (k, s), dd in lm0.items():
     ref = LM0.get(k, {}).get(s)
     for ks, v in dd.items():
         if not (math.isfinite(v) and abs(v - med) <= 1e-3):
-            bad[ks].append(f"step-0 lm {v:.6f} is {v - med:+.4f} off the {D.LABEL[k]} seed-{s} median (pairing broken)")
+            bad[ks].append(f"step-0 lm {v:.6f} is {v - med:+.4f} off the {LAB[k]} seed-{s} median (pairing broken)")
         if ref is None or not abs(v - ref) <= 1e-3:
-            bad[ks].append(f"step-0 lm {v:.6f} vs the CPU reference {ref} of {D.LABEL[k]} seed {s}")
+            bad[ks].append(f"step-0 lm {v:.6f} vs the CPU reference {ref} of {LAB[k]} seed {s}")
 
 for n in notes:
     print("NOTE", n)
 OUT["notes"] += notes
 for ks in sorted(bad, key=str):
     for why in bad[ks]:
-        print(f"INTEGRITY {D.LABEL[ks[0][0]]} {ks[0][1]}@{ks[0][2]} seed {ks[1]}: {why}")
+        print(f"INTEGRITY {LAB[ks[0][0]]} {ks[0][1]}@{ks[0][2]} seed {ks[1]}: {why}")
 print("== sources (priority order): runs in the ptshare grid / left out (reason: count)")
 for d in DIRS:
     src = d.parent.name if d.name == "out" else d.name
@@ -260,11 +262,11 @@ for d in DIRS:
           + (f" ({', '.join(f'{w}: {c}' for w, c in sorted(lo.items()))})" if lo else "") + ("" if d.exists() else "  (missing)"))
 if SHARE:
     print("== measured arithmetic share of the rows (tools/arith_share.py on the CPU dry runs; seeds 0-7): "
-          + ", ".join(f"{D.LABEL[k]} = {k} line(s) {100 * np.mean(list(SHARE[k].values())):.2f}%" for k in sorted(SHARE)))
+          + ", ".join(f"{k} line(s) per row = {LAB[k]} (seeds {100 * min(SHARE[k].values()):.2f}-{100 * max(SHARE[k].values()):.2f}%)" for k in sorted(SHARE)))
 
 
 def withheld(keys, seeds):
-    return [f"{D.LABEL[k[0]]} {k[1]}@{k[2]} seed {s}: {why}" for k in keys for s in seeds for why in bad.get((k, s), [])]
+    return [f"{LAB[k[0]]} {k[1]}@{k[2]} seed {s}: {why}" for k in keys for s in seeds for why in bad.get((k, s), [])]
 
 
 def vals(key, fn, seeds):
@@ -319,7 +321,7 @@ for k in D.LINES:
                                                f"({D.EXPAND[arm][info['open']]}, seeds 0-3)")
             best[(k, arm)] = sel["best"] if info["status"] == "final" else None
         gtxt = ", ".join(f"{lr} {info['mean'][lr]:.1f}" for lr in lrs) if info.get("mean") else ", ".join(lrs) or "-"
-        print(f"  {D.LABEL[k]:5s} {arm:7s} grid [{gtxt}] -> {info['status']}"
+        print(f"  {LAB[k]:6s} {arm:7s} grid [{gtxt}] -> {info['status']}"
               + (f": best {info['best']}" if info["best"] else "") + (f"; {info['why']}" if info["why"] else "")
               + (f" (tied {', '.join(info['near'])}; in-training bpb *)" if info.get("near") and len(info["near"]) > 1 else "")
               + (f" (note: area argmax at the {info['note']} edge by <= 2: not open)" if info.get("note") else "")
@@ -341,13 +343,14 @@ def boot_mean(d, nb):
 def grad_stats(key, seeds):
     """prior on-evals of the cell: LM share of the pre-clip gradient norm |g_lm| / (|g_lm| + |g_prior|), the derived
     pre-clip total norm |g_lm + g_prior| (from the logged norms and cosine) and clip coefficient min(1, 1 / total)"""
-    sh, tot, first = [], [], []
+    sh, tot, first, ratio = [], [], [], []
     for s in seeds:
         fr = (main[key] if s in D.MAIN else conf[key])[1][s]
         on = [e for e in fr[1]["curve"] if e.get("grad_lm") is not None and e.get("grad_prior") is not None]
         for i, e in enumerate(on):
             a_, b_, c_ = e["grad_lm"], e["grad_prior"], e.get("grad_cos", 0.0)
             sh.append(a_ / (a_ + b_))
+            ratio.append(b_ / a_)
             tot.append(math.sqrt(max(a_ * a_ + b_ * b_ + 2 * a_ * b_ * c_, 0.0)))
             if i == 0:
                 first.append(b_ / a_)
@@ -358,7 +361,8 @@ def grad_stats(key, seeds):
     return {"n_evals": len(sh), "lm_share_median": float(np.median(sh)), "lm_share_min": float(sh.min()),
             "prior_gt_lm_frac": float(np.mean(sh < 0.5)), "total_norm_median": float(np.median(tot)),
             "clip_coef_median": float(np.median(clip)), "clip_coef_min": float(clip.min()),
-            "clipped_frac": float(np.mean(tot > 1.0)), "first_on_prior_over_lm": [float(min(first)), float(max(first))]}
+            "clipped_frac": float(np.mean(tot > 1.0)), "first_on_prior_over_lm": [float(min(first)), float(max(first))],
+            "first_on_prior_over_lm_median": float(np.median(first)), "prior_over_lm_median": float(np.median(ratio))}
 
 
 print("\n== rule 3: per share at the selected lrs (win-ctx - none; 90% CIs = paired seed bootstrap, 10000, default_rng(0); "
@@ -366,7 +370,7 @@ print("\n== rule 3: per share at the selected lrs (win-ctx - none; 90% CIs = pai
 share_data = {}
 for k in D.LINES:
     if best.get((k, "none")) is None or best.get((k, "win-ctx")) is None:
-        print(f"  {D.LABEL[k]}: no selected lr for both arms yet")
+        print(f"  {LAB[k]}: no selected lr for both arms yet")
         continue
     kn, kw = (k, "none", best[(k, "none")]), (k, "win-ctx", best[(k, "win-ctx")])
     sd = {"none_lr": kn[2], "prior_lr": kw[2], "groups": {}}
@@ -375,12 +379,12 @@ for k in D.LINES:
         an, aw = vals(kn, area_of, seeds), vals(kw, area_of, seeds)
         if an is None or aw is None:
             sd["groups"][gname] = None
-            print(f"  {D.LABEL[k]:5s} seeds {gname:3s}: none@{kn[2]} / win-ctx@{kw[2]}: incomplete")
+            print(f"  {LAB[k]:6s} seeds {gname:3s}: none@{kn[2]} / win-ctx@{kw[2]}: incomplete")
             continue
         wh = withheld([kn, kw], seeds)
         if wh:
             sd["groups"][gname] = {"withheld": wh}
-            print(f"  {D.LABEL[k]:5s} seeds {gname:3s}: WITHHELD: {wh[0]}" + (f" (+{len(wh) - 1} more)" if len(wh) > 1 else ""))
+            print(f"  {LAB[k]:6s} seeds {gname:3s}: WITHHELD: {wh[0]}" + (f" (+{len(wh) - 1} more)" if len(wh) > 1 else ""))
             continue
         bud = R.budget_M(next(fr for fr in (main[kn][1].values()) if fr[1]["curve"])[1])
         dA = aw - an
@@ -398,7 +402,7 @@ for k in D.LINES:
                                       "t_prior": [None if not np.isfinite(v) else float(v) for v in tw]}
         sd["groups"][gname] = g
         r5, r9 = g["R50"], g["R90"]
-        print(f"  {D.LABEL[k]:5s} seeds {gname:3s} none@{kn[2]} {g['area_none']:5.1f} | win-ctx@{kw[2]} {g['area_prior']:5.1f} | "
+        print(f"  {LAB[k]:6s} seeds {gname:3s} none@{kn[2]} {g['area_none']:5.1f} | win-ctx@{kw[2]} {g['area_prior']:5.1f} | "
               f"dArea {g['dA']:+6.1f} [{g['dA_ci'][0]:+.1f}, {g['dA_ci'][1]:+.1f}] wins {g['dA_wins']}/{len(seeds)} p {g['dA_p']:.3g} | "
               f"R_0.5 {r5['text'].split(' (')[0]} [{r5['ci'][0]:.2f}, {r5['ci'][1]:.2f}] cen {r5['cen_none']}/{len(seeds)} none, "
               f"{r5['cen_prior']}/{len(seeds)} prior | R_0.9 {r9['text'].split(' (')[0]} [{r9['ci'][0]:.2f}, {r9['ci'][1]:.2f}] "
@@ -505,8 +509,8 @@ def slope_table(ks, seeds):
             up |= (bb == 9) | (sg * bb == 1)
             down |= (bb == 9) | (sg * bb == -1)
         ci_cons = [float(np.percentile(np.where(down, -np.inf, bs), 5)), float(np.percentile(np.where(up, np.inf, bs), 95))]
-        res[m] = {"slope": b, "ci": [lo, hi], "bound": bound, "per_share": {D.LABEL[k]: p[0] for k, p in zip(ks, pts)},
-                  "bounds": {D.LABEL[k]: p[1] for k, p in zip(ks, pts) if p[1]}, "per_doubling": b * math.log(2),
+        res[m] = {"slope": b, "ci": [lo, hi], "bound": bound, "per_share": {LAB[k]: p[0] for k, p in zip(ks, pts)},
+                  "bounds": {LAB[k]: p[1] for k, p in zip(ks, pts) if p[1]}, "per_doubling": b * math.log(2),
                   "push": {"1": float(up.mean()), "-1": float(down.mean())}, "ci_cons": ci_cons}
     return res
 
@@ -524,13 +528,13 @@ print("\n== rule 4: slopes vs ln(share) (OLS over the informative shares; 90% CI
       "10000 resamples; negative = the less arithmetic, the larger)")
 complete = [k for k in D.LINES if k in share_data and all(OUT["shares"][str(k)]["groups"].get(g) and
                                                            "withheld" not in OUT["shares"][str(k)]["groups"][g] for g, _ in GROUPS)]
-missing = [D.LABEL[k] for k in D.LINES if k not in complete]
+missing = [LAB[k] for k in D.LINES if k not in complete]
 inf = [k for k in complete if not OUT["shares"][str(k)]["uninformative"]]
 if missing:
     print(f"  incomplete: shares {', '.join(missing)} lack a selected lr for both arms, all 8 seeds, or valid runs -> no slope, no verdict")
     OUT["verdict"] = {"label": "incomplete", "zh": "未完成", "why": f"shares {missing} incomplete"}
 else:
-    unf = [D.LABEL[k] for k in complete if k not in inf]
+    unf = [LAB[k] for k in complete if k not in inf]
     if unf:
         print(f"  uninformative shares left out of every slope: {', '.join(unf)}")
     if len(inf) < 3:
@@ -545,47 +549,79 @@ else:
         OUT["loso"] = {}
         for m in ("dA", "lR50"):
             pts = {k: point(m, share_arrays(k, D.MAIN + D.CONFIRM)) for k in inf}
-            OUT["loso"][m] = {D.LABEL[k]: (Q.ols([j for j in inf if j != k], [pts[j][0] for j in inf if j != k])[0]
+            OUT["loso"][m] = {LAB[k]: (Q.ols([j for j in inf if j != k], [pts[j][0] for j in inf if j != k])[0]
                                            if len(inf) > 3 and all(pts[j][0] is not None for j in inf if j != k) else None) for k in inf}
             print(f"  descriptive, 8 seeds, {dict(METRICS)[m]} slope leaving one share out: "
                   + ", ".join(f"without {lab} {v:+.3f}" if v is not None else f"without {lab} -" for lab, v in OUT["loso"][m].items()))
-    # ---------------------------------------------------------------- rule 5: verdict (two readings until the user picks one)
-    cen = {k: OUT["shares"][str(k)]["none_t50_censored_8"] for k in Q.SWITCH_SHARES}
-    PA = Q.primary(cen)
+    # ---------------------------------------------------------------- covariate: the prior's strength at fixed lambda
+    cov = {k: OUT["shares"][str(k)].get("grad") for k in inf}
+    if all(cov.values()) and len(inf) >= 3:
+        y = [math.log(cov[k]["first_on_prior_over_lm_median"]) for k in inf]
+        OUT["covariate"] = {"first_on_prior_over_lm_median": {LAB[k]: cov[k]["first_on_prior_over_lm_median"] for k in inf},
+                            "prior_over_lm_median": {LAB[k]: cov[k]["prior_over_lm_median"] for k in inf},
+                            "lm_share_median": {LAB[k]: cov[k]["lm_share_median"] for k in inf},
+                            "slope_log_first_ratio": Q.ols(inf, y)[0]}
+        print("  covariate (lambda fixed, so the prior's pull changes with the share; descriptive): |g_prior| / |g_lm| at the first "
+              "on-eval, median over 8 seeds: " + ", ".join(f"{LAB[k]} {cov[k]['first_on_prior_over_lm_median']:.2f}" for k in inf)
+              + "; over every on-eval: " + ", ".join(f"{LAB[k]} {cov[k]['prior_over_lm_median']:.2f}" for k in inf)
+              + f"; slope of log(first-on ratio) per ln(share) {OUT['covariate']['slope_log_first_ratio']:+.3f}")
+    # ---------------------------------------------------------------- rule 5: verdict
+    cen = {k: OUT["shares"][str(k)]["none_t50_censored_8"] for k in inf}
     name = {"dA": "Delta area", "lR50": "log R_0.5"}
     sl = OUT["slopes"]
-    print(f"\n== rule 5 (none's t50 censored over 8 seeds: " + ", ".join(f"{D.LABEL[k]} {v}/8" for k, v in cen.items())
-          + f"; the switch is >= {Q.SWITCH_CEN}/8 at 2% or 4%)")
+    print(f"\n== rule 5 (none's t50 censored over 8 seeds: " + ", ".join(f"{LAB[k]} {v}/8" for k, v in cen.items())
+          + "; a censored none median makes that share's R a lower bound)")
     readings = {}
     pick = D.RULE5_READING
-    for rd, P, allow in (("A", PA, False), ("B", "lR50", True)):
+    # A (amendment 2026-10-26, chosen before any result): P = Delta area for the whole slope (defined at every share); S = log
+    # R_0.5 with a censored R used as its bound, direction agreement only. B (not chosen; --show_both for tests): P = log R_0.5
+    for rd, P, allow in (("A", "dA", False), ("B", "lR50", True)):
         S = "lR50" if P == "dA" else "dA"
-        what = ("P = Delta area for the whole slope (the switch fired)" if P == "dA" else "P = log R_0.5 (no switch)") if rd == "A" else \
-            "P = log R_0.5 for every share, a censored R used as its bound; S = Delta area"
-        if pick not in ("A", "B") and not A.show_both:   # the reading is chosen before any result: no verdict before that
+        what = ("P = Delta area for the whole slope; S = log R_0.5 (a censored R as its bound; direction only)" if rd == "A" else
+                "P = log R_0.5 for every share, a censored R used as its bound; S = Delta area")
+        if pick not in ("A", "B") and not A.show_both:
             print(f"  reading {rd}: {what} (no verdict printed: the reading is not chosen yet)")
+            continue
+        if rd != pick and not A.show_both:
             continue
         v = Q.decide(sl.get("8", {}).get(P), sl.get("4-7", {}).get(P), sl.get("8", {}).get(S), len(inf), allow_bound=allow)
         v.update(P=P, S=S)
         readings[rd] = v
-        if pick in (None, rd) or A.show_both:
-            print(f"  reading {rd} ({what}): {v['zh']} / {v['label']} -- {v['why']}")
-    ceil_only = [D.LABEL[k] for k in inf if OUT["shares"][str(k)]["prior_ceiling_only"]]
+        print(f"  reading {rd} ({what}): {v['zh']} / {v['label']} -- {v['why']}")
+    ceil_only = [LAB[k] for k in inf if OUT["shares"][str(k)]["prior_ceiling_only"]]
     if ceil_only:
-        print(f"  note: the prior alone is at the ceiling at {', '.join(ceil_only)}: the area gain there is compressed (read by R)"
-              + ("; in reading A (P = Delta area) the verdict also rests on S = log R_0.5 having the same sign" if PA == "dA" else ""))
-    near = [D.LABEL[k] for k in inf if OUT["shares"][str(k)]["prior_t50_after_window"] < 2 * 4.1]
+        print(f"  note: the prior alone is at the ceiling at {', '.join(ceil_only)}: the area gain there is compressed (read by R); "
+              f"with P = Delta area the verdict also rests on S = log R_0.5 having the same direction")
+    near = [LAB[k] for k in inf if OUT["shares"][str(k)]["prior_t50_after_window"] < 2 * 4.1]
     if near:
         print(f"  note: the prior's t50 is within 2 evals of the window's opening at {', '.join(near)}: there R and Delta area are "
               f"set mostly by none (the prior cannot be faster); read the gain's change with the share as a change of none's deficit")
+    # mandatory with any verdict (amendment 2026-10-26): both ends are biased the same way (2% / 4%: R censored; 8.5% / 17%:
+    # the prior near its ceiling, Delta area compressed), both enlarging "the lower the share, the larger the gain"; which arm
+    # moves the gain is read from the two arms' absolute areas
+    s8 = sl.get("8", {})
+    if s8.get("area_none", {}).get("slope") is not None:
+        an_, aw_ = s8["area_none"], s8["area_prior"]
+        attr = (f"attribution (mandatory): area none slope {an_['slope']:+.2f} [{an_['ci'][0]:+.2f}, {an_['ci'][1]:+.2f}], area win-ctx "
+                f"slope {aw_['slope']:+.2f} [{aw_['ci'][0]:+.2f}, {aw_['ci'][1]:+.2f}] per ln(share); Delta area slope = their "
+                f"difference {aw_['slope'] - an_['slope']:+.2f}; absolute areas (8 seeds) none / win-ctx: "
+                + ", ".join(f"{LAB[k]} {OUT['shares'][str(k)]['groups']['8']['area_none']:.1f} / "
+                            f"{OUT['shares'][str(k)]['groups']['8']['area_prior']:.1f}" for k in inf))
+        print("  " + attr)
+        OUT["attribution"] = attr
     if pick in readings:
-        OUT["verdict"] = dict(readings[pick], reading=pick, readings=readings if A.show_both else {pick: readings[pick]})
-        print(f"  VERDICT (reading {pick}, chosen by the user before any result): {readings[pick]['zh']} / {readings[pick]['label']}")
+        v = readings[pick]
+        wording = None
+        if v["zh"].startswith("显示了") and "算术越少" in v["zh"]:
+            wording = ("写法：增益随占比下降而增大，其中多少来自 none 的缺口、多少来自先验，看两组 arm 的绝对面积（上面 attribution 行，必须同时报）；"
+                       "两端的偏差同向放大这一方向：2% / 4% 的 R 被删失，8.5% / 17% 先验近上限、面积差被压缩")
+        elif v["zh"].startswith("显示了"):
+            wording = "写法：增益随占比上升而增大；必须同时报 attribution 行（两组 arm 的绝对面积）"
+        OUT["verdict"] = dict(v, reading=pick, readings=readings, wording=wording)
+        print(f"  VERDICT (reading {pick}, chosen before any result): {v['zh']} / {v['label']}" + (f"\n  {wording}" if wording else ""))
     else:
-        OUT["verdict"] = {"label": "pending: the user picks reading A or B before any result", "zh": "待定（用户在 A / B 两种读法中选定）",
-                          "why": "rule 5 as given names log R_0.5 for >= 7% and Delta area for a censored 2% / 4% share; one slope "
-                                 "needs one metric", "readings": readings}
-        print("  VERDICT: pending -- the user picks reading A or B (ptshare_design.RULE5_READING) before any ptshare result")
+        OUT["verdict"] = {"label": "pending: the reading is not chosen", "zh": "待定", "why": "RULE5_READING unset", "readings": readings}
+        print("  VERDICT: pending -- RULE5_READING unset")
     print("  (no confirmatory comparison with F86 / F87 cross-batch numbers; the 7% row is the ptlr cells themselves)")
 if A.json:
     Path(A.json).write_text(json.dumps(OUT, indent=1, default=float))

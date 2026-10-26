@@ -28,7 +28,7 @@ cells, stops, waiting = [], [], []
 for k in D.NEW:
     for arm in D.ARMS:
         s = sel.get(str(k), {}).get(arm)
-        lab = f"{D.LABEL[k]} {arm}"
+        lab = f"{D.share_label(k)} {arm}"
         if s is None:
             waiting.append(f"{lab}: absent from the selection")
         elif s["status"] == "final":
@@ -43,7 +43,7 @@ for k in D.NEW:
             waiting.append(f"{lab}: {s['status']} ({s['why']})")
 res = {"round": A.round, "cells": cells, "stops": stops, "waiting": waiting}
 for c in cells:
-    print(f"round {A.round}: {c['why']:7s} {D.LABEL[c['k']]} {c['arm']}@{c['lr']} seeds {c['seeds']}")
+    print(f"round {A.round}: {c['why']:7s} {D.share_label(c['k'])} {c['arm']}@{c['lr']} seeds {c['seeds']}")
 for x in stops:
     print(f"round {A.round}: STOP {x}")
 for x in waiting:

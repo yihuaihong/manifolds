@@ -203,7 +203,7 @@ def build(root, none_c, prior_c, special=None):
                 for s in range(4):
                     write_run(root, "ptshare", k, arm, lr, s, c_(s))
     refs = {"lm0": {str(k): {str(s): v for s, v in d.items()} for k, d in LM0.items()},
-            "share": {str(k): {str(s): {"share": 0.0212 * k} for s in range(8)} for k in D.LINES}, "dry": {}, "meta": {}}
+            "share": {str(k): {str(s): {"share": RSH[k][s]} for s in range(8)} for k in D.LINES}, "dry": {}, "meta": {}}
     (Path(root) / "refs.json").write_text(json.dumps(refs))
 
 
@@ -215,6 +215,11 @@ def run(root, tagname, hide=False):
         print(o.stdout[-3000:], o.stderr[-3000:])
         check(False, f"{tagname}: ptshare_summary.py failed")
     return o.stdout, json.loads(js.read_text())
+
+
+RSH = {k: {s: v["share"] for s, v in d.items()} for k, d in D.refs()["share"].items()}   # the real measured shares
+L = {k: D.share_label(k) for k in D.LINES}                                                   # '2.12%', '4.25%', '8.50%', '17.00%'
+check(list(L.values()) == ["2.12%", "4.25%", "8.50%", "17.00%"], f"measured labels {L}")
 
 
 def VA(J):
@@ -247,14 +252,22 @@ root = W / "A"
 build(root, {k: none_mono(k) for k in D.LINES}, P_FAST)
 write_run(root, "ptlr", 4, "none", "8e-3", 0, (0, 1000, 1.0), tag="53m-lr8e-3-7pct-none-dup")   # same args, another tag
 out, J = run(root, "A")
-check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VA(J)["P"] == "lR50" and VB(J)["zh"] == VA(J)["zh"] and VB(J)["P"] == "lR50"
-      and J["verdict"]["zh"].startswith("待定") and "VERDICT: pending" in out, f"A verdict {J['verdict']}")
+check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VA(J)["P"] == "dA" and VA(J)["S"] == "lR50" and VB(J)["zh"] == VA(J)["zh"]
+      and VB(J)["P"] == "lR50" and J["verdict"]["reading"] == "A" and "VERDICT (reading A" in out
+      and "增益随占比下降而增大" in (J["verdict"]["wording"] or ""), f"A verdict {J['verdict']}")
+check("attribution (mandatory): area none slope" in out and "area win-ctx slope" in out
+      and abs(J["slopes"]["8"]["area_prior"]["slope"] - J["slopes"]["8"]["area_none"]["slope"] - J["slopes"]["8"]["dA"]["slope"]) < 1e-9,
+      "A: the mandatory attribution line; Delta area slope = prior slope - none slope")
+check("covariate (lambda fixed" in out and set(J["covariate"]["first_on_prior_over_lm_median"]) == set(L.values()),
+      "A: the gradient-ratio covariate line")
+check(all(lab in out for lab in L.values()) and not any(x + "pct" in out for x in ("2", "4", "14")) and "7pct " not in out,
+      "A: every output names the shares by their measured share")
 check(all(J["shares"][str(k)]["prior_t50_after_window"] > 0 for k in D.LINES) and "the prior's t50 is" in out
       and "after the window opens" in out, "A: the prior-t50-after-the-window line")
 check("left out" in out and "is not the cell's pre-registered tag: 1" in out
       and abs(J["shares"]["4"]["groups"]["0-3"]["area_none"] - np.mean([mine_area(none_mono(4)(s)) for s in range(4)])) < 1e-9,
       "A: a same-args run under another tag in ptlr is left out, not merged")
-check(set(J["loso"]["dA"]) == {"2pct", "4pct", "7pct", "14pct"} and all(v < 0 for v in J["loso"]["lR50"].values()),
+check(set(J["loso"]["dA"]) == {L[1], L[2], L[4], L[8]} and all(v < 0 for v in J["loso"]["lR50"].values()),
       "A: leave-one-share-out slopes printed")
 for k in D.LINES:
     sel = J["select"][str(k)]
@@ -282,7 +295,7 @@ for gname in ("0-3", "4-7", "8"):
         check(any(l.strip().startswith(f"seeds {gname}") and lab in l and "per ln(share)" in l for l in out.splitlines()),
               f"A: slope line {gname} {lab}")
 check("the 7% sub-grid selection" not in out, "A: the 7% selection = F87's lrs (no warning)")
-print(f"scenario A (monotone, P = log R_0.5): {VA(J)['zh']}; slope {J['slopes']['8']['lR50']['slope']:+.3f}")
+print(f"scenario A (monotone; reading A, P = Delta area): {VA(J)['zh']}; slope {J['slopes']['8']['dA']['slope']:+.3f}")
 _, pk = pick(root, root / "A.json", 1)
 check(pk is not None and sorted((c["k"], c["arm"], c["lr"], c["why"]) for c in pk["cells"]) ==
       sorted((k, a, D.GRID[a][1], "confirm") for k in D.NEW for a in D.ARMS) and all(c["seeds"] == [4, 5, 6, 7] for c in pk["cells"]),
@@ -294,12 +307,11 @@ for n_cen, wantP in ((3, "dA"), (2, "lR50"), (4, "dA")):
     sp = {(1, "none", "*", s): {"c": (9000, 16000, 0.45)} for s in range(n_cen)}
     build(root, {k: none_mono(k) for k in D.LINES}, P_FAST, sp)
     out, J = run(root, f"B{n_cen}")
-    check(J["shares"]["1"]["none_t50_censored_8"] == n_cen and VA(J)["P"] == wantP and VB(J)["P"] == "lR50", f"B{n_cen}: P {J['verdict']}")
+    check(J["shares"]["1"]["none_t50_censored_8"] == n_cen and VA(J)["P"] == "dA" and VB(J)["P"] == "lR50", f"B{n_cen}: P {J['verdict']}")
     check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VB(J)["zh"] == "显示了（算术越少，增益越大）", f"B{n_cen} verdict {J['verdict']}")
-    check((J["slopes"]["8"]["lR50"]["bound"] == -1 and "2pct" in J["slopes"]["8"]["lR50"]["bounds"]) == (n_cen >= 4),
+    check((J["slopes"]["8"]["lR50"]["bound"] == -1 and L[1] in J["slopes"]["8"]["lR50"]["bounds"]) == (n_cen >= 4),
           f"B{n_cen}: a censored 2% none median (>= 4/8) makes the log R slope an upper bound {J['slopes']['8']['lR50']}")
-    check(("reading A (P = Delta area for the whole slope (the switch fired))" if wantP == "dA" else "reading A (P = log R_0.5 (no switch))") in out,
-          f"B{n_cen}: the switch is printed")
+    check(f"{L[1]} {n_cen}/8" in out, f"B{n_cen}: none's censored t50 count is printed")
     print(f"scenario B ({n_cen}/8 of 2% none censored at t50): A: P = {VA(J)['P']}, {VA(J)['zh']}; B: {VB(J)['zh']}")
 
 # ---- scenario C: no trend (same curves at every share) -> not shown
@@ -333,7 +345,7 @@ root = W / "F2"
 PRI = {1: (500, 1100, 0.6), 2: (800, 1800, 0.75), 4: (1100, 2700, 0.9), 8: (1500, 3500, 1.0)}
 build(root, flat, {k: (lambda s, k=k: (PRI[k][0] + jit(s), PRI[k][1] + jit(s), PRI[k][2])) for k in D.LINES})
 out, J = run(root, "F2")
-check(VA(J)["P"] == "lR50" and J["slopes"]["8"]["lR50"]["ci"][1] < 0 and J["slopes"]["8"]["dA"]["slope"] > 0
+check(VA(J)["P"] == "dA" and J["slopes"]["8"]["lR50"]["ci"][1] < 0 and J["slopes"]["8"]["dA"]["slope"] > 0
       and VA(J)["zh"] == "方向不稳" and VB(J)["zh"] == "方向不稳" and "S (8 seeds) opposite sign" in VA(J)["why"], f"F2 verdict {J['verdict']}")
 print(f"scenario F2 (secondary reversed): {VA(J)['zh']}")
 
@@ -356,9 +368,9 @@ out, J = run(root, "Dv")
 check(J["select"]["2"]["win-ctx"]["status"] == "final" and "4e-3" in J["select"]["2"]["win-ctx"].get("diverged", {})
       and "prior not acting" not in out, f"Dv: a diverged prior run counts, not withheld {J['select']['2']['win-ctx']}")
 out, J = run(root, "Dv_hidden", hide=True)
-check(J["verdict"]["zh"].startswith("待定") and J["verdict"]["readings"] == {} and "no verdict printed" in out
-      and "显示了" not in out and "未显示" not in out and "方向不稳" not in out, "hidden readings while RULE5_READING is unset")
-print("scenario Dv (a diverged prior run; readings hidden without --show_both): OK")
+check(J["verdict"]["reading"] == "A" and set(J["verdict"]["readings"]) == {"A"} and "reading B (" not in out
+      and "VERDICT (reading A" in out, "without --show_both only the chosen reading A is computed and printed")
+print("scenario Dv (a diverged prior run; only reading A without --show_both): OK")
 
 # ---- scenario G: floor at 2% (both arms) -> 2% left out; slope over 3 shares
 root = W / "G"
@@ -366,7 +378,7 @@ fl = {(1, a, "*", s): {"c": (15000, 18000, 0.02)} for a in D.ARMS for s in range
 build(root, {k: none_mono(k) for k in D.LINES}, P_FAST, fl)
 out, J = run(root, "G")
 check(J["shares"]["1"]["uninformative"] and J["shares"]["1"]["floor"] == {"none": True, "prior": True}
-      and "uninformative shares left out of every slope: 2pct" in out and set(J["slopes"]["8"]["dA"]["per_share"]) == {"4pct", "7pct", "14pct"},
+      and f"uninformative shares left out of every slope: {L[1]}" in out and set(J["slopes"]["8"]["dA"]["per_share"]) == {L[2], L[4], L[8]},
       f"G floor {J['shares']['1'].get('floor')}")
 print(f"scenario G (2% both at the floor): left out; {VA(J)['zh']}")
 
@@ -375,14 +387,14 @@ root = W / "H"
 ce = {(8, "win-ctx", lr, s): {"c": (900, 1250, 1.0)} for lr in ("2e-3",) for s in range(8)}
 build(root, {k: none_mono(k) for k in D.LINES}, P_FAST, ce)
 out, J = run(root, "H")
-check(J["shares"]["8"]["prior_ceiling_only"] and "the prior alone is at the ceiling at 14pct:" in out
+check(J["shares"]["8"]["prior_ceiling_only"] and f"the prior alone is at the ceiling at {L[8]}:" in out
       and not any(J["shares"][str(k)]["prior_ceiling_only"] for k in (1, 2, 4)), "H: prior-only ceiling note (14% only)")
 root = W / "H2"
 ce2 = dict(ce)
 ce2.update({(8, "none", "8e-3", s): {"c": (900, 1300, 1.0)} for s in range(8)})
 build(root, {k: none_mono(k) for k in D.LINES}, P_FAST, ce2)
 out, J = run(root, "H2")
-check(J["shares"]["8"]["uninformative"] and "14pct" not in J["slopes"]["8"]["dA"]["per_share"], "H2: both at the ceiling -> left out")
+check(J["shares"]["8"]["uninformative"] and L[8] not in J["slopes"]["8"]["dA"]["per_share"], "H2: both at the ceiling -> left out")
 print("scenario H (ceilings): prior-only note; both -> left out")
 
 # ---- scenario S: selection states and the picks
@@ -399,7 +411,7 @@ check(J["verdict"]["zh"] == "未完成", f"S: no verdict while selections are op
 pout, pk = pick(root, root / "S.json", 1)
 cells = {(c["k"], c["arm"], c["lr"], c["why"]) for c in pk["cells"]}
 check((8, "none", "3.2e-2", "expand") in cells and (8, "win-ctx", "2e-3", "confirm") in cells and not any(c[:2] in ((2, "win-ctx"), (1, "none")) for c in cells)
-      and "nothing for 4pct win-ctx: incomplete" in pout and "nothing for 2pct none: withheld" in pout, f"S picks round 1 {cells}")
+      and f"nothing for {L[2]} win-ctx: incomplete" in pout and f"nothing for {L[1]} none: withheld" in pout, f"S picks round 1 {cells}")
 _, pk2 = pick(root, root / "S.json", 2)
 check(pk2 is None or (8, "none", "3.2e-2", "expand") not in {(c["k"], c["arm"], c["lr"], c["why"]) for c in pk2["cells"]}, "S: round 2 never expands")
 for name, c_, want in (("closed", lambda s: (5000, 7000, 1.0), ("final", "1.6e-2")), ("open again", lambda s: (1000, 1800, 1.0), ("stop", "3.2e-2"))):
@@ -415,7 +427,7 @@ for name, c_, want in (("closed", lambda s: (5000, 7000, 1.0), ("final", "1.6e-2
         check(pk3 is not None and (8, "none", "1.6e-2", "confirm") in {(c["k"], c["arm"], c["lr"], c["why"]) for c in pk3["cells"]},
               "S: closed after the expansion -> confirm at the best lr")
     else:
-        check("STOP 14pct none" in pout2 and (pk3 is None or all(c[:2] != (8, "none") for c in
+        check(f"STOP {L[8]} none" in pout2 and (pk3 is None or all(c[:2] != (8, "none") for c in
                                                                  [(c["k"], c["arm"]) for c in pk3["cells"]])), "S: open again -> STOP")
     print(f"scenario S ({name} after the expansion): {s['status']} at {s['best']}")
 print(f"PTSHARE SELFTEST PASS ({N[0]} checks)")
