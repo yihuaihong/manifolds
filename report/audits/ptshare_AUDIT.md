@@ -89,7 +89,7 @@ arithmetic, the larger the gain". Here only the share changes.
 | split | train.bin text; held pairs rejected by draw_pair | val.bin text; held pairs | disjoint by construction; identical across the shares |
 | model state | train, bf16 autocast, no gradient checkpointing (53M) | eval mode, bf16 autocast | yes |
 | what changes with k | k x 32 lines per step (2k operand sites per row for the prior), 512 - L text tokens | nothing | the dose |
-| prior strength at fixed lambda 5 | the CKA is over 2k x 32 operand sites per batch (64 at k = 1, 512 at k = 8); |g_prior| / |g_lm| at the first on-eval was 3.5-7.8 at 2% vs 1.3-2.5 at 7% (pt999, lr 1e-3; audit item 3) | - | not matched: lambda is fixed by design; the read-out prints the gradient ratios per share |
+| prior strength at fixed lambda 5 | the CKA is over 2k x 32 operand sites per batch (64 at k = 1, 512 at k = 8); |g_prior| / |g_lm| at the first on-eval was 3.5-7.8 at 2% (pt999 2pct-win-ctx, snapshot 79e9b410dcc3, lr 1e-3) vs 1.3-2.5 at 7% (ptgw main-W, lr 1e-3) (audit item 3) | - | not matched: lambda is fixed by design; the read-out prints the gradient ratios per share |
 
 ## Read-out (tools/ptshare_summary.py; written and tested on fake results before any ptshare run)
 - Rule 2: a diverged run (first non-finite lm / val_loss / geo / grad_prior) keeps its area; 'unstable' (final val_loss >
@@ -112,9 +112,14 @@ arithmetic, the larger the gain". Here only the share changes.
        where the prior sits near its ceiling: their area gain is compressed, which pushes the slope towards "the less
        arithmetic, the larger the gain"); otherwise P = log R_0.5. A bounded P is not determinable.
      - reading B: P = log R_0.5 for every share (as the user names for >= 7%); a censored none median at 2% / 4% makes R a lower
-       bound there and, with the negative OLS weight of the low shares, the slope an upper bound: "the less arithmetic, the
-       larger the gain" stays a valid (conservative) claim, the opposite one cannot be made from it; at most 5% of the
-       bootstrap resamples may carry a bound against the claim. S = Delta area.
+       bound there and, with the negative OLS weight of the low shares, the slope an upper bound: with such a share reading B
+       can only show "the less arithmetic, the larger the gain" (a positive slope is then "未显示"). S = Delta area.
+     - censoring in the bootstrap (both readings): a claim must also hold on the conservative CI, in which every resample
+       whose censored medians bound its slope towards the other side is set to -inf / +inf, so censoring can only make the
+       test stricter (audit re-check: a 5% tolerance would have let the one-sided level reach about 10%).
+     - while the reading is unset, no reading's verdict is printed or written (only the definitions); the choice is made
+       before any ptshare result, and must be made before `--submit` (it needs a new read-out commit, RO_COMMIT, and a
+       rebuilt runs/ptshare/readout, which running jobs read).
      S = the other of the two in each reading. R_0.9 never decides.
   2. Main test: P's slope over all 8 seeds per share; its 90% CI excludes 0 -> shown.
   3. Guardrail against the selection bias: P's slope on the confirm seeds 4-7 only, same sign (no significance needed).
@@ -137,7 +142,8 @@ code_sha a3bce3ab63c1; 18310 steps / 75 evals; 52,672,128 parameters, no gradien
 the share (save_model, ckpt_every 2000, data, tokenizer, defaults); win-ctx prior_on_frac 6408 / 18310 and prior_events
 [[916, 1], [7324, 0]]; none never on; step-0 lm within 1e-3 of the CPU reference of its (share, seed) (tools/ptshare_refs.json)
 and of the (share, seed) median over the counted cells; win-ctx: the prior acts (26 on-evals, grad_prior > 0 at every one,
-geo at the last on-eval below the first; true for all 20 real 7% win-ctx runs); each cell only under its pre-registered tag
+the median geo inside the window below a quarter of the geo at the last pre-window eval, step 750; the real 53M window-ctx
+runs are >= 40x apart), a check skipped for a diverged run (rule 2 counts it with its area); each cell only under its pre-registered tag
 (the reused 7% cells pinned per source: a same-args run under another tag is left out, not merged). Ceiling of the seen
 pairs is not checked (F87 printed it only).
 
@@ -185,7 +191,7 @@ every possible expansion (6 x 4 jobs) at most 118 L40S-h; CPU selection jobs < 0
 | measured shares (seeds 0-7, 640 rows each) | k = 1: 2.09-2.15% (mean 2.12%); k = 2: 4.21-4.28% (4.25%); k = 4: 8.47-8.54% (8.50%); k = 8: 16.96-17.08% (17.00%); 10.8-10.9 arithmetic tokens per line at every k |
 | jobcheck_ptshare.py (every job the generator can render: 72 main + every expansion / confirm cell = 240) | each equals its ptlr 53M job (same arm and seed) byte for byte after undoing the listed edits and the design substitutions (runs/ptshare -> runs/ptlr, tag, --arith_lines, --lr); the raw token differences are exactly: job name, --nice=2000, the two comments, HOLD / code / out paths, the L40S guard, the dry block, --arith_lines, --lr; bash -n clean (+ the 2 selection job texts); render() refuses a wrong lr, k = 4, a gate arm, seed 8, a repeated --arith_lines, an unintended --lam. JOBCHECK PASS |
 | e2e_ptshare.py (the rendered job's bash on CPU, fake nvidia-smi, training line replaced by an echo) | k1 none@8e-3 s0, k8 win-ctx@2e-3 s1, k2 none@3.2e-2 s5 reach the training line with the share printed (2.15 / 17.00 / 4.23%) and the replay = the dry rows; an A100 -> exit 3; ARGS with k + 1 lines -> exit 3; a win-ctx job without its target -> exit 3; arith_share.py edited after the snapshot -> exit 3; HOLD -> exit 0. E2E PASS |
-| ptshare_selftest.py (rules unit tests, the references loader, fake runs end to end) | 101 checks: decide() on monotone / no trend / only P significant / only S significant / 8 seeds significant but confirm reversed / S reversed / CI includes 0 / undeterminable or settled bounds / bounded P / < 3 informative shares / positive direction; the switch at 3/8 (and not at 2/8); areas, R_0.5, R_0.9, Delta area and the OLS slope = an independent computation (1e-9); every per-share line carries Delta area, R_0.5, R_0.9 with CIs and censored counts for seeds 0-3 / 4-7 / 8, and the slope table every metric; designed verdicts (A shown, B switch, C not shown, F confirm reversed -> unstable, F2 S reversed -> unstable, G 2% floor left out, H prior-only ceiling note / both at the ceiling left out); selection final / open -> expansion pick / open again -> STOP / closed after the expansion -> confirm / incomplete / withheld; round 2 never expands; reading B on designed bounds (conservative / sign open / resamples against the claim) and a censored 2% median (4/8) giving an upper-bound slope; a win-ctx run without prior gradients -> withheld; a same-args 7% run under another tag -> left out; leave-one-share-out and the prior-t50-after-the-window lines printed. PASS |
+| ptshare_selftest.py (rules unit tests, the references loader, fake runs end to end) | 105 checks: decide() on monotone / no trend / only P significant / only S significant / 8 seeds significant but confirm reversed / S reversed / CI includes 0 / undeterminable or settled bounds / bounded P / < 3 informative shares / positive direction; the switch at 3/8 (and not at 2/8); areas, R_0.5, R_0.9, Delta area and the OLS slope = an independent computation (1e-9); every per-share line carries Delta area, R_0.5, R_0.9 with CIs and censored counts for seeds 0-3 / 4-7 / 8, and the slope table every metric; designed verdicts (A shown, B switch, C not shown, F confirm reversed -> unstable, F2 S reversed -> unstable, G 2% floor left out, H prior-only ceiling note / both at the ceiling left out); selection final / open -> expansion pick / open again -> STOP / closed after the expansion -> confirm / incomplete / withheld; round 2 never expands; reading B on designed bounds (conservative / sign open / resamples against the claim) and a censored 2% median (4/8) giving an upper-bound slope; a win-ctx run without prior gradients -> withheld; a same-args 7% run under another tag -> left out; leave-one-share-out and the prior-t50-after-the-window lines printed. PASS |
 | selplumb_ptshare.py (the selection job's bash on fake runs, generator calls echoed) | all final -> 6 confirm picks, --test-only then --submit; mixed -> the expansion + the closed arms' confirms, nothing for the incomplete / withheld arms; no runs or a stale picks file -> nothing submitted; a failing --test-only -> no --submit; a tampered read-out file -> exit 3 before the read-out. SELPLUMB PASS |
 | real 7% cells (ptshare_summary.py on runs/ptlr + ptgw with the CPU references) | integrity clean; the sub-grid rule picks none 8e-3 / win-ctx 2e-3 (= F87); Delta area +23.4 [+20.3, +26.5] 4/4 (seeds 0-3), +22.2 (4-7), +22.8 8/8; R_0.5 4.75x, R_0.9 3.13x [2.75, 6.28]: F87's pre-registered numbers reproduced by an independent read-out; the prior's pre-clip LM share median 0.82, clip coefficient 1.000 (the total pre-clip norm never exceeds 1 at the on-evals) |
 | regression of the existing read-outs | no existing file changed (git diff origin/main: new files only); ptscale_summary.py (129 lines) and pt2main_summary.py (143 lines) outputs byte-identical between origin/main and this branch |
@@ -202,7 +208,11 @@ No job-level bug (snapshots, job texts, eval set, seed pairing, R censoring, bou
 5. (minor-important) the edge rule interpretation -> known limit, pending the user's confirmation.
 6. (minor) the data-rows sentence was wrong -> corrected (shared pair sequence; independent resampling is conservative).
 7. (minor) brittleness: the ptlr template pinned by its source parts (an append-only amendment of make_jobs_ptlr.py no longer
-   stops a selection job); same-args runs under another tag are left out instead of crashing the read-out.
+   stops a selection job); same-args runs under another tag are left out instead of crashing the read-out. Still by design:
+   an incomplete / withheld arm is never retried automatically, and select_r2 is submitted once (both go to the user).
+Re-check of the fixes (same auditor): items 1 and 7 fixed; two new issues of the prior-activity check (a diverged run would
+have been withheld against rule 2; 'last on-eval geo < first' sits in the noise at high k) and a loose 5% tolerance in
+reading B -> fixed as described above (selftest 105 checks: a diverged prior run counts; readings hidden while unset).
 8. (minor) the ceiling threshold 90 misses a compressed 88.9 -> kept as pre-registered; the area headroom is printed per share.
 9. (minor) slope lines now carry the censored medians and the resample shares bounded each way; the prior-activity check is
    in the validity list; leave-one-share-out slopes are printed (descriptive).

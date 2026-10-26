@@ -67,20 +67,24 @@ for name, p8, p47, s8, ninf, want in cases:
     check(v["zh"] == want, f"decide: {name}: {v['zh']} != {want} ({v['why']})")
 
 
-def EB(s, lo, hi, b, up=0.0, down=0.0):
-    return {"slope": s, "ci": [lo, hi], "bound": b, "push": {"1": up, "-1": down}}
+def EB(s, lo, hi, b, cons=None):
+    return {"slope": s, "ci": [lo, hi], "bound": b, "ci_cons": cons or [lo, hi]}
 
 
 g47, s8n = E(-0.4, -0.9, 0.1), E(-3, -9, 2)
 for name, p8, want in (("B: upper bound, CI below 0 (conservative)", EB(-0.5, -0.8, -0.2, -1), "显示了（算术越少，增益越大）"),
                        ("B: lower bound, CI below 0 (sign open)", EB(-0.5, -0.8, -0.2, 1), "未显示"),
-                       ("B: upper bound but 20% of the resamples bounded from below", EB(-0.5, -0.8, -0.2, -1, up=0.2), "未显示"),
-                       ("B: exact point, 4% of resamples bounded from below", EB(-0.5, -0.8, -0.2, 0, up=0.04), "显示了（算术越少，增益越大）"),
+                       ("B: upper bound, but the resamples bounded from below reach 0", EB(-0.5, -0.8, -0.2, -1, [-0.8, 0.05]), "未显示"),
+                       ("B: exact point, conservative CI still below 0", EB(-0.5, -0.8, -0.2, 0, [-0.8, -0.1]), "显示了（算术越少，增益越大）"),
                        ("B: upper bound, CI above 0 (sign open)", EB(0.5, 0.2, 0.8, -1), "未显示"),
                        ("B: lower bound, CI above 0 (conservative)", EB(0.5, 0.2, 0.8, 1), "方向不稳")):
     v = Q.decide(p8, g47, s8n, 4, allow_bound=True)
     check(v["zh"] == want, f"decide reading B: {name}: {v['zh']} != {want} ({v['why']})")
 check(Q.decide(EB(-0.5, -0.8, -0.2, -1), g47, s8n, 4)["zh"] == "未显示", "reading A: a bounded P is not determinable")
+check(Q.decide(EB(0.5, 0.2, 0.8, 0, [-0.1, 0.8]), E(0.4, -0.1, 0.9), E(3, -2, 9), 4)["zh"] == "未显示",
+      "reading A: a positive claim with resamples bounded from above reaching 0 -> not shown")
+check(Q.decide(EB(0.5, 0.2, 0.8, 0, [0.1, 0.8]), E(0.4, -0.1, 0.9), E(3, -2, 9), 4)["zh"] == "显示了（算术越多，增益越大）",
+      "reading A: a positive claim whose conservative CI stays above 0 -> shown")
 check(Q.primary({1: 3, 2: 0}) == "dA" and Q.primary({1: 0, 2: 3}) == "dA" and Q.primary({1: 2, 2: 2}) == "lR50"
       and Q.primary({1: 8, 2: 8, 4: 8}) == "dA" and Q.primary({}) == "lR50", "primary(): switch at >= 3/8 at 2% or 4%")
 _, w = Q.ols([1, 2, 4, 8], [0, 0, 0, 0])
@@ -137,7 +141,7 @@ def mine_t(c, th):
     return math.inf
 
 
-def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=False, tag=None, noprior=False):
+def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=False, tag=None, noprior=False, diverge=None):
     r = copy.deepcopy(TPL[arm])
     tag = tag or ((D.tag(k, arm, lr) if k != 4 else f"53m-lr{lr}-7pct-{arm}") if src != "ptgw" else "main-W")
     out = Path(root) / src / "out" / tag
@@ -150,6 +154,13 @@ def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=Fals
         e["val_bits_per_byte"] = bpb
         if noprior:
             e["grad_prior"] = None
+        if diverge is not None and e["step"] >= diverge:   # NaN from here on (rule 2: counted with its area)
+            for b_ in BKT:
+                e[f"held_{b_}"] = 0.0
+            e["lm"] = e["val_loss"] = float("nan")
+            e["geo"] = float("nan")
+            if e.get("grad_prior") is not None:
+                e["grad_prior"] = float("nan")
         if i == 0:
             e["lm"] = LM0[k][seed] if lm0 is None else lm0
     if drop_last:
@@ -196,10 +207,10 @@ def build(root, none_c, prior_c, special=None):
     (Path(root) / "refs.json").write_text(json.dumps(refs))
 
 
-def run(root, tagname):
+def run(root, tagname, hide=False):
     js = Path(root) / f"{tagname}.json"
     o = subprocess.run([PY, str(HERE / "ptshare_summary.py"), "--root", str(root), "--refs", str(Path(root) / "refs.json"),
-                        "--json", str(js), "--nboot", str(A.nboot)], capture_output=True, text=True)
+                        "--json", str(js), "--nboot", str(A.nboot)] + ([] if hide else ["--show_both"]), capture_output=True, text=True)
     if o.returncode:
         print(o.stdout[-3000:], o.stderr[-3000:])
         check(False, f"{tagname}: ptshare_summary.py failed")
@@ -334,6 +345,20 @@ out, J = run(root, "N")
 check(J["select"]["2"]["win-ctx"]["status"] == "withheld" and "prior not acting" in out and J["verdict"]["zh"] == "未完成",
       f"N: prior not acting -> withheld {J['select']['2']['win-ctx']}")
 print("scenario N (a prior run with no prior gradient): withheld")
+
+# ---- scenario Dv: a diverged win-ctx run at a side lr is counted (rule 2), not withheld by the prior-activity check;
+# and without --show_both no reading's verdict is printed or written (the reading is chosen before any result)
+root = W / "Dv"
+build(root, {k: none_mono(k) for k in D.LINES}, P_FAST)
+c4 = P_FAST[2](1)
+write_run(root, "ptshare", 2, "win-ctx", "4e-3", 1, (c4[0] + 3000, c4[1] + 3000, c4[2]), bpb=1.25, diverge=3000)
+out, J = run(root, "Dv")
+check(J["select"]["2"]["win-ctx"]["status"] == "final" and "4e-3" in J["select"]["2"]["win-ctx"].get("diverged", {})
+      and "prior not acting" not in out, f"Dv: a diverged prior run counts, not withheld {J['select']['2']['win-ctx']}")
+out, J = run(root, "Dv_hidden", hide=True)
+check(J["verdict"]["zh"].startswith("待定") and J["verdict"]["readings"] == {} and "no verdict printed" in out
+      and "显示了" not in out and "未显示" not in out and "方向不稳" not in out, "hidden readings while RULE5_READING is unset")
+print("scenario Dv (a diverged prior run; readings hidden without --show_both): OK")
 
 # ---- scenario G: floor at 2% (both arms) -> 2% left out; slope over 3 shares
 root = W / "G"

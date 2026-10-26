@@ -16,9 +16,12 @@ Rule 5 has two readings, printed side by side until the user picks one (ptshare_
 log R_0.5 for the shares >= 7% and Delta area for a censored 2% / 4% share, but one slope needs one metric):
   A  P = Delta area for the whole slope when the 2% or 4% share switches, else log R_0.5 (a bounded P: not determinable)
   B  P = log R_0.5 for every share; a censored none median at 2% / 4% makes R a lower bound there, so the slope an upper
-     bound: a negative claim stays valid (conservative), a positive one cannot be made from it; S = Delta area
-A slope entry is {"slope": float or None, "ci": [lo, hi], "bound": 0 / +1 / -1 / None, "push": {"1": f, "-1": f}} (push = the
-share of bootstrap resamples with a censored median that bounds that resample's slope from below (+1) / above (-1))."""
+     bound: with such a share only a negative claim ("the less arithmetic, the larger") can be shown, a positive one is "not
+     shown"; S = Delta area
+A slope entry is {"slope": float or None, "ci": [lo, hi], "bound": 0 / +1 / -1 / None, "push": {"1": f, "-1": f}, "ci_cons":
+[lo, hi]}: push = the share of bootstrap resamples with a censored median that bounds that resample's slope from below (+1) /
+above (-1); ci_cons = the percentiles with the resamples bounded from above set to -inf (lower end) and those bounded from
+below set to +inf (upper end)."""
 import math
 
 import numpy as np
@@ -72,15 +75,13 @@ def fmt(s):
             f"{s['slope'] * math.log(2):+.3f} per doubling{mark}")
 
 
-BOOT_PUSH_MAX = 0.05   # reading B: at most 5% of the bootstrap resamples may carry a censoring bound against the claim
-
-
 def decide(p8, p47, s8, n_informative, allow_bound=False):
     """rule 5: P's 8-seed slope CI excludes 0 (main test), P's confirm-only slope (guardrail) and S's 8-seed slope with the
     same sign -> shown; P's CI includes 0 -> not shown; guardrail or S opposite / undeterminable -> direction unstable.
-    allow_bound (reading B): a P slope that is a bound counts when the bound can only push it further from 0 on the side its
-    CI is on (bound -1 with the CI below 0, or +1 with the CI above 0), and at most BOOT_PUSH_MAX of the resamples carry a
-    bound the other way ('push' fractions of the slope entry); otherwise a bounded P is not determinable"""
+    Censoring (both readings): the claim's side must also hold on the conservative CI 'ci_cons' of the slope entry, in which
+    every bootstrap resample whose censored medians bound it towards the other side is set to -inf / +inf, so a censored
+    median can only make the test stricter. A P slope that is itself a bound: reading A (allow_bound False) not
+    determinable; reading B (allow_bound True) counts when the bound can only push it further from 0 on the claim's side"""
     if n_informative < 3:
         return {"label": "not shown", "zh": "未显示", "why": f"only {n_informative} informative shares (< 3): no slope"}
     if p8 is None or p8.get("slope") is None or p8.get("bound", 0) is None:
@@ -88,12 +89,14 @@ def decide(p8, p47, s8, n_informative, allow_bound=False):
     if p8["ci"][0] <= 0 <= p8["ci"][1]:
         return {"label": "not shown", "zh": "未显示", "why": f"P's 8-seed slope {fmt(p8).strip()}: the 90% CI includes 0"}
     side = -1 if p8["ci"][1] < 0 else 1
-    if p8.get("bound", 0) != 0 or (allow_bound and p8.get("push", {}).get(str(-side), 0) > BOOT_PUSH_MAX):
-        ok = allow_bound and p8.get("bound", 0) in (0, side) and p8.get("push", {}).get(str(-side), 0) <= BOOT_PUSH_MAX
-        if not ok:
-            return {"label": "not shown", "zh": "未显示",
-                    "why": f"P's 8-seed slope is a censoring bound that leaves its sign open: {fmt(p8).strip()}"
-                           + (f"; resamples with a bound against it {100 * p8.get('push', {}).get(str(-side), 0):.0f}%" if allow_bound else "")}
+    cons = p8.get("ci_cons", p8["ci"])
+    if not ((side < 0 and cons[1] < 0) or (side > 0 and cons[0] > 0)):
+        return {"label": "not shown", "zh": "未显示",
+                "why": f"P's 8-seed slope {fmt(p8).strip()}: with the censoring-bounded resamples set against it the 90% CI "
+                       f"is [{cons[0]:+.3f}, {cons[1]:+.3f}] and includes 0"}
+    if p8.get("bound", 0) != 0 and not (allow_bound and p8["bound"] == side):
+        return {"label": "not shown", "zh": "未显示",
+                "why": f"P's 8-seed slope is a censoring bound that leaves its sign open: {fmt(p8).strip()}"}
     want = int(np.sign(p8["slope"]))
     g, s = sign_status(p47, want), sign_status(s8, want)
     if g != "same" or s != "same":

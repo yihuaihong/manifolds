@@ -62,6 +62,8 @@ ap.add_argument("--json", help="write the selection and every number printed her
 ap.add_argument("--own_failures", help="'<tag> <seed>' lines (default <root>/ptshare/OWN_FAILURES.txt)")
 ap.add_argument("--refs", help="CPU references (default tools/ptshare_refs.json)")
 ap.add_argument("--nboot", type=int, default=R.N_BOOT)
+ap.add_argument("--show_both", action="store_true", help="tests only: compute and print both readings of rule 5 while "
+                "ptshare_design.RULE5_READING is unset (the reading is chosen before any ptshare result)")
 A = ap.parse_args()
 root = Path(A.root)
 DIRS = [Path(d) for d in (A.dirs if A.dirs is not None else [root / f"{x}/out" for x in ("ptshare", "ptlr", "ptgw")])]
@@ -222,11 +224,16 @@ for k_ in cells:
                     bad[(k_, s)].append(f"prior_on_frac {c[-1].get('prior_on_frac')} (want {R.W_ON:.6f}) in {f}")
                 if r.get("prior_events") != R.W_EVENTS:
                     bad[(k_, s)].append(f"prior_events {r.get('prior_events')} in {f}")
-                on = [e for e in c if e.get("prior_on")]   # the prior acts: a gradient at every on-eval, its fit improves
-                if not (len(on) == 26 and all((e.get("grad_prior") or 0) > 0 for e in on) and on[-1]["geo"] < on[0]["geo"]):
-                    bad[(k_, s)].append(f"prior not acting ({len(on)} on-evals, grad_prior "
-                                        f"{[e.get('grad_prior') for e in on][:3]}..., geo {on[0]['geo'] if on else None} -> "
-                                        f"{on[-1]['geo'] if on else None}) in {f}")
+                # the prior acts: a gradient at every on-eval and the fit inside the window far below the last pre-window
+                # eval (53 real 53M window-ctx runs: >= 40x); a diverged run is skipped (rule 2: it counts with its area)
+                on = [e for e in c if e.get("prior_on")]
+                pre = [e for e in c if not e.get("prior_on") and e["step"] < 916]
+                g_in = float(np.median([e["geo"] for e in on])) if on and all(e.get("geo") is not None for e in on) else None
+                if R.diverged_at(r) is None and not (
+                        len(on) == 26 and all((e.get("grad_prior") or 0) > 0 for e in on) and pre and pre[-1].get("geo")
+                        and g_in is not None and g_in < 0.25 * pre[-1]["geo"]):
+                    bad[(k_, s)].append(f"prior not acting ({len(on)} on-evals, grad_prior {[e.get('grad_prior') for e in on][:3]}..., "
+                                        f"geo before the window {pre[-1].get('geo') if pre else None}, median inside {g_in}) in {f}")
             if k_[1] == "none" and (c[-1].get("prior_used_frac", 0) != 0 or c[-1].get("prior_on_frac", 0) != 0):
                 bad[(k_, s)].append(f"none run with the prior on ({c[-1].get('prior_on_frac')}) in {f}")
 for (k, s), dd in lm0.items():
@@ -497,9 +504,10 @@ def slope_table(ks, seeds):
             sg = int(np.sign(wk))
             up |= (bb == 9) | (sg * bb == 1)
             down |= (bb == 9) | (sg * bb == -1)
+        ci_cons = [float(np.percentile(np.where(down, -np.inf, bs), 5)), float(np.percentile(np.where(up, np.inf, bs), 95))]
         res[m] = {"slope": b, "ci": [lo, hi], "bound": bound, "per_share": {D.LABEL[k]: p[0] for k, p in zip(ks, pts)},
                   "bounds": {D.LABEL[k]: p[1] for k, p in zip(ks, pts) if p[1]}, "per_doubling": b * math.log(2),
-                  "push": {"1": float(up.mean()), "-1": float(down.mean())}}
+                  "push": {"1": float(up.mean()), "-1": float(down.mean())}, "ci_cons": ci_cons}
     return res
 
 
@@ -507,7 +515,8 @@ def fmt_line(s):
     extra = ""
     if s.get("slope") is not None and (s["bounds"] or s["push"]["1"] or s["push"]["-1"]):
         extra = (f" | censored medians: {', '.join(f'{lab} {chr(8805) if v > 0 else chr(8804)}' for lab, v in s['bounds'].items()) or 'none'}"
-                 f" at the point; resamples bounded from below {100 * s['push']['1']:.0f}% / above {100 * s['push']['-1']:.0f}%")
+                 f" at the point; resamples bounded from below {100 * s['push']['1']:.0f}% / above {100 * s['push']['-1']:.0f}%;"
+                 f" CI with those set against a claim [{s['ci_cons'][0]:+.3f}, {s['ci_cons'][1]:+.3f}]")
     return Q.fmt(s) + extra
 
 
@@ -548,14 +557,19 @@ else:
     print(f"\n== rule 5 (none's t50 censored over 8 seeds: " + ", ".join(f"{D.LABEL[k]} {v}/8" for k, v in cen.items())
           + f"; the switch is >= {Q.SWITCH_CEN}/8 at 2% or 4%)")
     readings = {}
+    pick = D.RULE5_READING
     for rd, P, allow in (("A", PA, False), ("B", "lR50", True)):
         S = "lR50" if P == "dA" else "dA"
+        what = ("P = Delta area for the whole slope (the switch fired)" if P == "dA" else "P = log R_0.5 (no switch)") if rd == "A" else \
+            "P = log R_0.5 for every share, a censored R used as its bound; S = Delta area"
+        if pick not in ("A", "B") and not A.show_both:   # the reading is chosen before any result: no verdict before that
+            print(f"  reading {rd}: {what} (no verdict printed: the reading is not chosen yet)")
+            continue
         v = Q.decide(sl.get("8", {}).get(P), sl.get("4-7", {}).get(P), sl.get("8", {}).get(S), len(inf), allow_bound=allow)
         v.update(P=P, S=S)
         readings[rd] = v
-        what = ("P = Delta area for the whole slope (the switch fired)" if P == "dA" else "P = log R_0.5 (no switch)") if rd == "A" else \
-            "P = log R_0.5 for every share, a censored R used as its bound (conservative); S = Delta area"
-        print(f"  reading {rd} ({what}): {v['zh']} / {v['label']} -- {v['why']}")
+        if pick in (None, rd) or A.show_both:
+            print(f"  reading {rd} ({what}): {v['zh']} / {v['label']} -- {v['why']}")
     ceil_only = [D.LABEL[k] for k in inf if OUT["shares"][str(k)]["prior_ceiling_only"]]
     if ceil_only:
         print(f"  note: the prior alone is at the ceiling at {', '.join(ceil_only)}: the area gain there is compressed (read by R)"
@@ -564,16 +578,14 @@ else:
     if near:
         print(f"  note: the prior's t50 is within 2 evals of the window's opening at {', '.join(near)}: there R and Delta area are "
               f"set mostly by none (the prior cannot be faster); read the gain's change with the share as a change of none's deficit")
-    pick = D.RULE5_READING
     if pick in readings:
-        OUT["verdict"] = dict(readings[pick], reading=pick, readings=readings)
-        print(f"  VERDICT (reading {pick}, the user's pick): {readings[pick]['zh']} / {readings[pick]['label']}")
+        OUT["verdict"] = dict(readings[pick], reading=pick, readings=readings if A.show_both else {pick: readings[pick]})
+        print(f"  VERDICT (reading {pick}, chosen by the user before any result): {readings[pick]['zh']} / {readings[pick]['label']}")
     else:
-        OUT["verdict"] = {"label": "pending: the user picks reading A or B", "zh": "待定（用户在 A / B 两种读法中选定）",
+        OUT["verdict"] = {"label": "pending: the user picks reading A or B before any result", "zh": "待定（用户在 A / B 两种读法中选定）",
                           "why": "rule 5 as given names log R_0.5 for >= 7% and Delta area for a censored 2% / 4% share; one slope "
                                  "needs one metric", "readings": readings}
-        print("  VERDICT: pending -- the user picks reading A or B (ptshare_design.RULE5_READING) before any ptshare result; "
-              f"A: {readings['A']['zh']}, B: {readings['B']['zh']}")
+        print("  VERDICT: pending -- the user picks reading A or B (ptshare_design.RULE5_READING) before any ptshare result")
     print("  (no confirmatory comparison with F86 / F87 cross-batch numbers; the 7% row is the ptlr cells themselves)")
 if A.json:
     Path(A.json).write_text(json.dumps(OUT, indent=1, default=float))
