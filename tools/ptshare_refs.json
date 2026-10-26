@@ -1,0 +1,294 @@
+{
+ "dry": {
+  "1": {
+   "0": "30e02effbdaa55f23cae136b1bb25e77bbfe96790b97084eeeba367f09807329",
+   "1": "bd890f4698d48e53ea224db293dae099497043be79a5bdc68668a20f13a55cfd",
+   "2": "e17d7ea8e072a1cbb6a67a42786c44bebcb9e2cea1c15b05d8b5d18afacdab46",
+   "3": "48d7e29c210c70d9309dbc2c5a62cbe529bdc238ad498777142543c13d5586e5",
+   "4": "bab86500aaadaf1b3cc692bd80355b3394b74400272b8a24390c8deac08b5f91",
+   "5": "427aae0f1104a30f0215279248f2b36416cdbc5b4762322df91574abbc2c377f",
+   "6": "662784b450ef16859c246b4f338a8cb7c192a4151a173ec47bd8b957f9f6ddaf",
+   "7": "b67e7b4fc00364f48b7b0144223f3fc45656566f1312aaf07fa6c8fd2addb8d3"
+  },
+  "2": {
+   "0": "82f6ef9a58a7023f9dc5d791c52fbee2f6bf29ede09fdaa4ae41b176e1b5bffe",
+   "1": "f6275be0262c42b0c1d2631db0908c237a35b08cd864cc0542ba3d619c5db988",
+   "2": "65f7dc032f103f95f05e1edcf5305ef64e6231b37ea07cbd75ecbdb1f77de3cf",
+   "3": "674c1cb98a765b640428a6beb66136fdfb30b684037edb691653ed99f4f418ee",
+   "4": "2f1ba647d0e4a828db438cacea242c01812224935e475c7a3cc70584ac182600",
+   "5": "26b9ec2bc6297a0ae3218f92eacf31e339faf54fffabe70beda39ac4df5842ca",
+   "6": "f91764abaf486b3bc720ae92ad02836443079fe7695b42202d179add43fec496",
+   "7": "dbd06e9efc60137b8fffb5e81ca17fb24aedc4c4a7cfc861295a694db2d0cea6"
+  },
+  "4": {
+   "0": "03c0de440cf09c15c58f2b0d4a762c1a111c2e5cfb39e00ab0b667ae5372348c",
+   "1": "f733b673e7ae41e645d9638a63117b406d28bb50cfaa2366b231888a3a5db3d6",
+   "2": "0fe947545555bf3f41b66d3379792c132be27db6a91fec70a64e38561dce1a13",
+   "3": "587f9faed9eee434967a7324aafa3830b6f0da610600c4938a2a9a3bff31630c",
+   "4": "019647a6076b04bfb9fa2b5ce1663e0ba75af5af0f2e798095e625b74a304bbc",
+   "5": "2602a4b1c5aabdeb1e1fdb6b838b7efa8f0be2e5e1cdd3c3d8065d655f9a6e07",
+   "6": "2b022433dc836fb74dfe95e532bdae642b7e8a19cbd205ce4038a178200119fd",
+   "7": "fe6608e729f9ce4877b4bf5d996ac4f5dfe5045b8a76fa2b89aef5ef2534b658"
+  },
+  "8": {
+   "0": "3351049aca3dbc1d6289dde1bfc3bf42129d393db0a9136a5969b63a4bd97162",
+   "1": "931420296250007921d9550d2ba417fe30b992e25a0d1f141c5f22db98e0b530",
+   "2": "4f9304db573a43bff44733258a6b1e8baffdc68858f0f3ac648c2b4b834d0bdd",
+   "3": "87516365320347da0e3526217e207843262f823c3d60ca165877a7efa970d95d",
+   "4": "821ce9ba896914304fcc8f53e27fdaeea2fc99052813d9a750ad6513f21762c9",
+   "5": "4bfd6bcee3bf0741e3621d08af6a3a5faca48ecbb97615dc5dd29e20dde7578b",
+   "6": "f6d52dc4f7fc04c1f2080f20c17984eb730f047294083b3af4b5a13f7f75919a",
+   "7": "76d3bcf79cb4426780c54fda2411480144fa43784ca47c3c592fa57dd03aa2a9"
+  }
+ },
+ "lm0": {
+  "1": {
+   "0": 11.616512298583984,
+   "1": 11.58720588684082,
+   "2": 11.565478324890137,
+   "3": 11.602093696594238,
+   "4": 11.594985961914062,
+   "5": 11.56811809539795,
+   "6": 11.584505081176758,
+   "7": 11.593494415283203
+  },
+  "2": {
+   "0": 11.615610122680664,
+   "1": 11.589254379272461,
+   "2": 11.56977653503418,
+   "3": 11.60245418548584,
+   "4": 11.588976860046387,
+   "5": 11.566110610961914,
+   "6": 11.57734203338623,
+   "7": 11.5840425491333
+  },
+  "4": {
+   "0": 11.60806941986084,
+   "1": 11.599084854125977,
+   "2": 11.579516410827637,
+   "3": 11.597047805786133,
+   "4": 11.589810371398926,
+   "5": 11.553509712219238,
+   "6": 11.576645851135254,
+   "7": 11.587860107421875
+  },
+  "8": {
+   "0": 11.629202842712402,
+   "1": 11.58800983428955,
+   "2": 11.580059051513672,
+   "3": 11.600725173950195,
+   "4": 11.598944664001465,
+   "5": 11.563812255859375,
+   "6": 11.555333137512207,
+   "7": 11.582630157470703
+  }
+ },
+ "meta": {
+  "arith_share": "fa277a7a4e99",
+  "method": "CPU, scale_work/ptshare/refs_ptshare.py (step0_ng.py: the trainer's own main() to the step-0 forward)",
+  "step0_ng_sha": "088175915d77",
+  "trainer": "a3bce3ab63c1"
+ },
+ "share": {
+  "1": {
+   "0": {
+    "arith_tokens_per_line": 10.984375,
+    "arith_tokens_per_row": 10.984375,
+    "rows": 640,
+    "share": 0.021453857421875
+   },
+   "1": {
+    "arith_tokens_per_line": 11.0171875,
+    "arith_tokens_per_row": 11.0171875,
+    "rows": 640,
+    "share": 0.0215179443359375
+   },
+   "2": {
+    "arith_tokens_per_line": 10.8734375,
+    "arith_tokens_per_row": 10.8734375,
+    "rows": 640,
+    "share": 0.0212371826171875
+   },
+   "3": {
+    "arith_tokens_per_line": 10.8234375,
+    "arith_tokens_per_row": 10.8234375,
+    "rows": 640,
+    "share": 0.0211395263671875
+   },
+   "4": {
+    "arith_tokens_per_line": 10.7875,
+    "arith_tokens_per_row": 10.7875,
+    "rows": 640,
+    "share": 0.0210693359375
+   },
+   "5": {
+    "arith_tokens_per_line": 10.7234375,
+    "arith_tokens_per_row": 10.7234375,
+    "rows": 640,
+    "share": 0.0209442138671875
+   },
+   "6": {
+    "arith_tokens_per_line": 10.9421875,
+    "arith_tokens_per_row": 10.9421875,
+    "rows": 640,
+    "share": 0.0213714599609375
+   },
+   "7": {
+    "arith_tokens_per_line": 10.8359375,
+    "arith_tokens_per_row": 10.8359375,
+    "rows": 640,
+    "share": 0.0211639404296875
+   }
+  },
+  "2": {
+   "0": {
+    "arith_tokens_per_line": 10.9,
+    "arith_tokens_per_row": 21.8,
+    "rows": 640,
+    "share": 0.042578125
+   },
+   "1": {
+    "arith_tokens_per_line": 10.9453125,
+    "arith_tokens_per_row": 21.890625,
+    "rows": 640,
+    "share": 0.042755126953125
+   },
+   "2": {
+    "arith_tokens_per_line": 10.91640625,
+    "arith_tokens_per_row": 21.8328125,
+    "rows": 640,
+    "share": 0.0426422119140625
+   },
+   "3": {
+    "arith_tokens_per_line": 10.92578125,
+    "arith_tokens_per_row": 21.8515625,
+    "rows": 640,
+    "share": 0.0426788330078125
+   },
+   "4": {
+    "arith_tokens_per_line": 10.90546875,
+    "arith_tokens_per_row": 21.8109375,
+    "rows": 640,
+    "share": 0.0425994873046875
+   },
+   "5": {
+    "arith_tokens_per_line": 10.8234375,
+    "arith_tokens_per_row": 21.646875,
+    "rows": 640,
+    "share": 0.042279052734375
+   },
+   "6": {
+    "arith_tokens_per_line": 10.8765625,
+    "arith_tokens_per_row": 21.753125,
+    "rows": 640,
+    "share": 0.042486572265625
+   },
+   "7": {
+    "arith_tokens_per_line": 10.7890625,
+    "arith_tokens_per_row": 21.578125,
+    "rows": 640,
+    "share": 0.042144775390625
+   }
+  },
+  "4": {
+   "0": {
+    "arith_tokens_per_line": 10.839453125,
+    "arith_tokens_per_row": 43.3578125,
+    "rows": 640,
+    "share": 0.0846832275390625
+   },
+   "1": {
+    "arith_tokens_per_line": 10.915234375,
+    "arith_tokens_per_row": 43.6609375,
+    "rows": 640,
+    "share": 0.0852752685546875
+   },
+   "2": {
+    "arith_tokens_per_line": 10.937109375,
+    "arith_tokens_per_row": 43.7484375,
+    "rows": 640,
+    "share": 0.0854461669921875
+   },
+   "3": {
+    "arith_tokens_per_line": 10.915234375,
+    "arith_tokens_per_row": 43.6609375,
+    "rows": 640,
+    "share": 0.0852752685546875
+   },
+   "4": {
+    "arith_tokens_per_line": 10.901953125,
+    "arith_tokens_per_row": 43.6078125,
+    "rows": 640,
+    "share": 0.0851715087890625
+   },
+   "5": {
+    "arith_tokens_per_line": 10.841015625,
+    "arith_tokens_per_row": 43.3640625,
+    "rows": 640,
+    "share": 0.0846954345703125
+   },
+   "6": {
+    "arith_tokens_per_line": 10.85,
+    "arith_tokens_per_row": 43.4,
+    "rows": 640,
+    "share": 0.084765625
+   },
+   "7": {
+    "arith_tokens_per_line": 10.873828125,
+    "arith_tokens_per_row": 43.4953125,
+    "rows": 640,
+    "share": 0.0849517822265625
+   }
+  },
+  "8": {
+   "0": {
+    "arith_tokens_per_line": 10.8748046875,
+    "arith_tokens_per_row": 86.9984375,
+    "rows": 640,
+    "share": 0.1699188232421875
+   },
+   "1": {
+    "arith_tokens_per_line": 10.882421875,
+    "arith_tokens_per_row": 87.059375,
+    "rows": 640,
+    "share": 0.170037841796875
+   },
+   "2": {
+    "arith_tokens_per_line": 10.9341796875,
+    "arith_tokens_per_row": 87.4734375,
+    "rows": 640,
+    "share": 0.1708465576171875
+   },
+   "3": {
+    "arith_tokens_per_line": 10.87578125,
+    "arith_tokens_per_row": 87.00625,
+    "rows": 640,
+    "share": 0.16993408203125
+   },
+   "4": {
+    "arith_tokens_per_line": 10.886328125,
+    "arith_tokens_per_row": 87.090625,
+    "rows": 640,
+    "share": 0.170098876953125
+   },
+   "5": {
+    "arith_tokens_per_line": 10.8697265625,
+    "arith_tokens_per_row": 86.9578125,
+    "rows": 640,
+    "share": 0.1698394775390625
+   },
+   "6": {
+    "arith_tokens_per_line": 10.8546875,
+    "arith_tokens_per_row": 86.8375,
+    "rows": 640,
+    "share": 0.1696044921875
+   },
+   "7": {
+    "arith_tokens_per_line": 10.8744140625,
+    "arith_tokens_per_row": 86.9953125,
+    "rows": 640,
+    "share": 0.1699127197265625
+   }
+  }
+ }
+}
