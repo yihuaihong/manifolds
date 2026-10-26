@@ -65,6 +65,22 @@ cases = [("monotone (all three negative)", E(-0.6, -0.9, -0.3), E(-0.5, -1.0, 0.
 for name, p8, p47, s8, ninf, want in cases:
     v = Q.decide(p8, p47, s8, ninf)
     check(v["zh"] == want, f"decide: {name}: {v['zh']} != {want} ({v['why']})")
+
+
+def EB(s, lo, hi, b, up=0.0, down=0.0):
+    return {"slope": s, "ci": [lo, hi], "bound": b, "push": {"1": up, "-1": down}}
+
+
+g47, s8n = E(-0.4, -0.9, 0.1), E(-3, -9, 2)
+for name, p8, want in (("B: upper bound, CI below 0 (conservative)", EB(-0.5, -0.8, -0.2, -1), "显示了（算术越少，增益越大）"),
+                       ("B: lower bound, CI below 0 (sign open)", EB(-0.5, -0.8, -0.2, 1), "未显示"),
+                       ("B: upper bound but 20% of the resamples bounded from below", EB(-0.5, -0.8, -0.2, -1, up=0.2), "未显示"),
+                       ("B: exact point, 4% of resamples bounded from below", EB(-0.5, -0.8, -0.2, 0, up=0.04), "显示了（算术越少，增益越大）"),
+                       ("B: upper bound, CI above 0 (sign open)", EB(0.5, 0.2, 0.8, -1), "未显示"),
+                       ("B: lower bound, CI above 0 (conservative)", EB(0.5, 0.2, 0.8, 1), "方向不稳")):
+    v = Q.decide(p8, g47, s8n, 4, allow_bound=True)
+    check(v["zh"] == want, f"decide reading B: {name}: {v['zh']} != {want} ({v['why']})")
+check(Q.decide(EB(-0.5, -0.8, -0.2, -1), g47, s8n, 4)["zh"] == "未显示", "reading A: a bounded P is not determinable")
 check(Q.primary({1: 3, 2: 0}) == "dA" and Q.primary({1: 0, 2: 3}) == "dA" and Q.primary({1: 2, 2: 2}) == "lR50"
       and Q.primary({1: 8, 2: 8, 4: 8}) == "dA" and Q.primary({}) == "lR50", "primary(): switch at >= 3/8 at 2% or 4%")
 _, w = Q.ols([1, 2, 4, 8], [0, 0, 0, 0])
@@ -121,9 +137,9 @@ def mine_t(c, th):
     return math.inf
 
 
-def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=False):
+def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=False, tag=None, noprior=False):
     r = copy.deepcopy(TPL[arm])
-    tag = (D.tag(k, arm, lr) if k != 4 else f"53m-lr{lr}-7pct-{arm}") if src != "ptgw" else "main-W"
+    tag = tag or ((D.tag(k, arm, lr) if k != 4 else f"53m-lr{lr}-7pct-{arm}") if src != "ptgw" else "main-W")
     out = Path(root) / src / "out" / tag
     out.mkdir(parents=True, exist_ok=True)
     r["args"].update(arith_lines=k, lr=float(lr), seed=seed, tag=f"_{tag}", out=str(out))
@@ -132,6 +148,8 @@ def write_run(root, src, k, arm, lr, seed, c, bpb=1.22, lm0=None, drop_last=Fals
         for b_ in BKT:
             e[f"held_{b_}"] = v
         e["val_bits_per_byte"] = bpb
+        if noprior:
+            e["grad_prior"] = None
         if i == 0:
             e["lm"] = LM0[k][seed] if lm0 is None else lm0
     if drop_last:
@@ -188,6 +206,14 @@ def run(root, tagname):
     return o.stdout, json.loads(js.read_text())
 
 
+def VA(J):
+    return J["verdict"]["readings"]["A"]
+
+
+def VB(J):
+    return J["verdict"]["readings"]["B"]
+
+
 def pick(root, sel_json, rnd):
     pk = Path(root) / f"picks_r{rnd}.json"
     pk.unlink(missing_ok=True)
@@ -208,8 +234,17 @@ def none_mono(k):
 # ---- scenario A: monotone, no switch -> P = log R_0.5, shown (the less arithmetic, the larger)
 root = W / "A"
 build(root, {k: none_mono(k) for k in D.LINES}, P_FAST)
+write_run(root, "ptlr", 4, "none", "8e-3", 0, (0, 1000, 1.0), tag="53m-lr8e-3-7pct-none-dup")   # same args, another tag
 out, J = run(root, "A")
-check(J["verdict"]["zh"] == "显示了（算术越少，增益越大）" and J["verdict"]["P"] == "lR50", f"A verdict {J['verdict']}")
+check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VA(J)["P"] == "lR50" and VB(J)["zh"] == VA(J)["zh"] and VB(J)["P"] == "lR50"
+      and J["verdict"]["zh"].startswith("待定") and "VERDICT: pending" in out, f"A verdict {J['verdict']}")
+check(all(J["shares"][str(k)]["prior_t50_after_window"] > 0 for k in D.LINES) and "the prior's t50 is" in out
+      and "after the window opens" in out, "A: the prior-t50-after-the-window line")
+check("left out" in out and "is not the cell's pre-registered tag: 1" in out
+      and abs(J["shares"]["4"]["groups"]["0-3"]["area_none"] - np.mean([mine_area(none_mono(4)(s)) for s in range(4)])) < 1e-9,
+      "A: a same-args run under another tag in ptlr is left out, not merged")
+check(set(J["loso"]["dA"]) == {"2pct", "4pct", "7pct", "14pct"} and all(v < 0 for v in J["loso"]["lR50"].values()),
+      "A: leave-one-share-out slopes printed")
 for k in D.LINES:
     sel = J["select"][str(k)]
     check(sel["none"]["status"] == "final" and sel["none"]["best"] == "8e-3" and sel["win-ctx"]["best"] == "2e-3", f"A select {k} {sel}")
@@ -236,22 +271,25 @@ for gname in ("0-3", "4-7", "8"):
         check(any(l.strip().startswith(f"seeds {gname}") and lab in l and "per ln(share)" in l for l in out.splitlines()),
               f"A: slope line {gname} {lab}")
 check("the 7% sub-grid selection" not in out, "A: the 7% selection = F87's lrs (no warning)")
-print(f"scenario A (monotone, P = log R_0.5): {J['verdict']['zh']}; slope {J['slopes']['8']['lR50']['slope']:+.3f}")
+print(f"scenario A (monotone, P = log R_0.5): {VA(J)['zh']}; slope {J['slopes']['8']['lR50']['slope']:+.3f}")
 _, pk = pick(root, root / "A.json", 1)
 check(pk is not None and sorted((c["k"], c["arm"], c["lr"], c["why"]) for c in pk["cells"]) ==
       sorted((k, a, D.GRID[a][1], "confirm") for k in D.NEW for a in D.ARMS) and all(c["seeds"] == [4, 5, 6, 7] for c in pk["cells"]),
       f"A picks {pk}")
 
 # ---- scenario B: the switch (2% none never reaches 0.5 in 3/8 seeds) -> P = Delta area; and 2/8 -> log R_0.5
-for n_cen, wantP in ((3, "dA"), (2, "lR50")):
+for n_cen, wantP in ((3, "dA"), (2, "lR50"), (4, "dA")):
     root = W / f"B{n_cen}"
     sp = {(1, "none", "*", s): {"c": (9000, 16000, 0.45)} for s in range(n_cen)}
     build(root, {k: none_mono(k) for k in D.LINES}, P_FAST, sp)
     out, J = run(root, f"B{n_cen}")
-    check(J["shares"]["1"]["none_t50_censored_8"] == n_cen and J["verdict"]["P"] == wantP, f"B{n_cen}: P {J['verdict']}")
-    check(J["verdict"]["zh"] == "显示了（算术越少，增益越大）", f"B{n_cen} verdict {J['verdict']}")
-    check(f"primary metric P = {'Delta area' if wantP == 'dA' else 'log R_0.5'}" in out, f"B{n_cen}: the switch is printed")
-    print(f"scenario B ({n_cen}/8 of 2% none censored at t50): P = {J['verdict']['P']}, {J['verdict']['zh']}")
+    check(J["shares"]["1"]["none_t50_censored_8"] == n_cen and VA(J)["P"] == wantP and VB(J)["P"] == "lR50", f"B{n_cen}: P {J['verdict']}")
+    check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VB(J)["zh"] == "显示了（算术越少，增益越大）", f"B{n_cen} verdict {J['verdict']}")
+    check((J["slopes"]["8"]["lR50"]["bound"] == -1 and "2pct" in J["slopes"]["8"]["lR50"]["bounds"]) == (n_cen >= 4),
+          f"B{n_cen}: a censored 2% none median (>= 4/8) makes the log R slope an upper bound {J['slopes']['8']['lR50']}")
+    check(("reading A (P = Delta area for the whole slope (the switch fired))" if wantP == "dA" else "reading A (P = log R_0.5 (no switch))") in out,
+          f"B{n_cen}: the switch is printed")
+    print(f"scenario B ({n_cen}/8 of 2% none censored at t50): A: P = {VA(J)['P']}, {VA(J)['zh']}; B: {VB(J)['zh']}")
 
 # ---- scenario C: no trend (same curves at every share) -> not shown
 root = W / "C"
@@ -259,8 +297,8 @@ flat = {k: (lambda s: (6000 + 6 * jit(s), 8000 + 6 * jit(s), 1.0)) for k in D.LI
 pj = {k: (lambda s, k=k: (1000 + 4 * jit((s + k) % 8), 2000 + 4 * jit((s + k) % 8), 1.0)) for k in D.LINES}
 build(root, flat, pj)
 out, J = run(root, "C")
-check(J["verdict"]["zh"] == "未显示", f"C verdict {J['verdict']}")
-print(f"scenario C (no trend): {J['verdict']['zh']} ({J['verdict']['why'][:110]})")
+check(VA(J)["zh"] == "未显示" and VB(J)["zh"] == "未显示", f"C verdict {J['verdict']}")
+print(f"scenario C (no trend): {VA(J)['zh']} ({VA(J)['why'][:110]})")
 
 # ---- scenario F: 8 seeds negative, the confirm seeds reversed (P = Delta area via the switch) -> direction unstable
 root = W / "F"
@@ -275,18 +313,27 @@ def none_f(k):
 
 build(root, {k: none_f(k) for k in D.LINES}, P_FAST)
 out, J = run(root, "F")
-check(J["verdict"]["P"] == "dA" and J["slopes"]["8"]["dA"]["ci"][1] < 0 and J["slopes"]["4-7"]["dA"]["slope"] > 0
-      and J["verdict"]["zh"] == "方向不稳", f"F verdict {J['verdict']} / {J['slopes']['4-7']['dA']}")
-print(f"scenario F (confirm seeds reversed): {J['verdict']['zh']}")
+check(VA(J)["P"] == "dA" and J["slopes"]["8"]["dA"]["ci"][1] < 0 and J["slopes"]["4-7"]["dA"]["slope"] > 0
+      and VA(J)["zh"] == "方向不稳" and not VB(J)["zh"].startswith("显示了"), f"F verdict {J['verdict']} / {J['slopes']['4-7']['dA']}")
+print(f"scenario F (confirm seeds reversed): A {VA(J)['zh']}, B {VB(J)['zh']}")
 
 # ---- scenario F2: the secondary metric reversed (P = log R_0.5 falls with the share, Delta area rises) -> direction unstable
 root = W / "F2"
 PRI = {1: (500, 1100, 0.6), 2: (800, 1800, 0.75), 4: (1100, 2700, 0.9), 8: (1500, 3500, 1.0)}
 build(root, flat, {k: (lambda s, k=k: (PRI[k][0] + jit(s), PRI[k][1] + jit(s), PRI[k][2])) for k in D.LINES})
 out, J = run(root, "F2")
-check(J["verdict"]["P"] == "lR50" and J["slopes"]["8"]["lR50"]["ci"][1] < 0 and J["slopes"]["8"]["dA"]["slope"] > 0
-      and J["verdict"]["zh"] == "方向不稳" and "S (8 seeds) opposite sign" in J["verdict"]["why"], f"F2 verdict {J['verdict']}")
-print(f"scenario F2 (secondary reversed): {J['verdict']['zh']}")
+check(VA(J)["P"] == "lR50" and J["slopes"]["8"]["lR50"]["ci"][1] < 0 and J["slopes"]["8"]["dA"]["slope"] > 0
+      and VA(J)["zh"] == "方向不稳" and VB(J)["zh"] == "方向不稳" and "S (8 seeds) opposite sign" in VA(J)["why"], f"F2 verdict {J['verdict']}")
+print(f"scenario F2 (secondary reversed): {VA(J)['zh']}")
+
+# ---- scenario N: a win-ctx run without prior gradients (the prior silently off) -> that cell withheld
+root = W / "N"
+build(root, {k: none_mono(k) for k in D.LINES}, P_FAST)
+write_run(root, "ptshare", 2, "win-ctx", "2e-3", 1, P_FAST[2](1), noprior=True)
+out, J = run(root, "N")
+check(J["select"]["2"]["win-ctx"]["status"] == "withheld" and "prior not acting" in out and J["verdict"]["zh"] == "未完成",
+      f"N: prior not acting -> withheld {J['select']['2']['win-ctx']}")
+print("scenario N (a prior run with no prior gradient): withheld")
 
 # ---- scenario G: floor at 2% (both arms) -> 2% left out; slope over 3 shares
 root = W / "G"
@@ -296,7 +343,7 @@ out, J = run(root, "G")
 check(J["shares"]["1"]["uninformative"] and J["shares"]["1"]["floor"] == {"none": True, "prior": True}
       and "uninformative shares left out of every slope: 2pct" in out and set(J["slopes"]["8"]["dA"]["per_share"]) == {"4pct", "7pct", "14pct"},
       f"G floor {J['shares']['1'].get('floor')}")
-print(f"scenario G (2% both at the floor): left out; {J['verdict']['zh']}")
+print(f"scenario G (2% both at the floor): left out; {VA(J)['zh']}")
 
 # ---- scenario H: the prior alone at the ceiling at 14% -> note; both at the ceiling -> 14% uninformative
 root = W / "H"

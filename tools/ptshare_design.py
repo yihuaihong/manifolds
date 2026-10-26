@@ -27,6 +27,12 @@ MAIN, CONFIRM = (0, 1, 2, 3), (4, 5, 6, 7)
 SIZE, HOURS = "53m", "03:00:00"           # ptlr's 53M time limit (runs take 0.96-0.98 L40S-h)
 NICE = 2000                                # after the fixed-tokens-per-parameter batch (nice 20), before rb6_190m_dim (5000)
 REFS = HERE / "ptshare_refs.json"         # CPU references: step-0 lm, dry rows, measured shares per (k, seed)
+RULE5_READING = None                       # 'A' / 'B' (ptshare_rules): the user's pick, set before any ptshare result; None = both printed
+WINDOW_START_M = 916 * 32 * 512 / 1e6     # the window (0.05, 0.4) opens at step 916 = 15.0M tokens: no prior before it
+# the reused 7% cells, pinned by source and tag (a later run with the same args under another tag is left out, not merged)
+REUSED_TAGS = {("ptlr", "none", lr): f"53m-lr{lr}-7pct-none" for lr in GRID["none"]}
+REUSED_TAGS.update({("ptlr", "win-ctx", lr): f"53m-lr{lr}-7pct-win-ctx" for lr in GRID["win-ctx"]})
+REUSED_TAGS[("ptgw", "win-ctx", "1e-3")] = "main-W"
 
 
 def tag(k, arm, lr):
