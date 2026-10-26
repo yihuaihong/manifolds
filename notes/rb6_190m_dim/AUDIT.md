@@ -146,3 +146,26 @@ submitted: make_jobs_rb6_190m_dim.py (sha256[:12] e113d287fa37, checked by the s
 (55f901755cde, checked), runs/rb6_190m_dim/select_code. Logs: llmadd_torch/logs/llmadd_rb6_190m_dim-<arm>-lr<lr>-s<seed>_<jobid>.out,
 the selection in runs/rb6_190m_dim/select.log. Planned ~12 x 2.5 = 30 A100-h, ~9 GB of saved models (/scratch at 93% of
 5 TB before submission). Kill switch: touch runs/rb6_190m_dim/HOLD.
+
+## Amendment M1 (2026-10-25, after the fresh build review; BEFORE any result: the 5 jobs are pending, out/ is empty)
+Review (fresh general-purpose agent, read-only): no blocker. Changes to the pre-registration, from its non-blocking points:
+- a (pinned read-out): the read-out runs the FROZEN copy, not the live branch:
+  `cd /scratch/yh6210/llmadd_torch/runs/rb6_190m_dim/select_code/tools && python rb6scale_dim_summary.py readout <the three outs> --picks ../../picks.json --json <out>`
+  (rb6scale_dim_summary.py 70954a2d0c56 = scale-ladder 8251667; the reader also checks that picks.json's tool_sha equals it).
+- b (recovery if D1 is incomplete, decided now): a D1 job that fails for an infrastructure reason (node, preemption,
+  OOM, timeout; no check.json) is re-run with its identical, unchanged job file; then picks.json (status incomplete) is
+  moved to picks_incomplete_<n>.json and the same select_job.sbatch is resubmitted with afterany on the re-run. A run that
+  finished with a FAILED check is reported to the user, not re-run.
+- c (a failed D2 submission is not a failed job): the selection job exits 0 either way; after it runs, select.log must
+  show 8 "Submitted batch job" lines and runs/rb6_190m_dim must have 8 new SUBMITTED_ flags (seeds 4-7), else the user
+  is told.
+- d (inputs read at D2 time, do not remove until D2 is submitted): the worktree /scratch/yh6210/llmadd-burst-scale, the
+  Burst results /scratch/yh6210/llmadd-burst-ro/results/{470,472,474,476}-*/dry_inputs.txt, make_jobs_rb6_190m_ext.py
+  (ba2eb39015af, asserted on import).
+- e (named deviation): rb6_190m_ext's "best tested" excluded A5-INVALID configs; this selection does not (rule 4 above).
+  It only matters if a 3.84e-2 seed diverges while the others score high; it is the direction that can only make the
+  comparison harder for all6 (an OPEN, not a dropped cell).
+- g (wording): the OPEN label quotes readout_rules.survives' text against the best tested none (e.g. "...; vs it:
+  SURVIVES tuning ..."); that inner text is NOT a SURVIVES verdict. Only a label that starts with "SURVIVES" is one.
+- f (cost, for the user): D2 (~20 A100-h) also runs when the bracket is OPEN, as designed; to skip it in that case,
+  touch runs/rb6_190m_dim/HOLD after D1 and before the selection job starts.
