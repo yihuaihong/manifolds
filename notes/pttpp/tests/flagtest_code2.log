@@ -1,0 +1,16 @@
+PASS code2: trainer line present: steps = int(args.tokens // (args.bs * args.seq))
+PASS code2: trainer line present: warm = max(1, steps // 100)
+PASS code2: trainer line present: return w0 * steps <= s < w1 * steps
+PASS code2: trainer line present: eval_every = max(1, round(args.eval_every * 32 / args.bs))
+PASS code2: trainer line present: math.cos(math.pi * min(1.0, s / steps))
+PASS code2: trainer line present: if s % eval_every == 0 or s == steps - 1:
+PASS code2: --tokens 163840 --eval_every 5: steps 40, eval_every_steps 5, 9 evals [0, 5, 10]...[35, 39], prior_events [[2, 1], [16, 0]] (want 40, 5, 9, [[2, 1], [16, 0]])
+PASS code2: make_jobs_pttpp.window_events / n_evals agree (40, 5)
+PASS code2: --tokens 163840 --eval_every 250: steps 40, eval_every_steps 250, 2 evals [0, 39]...[0, 39], prior_events [[2, 1], [16, 0]] (want 40, 250, 2, [[2, 1], [16, 0]])
+PASS code2: make_jobs_pttpp.window_events / n_evals agree (40, 250)
+PASS code2: --tokens 327680 --eval_every 10: steps 80, eval_every_steps 10, 9 evals [0, 10, 20]...[70, 79], prior_events [[4, 1], [32, 0]] (want 80, 10, 9, [[4, 1], [32, 0]])
+PASS code2: make_jobs_pttpp.window_events / n_evals agree (80, 10)
+PASS code2: --eval_every 5 vs the default changes the number of evals (9 vs 2)
+PASS code2 none: lr 0, 40 vs 80 steps: lm at steps [0, 5, 10, 15, 20, 25, 30, 35] identical (True) and distinct across steps (True): the data stream of a shorter run is the prefix of the longer one
+PASS code2 win-ctx: lr 0, 40 vs 80 steps: lm at steps [0, 5, 10, 15, 20, 25, 30, 35] identical (True) and distinct across steps (True): the data stream of a shorter run is the prefix of the longer one
+FLAGTEST PASS

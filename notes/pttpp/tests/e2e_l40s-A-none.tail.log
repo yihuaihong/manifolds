@@ -1,0 +1,15 @@
+e": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 0}
+{"step": 30, "tokens": 61440, "held_b11": 0.0, "held_b12": 0.0, "held_b13": 0.0, "held_b13_lt1000": 0.0, "held_b13_ge1000": null, "held_b22": 0.0, "held_b23": 0.0, "held_b23_lt1000": 0.0, "held_b23_ge1000": 0.0, "held_b33": 0.0, "held_b33_lt1000": 0.0, "held_b33_ge1000": 0.0, "seen_b11": 0.0, "seen_b12": 0.0, "seen_b13": 0.0, "seen_b22": 0.0, "seen_b23": 0.0, "seen_b33": 0.0, "ood_b44": 0.0, "ood_b41": 0.0, "ood_b42": 0.0, "val_loss": 8.805217146873474, "val_bits_per_byte": 2.6493792502714846, "lm": 5.870288372039795, "geo": 0.0, "sec": 68.39879751205444, "prior_on": 0, "prior_used_frac": 0.0, "cka_ops_helix3": 0.1328125, "text_numbers": null, "text_bins": null, "cka_emb_helix3": 0.1035604178905487, "cka_unemb_helix3": 0.1035604178905487, "prior_on_frac": 0.0, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 0}
+{"step": 39, "tokens": 79872, "held_b11": 0.0, "held_b12": 0.0, "held_b13": 0.0, "held_b13_lt1000": 0.0, "held_b13_ge1000": null, "held_b22": 0.0, "held_b23": 0.0, "held_b23_lt1000": 0.0, "held_b23_ge1000": 0.0, "held_b33": 0.0, "held_b33_lt1000": 0.0, "held_b33_ge1000": 0.0, "seen_b11": 0.0, "seen_b12": 0.0, "seen_b13": 0.0, "seen_b22": 0.0, "seen_b23": 0.0, "seen_b33": 0.0, "ood_b44": 0.0, "ood_b41": 0.0, "ood_b42": 0.0, "val_loss": 8.677270770072937, "val_bits_per_byte": 2.610881792436146, "lm": 5.545551300048828, "geo": 0.0, "sec": 87.53644275665283, "prior_on": 0, "prior_used_frac": 0.0, "cka_ops_helix3": 0.0703125, "text_numbers": null, "text_bins": null, "cka_emb_helix3": 0.10924339294433594, "cka_unemb_helix3": 0.10924339294433594, "prior_on_frac": 0.0, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 0}
+done in 88s
+=== tpp7-190m-t0.745-lr4.8e-3-none-s1 trainer returned 2026-10-26T17:44:14-04:00
+PASS run args = intent (35 fields, no other)  ([{}, []])
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 40, "n_params": 6615232, "grad_ckpt_on": false, "geo_layers": [1, 2], "read_layers": [1, 2], "lm_chunk": 0, "eval_every_steps": 10}  ({'steps': 40, 'n_params': 6615232, 'grad_ckpt_on': False, 'geo_layers': [1, 2], 'read_layers': [1, 2], 'lm_chunk': 0, 'eval_every_steps': 10})
+PASS N_nonemb = n_params - V x d_model = 197440  (6615232)
+PASS finished: 5 evals at the intended steps, the last at step 39  ([5, 39])
+PASS prior never on  (0.0)
+CONSUMED {"tag": "_tpp7-190m-t0.745-lr4.8e-3-none", "seed": 1, "lr": 0.0048, "tokens_consumed": 81920, "steps": 40, "eval_every_steps": 10, "evals": 5, "warmup_steps": 1, "tpp_consumed": 0.41491085899513774, "prior_events": [], "area": 0.0, "diverged_at_step": null, "final_val_bpb": 2.610881792436146, "lm0": 11.520655632019043}
+CHECKS PASS
+
+E2E l40s-A-none PASS (rc 0, hook ['tpp7-190m-t0.745'])

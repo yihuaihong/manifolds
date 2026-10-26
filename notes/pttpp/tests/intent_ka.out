@@ -1,0 +1,6 @@
+PASS intent7 (F87 505M facts) = F87 run run_whole_none_seed0_500m-lr9.6e-3-7pct-none.json: args diff {}, extra [], facts {}, events None
+PASS intent7 (F87 505M facts) = F87 run run_whole_helix3_seed1_500m-lr1.2e-3-7pct-win-ctx.json: args diff {}, extra [], facts {}, events None
+PASS intent2 (pt2s505 facts) = make_jobs_pt2s505.intent(none, 4.8e-3, 4)
+PASS intent2 (pt2s505 facts) = make_jobs_pt2s505.intent(win-ctx, 6e-4, 2)
+PASS dry2 with 505M's model line = make_jobs_pt2s505.burst_dry_expected, seeds 0-7
+INTENT-KA PASS

@@ -1,0 +1,20 @@
+PASS code7: trainer line present: steps = int(args.tokens // (args.bs * args.seq))
+PASS code7: trainer line present: warm = max(1, steps // 100)
+PASS code7: trainer line present: return w0 * steps <= s < w1 * steps
+PASS code7: trainer line present: eval_every = max(1, round(args.eval_every * 32 / args.bs))
+PASS code7: trainer line present: math.cos(math.pi * min(1.0, s / steps))
+PASS code7: trainer line present: if s % eval_every == 0 or s == steps - 1:
+FAIL code7: --tokens 20480 --eval_every 5: steps 40, eval_every_steps 40, 2 evals [0, 39]...[0, 39], prior_events [[2, 1], [16, 0]] (want 40, 5, 9, [[2, 1], [16, 0]])
+PASS code7: make_jobs_pttpp.window_events / n_evals agree (40, 5)
+FAIL code7: --tokens 20480 --eval_every 250: steps 40, eval_every_steps 2000, 2 evals [0, 39]...[0, 39], prior_events [[2, 1], [16, 0]] (want 40, 250, 2, [[2, 1], [16, 0]])
+PASS code7: make_jobs_pttpp.window_events / n_evals agree (40, 250)
+FAIL code7: --tokens 40960 --eval_every 10: steps 80, eval_every_steps 80, 2 evals [0, 79]...[0, 79], prior_events [[4, 1], [32, 0]] (want 80, 10, 9, [[4, 1], [32, 0]])
+PASS code7: make_jobs_pttpp.window_events / n_evals agree (80, 10)
+FAIL code7: --eval_every 5 vs the default changes the number of evals (2 vs 2)
+Traceback (most recent call last):
+  File "/scratch/yh6210/llmadd_torch/scale_work/tpp/flagtest_tpp.py", line 72, in <module>
+    p1 = run(code, f"{arm}-lr0-t20480", arm, "--tokens 163840 --eval_every 5 --lr 0")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/yh6210/llmadd_torch/scale_work/tpp/flagtest_tpp.py", line 38, in run
+    with open(log, "w") as fh:
+OSError: [Errno 116] Stale file handle

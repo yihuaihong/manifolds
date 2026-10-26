@@ -1,0 +1,79 @@
+2% 190m s0 dry rows: ['033a837b8184'] vs expected 033a837b8184: OK
+2% 190m s1 dry rows: ['6eb60f99e564'] vs expected 6eb60f99e564: OK
+2% 190m s2 dry rows: ['af9f0b40f733'] vs expected af9f0b40f733: OK
+2% 190m s3 dry rows: ['99f86683e5b9'] vs expected 99f86683e5b9: OK
+2% 190m s4 dry rows: ['30845923a662'] vs expected 30845923a662: OK
+2% 190m s5 dry rows: ['872c729dcf56'] vs expected 872c729dcf56: OK
+2% 190m s6 dry rows: ['e4f02d7ff355'] vs expected e4f02d7ff355: OK
+2% 190m s7 dry rows: ['567debef5613'] vs expected 567debef5613: OK
+2% 294m s0 dry rows: ['15fde897d347'] vs expected 15fde897d347: OK
+2% 294m s1 dry rows: ['cf22227550c8'] vs expected cf22227550c8: OK
+2% 294m s2 dry rows: ['146f012dcd60'] vs expected 146f012dcd60: OK
+2% 294m s3 dry rows: ['007f0fff5c1d'] vs expected 007f0fff5c1d: OK
+2% 294m s4 dry rows: ['97380da197f9'] vs expected 97380da197f9: OK
+2% 294m s5 dry rows: ['0aa9a481adb7'] vs expected 0aa9a481adb7: OK
+2% 294m s6 dry rows: ['922efc84586c'] vs expected 922efc84586c: OK
+2% 294m s7 dry rows: ['59b3d869016f'] vs expected 59b3d869016f: OK
+7% tpp7-1b-t0.745 none s0: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s0_20254520.out except the model line: OK
+7% tpp7-1b-t0.745 none s1: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s1_20254521.out except the model line: OK
+7% tpp7-1b-t0.745 win-ctx s0: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s0_20188411.out except the model line: OK
+7% tpp7-1b-t0.745 win-ctx s1: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s1_20188412.out except the model line: OK
+7% tpp7-294m-t0.745 none s0: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s0_20254520.out except the model line: OK
+7% tpp7-294m-t0.745 none s1: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s1_20254521.out except the model line: OK
+7% tpp7-294m-t0.745 win-ctx s0: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s0_20188411.out except the model line: OK
+7% tpp7-294m-t0.745 win-ctx s1: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s1_20188412.out except the model line: OK
+7% tpp7-93m-t0.318 none s0: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s0_20254520.out except the model line: OK
+7% tpp7-93m-t0.318 win-ctx s0: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s0_20188411.out except the model line: OK
+7% tpp7-93m-t0.745 none s0: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s0_20254520.out except the model line: OK
+7% tpp7-93m-t0.745 none s1: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s1_20254521.out except the model line: OK
+7% tpp7-93m-t0.745 win-ctx s0: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s0_20188411.out except the model line: OK
+7% tpp7-93m-t0.745 win-ctx s1: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s1_20188412.out except the model line: OK
+7% tppb-505m-3e8 none s0: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s0_20254520.out except the model line: OK
+7% tppb-505m-3e8 none s1: dry log (9 lines) = F87 505M job log llmadd_ptlr-500m-lr9.6e-3-7pct-none-s1_20254521.out except the model line: OK
+7% tppb-505m-3e8 win-ctx s0: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s0_20188411.out except the model line: OK
+7% tppb-505m-3e8 win-ctx s1: dry log (10 lines) = F87 505M job log llmadd_ptlr-500m-lr1.2e-3-7pct-win-ctx-s1_20188412.out except the model line: OK
+2% 190m s0: CPU 11.645783 (identical across none); GPU 11.645764 (spread over the source runs 0.0e+00); CPU - GPU +1.9e-05 OK
+2% 190m s1: CPU 11.675410 (identical across none); GPU 11.675424 (spread over the source runs 0.0e+00); CPU - GPU -1.3e-05 OK
+2% 190m s2: CPU 11.666844 (identical across none); GPU 11.666859 (spread over the source runs 0.0e+00); CPU - GPU -1.4e-05 OK
+2% 190m s3: CPU 11.643442 (identical across none); GPU 11.643491 (spread over the source runs 0.0e+00); CPU - GPU -4.9e-05 OK
+2% 190m s4: CPU 11.644089 (identical across none); GPU 11.644202 (spread over the source runs 0.0e+00); CPU - GPU -1.1e-04 OK
+2% 190m s5: CPU 11.673249 (identical across none); GPU 11.673169 (spread over the source runs 0.0e+00); CPU - GPU +8.0e-05 OK
+2% 190m s6: CPU 11.673365 (identical across none); GPU 11.673428 (spread over the source runs 0.0e+00); CPU - GPU -6.3e-05 OK
+2% 190m s7: CPU 11.681370 (identical across none); GPU 11.681317 (spread over the source runs 0.0e+00); CPU - GPU +5.2e-05 OK
+2% 294m s0: CPU 11.674500 (identical across none/win-ctx)
+2% 294m s1: CPU 11.678236 (identical across none)
+2% 294m s2: CPU 11.709680 (identical across none)
+2% 294m s3: CPU 11.683460 (identical across none)
+2% 294m s4: CPU 11.671570 (identical across none)
+2% 294m s5: CPU 11.706597 (identical across none)
+2% 294m s6: CPU 11.688408 (identical across none)
+2% 294m s7: CPU 11.689376 (identical across none)
+7% 190m s0: CPU 11.654166 (identical across none); GPU 11.654203 (spread over the source runs 0.0e+00); CPU - GPU -3.7e-05 OK
+7% 190m s1: CPU 11.677679 (identical across none); GPU 11.677737 (spread over the source runs 0.0e+00); CPU - GPU -5.8e-05 OK
+7% 294m s0: CPU 11.684602 (identical across none/win-ctx)
+7% 294m s1: CPU 11.660386 (identical across none)
+7% 294m s2: CPU 11.681838 (identical across none)
+7% 294m s3: CPU 11.675625 (identical across none)
+7% 294m s4: CPU 11.660036 (identical across none)
+7% 294m s5: CPU 11.680820 (identical across none)
+7% 294m s6: CPU 11.691356 (identical across none)
+7% 294m s7: CPU 11.686375 (identical across none)
+7% 505m s0: CPU 11.711779 (identical across none); GPU 11.711954 (spread over the source runs 0.0e+00); CPU - GPU -1.8e-04 OK
+7% 93m s0: CPU 11.625508 (identical across none/win-ctx)
+7% 93m s1: CPU 11.602504 (identical across none)
+7% 93m s2: CPU 11.637218 (identical across none)
+7% 93m s3: CPU 11.617809 (identical across none)
+7% 93m s4: CPU 11.591079 (identical across none)
+7% 93m s5: CPU 11.621766 (identical across none)
+7% 93m s6: CPU 11.618390 (identical across none)
+7% 93m s7: CPU 11.603629 (identical across none)
+lm0 references 7% 53m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 7% 93m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 7% 190m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 7% 294m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 7% 505m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 7% 1b: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 2% 190m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 2% 294m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+lm0 references 2% 505m: seeds [0, 1, 2, 3, 4, 5, 6, 7] OK
+ALL IDENTITIES HOLD

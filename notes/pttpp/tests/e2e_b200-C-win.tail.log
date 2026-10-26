@@ -1,0 +1,16 @@
+held_b22": 0.0, "held_b23": 0.0, "held_b23_lt1000": 0.0, "held_b23_ge1000": 0.0, "held_b33": 0.0, "held_b33_lt1000": 0.0, "held_b33_ge1000": 0.0, "seen_b11": 0.0, "seen_b12": 0.0, "seen_b13": 0.0, "seen_b22": 0.0, "seen_b23": 0.0, "seen_b33": 0.0, "ood_b44": 0.0, "ood_b41": 0.0, "ood_b42": 0.0, "val_loss": 11.019148468971252, "val_bits_per_byte": 3.3155233791956285, "lm": 10.486639022827148, "geo": 0.64453125, "sec": 68.64892768859863, "prior_on": 0, "prior_used_frac": 0.45161290322580644, "cka_ops_helix3": 0.35546875, "text_numbers": null, "text_bins": null, "cka_emb_helix3": 0.0503402017056942, "cka_unemb_helix3": 0.0503402017056942, "prior_on_frac": 0.45161290322580644, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 2}
+{"step": 39, "tokens": 79872, "held_b11": 0.0, "held_b12": 0.0, "held_b13": 0.0, "held_b13_lt1000": 0.0, "held_b13_ge1000": null, "held_b22": 0.0, "held_b23": 0.0, "held_b23_lt1000": 0.0, "held_b23_ge1000": 0.0, "held_b33": 0.0, "held_b33_lt1000": 0.0, "held_b33_ge1000": 0.0, "seen_b11": 0.0, "seen_b12": 0.0, "seen_b13": 0.0, "seen_b22": 0.0, "seen_b23": 0.0, "seen_b33": 0.0, "ood_b44": 0.0, "ood_b41": 0.0, "ood_b42": 0.0, "val_loss": 10.969223856925964, "val_bits_per_byte": 3.300501690459922, "lm": 10.385358810424805, "geo": 0.6484375, "sec": 87.66787457466125, "prior_on": 0, "prior_used_frac": 0.35, "cka_ops_helix3": 0.3515625, "text_numbers": null, "text_bins": null, "cka_emb_helix3": 0.05180026590824127, "cka_unemb_helix3": 0.05180026590824127, "prior_on_frac": 0.35, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 2}
+done in 88s
+=== tpp7-1b-t0.745-lr6e-4-win-ctx-s2 trainer returned 2026-10-26T17:44:15-04:00
+PASS run args = intent (35 fields, no other)  ([{}, []])
+PASS code_sha a3bce3ab63c1  (a3bce3ab63c1)
+PASS run facts = intent {"steps": 40, "n_params": 6615232, "grad_ckpt_on": false, "geo_layers": [1, 2], "read_layers": [1, 2], "lm_chunk": 0, "eval_every_steps": 10}  ({'steps': 40, 'n_params': 6615232, 'grad_ckpt_on': False, 'geo_layers': [1, 2], 'read_layers': [1, 2], 'lm_chunk': 0, 'eval_every_steps': 10})
+PASS N_nonemb = n_params - V x d_model = 197440  (6615232)
+PASS finished: 5 evals at the intended steps, the last at step 39  ([5, 39])
+PASS prior_events == [[2, 1], [16, 0]]  ([[2, 1], [16, 0]])
+PASS prior_on_frac == 0.350000 == prior_used_frac (ctx)  ([0.35, 0.35])
+PASS geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)  (1)
+CONSUMED {"tag": "_tpp7-1b-t0.745-lr6e-4-win-ctx", "seed": 2, "lr": 0.0006, "tokens_consumed": 81920, "steps": 40, "eval_every_steps": 10, "evals": 5, "warmup_steps": 1, "tpp_consumed": 0.41491085899513774, "prior_events": [[2, 1], [16, 0]], "area": 0.0, "diverged_at_step": null, "final_val_bpb": 3.300501690459922, "lm0": 11.524620056152344}
+CHECKS PASS
+
+E2E b200-C-win PASS (rc 0, hook ['tpp7-1b-t0.745'])

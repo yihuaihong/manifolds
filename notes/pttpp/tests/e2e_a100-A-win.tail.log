@@ -1,0 +1,22 @@
+mbers": null, "text_bins": null, "cka_emb_helix3": 0.04144492372870445, "cka_unemb_helix3": 0.04144492372870445, "prior_on_frac": 0.45161290322580644, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 2}
+{"step": 39, "tokens": 79872, "held_b11": 0.0, "held_b12": 0.0, "held_b13": 0.0, "held_b13_lt1000": 0.0, "held_b13_ge1000": 0.0, "held_b22": 0.0, "held_b23": 0.0, "held_b23_lt1000": 0.0, "held_b23_ge1000": 0.0, "held_b33": 0.0, "held_b33_lt1000": 0.0, "held_b33_ge1000": 0.0, "seen_b11": 0.0, "seen_b12": 0.0, "seen_b13": 0.0, "seen_b22": 0.0, "seen_b23": 0.0, "seen_b33": 0.0, "ood_b44": 0.0, "ood_b41": 0.0, "ood_b42": 0.0, "val_loss": 10.966170072555542, "val_bits_per_byte": 3.299582845096901, "lm": 10.91464614868164, "geo": 0.7734375, "sec": 83.20913004875183, "prior_on": 0, "prior_used_frac": 0.35, "cka_ops_helix3": 0.2265625, "text_numbers": null, "text_bins": null, "cka_emb_helix3": 0.04351044446229935, "cka_unemb_helix3": 0.04351044446229935, "prior_on_frac": 0.35, "ema_first_line": 0.0, "ema_bucket_min": 0.0, "ema_bucket": {"b11": 0.0, "b12": 0.0, "b13": 0.0, "b22": 0.0, "b23": 0.0, "b33": 0.0}, "prior_toggles": 2}
+done in 83s
+## 3. offline LM 2026-10-26T21:44:10Z
+{"tag": "_tpp2-294m-t0.745-lr6e-4-win-ctx", "seed": 0, "bpb_full": 3.2862476420022664, "bpb_orig_windows": 3.2995827733597447, "orig_minus_logged": -7.173715621533461e-08}
+## 4. intent checks 2026-10-26T21:55:41Z
+PASS run args = intent (34 fields)  ({})
+PASS code_sha 93e22bf4c4c0  (93e22bf4c4c0)
+PASS run facts = intent {"steps": 40, "n_params": 6615232, "grad_ckpt_on": false, "geo_layers": [1, 2], "read_layers": [1, 2], "lm_chunk": 0, "eval_every_steps": 10}  ({'steps': 40, 'n_params': 6615232, 'grad_ckpt_on': False, 'geo_layers': [1, 2], 'read_layers': [1, 2], 'lm_chunk': 0, 'eval_every_steps': 10})
+PASS finished: 5 evals, increasing, the last at step 39  ([5, 39])
+PASS prior_events == [[2, 1], [16, 0]]  ([[2, 1], [16, 0]])
+PASS prior_on_frac == 0.350000  (0.35)
+PASS geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)  (1)
+PASS prior_used_frac == prior_on_frac (ctx)  ([0.35, 0.35])
+PASS offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)  (-7.173715621533461e-08)
+{"tag": "_tpp2-294m-t0.745-lr6e-4-win-ctx", "seed": 0, "lr": 0.0006, "area": 0.0, "area_no_b11": 0.0, "b11_area": 0.0, "b33_area": 0.0, "t90_M": null, "budget_M": 0.08192, "lm0": 11.520280838012695, "final_val_bpb": 3.299582845096901, "bpb_full": 3.2862476420022664, "diverged": false, "diverged_at_step": null, "prior_used_frac": 0.35, "cka_ops_helix3": 0.2265625, "sec_per_step_median": 1.9879073394669429, "projected_run_h": 0.02208785932741048, "gpu_util_median": 97, "gpu_mem_max_MiB": 30000, "gpu_samples": 15, "pinned_calls": 1}
+CHECKS PASS
+## model removed (stage A)
+## 5. selection hook 2026-10-26T21:55:41Z
+## done 2026-10-26T21:55:41Z (check rc 0)
+
+E2E a100-A-win PASS (rc 0, hook ['tpp2-294m-t0.745'])

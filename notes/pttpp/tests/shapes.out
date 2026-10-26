@@ -1,0 +1,24 @@
+check 53M: d384 x 6: n_params 52,672,128 N_nonemb 14,165,376 (= the ladder's value)
+check 190M: d768 x 12: n_params 190,297,344 N_nonemb 113,283,840 (= the ladder's value)
+check 505M: d1024 x 24: n_params 505,437,184 N_nonemb 402,752,512 (= the ladder's value)
+check 1B: d1280 x 36: n_params 1,072,259,840 N_nonemb 943,904,000 (= the ladder's value)
+
+between 53M and 190M: geometric midpoint N_nonemb 40.06M
+  d512 x 10 (8 heads, d_ff 2048): n_params 93,306,368 N_nonemb 41,964,032 (41.96M) log distance +0.046; d/L 51.2
+  d576 x 8 (9 heads, d_ff 2304): n_params 100,246,464 N_nonemb 42,486,336 (42.49M) log distance +0.059; d/L 72.0
+  d512 x 9 (8 heads, d_ff 2048): n_params 89,110,016 N_nonemb 37,767,680 (37.77M) log distance -0.059; d/L 56.9
+  d576 x 7 (9 heads, d_ff 2304): n_params 94,935,744 N_nonemb 37,175,616 (37.18M) log distance -0.075; d/L 82.3
+  d448 x 11 (7 heads, d_ff 1792): n_params 80,268,608 N_nonemb 35,344,064 (35.34M) log distance -0.125; d/L 40.7
+  d640 x 7 (10 heads, d_ff 2560): n_params 110,071,680 N_nonemb 45,893,760 (45.89M) log distance +0.136; d/L 91.4
+  d512 x 11 (8 heads, d_ff 2048): n_params 97,502,720 N_nonemb 46,160,384 (46.16M) log distance +0.142; d/L 46.5
+  d576 x 9 (9 heads, d_ff 2304): n_params 105,557,184 N_nonemb 47,797,056 (47.80M) log distance +0.177; d/L 64.0
+
+between 190M and 505M: geometric midpoint N_nonemb 213.60M
+  d832 x 19 (13 heads, d_ff 3328): n_params 293,931,456 N_nonemb 210,500,160 (210.50M) log distance -0.015; d/L 43.8
+  d896 x 17 (14 heads, d_ff 3584): n_params 308,276,864 N_nonemb 218,427,776 (218.43M) log distance +0.022; d/L 52.7
+  d960 x 14 (15 heads, d_ff 3840): n_params 302,760,000 N_nonemb 206,493,120 (206.49M) log distance -0.034; d/L 68.6
+  d960 x 15 (15 heads, d_ff 3840): n_params 317,509,440 N_nonemb 221,242,560 (221.24M) log distance +0.035; d/L 64.0
+  d832 x 20 (13 heads, d_ff 3328): n_params 305,010,368 N_nonemb 221,579,072 (221.58M) log distance +0.037; d/L 41.6
+  d896 x 16 (14 heads, d_ff 3584): n_params 295,428,224 N_nonemb 205,579,136 (205.58M) log distance -0.038; d/L 56.0
+  d832 x 18 (13 heads, d_ff 3328): n_params 282,852,544 N_nonemb 199,421,248 (199.42M) log distance -0.069; d/L 46.2
+  d896 x 18 (14 heads, d_ff 3584): n_params 321,125,504 N_nonemb 231,276,416 (231.28M) log distance +0.080; d/L 49.8

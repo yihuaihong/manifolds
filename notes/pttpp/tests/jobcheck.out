@@ -1,0 +1,22 @@
+example ('7', 'l40s', False): tpp7-93m-t0.745-lr9.6e-3-none-s0: ARGS differences vs the nearest submitted job: {'--n_heads': ('12', '8'), '--d_model': ('768', '512'), '--tokens': (None, '31260672'), '--ckpt_every': ('2000', None), '--lr': ('4.8e-3', '9.6e-3'), '--out': ('/scratch/yh6210/llmadd_torch/runs/ptlr/out/190m-lr4.8e-3-7pct-none', '/scratch/yh6210/llmadd_torch/runs/pttpp/out/tpp7-93m-t0.745-lr9.6e-3-none'), '--d_ff': ('3072', '2048'), '--eval_every': (None, '26'), '--tag': ('_190m-lr4.8e-3-7pct-none', '_tpp7-93m-t0.745-lr9.6e-3-none'), '--save_model': (True, None), '--n_layers': ('12', '10')}
+example ('7', 'b200', False): tpp7-1b-t0.745-lr1.2e-3-none-s0: ARGS differences vs the nearest submitted job: {'--tokens': (None, '703070208'), '--lr': ('2.4e-3', '1.2e-3'), '--out': ('/scratch/yh6210/llmadd_torch/runs/ptlr_1b/out/1b-lr2.4e-3-7pct-none', '/scratch/yh6210/llmadd_torch/runs/pttpp/out/tpp7-1b-t0.745-lr1.2e-3-none'), '--eval_every': (None, '586'), '--tag': ('_1b-lr2.4e-3-7pct-none', '_tpp7-1b-t0.745-lr1.2e-3-none')}
+example ('7', 'b200', True): tppb-505m-3e8-lr9.6e-3-none-s0: ARGS differences vs the nearest submitted job: {'--n_heads': ('20', '16'), '--d_model': ('1280', '1024'), '--lr': ('2.4e-3', '9.6e-3'), '--out': ('/scratch/yh6210/llmadd_torch/runs/ptlr_1b/out/1b-lr2.4e-3-7pct-none', '/scratch/yh6210/llmadd_torch/runs/pttpp/out/tppb-505m-3e8-lr9.6e-3-none'), '--d_ff': ('5120', '4096'), '--tag': ('_1b-lr2.4e-3-7pct-none', '_tppb-505m-3e8-lr9.6e-3-none'), '--n_layers': ('36', '24')}
+example ('2', 'a100', False): tpp2-190m-t0.745-lr4.8e-3-none-s0: ARGS differences vs the nearest submitted job: {'--n_heads': ('16', '12'), '--d_model': ('1024', '768'), '--tokens': (None, '84377600'), '--ckpt_every': ('2000', None), '--out': ('/scratch/yh6210/llmadd_torch/runs/pt2s505/out/pt2s505-lr4.8e-3-none-s0/pt2s505-lr4.8e-3-none', '/scratch/yh6210/llmadd_torch/runs/pttpp/out2/tpp2-190m-t0.745-lr4.8e-3-none-s0/tpp2-190m-t0.745-lr4.8e-3-none'), '--d_ff': ('4096', '3072'), '--eval_every': (None, '70'), '--tag': ('_pt2s505-lr4.8e-3-none', '_tpp2-190m-t0.745-lr4.8e-3-none'), '--n_layers': ('24', '12')}
+FAIL PLANTED extra --lam ARGS differ beyond the design in ['--lam']: {'--lam': (None, '1'), '--n_heads': ('12', '8'), '--d_model': ('768', '512'), '--tokens': (None, '31260672'), '--ckpt_every': ('2000', None), '--lr': ('4.8e-3', '9.6e-3'), '--out': ('/scratch/yh6210/llmadd_torch/runs/ptlr/out/190m-lr4.8e-3-7pct-none', '/scratch/yh6210/llmadd_torch/runs/pttpp/out/tpp7-93m-t0.745-lr9.6e-3-none'), '--d_ff': ('3072', '2048'), '--eval_every': (None, '26'), '--tag': ('_190m-lr4.8e-3-7pct-none', '_tpp7-93m-t0.745-lr9.6e-3-none'), '--save_model': (True, None), '--n_layers': ('12', '10')}
+caught extra --lam
+FAIL PLANTED --eval_every 250 tokens / eval_every = the design
+caught --eval_every 250
+FAIL PLANTED --tokens one step short tokens / eval_every = the design
+caught --tokens one step short
+FAIL PLANTED hook removed lines differ beyond the design: ['+true || echo "maybe_select.sh failed (rc $?): selection not run"']
+FAIL PLANTED hook removed hook with the group id
+caught hook removed
+FAIL PLANTED nice removed header: account / partition / nice / time
+caught nice removed
+FAIL PLANTED 2% intent events changed intent != the design's facts
+caught 2% intent events changed
+FAIL PLANTED 2% CHECK_PY line changed lines differ beyond the design: ['-    chk(f"prior_on_frac == {I[\'on_frac\']:.6f}", abs(on_frac - I["on_frac"]) < 1e-9, on_frac)', '+    chk(f"prior_on_frac == {I[\'on_frac\']:.6f}", abs(on_frac - I["on_frac"]) < 1e-3, on_frac)']
+FAIL PLANTED 2% CHECK_PY line changed CHECK_PY not verbatim once
+caught 2% CHECK_PY line changed
+planted errors caught: 7/7
+JOBCHECK PASS: 200 job texts, 1440 checks passed
