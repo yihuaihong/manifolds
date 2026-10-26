@@ -228,3 +228,51 @@ b200_tandon_prem). myquota at submission: /scratch 4.70 / 5.00 TB (93.9%). `--al
 (SUBMITTED_<run>): 7% L40S stage A 7 x 16, 1.07B@0.745 stage A 8 (21033028-21033036), the bridge 8 (21033037-21033044, B200
 slots after the 1.07B stage A in each slot), 2% A100 stage A 2 x 16. Stages X / C follow automatically (decisions/,
 select_<group>.log). Kill switch: touch runs/pttpp/HOLD. The fresh post-submission audit (read-only) was started at once.
+
+## Amendment T1 (2026-10-26 evening; after the fresh post-submission build audit, before any pttpp result was read)
+The audit (read-only, fresh general-purpose agent; 13 items) found no wrong job. Seen so far: only the automatic selection of
+tpp7-93m-t0.745 (decisions/: none C 1.92e-2 with stage-A areas 3.44 / 3.81, win-ctx C 2.4e-3); no read-out of any cell.
+Checked by the build session against the code before acting:
+1. **Fixed (bug, could stop an arm for good).** pick_tpp.py: a 7% run counted as finished once its run JSON reached the last
+   step, before its job wrote check_s<seed>.json (2-4 s later); a selection by another job in that gap read 'check json
+   missing' -> WITHHELD -> STOP (append-only). Now a 7% run is finished only with its check file, as the 2% check.json.
+   Plumbing P7: the arm waits, no STOP, and is decided once the check exists.
+2. **Fixed (robustness).** maybe_select.sh: a pending mark set after the holder's last check was lost; squeue errors let a
+   running holder's lock be taken over. Now the holder releases, re-checks the mark and repeats (<= 5 rounds, logged
+   otherwise); only squeue's "Invalid job id" counts as gone (P8). pick_tpp.py retries the read-out 3 x 30 s; the read-out
+   skips a run JSON that does not parse (a running job rewrites it at every eval, not atomically) with a NOTE (a finished
+   run's JSON is never rewritten); TMPDIR / XDG_RUNTIME_DIR are not passed to submitted jobs.
+3. **Fixed (descriptive output).** The regression gain ~ ln N + ln T printed pinv's minimum-norm c with a CI on a rank-2
+   design (the four reused cells all have T = 3e8). Now: rank < 3 or |corr(ln N, ln T)| >= 0.98 -> "NOT IDENTIFIED".
+4. **Added, DESCRIPTIVE ONLY (the verdict rules V1-V4 are unchanged; whether any of this gates a verdict is the user's
+   decision):** a "## sensitivity" section per Q1 line and Q2: (a) the R slopes with the '>=' cells at their bound (a bound at
+   the small end biases the slope upward); (b) every slope without b11 (its held pairs occur in the natural text, so its
+   dose grows with T; the AUDIT's "never trained" holds for the arithmetic lines only); (c) lr selection: the seeds-0-3
+   slope with one cell's arm at each alternative lr within 2 area points of the pick, or at the lowest-median-t50 lr (new
+   cells: the stage A / X lrs; reused cells: F87 ptlr / ptsize999 and pt2s505 lrs with seeds 0-3; 1.07B's alternatives
+   have seeds 0-1 only and are not varied), with the slope range and the number of sign changes. Per cell a facts line:
+   steps, warmup steps, eval spacing in tokens, tpp by total parameters, the token at which the window opens, the prior's
+   t50 / opening and t50 - opening, Delta area and R_0.5 without b11.
+5. Code snapshots chmod a-w (code7, code2). The 7% jobs check only the trainer's sha at start (as F87 / ptlr_1b); the 2%
+   jobs check every module.
+Tests after the changes: selftest 65/65 (new: the non-identified regression, the sensitivity lines, an lr swap that changes
+the sign is counted and flagged, 2% / 7% cells with the same label kept apart, 1.07B alternatives not swapped, a partial
+run JSON skipped with the verdict unchanged), plumbing 21/21 (P7, P8 new), the read-out on the real root; regression of the
+other read-outs unchanged (only tools/pttpp_*.py differ). Frozen anew: see "Frozen (T1)" below; the jobs already submitted
+call maybe_select.sh by path, so they use the new files.
+**Points for the user (not acted on; the build session does not change the verdict rules or the design):**
+- (#1) The slope CIs cover seed noise only; with 2 lrs per arm and the prior's area near its ceiling, the prior's lr is
+  chosen by the 65k-token in-training bpb, and F87 showed that a tied choice can move R_0.5 by up to ~0.27 in ln. Section
+  4(c) prints that range. Option: require that no swap in 4(c) changes the sign for "SHOWN".
+- (#2) R_0.5 is partly tied to the window: the prior's 3e8 t50 (20-24M) sits 1.4-2.8x after the window opens (15M), and the
+  opening moves with T (0.05 S). A ln R slope on ln T (Q2) and on ln N along a tpp line (Q1, T ∝ N) partly reflects this
+  design choice; Delta area (normalised time) is not affected. Option: read Q2 on Delta area, or treat ln R and Delta area as
+  two separate questions.
+- (#3) A floor tie closes a bracket: at tpp7-93m-t0.745 none's two lrs are at the floor (3.44 / 3.81), the in-training bpb
+  picked the upper edge 1.92e-2 and stage C started; 3.84e-2 (the predicted optimum sits at the grid's top) was not tried.
+  The same may happen at 93M / 190M@0.318. Option: none@3.84e-2 seeds 0-3 for that cell (~1 L40S-h), and/or a rule "every lr
+  of an arm < 7 area points -> STOP".
+- (#5) The bridge tolerance (|Delta ln R_0.5| <= 0.20) allows the 1.07B end point alone to move a 5-cell slope by ~0.05 (3 cells:
+  ~0.14). The L40S-only slope is always printed; option: write a size effect only when both slopes agree in sign.
+- (#8 / #9) At a fixed tpp the steps also grow with size (814-42,912; warmup 8-429 steps), and the tpp by total parameters
+  rises from 0.335 (93M) to 0.656 (1.07B) on the 0.745 line: printed per cell, not corrected.

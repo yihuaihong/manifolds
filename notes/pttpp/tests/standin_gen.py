@@ -8,7 +8,26 @@ from pathlib import Path
 sys.path.insert(0, "/scratch/yh6210/llmadd_torch")
 import make_jobs_pttpp as T   # noqa: E402
 
+REAL_R = T.R
 T.R = Path(os.environ["PTTPP_DIR"])
+
+
+class _B:
+    """T.B for the guard in main() ('never another batch's dir name'): the real runs/pttpp is this batch's real twin, so
+    its dirs are not 'another batch' here; everything else is the real path"""
+    def __init__(self, p):
+        self.p = p
+    def __str__(self):
+        return str(self.p)
+    def __fspath__(self):
+        return str(self.p)
+    def __truediv__(self, o):
+        return self.p / o
+    def glob(self, pat):
+        return [q for q in self.p.glob(pat) if REAL_R not in q.parents]
+
+
+T.B = _B(T.B)
 globals().update({k: v for k, v in T.__dict__.items() if not k.startswith("__")})
 R = T.R
 

@@ -23,6 +23,7 @@ sys.path.insert(0, "/scratch/yh6210/llmadd_torch")
 import make_jobs_pttpp as T   # noqa: E402
 
 REAL = T.R
+SRC = Path(os.environ.get("PLUMB_SRC", str(REAL)))   # where pick_tpp.py / maybe_select.sh come from (T1: scale_work/tpp/t1)
 RO = Path("/scratch/yh6210/llmadd-burst-tpp/tools")
 W = HERE / "plumb"
 PY = T.PY
@@ -83,7 +84,8 @@ def fresh(name):
         os.symlink(REAL / c, R / c)
     shutil.copy(REAL / "AUDIT.md", R / "AUDIT.md")
     for f in ("pick_tpp.py", "maybe_select.sh"):
-        shutil.copy(REAL / f, R / f)
+        shutil.copy(SRC / f, R / f)
+        (R / f).chmod(0o644)
     gen = HERE / "standin_gen.py"
     (R / "FROZEN.txt").write_text("".join(f"{T.sha(p)} {p}\n" for p in (R / "pick_tpp.py", R / "maybe_select.sh", gen, RO / "pttpp_summary.py")))
     env = dict(os.environ, PTTPP_DIR=str(R), PTTPP_ROOT=str(root), PTTPP_GEN=str(gen), PTTPP_READOUT=str(RO))
@@ -198,7 +200,7 @@ p.chmod(0o644)
 p.write_text(p.read_text() + "\n# changed\n")
 hook(R, env, G7)
 check("FROZEN FILE CHANGED" in (R / f"select_{G7}.log").read_text() and decs(R, G7) == {}, "P5: a changed frozen file -> nothing")
-shutil.copy(REAL / "pick_tpp.py", p)
+shutil.copy(SRC / "pick_tpp.py", p)
 (R / "locks" / G7).mkdir(parents=True)
 (R / "locks" / G7 / "job").write_text(os.environ.get("SLURM_JOB_ID", "20284046") + "\n")   # a running job (this host's)
 h = hook(R, env, G7)
@@ -210,5 +212,39 @@ shutil.rmtree(R / "locks" / G7)
 hook(R, env, G7)
 check(decs(R, G7) == {("none", "C"): "4.8e-3", ("win-ctx", "C"): "1.2e-3"} and not (R / "locks" / G7).exists(),
       f"P5: stale lock taken over and released; ties -> C at the lower bpb / lower lr ({decs(R, G7)})")
+# ---------------- P7 (T1): a 7% run JSON without its job's check_s<seed>.json is not finished -> no decision, no STOP
+root, R, env = fresh("p7")
+mark_submitted_A(R, G7)
+for s in (0, 1, 2, 3):
+    for lr in ("4.8e-3", "9.6e-3"):
+        write_run(R, G7, "none", lr, s, .5, 1.2)
+    for lr in ("1.2e-3", "2.4e-3"):
+        write_run(R, G7, "win-ctx", lr, s, .88, 1.15)
+ck = R / "out" / T.tag_of(G7, "none", "9.6e-3") / "check_s2.json"
+ck.unlink()
+check(check_rc(R, env, G7) == 0, "P7: win-ctx is ready (its runs and checks are complete) -> --check exit 0")
+hook(R, env, G7)
+d = decs(R, G7)
+check(d == {("win-ctx", "C"): "1.2e-3"}, f"P7: none waits for its missing check (no STOP), win-ctx decided ({d})")
+ck.write_text(json.dumps({"pass": True}))
+hook(R, env, G7)
+check(decs(R, G7).get(("none", "C")) == "4.8e-3", f"P7: once the check is written, none is decided ({decs(R, G7)})")
+# ---------------- P8 (T1): a pending mark set while a selection runs -> the holder repeats the step
+root, R, env = fresh("p8")
+mark_submitted_A(R, G7)
+for s in (0, 1, 2, 3):
+    for lr in ("4.8e-3", "9.6e-3"):
+        write_run(R, G7, "none", lr, s, .5, 1.2)
+    for lr in ("1.2e-3", "2.4e-3"):
+        write_run(R, G7, "win-ctx", lr, s, .88, 1.15)
+wrap = R / "py_wrap.sh"
+wrap.write_text("#!/bin/bash\n"
+                f'case "$*" in *--decide*) [ -e {R}/.marked ] || {{ touch {R}/.marked {R}/locks/{G7}.pending; }};; esac\n'
+                f'exec {PY} "$@"\n')
+wrap.chmod(0o755)
+hook(R, dict(env, PTTPP_PY=str(wrap)), G7)
+so = (R / f"select_{G7}.log.stdout").read_text() if (R / f"select_{G7}.log.stdout").exists() else ""
+check(so.count("nothing to submit") + so.count("--submit rc") >= 2 and not (R / "locks" / f"{G7}.pending").exists()
+      and not (R / "locks" / G7).exists(), f"P8: a mark set during the selection -> a second round, mark consumed, lock released")
 print("PLUMB", "PASS" if not fails else f"FAIL ({len(fails)}): {fails}")
 sys.exit(1 if fails else 0)

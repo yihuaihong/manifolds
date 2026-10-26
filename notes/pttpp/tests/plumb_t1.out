@@ -1,0 +1,22 @@
+PASS P0: stage A incomplete -> --check exit 1
+PASS P0: the hook decides nothing while stage A is incomplete
+PASS P1: stage A complete -> --check exit 0
+PASS P1: decisions none X 1.92e-2, win-ctx C 2.4e-3 ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3'})
+PASS P1: 4 X jobs + 4 C jobs (fake) submitted after --test-only (8 lines)
+PASS P1: the real sbatch --test-only passed for the 8 new jobs
+PASS P1: the C job of win-ctx is seed 5 at 2.4e-3 with --save_model
+PASS P2: X worse -> closed -> none C 9.6e-3 ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3', ('none', 'C'): '9.6e-3'})
+PASS P6: after every stage is decided and submitted -> --check exit 1
+PASS P3: X better again -> STOP for none, no C ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3', ('none', 'STOP'): '1.92e-2'})
+PASS P4: 2% decisions none C 9.6e-3, win-ctx X 3e-4 ({('none', 'C'): '9.6e-3', ('win-ctx', 'X'): '3e-4'})
+PASS P4: the 2% selection is pt2main_summary's own output
+PASS P4: 4 X + 4 C 2% jobs (fake) submitted
+PASS P5: HOLD -> nothing
+PASS P5: a changed frozen file -> nothing
+PASS P5: lock held by a running job -> pending mark, nothing decided
+PASS P5: stale lock taken over and released; ties -> C at the lower bpb / lower lr ({('none', 'C'): '4.8e-3', ('win-ctx', 'C'): '1.2e-3'})
+PASS P7: win-ctx is ready (its runs and checks are complete) -> --check exit 0
+PASS P7: none waits for its missing check (no STOP), win-ctx decided ({('win-ctx', 'C'): '1.2e-3'})
+PASS P7: once the check is written, none is decided ({('win-ctx', 'C'): '1.2e-3', ('none', 'C'): '4.8e-3'})
+PASS P8: a mark set during the selection -> a second round, mark consumed, lock released
+PLUMB PASS

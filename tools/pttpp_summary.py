@@ -52,6 +52,22 @@ def load_gen(path):
     return G
 
 
+def load_json(f, notes=None):
+    """json of a file; a run JSON is rewritten at every eval by its running job (not atomic), so a parse error is retried
+    once after 2 s and then reported and skipped: a finished run's JSON is never rewritten, so a skipped file is a run in
+    progress (Amendment T1)"""
+    import time
+    for i in range(2):
+        try:
+            return json.loads(Path(f).read_text())
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            if i == 0:
+                time.sleep(2)
+    if notes is not None:
+        notes.append(f"UNREADABLE (being written; treated as unfinished): {f}")
+    return None
+
+
 def fmt_lr(lr):
     m, e = f"{lr:.2e}".split("e")
     return f"{m.rstrip('0').rstrip('.')}e{int(e)}"
@@ -101,7 +117,9 @@ class Data:
 
     def _new7(self):
         for f in sorted(glob.glob(str(self.Rd / "out" / "*" / "run_*.json"))):
-            r = json.loads(Path(f).read_text())
+            r = load_json(f, self.notes)
+            if r is None:
+                continue
             a = r["args"]
             size = self.size_of.get((a["d_model"], a["n_layers"], a["n_heads"], a["d_ff"]))
             arm = arm_of(a)
@@ -112,7 +130,7 @@ class Data:
             lr, s = fmt_lr(a["lr"]), a["seed"]
             tag = self.G.tag_of(g, arm, lr)
             chk = Path(f).parent / f"check_s{s}.json"
-            rec = dict(file=f, r=r, own=False, check=json.loads(chk.read_text()) if chk.exists() else None, off=None,
+            rec = dict(file=f, r=r, own=False, check=load_json(chk, self.notes) if chk.exists() else None, off=None,
                        bad=[], src="pttpp", setting="7", size=size, tag=tag)
             if a["tag"] != f"_{tag}":
                 rec["bad"].append(f"tag {a['tag']} != the design's _{tag}")
@@ -120,7 +138,9 @@ class Data:
 
     def _new2(self):
         for f in sorted(glob.glob(str(self.Rd / "out2" / "*" / "*" / "run_*.json"))):
-            r = json.loads(Path(f).read_text())
+            r = load_json(f, self.notes)
+            if r is None:
+                continue
             a = r["args"]
             size = self.size_of.get((a["d_model"], a["n_layers"], a["n_heads"], a["d_ff"]))
             arm = arm_of(a)
@@ -131,7 +151,7 @@ class Data:
             lr, s = fmt_lr(a["lr"]), a["seed"]
             tag = self.G.tag_of(g, arm, lr)
             task = Path(f).parent.parent
-            rec = dict(file=f, r=r, own=False, check=json.loads((task / "check.json").read_text()) if (task / "check.json").exists() else None,
+            rec = dict(file=f, r=r, own=False, check=load_json(task / "check.json", self.notes) if (task / "check.json").exists() else None,
                        off=self._offline(task, tag, s, r), bad=[], src="pttpp", setting="2", size=size, tag=tag)
             if a["tag"] != f"_{tag}" or task.name != f"{tag}-s{s}":
                 rec["bad"].append(f"tag / task dir {a['tag']} / {task.name} != the design's _{tag} / {tag}-s{s}")
@@ -141,7 +161,10 @@ class Data:
         f = task / "offline_lm.json"
         if not f.exists():
             return None
-        o = [v for v in json.loads(f.read_text()).values() if v.get("tag") == f"_{tag}" and v.get("seed") == s and v.get("max_windows") == 0]
+        d = load_json(f, self.notes)
+        if d is None:
+            return None
+        o = [v for v in d.values() if v.get("tag") == f"_{tag}" and v.get("seed") == s and v.get("max_windows") == 0]
         return R.offline_bpb(o[0], R.diverged_at(r) is not None) if o else None
 
     def _reused(self):
@@ -152,13 +175,15 @@ class Data:
                 else:
                     fs = sorted(glob.glob(str(self.root / src / f"{tag}-s*" / tag / "run_*.json")))
                 for f in fs:
-                    r = json.loads(Path(f).read_text())
+                    r = load_json(f, self.notes)
+                    if r is None:
+                        continue
                     s = r["args"]["seed"]
                     task = Path(f).parent.parent
                     rec = dict(file=f, r=r, own=False, check=None, off=None, bad=[], src=src.split("/")[0], setting=ck[0],
                                size=ck[1], tag=tag)
                     if ck[0] == "2":
-                        rec["check"] = json.loads((task / "check.json").read_text()) if (task / "check.json").exists() else None
+                        rec["check"] = load_json(task / "check.json", self.notes) if (task / "check.json").exists() else None
                         rec["off"] = self._offline(task, tag, s, r)
                     if fmt_lr(r["args"]["lr"]) != lr or arm_of(r["args"]) != arm:
                         rec["bad"].append(f"lr / arm {r['args']['lr']} / {arm_of(r['args'])} != {lr} / {arm}")
@@ -375,6 +400,15 @@ def build_cells(D):
             cell[f"tn{th}"] = arr("none", lambda D_, k: t_of(D_, k, th))
             cell[f"tp{th}"] = arr("win-ctx", lambda D_, k: t_of(D_, k, th))
         cell["bud"] = budget(D, cell["keys"]["none"][0])
+        # Amendment T1 (descriptive): without b11 (its held pairs occur in the natural text), and the facts behind #2 / #8 / #9
+        a5 = lambda D_, k: R.area(D_.runs[k]["r"], R.B5) if not D_.runs[k]["own"] else area_of(D_, k)
+        cell["an5"], cell["ap5"] = arr("none", a5), arr("win-ctx", a5)
+        for th in (0.5, 0.9):
+            cell[f"tn{th}_5"] = arr("none", lambda D_, k: R.t_theta(D_.runs[k]["r"], th, R.B5))
+            cell[f"tp{th}_5"] = arr("win-ctx", lambda D_, k: R.t_theta(D_.runs[k]["r"], th, R.B5))
+        cell["n_params"] = G.SIZES[cell["size"]][4]
+        cell["open_M"] = G.window_events(cell["S"])[0][0][0] * G.TOK_STEP / 1e6
+        cell["E"] = G.EVAL_3E8 if cell["S"] == G.STEPS_3E8 else G.eval_every_of(cell["S"])
         cell["floor"] = (cell["an"].mean() < FLOOR_AREA and cell["ap"].mean() < FLOOR_AREA) or R.censored_median(cell["tp0.5"])
         cell["grad"] = grad_stats(D, cell)
     return cells
@@ -527,7 +561,7 @@ def fmt_R(sp, ci):
     return f"{sp['mark'] + format(sp['ratio'], '.2f'):>8s} [{ci['lo']:5.2f}, {ci['hi']:5.2f}]"
 
 
-def print_cells(cells, out):
+def print_cells(cells, out, G=None):
     print("\n## cells at the picks: Delta area = prior - none (area points, mean over the seeds; 90% CI paired seed bootstrap; "
           "wins); R_0.5 / R_0.9 = median t(none) / median t(prior) (readout_rules.speedup, censored at the budget; '>=' = none's "
           "median censored, a lower bound) with readout_rules.boot_ci; cens = runs that never reach theta (none/prior)", file=out)
@@ -557,6 +591,11 @@ def print_cells(cells, out):
               + (f"; {c['sel_note']}" if c["sel_note"] else "")
               + (f"  ** FLOOR: uninformative (both areas < {FLOOR_AREA:g} or the prior's t50 median censored), out of every slope"
                  if c["floor"] else "") + f"  [{c['src']}]", file=out)
+        print(f"  {'':24s}       facts (descriptive, T1): {c['S']} steps, warmup {max(1, c['S'] // 100)} steps, eval every {c['E']} "
+              f"steps = {c['E'] * G.TOK_STEP / 1e6:.2f}M tokens; tpp by total parameters {c['T'] / c['n_params']:.3f}; window opens at "
+              f"{c['open_M']:.2f}M tokens; prior t50 / opening {tp / c['open_M']:.2f}, t50 - opening {tp - c['open_M']:+.2f}M; "
+              f"without b11: Delta area {(c['ap5'] - c['an5']).mean():+.1f}, R_0.5 "
+              f"{R.speedup(c['tn0.5_5'], c['tp0.5_5'], c['bud'])['text'].split(' ')[0]}", file=out)
 
 
 def print_grad(cells, out):
@@ -608,6 +647,17 @@ def decide(res, primary, dirs):
 
 Q1_DIRS = {1: "the gain is larger at larger sizes (same tpp)", -1: "the gain is smaller at larger sizes (same tpp)"}
 Q2_DIRS = {-1: "the gain is larger with fewer tokens (same size)", 1: "the gain is larger with more tokens (same size)"}
+
+
+def identified(X):
+    """True, or why b (ln N) and c (ln T) are not separately identified: rank < 3, or |corr(ln N, ln T)| >= 0.98 (build
+    audit #6: four cells at one T gave pinv's minimum-norm 'c' with a CI)"""
+    if np.linalg.matrix_rank(X) < 3:
+        return f"design rank {np.linalg.matrix_rank(X)} < 3"
+    r = np.corrcoef(X[:, 1], X[:, 2])[0, 1]
+    if abs(r) >= 0.98:
+        return f"|corr(ln N, ln T)| = {abs(r):.3f} >= 0.98"
+    return True
 
 
 def bridge(D, out):
@@ -665,7 +715,7 @@ def full(D, out):
         for arm in G.ARMS:
             print("  " + say_select(select_arm(D, gid, arm)), file=out)
     cells = build_cells(D)
-    print_cells(cells, out)
+    print_cells(cells, out, G)
     bv = bridge(D, out)
     print_grad(cells, out)
     fin = [c for c in cells.values() if c["status"] == "final" and not c["floor"]]
@@ -727,6 +777,10 @@ def full(D, out):
             print(f"  {name}: fewer than 4 cells", file=out)
             continue
         X = np.array([[1.0, math.log(c["nne"]), math.log(c["T"])] for c in use])
+        idn = identified(X)
+        if idn is not True:
+            print(f"  {name}: NOT IDENTIFIED ({idn}; {len(use)} cells: {', '.join(label(c) for c in use)}): no coefficients", file=out)
+            continue
         P = np.linalg.pinv(X)
         y = np.array([metric_vals(c, m, pos_of(ALL8)) for c in use])
         Yb = np.stack([metric_vals(c, m, boot_idx(ALL8)) for c in use], -1)
@@ -734,7 +788,123 @@ def full(D, out):
         ci = lambda j: f"{bt[j]:+.3f} [{np.percentile(bb[:, j], 5):+.3f}, {np.percentile(bb[:, j], 95):+.3f}]"
         print(f"  {name}: b (ln N) {ci(1)}, c (ln T) {ci(2)} (90% CI, joint seed bootstrap; {len(use)} cells: "
               f"{', '.join(label(c) for c in use)})", file=out)
+    sensitivity(D, cells, fin, out)
     print("\n(no 2% vs 7% comparison is made: AUDIT.md)", file=out)
+
+
+# ---------------------------------------------------------------- Amendment T1: sensitivity (descriptive only)
+def alt_runs(D):
+    """the other lrs at 3e8 tokens of the reused cells' sizes and arms (F87 ptlr / ptsize999, pt2s505), seeds 0-3:
+    (setting, size, arm, lr) -> {seed: run}; ptlr_1b's other lrs have seeds 0-1 only and are not used"""
+    G, out = D.G, {}
+    pats = [("7", "ptlr/out/*/run_*.json"), ("7", "ptsize999/out/*/run_*.json"), ("2", "pt2s505/out/*/*/run_*.json")]
+    for st, pat in pats:
+        for f in sorted(glob.glob(str(D.root / pat))):
+            r = load_json(f)
+            if r is None or not R.finished(r):
+                continue
+            a = r["args"]
+            size = D.size_of.get((a["d_model"], a["n_layers"], a["n_heads"], a["d_ff"]))
+            arm = arm_of(a)
+            ok = (size and arm and r["steps"] == G.STEPS_3E8 and a.get("arith_lines") == (4 if st == "7" else 1) and a.get("lam") == 5.0
+                  and a.get("bs") == 32 and a.get("seq") == 512 and a.get("eval_every", 250) == 250 and a.get("n_eval", 150) == 150
+                  and not a.get("untie", False) and a.get("site", "ctx") == "ctx" and a["seed"] in MAIN)
+            if ok:
+                out.setdefault((st, size, arm, fmt_lr(a["lr"])), {}).setdefault(a["seed"], r)
+    return out
+
+
+def variants(D, cells, fin, alts):
+    """per informative cell and arm: the other lrs whose seeds-0-3 mean area is within 2 points of the pick's, and the lr
+    with the lowest median t50 (censored at the budget), each with seeds 0-3 -> [(cell label, arm, lr, why, variant cell)]"""
+    G, outv = D.G, []
+    for c in fin:
+        for arm in G.ARMS:
+            pick = c["lr"][arm]
+            if c["gid"]:
+                pool = {lr: {s: D.runs[(c["gid"], arm, lr, s)]["r"] for s in MAIN if (c["gid"], arm, lr, s) in D.runs}
+                        for lr in {k[2] for k in D.runs if k[0] == c["gid"] and k[1] == arm}}
+            else:
+                pool = {lr: rs for (st, sz, a, lr), rs in alts.items() if (st, sz, a) == (c["setting"], c["size"], arm)}
+                pool[pick] = {s: D.runs[c["keys"][arm][s]]["r"] for s in MAIN}
+            pool = {lr: rs for lr, rs in pool.items() if all(s in rs for s in MAIN)}
+            if pick not in pool or len(pool) < 2:
+                continue
+            ar = {lr: np.mean([R.area(rs[s]) for s in MAIN]) for lr, rs in pool.items()}
+            med = {lr: R.median_at_budget([R.t_theta(rs[s], 0.5) for s in MAIN], c["bud"]) for lr, rs in pool.items()}
+            t50b = min(med, key=lambda lr: (med[lr], -ar[lr], float(lr)))
+            for lr in sorted(pool, key=float):
+                why = [w for w, ok in (("within 2 area points", lr != pick and ar[lr] >= ar[pick] - R.TIE),
+                                       ("lowest median t50", lr != pick and lr == t50b)) if ok]
+                if not why:
+                    continue
+                v = dict(c)
+                k = "n" if arm == "none" else "p"
+                v["a" + k] = c["a" + k].copy()
+                for th in (0.5, 0.9):
+                    v[f"t{k}{th}"] = c[f"t{k}{th}"].copy()
+                for i, s in enumerate(MAIN):
+                    v["a" + k][i] = R.area(pool[lr][s])
+                    for th in (0.5, 0.9):
+                        v[f"t{k}{th}"][i] = R.t_theta(pool[lr][s], th)
+                outv.append(((c["setting"], label(c)), arm, lr, " and ".join(why), v))
+    return outv
+
+
+def sensitivity(D, cells, fin, out):
+    G = D.G
+    print("\n## sensitivity (Amendment T1, written after the build audit and before any pttpp result was read; DESCRIPTIVE "
+          "ONLY: no verdict above uses it)", file=out)
+    alts = alt_runs(D)
+    V = variants(D, cells, fin, alts)
+    lines = [("Q1 7% tpp 0.745", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.745", "lnR50"),
+             ("Q1 7% tpp 0.318", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.318", "lnR50"),
+             ("Q1 2% tpp 0.745", "nne", None, lambda c: c["setting"] == "2" and c["tpp"] == "0.745", "area"),
+             ("Q2 7% pooled within size", "T", "size", lambda c: c["setting"] == "7", "lnR50")]
+    for name, xkey, grp, sel, prim in lines:
+        cs = sorted([c for c in fin if sel(c)], key=lambda c: (c["nne"], c["T"]))
+        if len(cs) < 2:
+            print(f"  {name}: fewer than 2 informative cells", file=out)
+            continue
+        gr = [c[grp] for c in cs] if grp else None
+        print(f"  {name} (primary {'ln R_0.5' if prim == 'lnR50' else 'Delta area'}):", file=out)
+        # (a) R slopes with the '>=' cells at their bound (a bound at the left end biases a size / token slope upward)
+        keep = [i for i, c in enumerate(cs) if r_status(c, ALL8) in ("point", ">=")]
+        b = [s_ for s_ in (slope([cs[i] for i in keep], "lnR50", ss, xkey, [gr[i] for i in keep] if gr else None) for ss, _ in SETS)]
+        print(f"    ln R_0.5 incl. '>=' cells at their bound: 0-3 {fmt_slope(b[0])}  4-7 {fmt_slope(b[1])}  0-7 {fmt_slope(b[2])}  "
+              f"cells {', '.join(label(cs[i]) + ('(>=)' if r_status(cs[i], ALL8) == '>=' else '') for i in keep)}", file=out)
+        # (b) without b11
+        c5 = [dict(c, an=c["an5"], ap=c["ap5"], **{f"t{k}{th}": c[f"t{k}{th}_5"] for k in "np" for th in (0.5, 0.9)}) for c in cs]
+        r5 = unit_slopes(c5, xkey, groups=gr)
+        print(f"    without b11: Delta area 0-7 {fmt_slope(r5[('area', '0-7')])}, 4-7 {fmt_slope(r5[('area', '4-7')])}; ln R_0.5 0-7 "
+              f"{fmt_slope(r5[('lnR50', '0-7')])}, 4-7 {fmt_slope(r5[('lnR50', '4-7')])}", file=out)
+        # (c) lr selection: seeds 0-3 slope with one cell's arm at a tied / t50-best alternative lr
+        for m in (prim, "area" if prim == "lnR50" else "lnR50"):
+            use = cs if m == "area" else [c for c in cs if r_status(c, ALL8) == "point"]
+            g_ = [c[grp] for c in use] if grp else None
+            base = slope(use, m, MAIN, xkey, g_)
+            if base is None or base.get("bad"):
+                print(f"    lr-selection ({m}): no base slope", file=out)
+                continue
+            rows = []
+            for key, arm, lr, why, v in V:
+                lab = key[1]
+                if key not in [(c["setting"], label(c)) for c in use]:   # a 2% and a 7% cell share a label
+                    continue
+                if m != "area" and r_status(v, MAIN) != "point":
+                    rows.append((lab, arm, lr, why, None))
+                    continue
+                vs = [v if (c["setting"], label(c)) == key else c for c in use]
+                rows.append((lab, arm, lr, why, slope(vs, m, MAIN, xkey, g_)))
+            got = [r_[4]["b"] for r_ in rows if r_[4] and not r_[4].get("bad")]
+            flips = sum(sgn(b_) != sgn(base["b"]) for b_ in got)
+            print(f"    lr-selection ({'ln R_0.5' if m == 'lnR50' else 'Delta area'}, seeds 0-3): base {fmt_slope(base)}; "
+                  + (f"{len(got)} single swaps, slope range {min(got):+.3f} to {max(got):+.3f}, sign changes {flips}" if got else "no alternative lr with seeds 0-3")
+                  + (" ** the sign depends on the lr choice" if flips else ""), file=out)
+            for lab, arm, lr, why, sl in rows:
+                print(f"      {lab} {arm}@{lr} ({why}): {fmt_slope(sl) if sl else 'R not a point value: skipped'}", file=out)
+    no_alt = [f"{c['setting']}% {label(c)} {a}" for c in fin for a in G.ARMS if not any(v[0] == (c["setting"], label(c)) and v[1] == a for v in V)]
+    print(f"  (no alternative lr with seeds 0-3 within 2 points or t50-best, or only selection seeds 0-1: {', '.join(no_alt) or 'none'})", file=out)
 
 
 def main(argv=None, out=None):

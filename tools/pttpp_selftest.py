@@ -129,7 +129,7 @@ def put_bridge(root, arm, seed, t50f, plateau):
     (out / f"check_s{seed}.json").write_text(json.dumps({"pass": True}))
 
 
-def build(name, cellfun, bridge_none_shift=0.0, mutate=None):
+def build(name, cellfun, bridge_none_shift=0.0, mutate=None, altfun=None):
     """cellfun(setting, size, tpp, arm, seed) -> (t50 as a fraction of the cell's budget, plateau). Every new group: both
     grid lrs on the selection seeds (the second lr = the same curve, higher in-training / offline bpb: an edge tie, so the
     first lr is the pick and the bracket is not open), the C decision at the first lr, its confirm seeds."""
@@ -142,6 +142,8 @@ def build(name, cellfun, bridge_none_shift=0.0, mutate=None):
             for lr in G.GRID[gid][arm]:
                 for s in c["sel"]:
                     t, p = cellfun(c["setting"], c["size"], c["line"], arm, s)
+                    if lr != picks[arm] and altfun is not None:
+                        t, p = altfun(c["setting"], c["size"], c["line"], arm, s) or (t, p)
                     put_new(root, gid, arm, lr, s, t, p, bpb=1.10 if lr == picks[arm] else 1.20)
             for s in c["conf"]:
                 t, p = cellfun(c["setting"], c["size"], c["line"], arm, s)
@@ -212,6 +214,10 @@ check(V(sl(.2, .1, .3), sl(0.0, -.1, .1), sl(5, 1, 9), S.Q1_DIRS)[1] == "unstabl
 check(V(sl(-.2, -.3, -.1), sl(-.1, -.2, 0), sl(-1, -2, -.5), S.Q2_DIRS)[0].endswith("fewer tokens (same size)"), "verdict: Q2 negative = fewer tokens")
 check(V({"b": float("nan"), "lo": float("nan"), "hi": float("nan"), "bad": "non-finite"}, None, None, S.Q1_DIRS)[1] == "undeterminable",
       "verdict: a non-finite slope -> not determinable")
+Xd = np.array([[1.0, math.log(n), math.log(3e8)] for n in (14e6, 113e6, 403e6, 944e6)])
+check(S.identified(Xd) is not True and "rank" in str(S.identified(Xd)), f"regression: one T for every cell -> not identified ({S.identified(Xd)})")
+Xl = np.array([[1.0, math.log(n), math.log(0.745 * n) + 1e-3 * i] for i, n in enumerate((42e6, 113e6, 210e6, 403e6, 944e6))])
+check(S.identified(Xl) is not True, f"regression: one tpp line (ln T = ln N + const) -> not identified ({S.identified(Xl)})")
 x = np.log([1.0, 2.0, 4.0, 8.0])
 check(abs(S.fit_slope(x, 3 * x + 1) - 3) < 1e-12 and abs(S.fit_slope(np.r_[x, x], np.r_[2 * x, 2 * x + 5], groups=[0] * 4 + [1] * 4) - 2) < 1e-12,
       "fit_slope: OLS and fixed-effects slopes on exact lines")
@@ -234,6 +240,14 @@ check(len(rows) >= 3 * 15 and all(l.count("|") >= 4 and "[" in l.split("|")[1] a
       f"columns: every cell row ({len(rows)}) has Delta area and R_0.5 with CIs (seeds 0-3 / 4-7 / 0-7)")
 check("LM share (norm) median 0.83" in t and "clip coefficient median" in t, "gradient report printed for the prior cells (designed share 1 / 1.2)")
 check("2% tpp 0.745" in t and "-> 2% tpp 0.745 (all sizes): SHOWN" in t, "size_effect: 2% line shown (primary Delta area)")
+sens = t.split("## sensitivity")[1] if "## sensitivity" in t else ""
+check(all(k in sens for k in ("incl. '>=' cells at their bound", "without b11", "lr-selection (ln R_0.5, seeds 0-3)",
+                              "lr-selection (Delta area, seeds 0-3)", "Q2 7% pooled within size")) and "sign changes 0" in sens
+      and "the sign depends on the lr choice" not in sens, "T1 sensitivity: bound / no-b11 / lr-selection lines printed; tied twins change no sign")
+check(t.count("facts (descriptive, T1)") >= 15 and "window opens at" in t and "tpp by total parameters" in t,
+      "T1: a facts line (steps, warmup, eval spacing, tpp by total parameters, window opening, prior t50 / opening) per final cell")
+reg = t.split("## descriptive regression")[1].split("## sensitivity")[0]
+check("b (ln N)" in reg and "NOT IDENTIFIED" not in reg, "regression: identified on the full design (several N and T)")
 
 t = build("no_effect", base(lambda st, size, tpp, s: 0.15 * jitter("ne", size, tpp, sd=0.02)))
 check("NOT SHOWN" in line_of(t, "-> 7% tpp 0.745 (all sizes)") and "NOT SHOWN" in line_of(t, "-> 7% tpp 0.318 (all sizes)"),
@@ -292,6 +306,31 @@ def tokeff(st, size, tpp, arm, s):   # R_0.5 larger with fewer tokens at the sam
 
 t = build("token_effect", tokeff)
 check("SHOWN: the gain is larger with fewer tokens" in line_of(t, "-> Q2 7% pooled"), "token_effect: Q2 pooled -> shown, fewer tokens")
+NOEFF = base(lambda st, size, tpp, s: 0.15 * jitter("ne", size, tpp, sd=0.02))
+
+
+def slowalt(st, size, tpp, arm, s):   # none's tied twin (within 2 area points) at 93M and 294M on the 0.745 line is 12% slower
+    if st == "7" and tpp == "0.745" and size in ("93m", "294m") and arm == "none":   # (1.07B's alternatives: seeds 0-1 only, skipped)
+        t, p_ = NOEFF(st, size, tpp, arm, s)
+        return t * 1.12, p_
+    return None
+
+
+t = build("lr_flip", NOEFF, altfun=slowalt)
+q = t.split("## sensitivity")[1].split("Q1 7% tpp 0.318")[0]
+m = re.search(r"lr-selection \(ln R_0.5, seeds 0-3\): base +([+-][\d.]+) .*?sign changes (\d+)", q)
+qr = "lr-selection (ln R_0.5" + q.split("lr-selection (ln R_0.5")[1].split("lr-selection (Delta area")[0]   # the primary's block
+sw = re.findall(r"      (93m@0.745|294m@0.745) none@\S+ \(within 2 area points[^)]*\): +([+-][\d.]+)", qr)
+check(m is not None and len(sw) == 2 and len(re.findall(r"      190m@0.745 ", qr)) == 2,
+      f"lr_flip: both designed tied alternatives listed; 190M@0.745 swaps listed once per arm (7% only, not the 2% twin) ({sw})")
+check("1b@0.745" not in "".join(re.findall(r"      \S+ (?:none|win-ctx)@", q)) and "7% 1b@0.745 none" in t.split("## sensitivity")[1],
+      "lr_flip: 1.07B's alternatives (seeds 0-1 only) are not swapped, and listed as having none")
+if m and len(sw) == 2:
+    b0, nflip = float(m.group(1)), int(m.group(2))
+    want = sum((float(v) > 0) != (b0 > 0) for _, v in sw)
+    lo_, hi_ = sorted(float(v) for _, v in sw)
+    check(nflip == want and lo_ < b0 and ((nflip == 0) == ("the sign depends on the lr choice" not in qr.split("\n")[0])),
+          f"lr_flip: a slower none twin lowers the slope ({b0:+.3f} -> {sw}); sign changes {nflip} counted right and flagged iff > 0")
 t = build("bridge_fail", sizeeff, bridge_none_shift=1.5)
 check("bridge FAIL" in t and "[PRIMARY]" in line_of(t, "7% tpp 0.745, L40S only"), "bridge_fail: FAIL -> the L40S-only slope is the primary")
 check("[descriptive]" in line_of(t, "7% tpp 0.745, all sizes"), "bridge_fail: the all-size slope becomes descriptive")
@@ -305,6 +344,12 @@ def breakone(root):   # an integrity failure in one confirm run of 294M@0.745: i
 
 
 t = build("integrity", sizeeff, mutate=breakone)
+def partial(root):   # a run JSON being rewritten by its running job (not atomic): read as unreadable, skipped with a note
+    d = root / "pttpp/out/tpp7-93m-t0.318-lr4.8e-3-win-ctx"
+    (d / "run_whole_helix3_seed9_tpp7-93m-t0.318-lr4.8e-3-win-ctx.json").write_text('{"args": {"tag": "_tpp7-93m')
+t2 = build("partial_json", sizeeff, mutate=partial)
+check("UNREADABLE (being written; treated as unfinished)" in t2 and line_of(t2, "=> Q1 7%") == line_of(build("size_effect", sizeeff), "=> Q1 7%"),
+      "partial JSON: noted as unreadable, the read-out completes with the same Q1 verdict")
 check("WITHHELD" in line_of(t, "7% 294m tpp 0.745") and "294m@0.745" not in t.split("7% tpp 0.745, all sizes")[1].split("->")[0]
       and "PROVISIONAL" in t, "integrity: a bad step-0 lm withholds the cell, it leaves the slopes, the read-out says PROVISIONAL")
 

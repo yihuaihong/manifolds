@@ -1,0 +1,66 @@
+PASS verdict: CI > 0, guard +, other + -> shown
+PASS verdict: CI < 0 -> shown (smaller)
+PASS verdict: 8 seeds shown, confirm-only opposite -> unstable
+PASS verdict: other metric opposite -> unstable
+PASS verdict: CI includes 0 -> not shown
+PASS verdict: CI includes 0 and guard opposite -> not shown (noted)
+PASS verdict: no slope -> not determinable
+PASS verdict: guard not computable -> not fully shown
+PASS verdict: a zero guard counts as not the same sign
+PASS verdict: Q2 negative = fewer tokens
+PASS verdict: a non-finite slope -> not determinable
+PASS regression: one T for every cell -> not identified (design rank 2 < 3)
+PASS regression: one tpp line (ln T = ln N + const) -> not identified (|corr(ln N, ln T)| = 1.000 >= 0.98)
+PASS fit_slope: OLS and fixed-effects slopes on exact lines
+PASS size_effect: 7% tpp 0.745 (all sizes) -> shown, larger
+PASS size_effect: 7% tpp 0.318 (all sizes) -> shown, larger
+PASS size_effect: Q1 7% shown on both lines
+PASS size_effect: bridge PASS (B200 curves = L40S curves)
+PASS size_effect: ln R_0.5 slope ~ the designed 0.25 (+0.262)
+PASS columns: the cell table prints Delta area, R_0.5 and R_0.9
+PASS columns: every slope table (11) prints Delta area, ln R_0.5 and ln R_0.9 for all three seed sets
+PASS columns: every cell row (45) has Delta area and R_0.5 with CIs (seeds 0-3 / 4-7 / 0-7)
+PASS gradient report printed for the prior cells (designed share 1 / 1.2)
+PASS size_effect: 2% line shown (primary Delta area)
+PASS T1 sensitivity: bound / no-b11 / lr-selection lines printed; tied twins change no sign
+PASS T1: a facts line (steps, warmup, eval spacing, tpp by total parameters, window opening, prior t50 / opening) per final cell
+PASS regression: identified on the full design (several N and T)
+PASS no_effect: both 7% lines -> not shown (CI includes 0)
+PASS no_effect: Q1 7% not shown
+PASS confirm_flip: 2% 8 seeds shown, confirm seeds opposite -> unstable (-> 2% tpp 0.745 (all sizes): DIRECTION UNSTABLE: the 8-seed CI excludes 0 (the gain is larger at larger sizes (same tpp))
+PASS metric_flip: R_0.5 shown, Delta area opposite -> unstable (-> 7% tpp 0.745 (all sizes): DIRECTION UNSTABLE: the 8-seed CI excludes 0 (the gain is larger at larger sizes (same tpp))
+PASS floor: 93M tpp 0.318 labelled FLOOR
+PASS floor / censored: 93M@0.318 out of every slope; 190M@0.318 out of the R slopes (R >=)
+PASS censored: 190M@0.318 stays in the Delta area slope
+PASS censored: the cell row prints R_0.5 as '>=' (a bound)
+PASS token_effect: Q2 pooled -> shown, fewer tokens
+PASS lr_flip: both designed tied alternatives listed; 190M@0.745 swaps listed once per arm (7% only, not the 2% twin) ([('93m@0.745', '-0.023'), ('294m@0.745', '+0.009')])
+PASS lr_flip: 1.07B's alternatives (seeds 0-1 only) are not swapped, and listed as having none
+PASS lr_flip: a slower none twin lowers the slope (+0.009 -> [('93m@0.745', '-0.023'), ('294m@0.745', '+0.009')]); sign changes 1 counted right and flagged iff > 0
+PASS bridge_fail: FAIL -> the L40S-only slope is the primary
+PASS bridge_fail: the all-size slope becomes descriptive
+PASS partial JSON: noted as unreadable, the read-out completes with the same Q1 verdict
+PASS integrity: a bad step-0 lm withholds the cell, it leaves the slopes, the read-out says PROVISIONAL
+PASS known answer ('7', '505m', '0.745') Delta area seeds 0-3: +27.45 (FINDINGS +27.4)
+PASS known answer ('7', '505m', '0.745') R_0.5 seeds 0-3: 4.762 (FINDINGS 4.76)
+PASS known answer ('7', '505m', '0.745') Delta area seeds 4-7: +36.93 (FINDINGS +36.9)
+PASS known answer ('7', '505m', '0.745') Delta area seeds 0-7: +32.19 (FINDINGS +32.2)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 0-3: +38.79 (FINDINGS +38.8)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 0-3: 5.687 (FINDINGS 5.69)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 4-7: +33.47 (FINDINGS +33.5)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 4-7: 4.673 (FINDINGS 4.67)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 0-7: +36.13 (FINDINGS +36.1)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 0-7: 5.181 (FINDINGS 5.18)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 0-3: +25.43 (FINDINGS +25.4)
+PASS known answer ('7', '190m', '2.65') R_0.5 seeds 0-3: 4.556 (FINDINGS 4.56)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 4-7: +21.63 (FINDINGS +21.6)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 0-7: +23.53 (FINDINGS +23.5)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 0-3: +23.39 (FINDINGS +23.4)
+PASS known answer ('7', '53m', '21.2') R_0.5 seeds 0-3: 4.750 (FINDINGS 4.75)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 4-7: +22.20 (FINDINGS +22.2)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 0-7: +22.79 (FINDINGS +22.8)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 0-3: +52.02 (FINDINGS +52.0)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 4-7: +53.94 (FINDINGS +53.9)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 0-7: +52.98 (FINDINGS +53.0)
+PASS known answer: no integrity failure on the real reused runs
+SELFTEST PASS: 65 passed, 0 failed

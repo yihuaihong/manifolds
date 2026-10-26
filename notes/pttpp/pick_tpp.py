@@ -13,8 +13,13 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             decisions/<group>.json is append-only (seq, arm, stage, lr, time, job, basis); then the disk guard (myquota
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
-Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY."""
+Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T1 (build audit, before any pttpp result was read): a 7% run counts as finished only once its job wrote
+check_s<seed>.json (as the 2% check.json; a run JSON without it read as 'check missing' -> WITHHELD -> a permanent STOP);
+the read-out is retried 3 times 30 s apart (a run JSON being rewritten by a running job); TMPDIR / XDG_RUNTIME_DIR of
+the submitting job are not passed to the new jobs."""
 import datetime
+import time
 import importlib.util
 import json
 import os
@@ -55,7 +60,7 @@ def finished(G, gid, F):
     else:
         target = "none" if F["arm"] == "none" else "helix3"
         f = [R / "out" / F["tag"] / f"run_whole_{target}_seed{F['seed']}_{F['tag']}.json"]
-        if not f[0].exists():
+        if not (f[0].exists() and (R / "out" / F["tag"] / f"check_s{F['seed']}.json").exists()):   # T1: the job's check is written
             return False
     try:
         r = json.loads(f[0].read_text())
@@ -105,7 +110,15 @@ def decide(G, gid):
     dec, ready, unsub = state(G, gid)
     new = []
     if ready:
-        sel = readout(G, gid)
+        for attempt in range(3):   # T1: a run JSON of a running job can be caught mid-write
+            try:
+                sel = readout(G, gid)
+                break
+            except Exception as e:
+                log(gid, f"read-out attempt {attempt + 1} failed: {e}")
+                if attempt == 2:
+                    raise
+                time.sleep(30)
         for a in ready:
             s = sel[a]
             basis = {k: s.get(k) for k in ("status", "best", "open", "grid", "mean", "bpb", "near", "reasons")}
@@ -150,7 +163,7 @@ def decide(G, gid):
         return
     if not m:
         log(gid, "myquota could not be parsed; submitting anyway")
-    env = {k: v for k, v in os.environ.items() if not k.startswith(("SLURM_", "SBATCH_"))}
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("SLURM_", "SBATCH_")) and k not in ("TMPDIR", "XDG_RUNTIME_DIR")}
     t = subprocess.run([PY, str(GEN), "--group", gid, "--test-only"], capture_output=True, text=True, env=env)
     log(gid, f"--test-only rc {t.returncode}:\n" + t.stdout + t.stderr)
     if t.returncode:
