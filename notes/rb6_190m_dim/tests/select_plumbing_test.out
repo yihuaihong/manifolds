@@ -1,0 +1,8 @@
+PASS the real select_job.sbatch = select_job_text() (byte for byte)
+PASS picked: status picked, then the D2 --test-only and --submit calls (['GEN --stage D2 --picks /scratch/yh6210/llmadd_torch/scale_work/rb190dim_selplumb/picked/picks.json --test-only', 'GEN --stage D2 --picks /scratch/yh6210/llmadd_torch/scale_work/rb190dim_selplumb/picked/picks.json --submit'])
+PASS picked: the selection on the real 190M runs + the relabelled 3.84e-2 = 1.92e-2 (exact tie)
+PASS incomplete: NOT PICKED, no generator call
+PASS hold: exits at start, no selection
+PASS picks_exists: exit 3, picks.json untouched
+PASS tampered: a changed select_code file -> exit 3, no selection
+SELECT PLUMBING TEST PASS

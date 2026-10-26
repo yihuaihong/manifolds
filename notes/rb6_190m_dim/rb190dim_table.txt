@@ -1,0 +1,41 @@
+s0 none@3.84e-2: rc 0; DRY 6879f5e45805 n 88 = main; domains prior/shuf/lam = intent; target line [] ok; DOMS True; eval lines = main True; whole log except the arm lines = main's dry_190m_all6-lam1_lr6e-4_s0.log: True
+s1 none@3.84e-2: rc 0; DRY 44fa7339afdb n 88 = main; domains prior/shuf/lam = intent; target line [] ok; DOMS True; eval lines = main True; whole log except the arm lines = main's dry_190m_none_lr6e-4_s1.log: True
+s2 none@3.84e-2: rc 0; DRY b41d76780b11 n 88 = main; domains prior/shuf/lam = intent; target line [] ok; DOMS True; eval lines = main True; whole log except the arm lines = main's dry_190m_none_lr6e-4_s2.log: True
+s3 none@3.84e-2: rc 0; DRY 3a93150b24e0 n 88 = main; domains prior/shuf/lam = intent; target line [] ok; DOMS True; eval lines = main True; whole log except the arm lines = main's dry_190m_all6-lam1_lr6e-4_s3.log: True
+s4 none@6e-4: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s4 none@4.8e-3: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s4 none@9.6e-3: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s4 none@1.92e-2: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s4 none@3.84e-2: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s5 none@6e-4: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s5 none@4.8e-3: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s5 none@9.6e-3: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s5 none@1.92e-2: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s5 none@3.84e-2: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s6 none@6e-4: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s6 none@4.8e-3: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s6 none@9.6e-3: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s6 none@1.92e-2: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s6 none@3.84e-2: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s7 none@6e-4: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s7 none@4.8e-3: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s7 none@9.6e-3: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s7 none@1.92e-2: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s7 none@3.84e-2: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line [] ok; DOMS True
+s4 all6-lam1@6e-4: rc 0; DRY 1941103b69a6 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line ['target features (1000, 10)'] ok; DOMS True
+s5 all6-lam1@6e-4: rc 0; DRY d9cbf8e6dbe3 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line ['target features (1000, 10)'] ok; DOMS True
+s6 all6-lam1@6e-4: rc 0; DRY d31102aea3a5 n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line ['target features (1000, 10)'] ok; DOMS True
+s7 all6-lam1@6e-4: rc 0; DRY 6477ad247bcc n 88 = Burst 53M rows + 190M model line; domains prior/shuf/lam = intent; target line ['target features (1000, 10)'] ok; DOMS True
+s4: 6 cells; whole dry log except the arm lines identical across them: True; eval lines identical: True
+s5: 6 cells; whole dry log except the arm lines identical across them: True; eval lines identical: True
+s6: 6 cells; whole dry log except the arm lines identical across them: True; eval lines identical: True
+s7: 6 cells; whole dry log except the arm lines identical across them: True; eval lines identical: True
+step0 group step0_job20933476 hosts ['cs628.hpc.nyu.edu']: host calibration s0 none@3.84e-2 11.646807670593262 (- stored LM0[0] +2.48e-05), none@6e-4 11.646807670593262 (- stored LM0[0] +2.48e-05) -> OK (< 1e-4)
+  s0: none@3.84e-2 11.646807670593262, none@6e-4 11.646807670593262 -> one value (bitwise)
+  s4: all6-lam1@6e-4 11.640873908996582, none@3.84e-2 11.640873908996582, none@6e-4 11.640873908996582 -> one value (bitwise)
+  s5: all6-lam1@6e-4 11.667198181152344, none@6e-4 11.667198181152344 -> one value (bitwise)
+  s6: all6-lam1@6e-4 11.66833782196045, none@6e-4 11.66833782196045 -> one value (bitwise)
+  s7: all6-lam1@6e-4 11.678401947021484, none@1.92e-2 11.678401947021484, none@6e-4 11.678401947021484 -> one value (bitwise)
+LM0 seeds 4-7: {"4": 11.640873908996582, "5": 11.667198181152344, "6": 11.66833782196045, "7": 11.678401947021484}; DRY seeds 4-7: {"4": ["1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57", 88], "5": ["d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918", 88], "6": ["d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8", 88], "7": ["6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94", 88]}
+written /scratch/yh6210/llmadd_torch/scale_work/rb190dim_refs.json
+ALL IDENTITIES HOLD

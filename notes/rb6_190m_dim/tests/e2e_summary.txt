@@ -1,0 +1,9 @@
+E2E all6-lam1@6e-4 s5: job rc 0; check PASS; n_params 6615232; code_sha 93e22bf4c4c0 dep {'toy_struct.py': 'd182ce548bcc'}; step-0 lm run 11.524163246154785 vs CPU reference 11.524163246154785
+E2E PASS
+RUN PRIORS OK (all6-lam1: on = numbers,months,weekdays,clock,s4,dim; lambda per active prior 1; n on-evals 1)
+E2E none@1.92e-2 s6: job rc 0; check PASS; n_params 6615232; code_sha 93e22bf4c4c0 dep {'toy_struct.py': 'd182ce548bcc'}; step-0 lm run 11.535037994384766 vs CPU reference 11.535037994384766
+E2E PASS
+RUN PRIORS OK (none: on = none; lambda per active prior 1; n on-evals 0)
+E2E none@3.84e-2 s1: job rc 0; check PASS; n_params 6615232; code_sha 93e22bf4c4c0 dep {'toy_struct.py': 'd182ce548bcc'}; step-0 lm run 11.517876625061035 vs CPU reference 11.517876625061035
+E2E PASS
+RUN PRIORS OK (none: on = none; lambda per active prior 1; n on-evals 0)

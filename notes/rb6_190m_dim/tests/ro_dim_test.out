@@ -1,0 +1,46 @@
+PASS choose: 3.84e-2 1.5 above 1.92e-2 (tied) with a higher bpb -> 1.92e-2, closed (closed (note: the dim argmax is at the upper edge by <= 2 po)
+PASS choose: tied, 3.84e-2 has the lower bpb -> 3.84e-2, NOT open (<= 2 above)
+PASS choose: exactly 2.0 above = tied (within 2) -> lower bpb 1.92e-2
+PASS choose: 2.1 above -> 3.84e-2, OPEN
+PASS choose: exact tie in dim and bpb -> the lower lr
+PASS choose: a non-finite bpb is the worst (diverged)
+PASS choose: a middle pick -> closed
+PASS verdict: SURVIVES -> SURVIVES (seeds 0-3: mean > 0, >= 3/4 wins, p < .05; confirm seeds 4-7: same sign, >= 3/4 
+PASS verdict: NOT SIGNIFICANT (paired t p -> NOT SIGNIFICANT (paired t p 0.087 >= .05 on seeds 0-3)
+PASS verdict: DIRECTION UNSTABLE (only 2/4 -> DIRECTION UNSTABLE (only 2/4 seed wins on seeds 0-3)
+PASS verdict: NOT SIGNIFICANT (mean <= 0 -> NOT SIGNIFICANT (mean <= 0 on seeds 0-3)
+PASS verdict: REVERSED -> REVERSED (none > all6 on seeds 0-3, paired t p < .05)
+PASS verdict: DIRECTION UNSTABLE (the confirm -> DIRECTION UNSTABLE (the confirm seeds 4-7 disagree: mean +15.0, wins 2/4)
+PASS verdict: INCOMPLETE (passes on seeds 0-3 -> INCOMPLETE (passes on seeds 0-3; the confirm seeds 4-7 are missing: PROVISIONAL)
+PASS verdict: no selection -> INCOMPLETE
+PASS verdict: OPEN takes precedence over SURVIVES -> OPEN (bracket open: all6 - the best TESTED none, not best-vs-best; vs it: SURVIVES tuning 
+PASS base select: picked none_dim 1.92e-2 (exact tie with the relabelled 3.84e-2 -> the lower lr), closed: {'none_dim': '1.92e-2'} closed
+PASS base select: the means = FINDINGS (none@1.92e-2 40.1, none@6e-4 14.3)
+PASS select refuses to overwrite an existing picks JSON
+PASS base readout: SURVIVES (seeds 0-3: mean > 0, >= 3/4 wins, p < .05; confirm; status complete
+PASS base: the seeds 0-3 dim row = the stored rb6_190m_ext Q3 row exactly ([44.3, 42.6, 74.7, 35.5], p 0.011)
+PASS base: the confirm row = the 53M source runs' all6 - none dim at seeds 4-7 ([53.6, 58.2, 76.7, 63.6])
+PASS base: the only-numbers run is IGNORED; --picks printed as agreeing
+PASS base: the flags used are printed
+PASS base: gradient split + clip printed per all6 seed (['    s0 LM share 0.95 prior/LM 0.31 prior>LM 0.08 clip 1.00 frac clipped 0.04 (n 26)'])
+PASS --picks disagreeing (9.6e-3) -> the read-out REFUSES
+PASS without --picks: selection recomputed only, the same reading (the flag takes effect only as a check)
+PASS ns: none@1.92e-2 s0 = all6's dim -> NOT SIGNIFICANT (paired t p 0.088 >= .05 on seeds 0-3)
+PASS unstable03: -> DIRECTION UNSTABLE (only 2/4 seed wins on seeds 0-3)
+PASS confirm_disagree: none@1.92e-2 s4, s5 = all6's dim -> DIRECTION UNSTABLE (the confirm seeds 4-7 disagree: mean +35.1, wins 2/4)
+PASS open select: none_dim {'none_dim': '3.84e-2'}, open True
+PASS open readout: OPEN (bracket open: all6 - the best TESTED none, not best-vs-best; vs it: does NOT survive tuning)
+PASS diverged select: data (its dim counts, bpb worst) -> 1.92e-2; DIVERGED s1 shown
+PASS diverged readout: the lm-curve line names DIVERGED at step 7500; reading SURVIVES (seeds 0-3:
+PASS nanother: a NaN in all6-lam1@6e-4 s5 (not a high-lr none cell) -> the read-out stops
+PASS incomplete_d1 select: status incomplete, no pick, the missing run named
+PASS incomplete_d1 readout strict: REFUSED
+PASS incomplete_d1 readout --allow_partial: INCOMPLETE (data missing: no selection on seeds 0-3, no reading); status PROVISIONAL (the flag takes effect)
+PASS incomplete_d2 readout strict: REFUSED (all6 s7)
+PASS incomplete_d2 readout --allow_partial: INCOMPLETE (passes on seeds 0-3; the confirm seeds 4-7 are missing: PROVISIONAL)
+PASS unfinished: a 3.84e-2 run without its last evals -> select incomplete
+PASS failcheck: a failed check.json -> select incomplete
+PASS failcheck readout: the run is EXCLUDED, strict refuses
+PASS wronglr: a run whose args lr != its tag -> identity problem, select incomplete
+PASS datasha: a data_sha mismatch at seed 6 -> AssertionError
+RO DIM TEST PASS

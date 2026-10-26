@@ -1,0 +1,1350 @@
+{
+ "all_hold": true,
+ "dry": {
+  "all6-lam1@6e-4@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     true,
+     false,
+     1.0
+    ],
+    "dim": [
+     true,
+     false,
+     1.0
+    ],
+    "months": [
+     true,
+     false,
+     1.0
+    ],
+    "numbers": [
+     true,
+     false,
+     1.0
+    ],
+    "s4": [
+     true,
+     false,
+     1.0
+    ],
+    "weekdays": [
+     true,
+     false,
+     1.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "all6-lam1@6e-4@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     true,
+     false,
+     1.0
+    ],
+    "dim": [
+     true,
+     false,
+     1.0
+    ],
+    "months": [
+     true,
+     false,
+     1.0
+    ],
+    "numbers": [
+     true,
+     false,
+     1.0
+    ],
+    "s4": [
+     true,
+     false,
+     1.0
+    ],
+    "weekdays": [
+     true,
+     false,
+     1.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "all6-lam1@6e-4@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     true,
+     false,
+     1.0
+    ],
+    "dim": [
+     true,
+     false,
+     1.0
+    ],
+    "months": [
+     true,
+     false,
+     1.0
+    ],
+    "numbers": [
+     true,
+     false,
+     1.0
+    ],
+    "s4": [
+     true,
+     false,
+     1.0
+    ],
+    "weekdays": [
+     true,
+     false,
+     1.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "all6-lam1@6e-4@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     true,
+     false,
+     1.0
+    ],
+    "dim": [
+     true,
+     false,
+     1.0
+    ],
+    "months": [
+     true,
+     false,
+     1.0
+    ],
+    "numbers": [
+     true,
+     false,
+     1.0
+    ],
+    "s4": [
+     true,
+     false,
+     1.0
+    ],
+    "weekdays": [
+     true,
+     false,
+     1.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  },
+  "none@1.92e-2@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "none@1.92e-2@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "none@1.92e-2@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "none@1.92e-2@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  },
+  "none@3.84e-2@s0": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6879f5e4580591ea6df45d61104d8d8c3941534a220302ae9324bdd10884ec2e",
+   "target_ok": true
+  },
+  "none@3.84e-2@s1": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "44fa7339afdbdd8b5c452a950df37dd6e4029c2fa28473894c46fcd4fe5cbc93",
+   "target_ok": true
+  },
+  "none@3.84e-2@s2": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "b41d76780b115aa433f96dbcb5fc00a24a125ba7a7d68a4b3914ae010f0e92d8",
+   "target_ok": true
+  },
+  "none@3.84e-2@s3": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "3a93150b24e0f9b35780e3f17160527f1e007a7b847cc7bce84f5b7a3eecc0f4",
+   "target_ok": true
+  },
+  "none@3.84e-2@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "none@3.84e-2@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "none@3.84e-2@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "none@3.84e-2@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  },
+  "none@4.8e-3@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "none@4.8e-3@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "none@4.8e-3@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "none@4.8e-3@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  },
+  "none@6e-4@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "none@6e-4@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "none@6e-4@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "none@6e-4@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  },
+  "none@9.6e-3@s4": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   "target_ok": true
+  },
+  "none@9.6e-3@s5": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   "target_ok": true
+  },
+  "none@9.6e-3@s6": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   "target_ok": true
+  },
+  "none@9.6e-3@s7": {
+   "doms_ok": true,
+   "eval_ok": true,
+   "good": true,
+   "model_line": [
+    "model: 190.3M parameters; gradient checkpointing on"
+   ],
+   "n": 88,
+   "prior": {
+    "clock": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "months": [
+     false,
+     false,
+     0.0
+    ],
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "s4": [
+     false,
+     false,
+     0.0
+    ],
+    "weekdays": [
+     false,
+     false,
+     0.0
+    ]
+   },
+   "prior_ok": true,
+   "rc": 0,
+   "rows_ok": true,
+   "sha": "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   "target_ok": true
+  }
+ },
+ "dry_seed": {
+  "0": [
+   "6879f5e4580591ea6df45d61104d8d8c3941534a220302ae9324bdd10884ec2e",
+   88
+  ],
+  "1": [
+   "44fa7339afdbdd8b5c452a950df37dd6e4029c2fa28473894c46fcd4fe5cbc93",
+   88
+  ],
+  "2": [
+   "b41d76780b115aa433f96dbcb5fc00a24a125ba7a7d68a4b3914ae010f0e92d8",
+   88
+  ],
+  "3": [
+   "3a93150b24e0f9b35780e3f17160527f1e007a7b847cc7bce84f5b7a3eecc0f4",
+   88
+  ],
+  "4": [
+   "1941103b69a67507c398169cbcaff3da8d155f92a598c92595fe087ad608fe57",
+   88
+  ],
+  "5": [
+   "d9cbf8e6dbe3f0f2f212870062f6dcee8177d7647985bc8ea4d351c3af67b918",
+   88
+  ],
+  "6": [
+   "d31102aea3a58e4daffc87195eb28ff524de4de059da81f0e97a22f99aef21a8",
+   88
+  ],
+  "7": [
+   "6477ad247bcc8ce63caa440bdf1e2f5586d4d0155498c187841519bdb967da94",
+   88
+  ]
+ },
+ "lm0": {
+  "4": 11.640873908996582,
+  "5": 11.667198181152344,
+  "6": 11.66833782196045,
+  "7": 11.678401947021484
+ },
+ "notes": [],
+ "step0_groups": {
+  "step0_job20933476": {
+   "all6-lam1@6e-4@s4": 11.640873908996582,
+   "all6-lam1@6e-4@s5": 11.667198181152344,
+   "all6-lam1@6e-4@s6": 11.66833782196045,
+   "all6-lam1@6e-4@s7": 11.678401947021484,
+   "none@1.92e-2@s7": 11.678401947021484,
+   "none@3.84e-2@s0": 11.646807670593262,
+   "none@3.84e-2@s4": 11.640873908996582,
+   "none@6e-4@s0": 11.646807670593262,
+   "none@6e-4@s4": 11.640873908996582,
+   "none@6e-4@s5": 11.667198181152344,
+   "none@6e-4@s6": 11.66833782196045,
+   "none@6e-4@s7": 11.678401947021484
+  }
+ }
+}
