@@ -1,0 +1,17 @@
+# pttpp frozen files (sha256[:12] path), checked by maybe_select.sh before any selection (runs/pttpp/AUDIT.md)
+2df9b0ca3f09 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pttpp_summary.py
+e91ee8a8a846 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/readout_rules.py
+01e2fec07499 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pt999_summary.py
+68c3b7c26de2 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pt2main_summary.py
+8c09bc6032ad /scratch/yh6210/llmadd_torch/runs/pttpp/readout/COMMIT
+4d86fa1056b5 /scratch/yh6210/llmadd_torch/runs/pttpp/pick_tpp.py
+37d4d7635ec1 /scratch/yh6210/llmadd_torch/runs/pttpp/maybe_select.sh
+a20881aec69f /scratch/yh6210/llmadd_torch/make_jobs_pttpp.py
+d10d720c1242 /scratch/yh6210/llmadd_torch/pttpp_refs.json
+8dd7b3407459 /scratch/yh6210/llmadd_torch/make_jobs_ptlr1b.py
+a5a7fb60eedc /scratch/yh6210/llmadd_torch/make_jobs_pt2s505.py
+19bc055c2d09 /scratch/yh6210/llmadd_torch/make_jobs_rb6scale.py
+a3bce3ab63c1 /scratch/yh6210/llmadd_torch/runs/pttpp/code7/tools/pretrain_range.py
+93e22bf4c4c0 /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/pretrain_range.py
+a2e8a9621383 /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/make_pt2main_tasks.py
+226f4cac70ea /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/offline_lm.py

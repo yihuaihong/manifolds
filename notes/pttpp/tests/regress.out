@@ -1,0 +1,16 @@
+ladder-tpp vs scale-ladder: changed files under tools/:
+ tools/pttpp_selftest.py | 337 +++++++++++++++++++++
+ tools/pttpp_summary.py  | 767 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 1104 insertions(+)
+IDENTICAL pt2main_burst.txt (143 lines)
+IDENTICAL pt2s505.txt (35 lines)
+IDENTICAL pt2s505.json (21 lines)
+IDENTICAL ptscale_scaleladder.txt (129 lines)
+IDENTICAL rb6scale_190m.txt (216 lines)
+IDENTICAL rb6scale_190m.json (4183 lines)
+IDENTICAL rb6ext.txt (226 lines)
+IDENTICAL rb6ext.json (4258 lines)
+IDENTICAL rb6dim.txt (21 lines, after path normalisation)
+rb6dim: both sides stop at the missing rb6_190m_dim/picks.json (that batch is not selected yet): compared as text only
+IDENTICAL ptlr1b (151 lines)
+REGRESSION PASS

@@ -212,3 +212,19 @@ infrastructure loss) and runs `bash maybe_select.sh <group>` by hand.
 | pttpp_selftest.py (ladder-tpp tools/) | SELFTEST PASS 56/56: verdict rule units (shown / not shown / 8 seeds shown but confirm opposite / other metric opposite / not computable / zero guard / non-finite); synthetic roots: size effect (both 7% lines SHOWN, designed ln R_0.5 slope 0.25 read +0.262), no effect (NOT SHOWN), confirm seeds opposite (2%: DIRECTION UNSTABLE), other metric opposite (7%: DIRECTION UNSTABLE), floor cell (left out of every slope), censored cell (out of the R slopes, in the Delta area slope, printed '>='), token effect (Q2 SHOWN, fewer tokens), bridge FAIL (L40S-only becomes primary), an integrity failure (cell WITHHELD, PROVISIONAL); every cell row and slope table prints Delta area, R_0.5 and R_0.9 for seeds 0-3 / 4-7 / 0-7; known answers on the REAL reused cells = FINDINGS (505M +27.4 / +36.9 / +32.2, R_0.5 4.76; 1.07B +38.8 / +33.5 / +36.1, R_0.5 5.69 / 4.67 / 5.18; 190M +25.4 / +21.6 / +23.5, 4.56; 53M +23.4 / +22.2 / +22.8, 4.75; pt2s505 +52.0 / +53.9 / +53.0), no integrity failure on them |
 | plumb_tpp.py (fake root, stand-in generator: real rendering and sbatch --test-only, fake submission) | PLUMB PASS 17/17: incomplete -> nothing; 7% open upper -> X 1.92e-2, edge tie -> C (8 jobs pass the real --test-only); X worse -> C at the interior pick; X better again -> STOP; 2% through pt2main_summary: tie -> C at the lower offline bpb, open lower -> X 3e-4; HOLD; a changed frozen file; a lock held by a running job -> pending mark; a stale lock taken over and released; nothing left -> --check exit 1 |
 | regress_tpp.sh (existing read-outs, ladder-tpp vs the worktree / snapshot they were frozen in) | identical: pt2main (Burst, 143 lines), pt2s505 (--gen, text + json), ptscale_summary (scale-ladder), rb6scale_summary 190M (text + json), rb6scale_ext (text + json), rb6scale_dim (both stop at the not-yet-written rb6_190m_dim/picks.json; text identical after path normalisation), ptlr_1b's frozen snapshot = ladder-1b. ladder-tpp only adds tools/pttpp_summary.py and tools/pttpp_selftest.py |
+
+## Frozen before submission (sha256[:12]; chmod a-w; FROZEN.txt, checked by maybe_select.sh)
+make_jobs_pttpp.py a20881aec69f, pick_tpp.py 4d86fa1056b5, maybe_select.sh 37d4d7635ec1, pttpp_refs.json d10d720c1242;
+read-out snapshot runs/pttpp/readout = `git archive 712817c tools/` (branch ladder-tpp): pttpp_summary.py 2df9b0ca3f09,
+readout_rules.py e91ee8a8a846, pt999_summary.py 01e2fec07499, pt2main_summary.py 68c3b7c26de2; the read-only generators
+make_jobs_ptlr1b.py 8dd7b3407459, make_jobs_pt2s505.py a5a7fb60eedc, make_jobs_rb6scale.py 19bc055c2d09; trainers code7
+pretrain_range.py a3bce3ab63c1, code2 pretrain_range.py 93e22bf4c4c0 / make_pt2main_tasks.py a2e8a9621383 / offline_lm.py
+226f4cac70ea. The read-out on the real root before submission (scale_work/tpp/readout_presubmit.txt): 80 reused runs, no
+integrity line, the reused cells at their FINDINGS values, every new cell NOTFINAL, Q1 7% waiting for the bridge.
+
+## Submitted (2026-10-26 ~18:30 EDT; submit_A.log)
+`make_jobs_pttpp.py --all --test-only`: 160/160 OK (testonly_A.txt; the B200 copies estimated to start 2026-10-29 on
+b200_tandon_prem). myquota at submission: /scratch 4.70 / 5.00 TB (93.9%). `--all --submit`: 160 jobs, 21032456-21033186
+(SUBMITTED_<run>): 7% L40S stage A 7 x 16, 1.07B@0.745 stage A 8 (21033028-21033036), the bridge 8 (21033037-21033044, B200
+slots after the 1.07B stage A in each slot), 2% A100 stage A 2 x 16. Stages X / C follow automatically (decisions/,
+select_<group>.log). Kill switch: touch runs/pttpp/HOLD. The fresh post-submission audit (read-only) was started at once.
