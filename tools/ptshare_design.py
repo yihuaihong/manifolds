@@ -47,5 +47,6 @@ def refs():
     if not REFS.exists():
         return None
     r = json.loads(REFS.read_text())
-    return {sec: {int(k): ({int(s): v for s, v in d.items()} if isinstance(d, dict) else d) for k, d in r[sec].items()}
-            for sec in r}
+    out = {sec: {int(k): {int(s): v for s, v in d.items()} for k, d in r[sec].items()} for sec in ("lm0", "share", "dry")}
+    out["meta"] = r.get("meta", {})
+    return out

@@ -79,6 +79,11 @@ check(Q.floor_ceiling(4.9, 0.05) == "floor" and Q.floor_ceiling(4.9, 0.2) is Non
       and Q.floor_ceiling(89.9, 1.0) is None and Q.floor_ceiling(50, 0.5) is None, "floor_ceiling thresholds")
 check(Q.uninformative("floor", "floor") and Q.uninformative("ceiling", "ceiling") and not Q.uninformative("floor", None)
       and not Q.uninformative(None, None) and not Q.uninformative(None, "ceiling"), "uninformative")
+rf = D.refs()
+check(rf is not None and all(sorted(rf[sec]) == list(D.LINES) and all(sorted(rf[sec][k]) == list(range(8)) for k in D.LINES)
+                             for sec in ("lm0", "share", "dry"))
+      and all(abs(rf["share"][k][s]["share"] / k - rf["share"][1][s]["share"]) < 0.002 for k in D.LINES for s in range(8)),
+      "ptshare_refs.json via ptshare_design.refs(): 4 shares x 8 seeds, share proportional to k (within 0.2 points per line)")
 print(f"part 1: {N[0]} rule checks pass")
 
 # ---------------------------------------------------------------- part 2: fake runs
