@@ -467,3 +467,20 @@ file); the old snapshot kept as readout.pre_t5; FROZEN.txt rewritten (26 files, 
 of tpp7-93m-t0.318 (X jobs 21083281-21083284 submitted), and the hook once by hand for every group at 06:10 (each: nothing to
 do, no log line). The generator is unchanged (218991699dee). Scripts and outputs: scale_work/tpp/t5/final (deploy_t5.sh,
 t5_decide.py, hooks_by_hand.sh; git notes/pttpp/tests/t5). A fresh minimal audit (read-only) follows.
+T5 audit (fresh general-purpose agent, read-only, blind; report notes/batch1_build/audit_pttpp_t5.md in the review repo;
+recorded 2026-10-27, before any read-out of a pttpp cell): **no blocking and no important item**. Confirmed: F1 cannot take
+over a live owner's lock (own id = a dead earlier run; the hook runs once per job); --check rc 0 / 1 / 2 and the job bodies'
+`|| echo` keep the jobs' exit codes; the read-out changes only full() (the --select output of T4 and T5 is identical on
+synthetic roots), the T5 rule as specified, 106/106 on the deployed snapshot; the 93M@0.318 entries and the X jobs
+21083281-84 = the design (byte-identical to render(), only lr / stage differ from the stage-A twin); FROZEN 26/26, snapshot
+= git archive fd8901b, no T5-own code deployed. Minor, recorded (not changed): (1) /scratch/yh6210/llmadd-burst-ro is a
+working checkout (a session committed FINDINGS there today), not read-only: a checkout of a branch without the 8 frozen
+dry_inputs.txt (e.g. living-lab-page) or a `git worktree remove` stops every group with "FROZEN FILE CHANGED" (exit 0): the
+sessions working there must not switch or remove it while this batch runs, and the watcher greps "FROZEN FILE CHANGED";
+(2) (T4) a pid owner of another host is always alive, so a hand selection SIGKILLed while it held a lock would block that
+group silently: the watcher reports any locks/<group> directory older than 30 min; (3) (old) the selftest's cleanup removes
+every directory under --work: never point --work at a real directory; (4) cosmetic: the incl. line lists every '>=' cell of
+the line, not only the added ones. For the coordinator (not bugs): 294M@0.745 none was decided STOP automatically at
+06:12:11 (still open after its X 1.92e-2; the user decides; Q1 PROVISIONAL); 190M@0.318 and 294M@0.318 none were closed at
+the upper grid edge without an X, so if one of them becomes NONE AT FLOOR the asymmetry of T3 recurs: a general rule
+(extend or not) should be written before any read-out; Q2 is not covered by T5; F2 (PRIMARY.txt) is still open.
