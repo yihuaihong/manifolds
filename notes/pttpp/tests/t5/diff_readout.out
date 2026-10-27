@@ -1,0 +1,21 @@
+size_effect: 6 lines T5 only, 1 lines T4 only; unexplained: none
+no_effect: 6 lines T5 only, 1 lines T4 only; unexplained: none
+floor_censored: 6 lines T5 only, 1 lines T4 only; unexplained: none
+lr_flip: 6 lines T5 only, 1 lines T4 only; unexplained: none
+none_floor: 9 lines T5 only, 4 lines T4 only; unexplained: none
+    <     -> 7% tpp 0.745 (all sizes) [primary = area]: SHOWN: the gain is larger at larger sizes (same tpp)
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -17.423 [-17.923, -16.902], 4-7 -17.748 [-18.263, -17.233]; ln R_0.5 0-7 +0.254 [ +0.206,  +0.292], 4-7 +0.292 [ +0.243,  +0.309]; ad
+    >     -> 7% tpp 0.745 (all sizes) [primary = area]: DIRECTION UNSTABLE (none-at-floor cells): the gain is larger at larger sizes (same tpp), but the 8-seed slope with the NONE AT FLOOR cells (93m@0.745) included has the other sign
+    <     -> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = area]: SHOWN: the gain is larger at larger sizes (same tpp)
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -30.789 [-31.159, -30.431], 4-7 -30.606 [-30.931, -30.282]; ln R_0.5 0-7 +0.288 [ +0.197,  +0.351], 4-7 +0.335 [ +0.264,  +0.398]; ad
+    >     -> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = area]: DIRECTION UNSTABLE (none-at-floor cells): the gain is larger at larger sizes (same tpp), but the 8-seed slope with the NONE AT FLOOR cells (93m@0.745) included h
+    <   => [primary = area] Q1 7%: SHOWN on both lines: the gain is larger at larger sizes (same tpp)
+    >   => [primary = area] Q1 7%: DIRECTION UNSTABLE (a line is unstable, or the two lines show opposite directions) [none-at-floor cells flip the sign on the tpp 0.745 line (T5)]
+floor_same: 6 lines T5 only, 1 lines T4 only; unexplained: none
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -22.818 [-23.093, -22.539], 4-7 -22.909 [-23.267, -22.536]; ln R_0.5 0-7 -0.246 [ -0.294,  -0.208], 4-7 -0.208 [ -0.257,  -0.191]; ad
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -32.492 [-32.826, -32.173], 4-7 -32.307 [-32.593, -32.021]; ln R_0.5 0-7 -0.212 [ -0.303,  -0.149], 4-7 -0.165 [ -0.236,  -0.102]; ad
+floor_noeff: 6 lines T5 only, 1 lines T4 only; unexplained: none
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -22.978 [-23.208, -22.743], 4-7 -23.072 [-23.291, -22.852]; ln R_0.5 0-7 +0.004 [ -0.044,  +0.042], 4-7 +0.042 [ -0.007,  +0.059]; ad
+    >     incl. NONE AT FLOOR cells (T5 sensitivity; their gains over their 8 seeds): Delta area 0-7 -35.707 [-35.948, -35.488], 4-7 -35.575 [-35.764, -35.386]; ln R_0.5 0-7 +0.038 [ -0.053,  +0.101], 4-7 +0.085 [ +0.014,  +0.148]; ad
+own_after_train: 6 lines T5 only, 1 lines T4 only; unexplained: none
+bridge_fail: 6 lines T5 only, 1 lines T4 only; unexplained: none

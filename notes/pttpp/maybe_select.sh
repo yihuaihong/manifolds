@@ -10,6 +10,8 @@
 # the lock is older than 10 min; owner gone -> take over by renaming the lock away (only if it still names that owner) and
 # making a fresh one (T4: the old 2 h age rule and the in-place takeover let several callers run at once).
 # 5. pick_tpp.py --decide, the lock released, and if a pending mark appeared meanwhile the step repeats (<= 5 rounds).
+# Amendment T5 (fourth audit): a lock whose owner is this job id is not alive (an earlier run of this job, killed while it
+# held the lock and requeued with the same id); a crash of --check (rc other than 0 / 1) is logged and returned.
 set -u
 R=${PTTPP_DIR:-/scratch/yh6210/llmadd_torch/runs/pttpp}   # overrides: plumbing tests only
 PY=${PTTPP_PY:-/scratch/yh6210/miniconda3/envs/open_r1/bin/python}
@@ -27,12 +29,18 @@ while read -r sha f; do
     exit 0
   fi
 done < "$R/FROZEN.txt"
-PTTPP_DIR=$R $PY "$R/pick_tpp.py" --group "$G" --check || exit 0
+PTTPP_DIR=$R $PY "$R/pick_tpp.py" --group "$G" --check; crc=$?
+[ $crc = 1 ] && exit 0   # nothing to do
+if [ $crc != 0 ]; then   # T5: a crash is not "nothing to do"
+  echo "[$(date -Is)] job ${SLURM_JOB_ID:-none}: pick_tpp.py --check FAILED (rc $crc; traceback in the job's output): nothing selected or submitted" >> "$LOG"
+  exit $crc
+fi
 case "${SLURM_JOB_NAME:-}" in llmadd_tpp-*) me=${SLURM_JOB_ID:?};; *) me=pid:$(hostname):$$;; esac
 mkdir -p "$R/locks"
 for v in $(compgen -e | grep -E "^(SLURM|SBATCH)_"); do [ "$v" = SLURM_JOB_ID ] || unset "$v"; done
 alive() {   # owner -> 0 if it may still be selecting
   local o=$1
+  [ "$o" = "$me" ] && return 1   # T5: this job id = an earlier run of this (requeued) job, which is dead
   case "$o" in
     pid:*) local h=${o#pid:}; h=${h%%:*}; local pid=${o##*:}
            [ "$h" != "$(hostname)" ] && return 0   # another host's process: cannot tell -> alive

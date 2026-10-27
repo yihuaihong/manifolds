@@ -14,6 +14,9 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
 Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T5 (fourth audit): --check exits 2 on any exception (e.g. the generator's import-time sha asserts) after logging
+it ("--check CRASHED"), instead of Python's 1, which maybe_select.sh read as "nothing to do"; the DISK GUARD line says
+that the next hook call of the group retries the submission and that by hand is needed when no job of the group is left.
 Amendment T4 (third audit): OWN_FAILURES.txt is parsed leniently (comments, 's3'; a bad line is logged, never an exception)
 and applies to 7% runs only (2% follows pt2main: a failed run is re-run); a listed run counts only when its job is gone
 from the queue (SUBMITTED_<run> names the job id; squeue); the decision log is appended with a unique temp file and only if
@@ -236,7 +239,9 @@ def decide(G, gid):
     q = subprocess.run(["myquota"], capture_output=True, text=True)
     m = re.search(r"/scratch\s.*?\(([\d.]+)%\)", q.stdout.replace("\x1b", " "))
     if m and float(m.group(1)) >= DISK_MAX:
-        log(gid, f"DISK GUARD: /scratch at {m.group(1)}% >= {DISK_MAX}%: {len(unsub)} jobs NOT submitted (rerun maybe_select.sh later)")
+        log(gid, f"DISK GUARD: /scratch at {m.group(1)}% >= {DISK_MAX}%: {len(unsub)} jobs NOT submitted (the decisions are kept; "
+                 f"the next hook call of this group retries the submission; if no job of {gid} is still queued or running, "
+                 f"free space and run 'bash {R}/maybe_select.sh {gid}' by hand)")
         return
     if not m:
         log(gid, "myquota could not be parsed; submitting anyway")
@@ -252,13 +257,25 @@ def decide(G, gid):
 
 def main():
     gid = sys.argv[sys.argv.index("--group") + 1]
+    if "--check" in sys.argv:   # T5: exit 0 = something to do, 1 = nothing to do, 2 = crashed (logged; maybe_select.sh returns it)
+        try:
+            G = load_gen()
+            if gid not in G.GROUPS:
+                print(f"{gid}: no selection (bridge or unknown)")
+                sys.exit(1)
+            dec, ready, unsub = state(G, gid)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            try:
+                log(gid, f"--check CRASHED: {type(e).__name__}: {str(e)[:300]} (traceback in the job's output): nothing selected or submitted")
+            finally:
+                sys.exit(2)
+        sys.exit(0 if ready or unsub else 1)
     G = load_gen()
     if gid not in G.GROUPS:
         print(f"{gid}: no selection (bridge or unknown)")
         sys.exit(1)
-    if "--check" in sys.argv:
-        dec, ready, unsub = state(G, gid)
-        sys.exit(0 if ready or unsub else 1)
     decide(G, gid)
 
 

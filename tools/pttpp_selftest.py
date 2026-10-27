@@ -6,7 +6,10 @@ so R_0.5 = t50(none) / t50(prior) and Delta area follow from the design. Scenari
 read-out): size effect / no size effect / only one seed group significant (8 seeds shown, confirm seeds opposite) / only
 one metric (the other metric opposite) / floor cell / censored cell / token effect at fixed size / bridge pass and fail /
 an integrity failure; plus unit tests of the verdict rule, the column check (every cell and slope table prints Delta
-area, R_0.5 and R_0.9 / both metrics), and the known answer on the REAL reused cells (F87 / F86 numbers).
+area, R_0.5 and R_0.9 / both metrics), and the known answer on the REAL reused cells (F87 / F86 numbers; T5: read from a
+root holding only the reused batches, never runs/pttpp). T5 scenarios: a NONE AT FLOOR cell that flips a SHOWN slope's
+sign (-> DIRECTION UNSTABLE (none-at-floor cells)), one that agrees in sign (SHOWN unchanged), and one next to a NOT SHOWN
+slope (unchanged).
     python tools/pttpp_selftest.py [--work <scratch dir>] [--keep]        -> SELFTEST PASS / FAIL"""
 import argparse
 import hashlib
@@ -379,6 +382,60 @@ check("NONE AT FLOOR" in r93 and "** FLOOR" not in r93 and "** FLOOR" in r93b an
 check("7% 93m@0.745: none" in nfs and "93m@0.318" not in nfs, "T2 none_floor: reported in the none-at-floor section")
 check(all("93m@0.745" not in x for x in re.findall(r"    (?:Delta area|ln R_0.5).*", t.split("## Q1")[1].split("## descriptive")[0])),
       "T2 none_floor: 93M@0.745 is in no slope")
+# T5: the NONE AT FLOOR cell (93M@0.745: Delta area ~ +93 at the smallest size) flips the designed rising Delta area slope
+q1 = t.split("## Q1")[1].split("## Q2")[0]
+inc = re.findall(r"    incl\. NONE AT FLOOR cells \(T5 sensitivity; .*?Delta area 0-7 ([+-][\d.]+) .*added (.*)", q1)
+check(len(inc) == 2 and all(float(b) < 0 and a.startswith("93m@0.745") for b, a in inc)
+      and q1.count("incl. NONE AT FLOOR cells (T5 sensitivity): no such cell on this line") == 3,
+      f"T5 floor_flip: both 0.745 tables print the slope with 93M@0.745 included (negative), the other three say no such cell ({inc})")
+for vn in ("all sizes", "L40S only (1.07B left out)"):
+    la = line_of(t, f"-> 7% tpp 0.745 ({vn}) [primary = area]")
+    check(la.startswith(f"-> 7% tpp 0.745 ({vn}) [primary = area]: DIRECTION UNSTABLE (none-at-floor cells): the gain is larger")
+          and "93m@0.745" in la and "(T5)" in la, f"T5 floor_flip ({vn}): area SHOWN larger -> DIRECTION UNSTABLE (none-at-floor cells) ({la[:170]})")
+    lr_ = line_of(t, f"-> 7% tpp 0.745 ({vn}) [primary = log R_0.5]")
+    check(lr_.startswith(f"-> 7% tpp 0.745 ({vn}) [primary = log R_0.5]: SHOWN: the gain is larger"),
+          f"T5 floor_flip ({vn}): ln R_0.5 unchanged (the floor cell's R is '>=', out of the R slopes by S4) ({lr_[:120]})")
+check(line_of(t, "-> 7% tpp 0.318 (all sizes) [primary = area]").startswith("-> 7% tpp 0.318 (all sizes) [primary = area]: SHOWN: the gain is larger")
+      and line_of(t, "-> 2% tpp 0.745 (all sizes)").startswith("-> 2% tpp 0.745 (all sizes): SHOWN"), "T5 floor_flip: the lines without a floor cell are unchanged")
+lq = line_of(t, "=> [primary = area] Q1 7%")
+check(lq.startswith("=> [primary = area] Q1 7%: DIRECTION UNSTABLE") and "[none-at-floor cells flip the sign on the tpp 0.745 line (T5)]" in lq
+      and "SHOWN on both lines" in line_of(t, "=> [primary = log R_0.5] Q1 7%") and "none-at-floor" not in line_of(t, "=> [primary = log R_0.5] Q1 7%"),
+      f"T5 floor_flip: Q1 7% under area -> DIRECTION UNSTABLE with the floor label; under log R_0.5 still SHOWN on both lines ({lq[:150]})")
+
+
+def floorsame(st, size, tpp, arm, s):   # gain falls with size (none learns faster at larger sizes); 93M@0.745 none at floor
+    if st == "7" and size == "93m" and tpp == "0.745" and arm == "none":
+        return 0.5, 0.03
+    if arm == "win-ctx":
+        return FP * jitter(st, size, tpp, arm, s), 1.0
+    return 0.40 * math.exp(-0.25 * lnN(size)) * jitter(st, size, tpp, arm, s), 1.0
+
+
+t = build("floor_same", floorsame)
+q1 = t.split("## Q1")[1].split("## Q2")[0]
+inc = re.findall(r"    incl\. NONE AT FLOOR cells \(T5 sensitivity; .*?Delta area 0-7 ([+-][\d.]+) .*added (.*)", q1)
+check(len(inc) == 2 and all(float(b) < 0 for b, _ in inc), f"T5 floor_same: the slope with 93M@0.745 included is negative, as the main slope ({inc})")
+for pv in ("[primary = area]", "[primary = log R_0.5]"):
+    for vn in ("all sizes", "L40S only (1.07B left out)"):
+        la = line_of(t, f"-> 7% tpp 0.745 ({vn}) {pv}")
+        check(la.startswith(f"-> 7% tpp 0.745 ({vn}) {pv}: SHOWN: the gain is smaller at larger sizes"),
+              f"T5 floor_same {pv} ({vn}): the floor cell agrees in sign -> SHOWN (smaller) unchanged ({la[:120]})")
+    check("SHOWN on both lines: the gain is smaller" in line_of(t, f"=> {pv} Q1 7%") and "none-at-floor" not in line_of(t, f"=> {pv} Q1 7%"),
+          f"T5 floor_same {pv}: Q1 7% SHOWN on both lines (smaller), no floor label")
+def floor_noeff(st, size, tpp, arm, s):   # no size effect (the seed jitter gives a positive point estimate, CI includes 0);
+    if st == "7" and size == "93m" and tpp == "0.745" and arm == "none":   # 93M@0.745 none at floor: the slope with it is far negative
+        return 0.5, 0.03
+    return NOEFF(st, size, tpp, arm, s)
+
+
+t = build("floor_noeff", floor_noeff)
+inc = re.findall(r"    incl\. NONE AT FLOOR cells \(T5 sensitivity; .*?Delta area 0-7 ([+-][\d.]+) \[([+-][\d.]+), ([+-][\d.]+)\]", t)
+m = re.search(r"7% tpp 0.745, all sizes \[PRIMARY\]\n.*\n    Delta area\s+([+-][\d.]+)", t)
+la = line_of(t, "-> 7% tpp 0.745 (all sizes) [primary = area]")
+check(len(inc) == 2 and all(float(hi) < 0 for _, _, hi in inc) and m is not None and float(m.group(1)) > 0
+      and la.startswith("-> 7% tpp 0.745 (all sizes) [primary = area]: NOT SHOWN") and "none-at-floor" not in la,
+      f"T5 floor_noeff: main slope {m.group(1) if m else None} (CI includes 0) NOT SHOWN stays NOT SHOWN although the slope with the "
+      f"floor cell has the other sign ({inc}; {la[:100]})")
 
 
 def reg_area(root):
@@ -476,7 +533,16 @@ check("WITHHELD" in line_of(t, "7% 294m tpp 0.745") and "294m@0.745" not in t.sp
       and "PROVISIONAL" in t, "integrity: a bad step-0 lm withholds the cell, it leaves the slopes, the read-out says PROVISIONAL")
 
 # ---------------------------------------------------------------- known answer: the REAL reused cells (F87 / F86 numbers)
-D = S.Data(G, S.ROOT_DEFAULT)
+# T5 (fourth audit, F10): on a root that holds only the reused batches (symlinks) and an empty pttpp dir, so the known answer
+# never reads a pttpp result (the batch stays blind while its read-out is tested)
+KR = WORK / "ka_reused_only"
+shutil.rmtree(KR, ignore_errors=True)
+(KR / "pttpp").mkdir(parents=True)
+for b_ in sorted({v[0].split("/")[0] for arms in G.REUSED.values() for v in arms.values()} | {"ptlr", "ptsize999", "pt2s505"}):
+    (KR / b_).symlink_to(Path(S.ROOT_DEFAULT) / b_)
+D = S.Data(G, KR)
+check(not [k for k in D.runs if not k[0].startswith("R")] and not list((KR / "pttpp").iterdir()),
+      "known answer: the root has no pttpp run (only the reused batches are read)")
 cells = S.build_cells(D)
 KA = {("7", "505m", "0.745"): {"0-3": 27.4, "4-7": 36.9, "0-7": 32.2, "R0-3": 4.76},
       ("7", "1b", "0.318"): {"0-3": 38.8, "4-7": 33.5, "0-7": 36.1, "R0-3": 5.69, "R4-7": 4.67, "R0-7": 5.18},
@@ -495,6 +561,9 @@ for ck, want in KA.items():
             r = S.cell_line(c, dict((l, s) for s, l in S.SETS)[lab])["R0.5"][0]["ratio"]
             check(abs(r - want["R" + lab]) < 0.006, f"known answer {ck} R_0.5 seeds {lab}: {r:.3f} (FINDINGS {want['R' + lab]})")
 check(not [k for k in D.runs if k[0].startswith("R") and D.runs[k]["bad"]], "known answer: no integrity failure on the real reused runs")
+for p_ in KR.iterdir():   # the symlinks go first (rmtree below never follows them, but be explicit)
+    if p_.is_symlink():
+        p_.unlink()
 
 print(f"SELFTEST {'PASS' if not fails else 'FAIL'}: {npass} passed, {len(fails)} failed" + (f": {fails}" if fails else ""))
 if not A.keep:

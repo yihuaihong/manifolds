@@ -1,0 +1,107 @@
+PASS verdict: CI > 0, guard +, other + -> shown
+PASS verdict: CI < 0 -> shown (smaller)
+PASS verdict: 8 seeds shown, confirm-only opposite -> unstable
+PASS verdict: other metric opposite -> unstable
+PASS verdict: CI includes 0 -> not shown
+PASS verdict: CI includes 0 and guard opposite -> not shown (noted)
+PASS verdict: no slope -> not determinable
+PASS verdict: guard not computable -> not fully shown
+PASS verdict: a zero guard counts as not the same sign
+PASS verdict: Q2 negative = fewer tokens
+PASS verdict: a non-finite slope -> not determinable
+PASS regression: one T for every cell -> not identified (design rank 2 < 3)
+PASS regression: one tpp line (ln T = ln N + const) -> not identified (|corr(ln N, ln T)| = 1.000 >= 0.98)
+PASS fit_slope: OLS and fixed-effects slopes on exact lines
+PASS size_effect: 7% tpp 0.745 (all sizes) [primary = area] -> shown, larger, no lr label
+PASS size_effect: 7% tpp 0.745 (all sizes) [primary = log R_0.5] -> shown, larger, no lr label
+PASS size_effect: 7% tpp 0.318 (all sizes) [primary = area] -> shown, larger, no lr label
+PASS size_effect: 7% tpp 0.318 (all sizes) [primary = log R_0.5] -> shown, larger, no lr label
+PASS size_effect: Q1 7% [primary = area] shown on both lines
+PASS size_effect: Q1 7% [primary = log R_0.5] shown on both lines
+PASS T2: no PRIMARY.txt -> both verdicts printed, marked not registered
+PASS size_effect: bridge PASS (B200 curves = L40S curves)
+PASS size_effect: ln R_0.5 slope ~ the designed 0.25 (+0.262)
+PASS columns: the cell table prints Delta area, R_0.5 and R_0.9
+PASS columns: every slope table (11) prints Delta area, ln R_0.5 and ln R_0.9 for all three seed sets
+PASS columns: every cell row (45) has Delta area and R_0.5 with CIs (seeds 0-3 / 4-7 / 0-7)
+PASS gradient report printed for the prior cells (designed share 1 / 1.2)
+PASS size_effect: 2% line shown (primary Delta area)
+PASS T1 sensitivity: bound / no-b11 / lr-selection lines printed; tied twins change no sign
+PASS T1: a facts line (steps, warmup, eval spacing, tpp by total parameters, window opening, prior t50 / opening) per final cell
+PASS regression: identified on the full design (several N and T)
+PASS no_effect: both 7% lines -> not shown (CI includes 0)
+PASS no_effect: Q1 7% not shown under both primaries
+PASS confirm_flip: 2% 8 seeds shown, confirm seeds opposite -> unstable (-> 2% tpp 0.745 (all sizes): DIRECTION UNSTABLE: the 8-seed CI excludes 0 (the gain is larger at larger sizes (same tpp))
+PASS metric_flip [primary = area]: main CI excludes 0, the other metric opposite -> unstable (-> 7% tpp 0.745 (all sizes) [primary = area]: DIRECTION UNSTABLE: the 8-seed CI excludes 0 (the gain is smalle)
+PASS metric_flip [primary = log R_0.5]: main CI excludes 0, the other metric opposite -> unstable (-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: DIRECTION UNSTABLE: the 8-seed CI excludes 0 (the gain is l)
+PASS floor: 93M tpp 0.318 labelled FLOOR
+PASS floor / censored: 93M@0.318 out of every slope; 190M@0.318 out of the R slopes (R >=)
+PASS censored: 190M@0.318 stays in the Delta area slope
+PASS censored: the cell row prints R_0.5 as '>=' (a bound)
+PASS token_effect: Q2 pooled [primary = area] -> shown, fewer tokens
+PASS token_effect: Q2 pooled [primary = log R_0.5] -> shown, fewer tokens
+PASS lr_flip: both designed tied alternatives listed; 190M@0.745 swaps listed once per arm (7% only, not the 2% twin) ([('93m@0.745', '-0.027'), ('294m@0.745', '+0.006')])
+PASS lr_flip: 1.07B's alternatives (seeds 0-1 only) are not swapped, and listed as having none
+PASS lr_flip: a slower none twin lowers the slope (+0.005 -> [('93m@0.745', '-0.027'), ('294m@0.745', '+0.006')]); sign changes 1 counted right and flagged iff > 0
+PASS T2 lr_flip: the verdict keeps its text and gets the lr-sensitive label (-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: NOT SHOWN (8-seed slope +0.012, 90% CI -0.024 to +0.041 includes 0) [lr-sensitive: seeds 0-3 slope +0.005 at )
+PASS T3 lr_flip: the Q1 combination line carries the lr-sensitive label too (=> [primary = log R_0.5] Q1 7%: NOT SHOWN (lines: not shown, not shown) [lr-sensitive on the tpp 0.745 line])
+PASS T3: the raw decision log is printed per group
+PASS T2 l40s_flip [primary = area]: all sizes would be SHOWN, the L40S-only slope opposite -> unstable (-> 7% tpp 0.745 (all sizes) [primary = area]: DIRECTION UNSTABLE: the gain is larger at larger sizes (same tpp), but the L40S-only slope has the other)
+PASS T2 l40s_flip [primary = area]: the L40S-only verdict is not 'larger' (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = area]: SHOWN: the gain is smaller at larger sizes (same tpp))
+PASS T2 l40s_flip [primary = log R_0.5]: all sizes would be SHOWN, the L40S-only slope opposite -> unstable (-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: DIRECTION UNSTABLE: the gain is larger at larger sizes (same tpp), but the L40S-only slope has the )
+PASS T2 l40s_flip [primary = log R_0.5]: the L40S-only verdict is not 'larger' (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = log R_0.5]: SHOWN: the gain is smaller at larger sizes (same tpp)
+PASS T2 none_floor: 93M@0.745 NONE AT FLOOR; 93M@0.318 (both arms) FLOOR
+PASS T2 none_floor: reported in the none-at-floor section
+PASS T2 none_floor: 93M@0.745 is in no slope
+PASS T5 floor_flip: both 0.745 tables print the slope with 93M@0.745 included (negative), the other three say no such cell ([('-17.423', '93m@0.745 (R not a point value, out of the R slopes: 93m@0.745 R >=)'), ('-30.789', '93m@0.745 (R not a point value, out of the R slopes: 93m@0.745 R >=)')])
+PASS T5 floor_flip (all sizes): area SHOWN larger -> DIRECTION UNSTABLE (none-at-floor cells) (-> 7% tpp 0.745 (all sizes) [primary = area]: DIRECTION UNSTABLE (none-at-floor cells): the gain is larger at larger sizes (same tpp), but the 8-seed slope with the NONE )
+PASS T5 floor_flip (all sizes): ln R_0.5 unchanged (the floor cell's R is '>=', out of the R slopes by S4) (-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: SHOWN: the gain is larger at larger sizes (same tpp))
+PASS T5 floor_flip (L40S only (1.07B left out)): area SHOWN larger -> DIRECTION UNSTABLE (none-at-floor cells) (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = area]: DIRECTION UNSTABLE (none-at-floor cells): the gain is larger at larger sizes (same tpp), but the 8-seed slo)
+PASS T5 floor_flip (L40S only (1.07B left out)): ln R_0.5 unchanged (the floor cell's R is '>=', out of the R slopes by S4) (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = log R_0.5]: SHOWN: the gain is larger at larger sizes (same tpp))
+PASS T5 floor_flip: the lines without a floor cell are unchanged
+PASS T5 floor_flip: Q1 7% under area -> DIRECTION UNSTABLE with the floor label; under log R_0.5 still SHOWN on both lines (=> [primary = area] Q1 7%: DIRECTION UNSTABLE (a line is unstable, or the two lines show opposite directions) [none-at-floor cells flip the sign on th)
+PASS T5 floor_same: the slope with 93M@0.745 included is negative, as the main slope ([('-22.818', '93m@0.745 (R not a point value, out of the R slopes: 93m@0.745 R >=)'), ('-32.492', '93m@0.745 (R not a point value, out of the R slopes: 93m@0.745 R >=)')])
+PASS T5 floor_same [primary = area] (all sizes): the floor cell agrees in sign -> SHOWN (smaller) unchanged (-> 7% tpp 0.745 (all sizes) [primary = area]: SHOWN: the gain is smaller at larger sizes (same tpp))
+PASS T5 floor_same [primary = area] (L40S only (1.07B left out)): the floor cell agrees in sign -> SHOWN (smaller) unchanged (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = area]: SHOWN: the gain is smaller at larger sizes (same tpp))
+PASS T5 floor_same [primary = area]: Q1 7% SHOWN on both lines (smaller), no floor label
+PASS T5 floor_same [primary = log R_0.5] (all sizes): the floor cell agrees in sign -> SHOWN (smaller) unchanged (-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: SHOWN: the gain is smaller at larger sizes (same tpp))
+PASS T5 floor_same [primary = log R_0.5] (L40S only (1.07B left out)): the floor cell agrees in sign -> SHOWN (smaller) unchanged (-> 7% tpp 0.745 (L40S only (1.07B left out)) [primary = log R_0.5]: SHOWN: the gain is smaller at larger sizes (same tpp)
+PASS T5 floor_same [primary = log R_0.5]: Q1 7% SHOWN on both lines (smaller), no floor label
+PASS T5 floor_noeff: main slope +0.207 (CI includes 0) NOT SHOWN stays NOT SHOWN although the slope with the floor cell has the other sign ([('-22.978', '-23.208', '-22.743'), ('-35.707', '-35.948', '-35.488')]; -> 7% tpp 0.745 (all sizes) [primary = area]: NOT SHOWN (8-seed slope +0.207, 90% CI -0.140 to +0.56)
+PASS T2: PRIMARY.txt = area -> marked as the registered primary
+PASS T3: an own failure without a run JSON counts (area 0); an unknown entry is a warning
+PASS T3: own_nojson read-out completes (cell rows printed)
+PASS T4: OWN_FAILURES parsed leniently ({('tagA', 3), ('tagB', 5)}, ['broken', 'tagC 1 2', 'tagD x'])
+PASS T4: a listed finished run without its check counts as an own failure, the cell is not withheld
+PASS T4: a listed 2% run is ignored with a warning
+PASS T4: a listed bridge run without a JSON counts as area 0 (bridge complete; none drops 18 -> FAIL, as designed)
+PASS T2 REOPEN: the withdrawn C leaves the cell not final
+PASS T2 REOPEN then C at the same lr: final again, same verdict
+PASS bridge_fail: FAIL -> the L40S-only slope is the primary
+PASS bridge_fail: the all-size slope becomes descriptive
+PASS partial JSON: noted as unreadable, the read-out completes with the same Q1 verdict
+PASS integrity: a bad step-0 lm withholds the cell, it leaves the slopes, the read-out says PROVISIONAL
+PASS known answer: the root has no pttpp run (only the reused batches are read)
+PASS known answer ('7', '505m', '0.745') Delta area seeds 0-3: +27.45 (FINDINGS +27.4)
+PASS known answer ('7', '505m', '0.745') R_0.5 seeds 0-3: 4.762 (FINDINGS 4.76)
+PASS known answer ('7', '505m', '0.745') Delta area seeds 4-7: +36.93 (FINDINGS +36.9)
+PASS known answer ('7', '505m', '0.745') Delta area seeds 0-7: +32.19 (FINDINGS +32.2)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 0-3: +38.79 (FINDINGS +38.8)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 0-3: 5.687 (FINDINGS 5.69)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 4-7: +33.47 (FINDINGS +33.5)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 4-7: 4.673 (FINDINGS 4.67)
+PASS known answer ('7', '1b', '0.318') Delta area seeds 0-7: +36.13 (FINDINGS +36.1)
+PASS known answer ('7', '1b', '0.318') R_0.5 seeds 0-7: 5.181 (FINDINGS 5.18)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 0-3: +25.43 (FINDINGS +25.4)
+PASS known answer ('7', '190m', '2.65') R_0.5 seeds 0-3: 4.556 (FINDINGS 4.56)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 4-7: +21.63 (FINDINGS +21.6)
+PASS known answer ('7', '190m', '2.65') Delta area seeds 0-7: +23.53 (FINDINGS +23.5)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 0-3: +23.39 (FINDINGS +23.4)
+PASS known answer ('7', '53m', '21.2') R_0.5 seeds 0-3: 4.750 (FINDINGS 4.75)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 4-7: +22.20 (FINDINGS +22.2)
+PASS known answer ('7', '53m', '21.2') Delta area seeds 0-7: +22.79 (FINDINGS +22.8)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 0-3: +52.02 (FINDINGS +52.0)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 4-7: +53.94 (FINDINGS +53.9)
+PASS known answer ('2', '505m', '0.745') Delta area seeds 0-7: +52.98 (FINDINGS +53.0)
+PASS known answer: no integrity failure on the real reused runs
+SELFTEST PASS: 106 passed, 0 failed
