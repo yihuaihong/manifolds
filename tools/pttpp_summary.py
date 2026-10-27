@@ -54,8 +54,8 @@ def load_gen(path):
 
 def load_json(f, notes=None):
     """json of a file; a run JSON is rewritten at every eval by its running job (not atomic), so a parse error is retried
-    once after 2 s and then reported and skipped: a finished run's JSON is never rewritten, so a skipped file is a run in
-    progress (Amendment T1)"""
+    once after 2 s and then reported and skipped (Amendment T1): a skipped file is a run in progress (a finished run's JSON
+    is rewritten only if its job is requeued and restarts the run, T3)"""
     import time
     for i in range(2):
         try:
@@ -100,7 +100,27 @@ class Data:
         self._new7()
         self._new2()
         self._reused()
+        self._own_without_json()
         self._integrity()
+
+    def _own_without_json(self):
+        """T3: an OWN_FAILURES entry ('<tag> <seed>') of a new run that crashed before writing any run JSON counts as area 0
+        over all eval slots (bpb worst), as runs/ptlr's rule 2; an entry that names no design run is a NOTE"""
+        G = self.G
+        seen = {(rec["tag"], k[3]) for k, rec in self.runs.items()}
+        for tag, s in sorted(self.own - seen):
+            key = next(((g, a, lr, s) for g in G.GROUPS for a in G.ARMS for lr in G.LADDER if G.tag_of(g, a, lr) == tag), None)
+            if key is None or not (0 <= s <= 7):
+                self.notes.append(f"WARNING: OWN_FAILURES lists {tag} {s}, which is no run of the design: ignored")
+                continue
+            if any(k[:3] == key[:3] and k[3] == s for k, _, _, _ in self.unfinished):
+                continue
+            c = G.GROUPS[key[0]]
+            rec = dict(file=f"<no run JSON: {tag} seed {s}>", r={"args": {"tag": f"_{tag}", "seed": s, "bs": 32, "seq": 512}, "steps": G.steps_of(c["size"], c["line"]),
+                       "curve": []}, own=True, synthetic=True, check=None, off=None, bad=[], src="pttpp", setting=c["setting"],
+                       size=c["size"], tag=tag)
+            self.notes.append(f"own failure without a run JSON (counts as area 0, bpb worst): {tag} seed {s}")
+            self._add(key, rec)
 
     def gkey_new(self, setting, size, S, tokens_arg):
         G = self.G
@@ -223,6 +243,8 @@ class Data:
         G = self.G
         lm0 = collections.defaultdict(dict)
         for key, rec in self.runs.items():
+            if rec.get("synthetic"):   # T3: an own failure without a run JSON has nothing to check
+                continue
             r, a, c = rec["r"], rec["r"]["args"], rec["r"]["curve"]
             X = self.expect(key)
             bad = rec["bad"]
@@ -334,10 +356,12 @@ def select_arm(D, gid, arm):
     br = R.bracket(lrs, s_["mean"], s_["best"])
     return dict(out, status="ok", best=s_["best"], near=s_["near"], offline=s_["offline"], mean=s_["mean"], bpb=s_["bpb"],
                 open=br[1] if br and br[0] == "open" else None, note=br[1] if br and br[0] == "note" else None,
-                unstable=[f"{lr} s{s}" for lr in lrs for s in c["sel"]
-                          if R.unstable(D.runs[(gid, arm, lr, s)]["r"], D.runs.get((gid, "none", G.GRID[gid]["none"][0], s), {}).get("r"))],
+                unstable=[f"{lr} s{s}" for lr in lrs for s in c["sel"] if not D.runs[(gid, arm, lr, s)]["own"]
+                          and R.unstable(D.runs[(gid, arm, lr, s)]["r"], (lambda ref: ref["r"] if ref and not ref["own"] else None)(
+                              D.runs.get((gid, "none", G.GRID[gid]["none"][0], s))))],
                 diverged=[f"{lr} s{s}@{R.diverged_at(D.runs[(gid, arm, lr, s)]['r'])}" for lr in lrs for s in c["sel"]
-                          if R.diverged_at(D.runs[(gid, arm, lr, s)]["r"]) is not None])
+                          if R.diverged_at(D.runs[(gid, arm, lr, s)]["r"]) is not None],
+                own=[f"{lr} s{s}" for lr in lrs for s in c["sel"] if D.runs[(gid, arm, lr, s)]["own"]])
 
 
 def say_select(sel):
@@ -351,6 +375,7 @@ def say_select(sel):
             + (f"  (edge pick within 2 points at the {sel['note']} edge: not an open bracket)" if sel["note"] else "")
             + (f"  [diverged {', '.join(sel['diverged'])}]" if sel["diverged"] else "")
             + (f"  [unstable {', '.join(sel['unstable'])}]" if sel["unstable"] else "")
+            + (f"  [own failure (area over all eval slots, missing evals 0) {', '.join(sel['own'])}]" if sel.get("own") else "")
             + (f"  [ignored, not in the design: {sel['stray']}]" if sel["stray"] else ""))
 
 
@@ -439,9 +464,9 @@ def none_lr_means(D, cell):
             if all(k in D.runs for k in ks):
                 out[lr] = float(np.mean([area_of(D, k) for k in ks]))
     else:
-        if "a" not in _ALTS:
-            _ALTS["a"] = alt_runs(D)
-        for (st, sz, a, lr), rs in _ALTS["a"].items():
+        if str(D.root) not in _ALTS:
+            _ALTS[str(D.root)] = alt_runs(D)
+        for (st, sz, a, lr), rs in _ALTS[str(D.root)].items():
             if (st, sz, a) == (cell["setting"], cell["size"], "none") and lr != cell["lr"]["none"] and all(s in rs for s in MAIN):
                 out[lr] = float(np.mean([R.area(rs[s]) for s in MAIN]))
     return out
@@ -787,8 +812,13 @@ def full(D, out):
     print("\n## selection per group (F87 rule 1 at 7%, pt2main rule 1 at 2%; decisions = runs/pttpp/decisions/<group>.json)", file=out)
     for gid in G.GROUPS:
         dec = decisions(D, gid)
-        print(f"  {gid} (selection seeds {G.GROUPS[gid]['sel'][0]}-{G.GROUPS[gid]['sel'][-1]}): decisions "
-              + (", ".join(f"{a} {st} {e.get('lr', '')}" for (a, st), e in sorted(dec.items())) or "none"), file=out)
+        fl = D.Rd / "decisions" / f"{gid}.json"
+        raw = sorted(json.loads(fl.read_text())["log"], key=lambda e: e["seq"]) if fl.exists() else []
+        logtxt = ", ".join(f"{e['seq']}:{e['arm']} {e['stage']}" + (f" {e['lr']}" if e.get("lr") else "")
+                           + (f" ({e['amend']})" if e.get("amend") else "") for e in raw) or "none"
+        force = ", ".join(f"{a} {st}" + (f" {e['lr']}" if e.get("lr") else "") for (a, st), e in sorted(dec.items()))
+        print(f"  {gid} (selection seeds {G.GROUPS[gid]['sel'][0]}-{G.GROUPS[gid]['sel'][-1]}): decision log {logtxt}"
+              + (f"; in force: {force}" if raw else ""), file=out)
         for arm in G.ARMS:
             print("  " + say_select(select_arm(D, gid, arm)), file=out)
     cells = build_cells(D)
@@ -842,7 +872,7 @@ def full(D, out):
                 pn = f" [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}]" if st == "7" else ""
                 print(f"    -> {st}% tpp {line} ({vname}){pn}: {text}{lab}", file=out)
                 if use:
-                    calls[(st, line, prim)] = (cat, text, sgn(res[(prim, "0-7")]["b"]) if res[(prim, "0-7")] and not res[(prim, "0-7")].get("bad") else 0)
+                    calls[(st, line, prim)] = (cat, text, sgn(res[(prim, "0-7")]["b"]) if res[(prim, "0-7")] and not res[(prim, "0-7")].get("bad") else 0, lab)
     for prim in ("area", "lnR50"):
         c7 = [calls.get(("7", ln, prim)) for ln in ("0.745", "0.318")]
         if None in c7:
@@ -858,7 +888,10 @@ def full(D, out):
                 q1 = f"Q1 7%: shown on the tpp {('0.745', '0.318')[i]} line only ({Q1_DIRS[c7[i][2]]}); the other line: {cats[1 - i]}"
             else:
                 q1 = f"Q1 7%: NOT SHOWN (lines: {', '.join(cats)})"
-        print(f"  => [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}] {q1}" + (" [PROVISIONAL]" if notfin else ""), file=out)
+        labs = [f"tpp {ln}" for ln, c_ in zip(("0.745", "0.318"), c7) if c_ and c_[3]]
+        print(f"  => [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}] {q1}"
+              + (f" [lr-sensitive on the {' and '.join(labs)} line{'s' if len(labs) > 1 else ''}]" if labs else "")
+              + (" [PROVISIONAL]" if notfin else ""), file=out)
     print("\n## Q2 token effect at fixed size: slope vs ln T (total tokens), 7%; PRIMARY = pooled within size (size fixed "
           "effects, every size with >= 2 informative cells; 1.07B's cells are both B200), per size descriptive"
           + ("\n" + prov if prov else ""), file=out)
@@ -932,7 +965,7 @@ def variants(D, cells, fin, alts):
         for arm in G.ARMS:
             pick = c["lr"][arm]
             if c["gid"]:
-                pool = {lr: {s: D.runs[(c["gid"], arm, lr, s)]["r"] for s in MAIN if (c["gid"], arm, lr, s) in D.runs}
+                pool = {lr: {s: D.runs[(c["gid"], arm, lr, s)]["r"] for s in MAIN if (c["gid"], arm, lr, s) in D.runs and not D.runs[(c["gid"], arm, lr, s)]["own"]}
                         for lr in {k[2] for k in D.runs if k[0] == c["gid"] and k[1] == arm}}
             else:
                 pool = {lr: rs for (st, sz, a, lr), rs in alts.items() if (st, sz, a) == (c["setting"], c["size"], arm)}

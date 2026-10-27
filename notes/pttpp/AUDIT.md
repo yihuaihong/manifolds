@@ -324,3 +324,34 @@ T2 deployed 2026-10-26 ~20:01: read-out snapshot runs/pttpp/readout = git archiv
 seq 2 REOPEN none, seq 3 X none@3.84e-2 (amend T2); the X jobs 21042897-21042900 passed --test-only and were submitted by the
 hook (planned GPU-h then B200 141.9, L40S + A100 249.2). The hook was run by hand once for every group (catch-up). Regression
 of the other read-outs: identical (regress_t2.out). A fresh minimal audit of T1 + T2 runs (read-only).
+
+## Amendment T3 (written 2026-10-26T20:58:05-04:00; second fresh audit of T1 + T2, read-only; before any read-out of a pttpp cell)
+The audit found no code that changes a verdict or submits a wrong job (folding of the log consistent in its three places,
+176/176 submitted job files re-render byte for byte, selftest 82/82 on the frozen snapshot, the reused cells = FINDINGS,
+other read-outs identical). Fixed:
+1. **Own failures stalled an arm (important).** pick_tpp.py did not read OWN_FAILURES.txt, so a stage-A / X run that crashed
+   on its own (no run JSON or no check file) kept its arm waiting for ever, even after the documented remedy. Now a listed
+   run counts as finished; the read-out scores a listed run without any run JSON as area 0 over all eval slots (bpb worst),
+   as runs/ptlr rule 2, warns on entries that name no design run, and keeps own failures out of the lr alternatives
+   (plumbing P11: a listed crash drops its lr's mean; selftest own_nojson). A finished run JSON whose check file is still
+   missing after 30 min is now logged ("CHECK MISSING") instead of a silent wait.
+2. **Q1 combination line**: carries " [lr-sensitive on the tpp <line> line(s)]" when a per-line verdict it combines has the
+   label (T2 item 1 said every verdict line).
+3. **Lock**: a caller that finds the lock held first leaves the pending mark and then tries the lock once more (the holder
+   releases before it checks the mark), which closes the lost-mark window; owner outside Slurm = pid:<host>:<pid> (alive =
+   the pid exists on this host), not "none" (which squeue called invalid, so a hook took over a running manual selection);
+   a lock older than 2 h is stale whatever its owner (a SIGKILL leaves it behind). Plumbing P12.
+4. Read-out details: the per-group line prints the raw decision log (REOPEN visible) and the decisions in force; the
+   alternative-lr cache is per root (only the selftest ran several roots in one process); a docstring corrected (a finished
+   run JSON is rewritten if its job is requeued and restarts the run).
+Corrections to T2's text: the planned L40S + A100 GPU-h after the T2 entries were 249.2 h (the log), not 243.6 + 1.0: the 190M@0.745
+X decided at 19:42 (+3.5 h) was already in, and the withdrawn none@1.92e-2 C runs of 93M@0.745 are counted because they run.
+The cost guard can only be passed by an amendment that changes COST_MAX (a frozen constant) or by withdrawing a decision:
+both are the coordinator's. The T2 REOPEN / X entries were written under the group's lock by scale_work/tpp/t2_decide.py; this
+paragraph is their record (the select log has no DECISION line for them).
+**For the coordinator / user (not acted on):** at 20:19 the hook closed tpp7-93m-t0.318 none on a floor tie as well (none@1.92e-2
+1.1, none@3.84e-2 1.4; the in-training bpb picked the upper edge 3.84e-2; confirm seeds 21044876-79 submitted). It is the
+situation T2 item 3 extended at 93M@0.745, but the rule is not general, so the two cells are now treated differently. Under the
+T2 floor rule this cell becomes NONE AT FLOOR (or FLOOR if the prior is below 5 too) and leaves every slope. 190M@0.318 may follow.
+Tests after the changes: selftest 86/86, plumbing 35/35 (P11, P12 new), the generator unchanged (its frozen sha stays), the other
+read-outs unchanged; a fresh minimal audit follows.

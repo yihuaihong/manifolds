@@ -1,0 +1,36 @@
+PASS P0: stage A incomplete -> --check exit 1
+PASS P0: the hook decides nothing while stage A is incomplete
+PASS P1: stage A complete -> --check exit 0
+PASS P1: decisions none X 1.92e-2, win-ctx C 2.4e-3 ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3'})
+PASS P1: 4 X jobs + 4 C jobs (fake) submitted after --test-only (8 lines)
+PASS P1: the real sbatch --test-only passed for the 8 new jobs
+PASS P1: the C job of win-ctx is seed 5 at 2.4e-3 with --save_model
+PASS P2: X worse -> closed -> none C 9.6e-3 ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3', ('none', 'C'): '9.6e-3'})
+PASS P6: after every stage is decided and submitted -> --check exit 1
+PASS P3: X better again -> STOP for none, no C ({('none', 'X'): '1.92e-2', ('win-ctx', 'C'): '2.4e-3', ('none', 'STOP'): '1.92e-2'})
+PASS P4: 2% decisions none C 9.6e-3, win-ctx X 3e-4 ({('none', 'C'): '9.6e-3', ('win-ctx', 'X'): '3e-4'})
+PASS P4: the 2% selection is pt2main_summary's own output
+PASS P4: 4 X + 4 C 2% jobs (fake) submitted
+PASS P5: HOLD -> nothing
+PASS P5: a changed frozen file -> nothing
+PASS P5: lock held by a running job -> pending mark, nothing decided
+PASS P5: stale lock taken over and released; ties -> C at the lower bpb / lower lr ({('none', 'C'): '4.8e-3', ('win-ctx', 'C'): '1.2e-3'})
+PASS P7: win-ctx is ready (its runs and checks are complete) -> --check exit 0
+PASS P7: none waits for its missing check (no STOP), win-ctx decided ({('win-ctx', 'C'): '1.2e-3'})
+PASS P7: once the check is written, none is decided ({('win-ctx', 'C'): '1.2e-3', ('none', 'C'): '4.8e-3'})
+PASS P8: a mark set during the selection -> a second round, mark consumed, lock released
+PASS P9: floor tie -> C at the edge (as at 93M@0.745) ({('none', 'C'): '9.6e-3', ('win-ctx', 'C'): '1.2e-3'})
+PASS P9: after REOPEN + X: the X jobs are not submitted yet -> --check exit 0
+PASS P9: the 4 X jobs are submitted by the hook
+PASS P9: X runs not finished, everything submitted -> --check exit 1
+PASS P9: the X lr beats both by > 2 at the upper edge -> still open -> STOP ([('none', 'C', '9.6e-3'), ('win-ctx', 'C', '1.2e-3'), ('none', 'REOPEN', None), ('none', 'X', '1.92e-2'), ('none', 'STOP', '1.92e-2')])
+PASS P9b: X ties (within 2) with the lowest bpb -> new C at 1.92e-2, its 4 confirm jobs submitted ([('none', 'C', '9.6e-3'), ('win-ctx', 'C', '1.2e-3'), ('none', 'REOPEN', None), ('none', 'X', '1.92e-2'), ('none', 'C', '1.92e-2')])
+PASS P10: over budget -> decisions recorded, nothing submitted, COST GUARD logged
+PASS P10: within budget -> submitted on the next hook
+PASS P11: setup
+PASS P11: none waits for its missing run ({('win-ctx', 'C'): '1.2e-3'})
+PASS P11: listed as an own failure -> counts with area 0 -> 9.6e-3 mean 41.2 < 4.8e-3 50.0 - 2 -> open at the lower edge -> X 2.4e-3 ({('win-ctx', 'C'): '1.2e-3', ('none', 'X'): '2.4e-3'})
+PASS P12: a dead pid's lock is taken over
+PASS P12: a live job's lock older than 2 h is stale -> taken over
+PASS P12: a live pid's fresh lock -> pending mark, nothing decided
+PLUMB PASS

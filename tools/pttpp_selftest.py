@@ -342,6 +342,10 @@ if m and len(sw) == 2:
     lv = line_of(t, "-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]")
     check(("[lr-sensitive: seeds 0-3 slope" in lv) == (nflip > 0) and "93m@0.745 none@" in lv and lv.startswith(
           "-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: NOT SHOWN"), f"T2 lr_flip: the verdict keeps its text and gets the lr-sensitive label ({lv[:160]})")
+    lq = line_of(t, "=> [primary = log R_0.5] Q1 7%")
+    check(lq.startswith("=> [primary = log R_0.5] Q1 7%: NOT SHOWN") and "[lr-sensitive on the tpp 0.745 line" in lq,
+          f"T3 lr_flip: the Q1 combination line carries the lr-sensitive label too ({lq[:140]})")
+    check("0:none C" in t and "1:win-ctx C" in t and "decision log" in t, "T3: the raw decision log is printed per group")
 def l40flip(st, size, tpp, arm, s):   # R_0.5 falls slightly over 93M-505M, 1.07B far above: all sizes up, L40S-only down
     if arm == "win-ctx":
         return FP * jitter(st, size, tpp, arm, s, sd=0.01), 1.0
@@ -393,6 +397,21 @@ def reopen(root):   # REOPEN withdraws none's C of tpp7-93m-t0.745; no new C yet
     f.write_text(json.dumps(d))
 
 
+def own_nojson(root):   # T3: a stage-C run of 190M@0.745 crashed before writing any JSON and is listed in OWN_FAILURES
+    g = "tpp7-190m-t0.745"
+    tag = G.tag_of(g, "none", G.GRID[g]["none"][0])
+    for f in (root / "pttpp/out" / tag).glob("*seed6_*"):
+        f.unlink()
+    (root / "pttpp/out" / tag / "check_s6.json").unlink(missing_ok=True)
+    (root / "pttpp" / "OWN_FAILURES.txt").write_text(f"{tag} 6\nno-such-tag 3\n")
+
+
+t = build("own_nojson", sizeeff, mutate=own_nojson)
+check("own failure without a run JSON (counts as area 0, bpb worst)" in t and "no-such-tag 3, which is no run of the design" in t
+      and "NOTFINAL" not in line_of(t, "7% 190m tpp 0.745") and "INCOMPLETE" not in line_of(t, "7% 190m tpp 0.745"),
+      "T3: an own failure without a run JSON counts (area 0); an unknown entry is a warning")
+r190 = [l for l in t.splitlines() if l.strip().startswith("4-7") or l.strip().startswith("7% 190m tpp 0.745")]
+check(any("/   0.0" not in l for l in r190), "T3: own_nojson read-out completes (cell rows printed)")
 t = build("reopen", sizeeff, mutate=reopen)
 check("NOTFINAL" in line_of(t, "7% 93m tpp 0.745") and "none: no C decision yet" in line_of(t, "7% 93m tpp 0.745")
       and "PROVISIONAL" in t, "T2 REOPEN: the withdrawn C leaves the cell not final")

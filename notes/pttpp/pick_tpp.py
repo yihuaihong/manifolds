@@ -14,6 +14,8 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
 Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T3 (second audit): a run listed in OWN_FAILURES.txt ('<tag> <seed>') counts as finished (the read-out scores it
+over all eval slots); a finished run JSON whose check file is still missing after 30 min is logged ("CHECK MISSING").
 Amendment T2: the state of an arm is the decision log folded in order (make_jobs_pttpp.effective: REOPEN withdraws a C);
 before any submission the cost guard: the planned GPU-h (make_jobs_pttpp.planned_hours) must stay within COST_MAX
 (B200 180 h, L40S + A100 300 h), else nothing is submitted ("COST GUARD" in the log; the coordinator decides).
@@ -54,7 +56,20 @@ def log(gid, msg):
     print(line, flush=True)
 
 
-def finished(G, gid, F):
+def own_failures():
+    f = R / "OWN_FAILURES.txt"
+    out = set()
+    if f.exists():
+        for line in f.read_text().splitlines():
+            if line.strip() and not line.startswith("#"):
+                t, s_ = line.split()
+                out.add((t, int(s_)))
+    return out
+
+
+def finished(G, gid, F, own=None):
+    if (F["tag"], F["seed"]) in (own_failures() if own is None else own):   # T3: an own failure counts (scored by the read-out)
+        return True
     if F["setting"] == "2":
         t = R / "out2" / F["name"]
         f = list((t / F["tag"]).glob("run_*.json"))
@@ -78,8 +93,25 @@ def state(G, gid):
     dec.update({(a, "STOP"): {} for a in G.ARMS if eff[a]["STOP"]})
     open_arms = [a for a in G.ARMS if (a, "C") not in dec and (a, "STOP") not in dec]
     runs = G.runs_of(gid)
+    own = own_failures()
     ready = [a for a in open_arms
-             if all(finished(G, gid, G.facts(gid, a, lr, s, st)) for st, aa, lr, s in runs if aa == a and st in ("A", "X"))]
+             if all(finished(G, gid, G.facts(gid, a, lr, s, st), own) for st, aa, lr, s in runs if aa == a and st in ("A", "X"))]
+    if G.GROUPS[gid]["setting"] == "7":   # T3: a run JSON at its last step without its job's check file for 30 min: say so
+        for st, a, lr, s in runs:
+            F = G.facts(gid, a, lr, s, st)
+            tgt = "none" if a == "none" else "helix3"
+            j = R / "out" / F["tag"] / f"run_whole_{tgt}_seed{s}_{F['tag']}.json"
+            ck = R / "out" / F["tag"] / f"check_s{s}.json"
+            mark = R / "locks" / f"checkmissing_{F['name']}"
+            if j.exists() and not ck.exists() and (F["tag"], s) not in own and not mark.exists() and time.time() - j.stat().st_mtime > 1800:
+                try:
+                    rj = json.loads(j.read_text())
+                    if rj["curve"][-1]["step"] >= rj["steps"] - 1:
+                        mark.parent.mkdir(exist_ok=True); mark.write_text("")
+                        log(gid, f"CHECK MISSING: {F['name']} finished training > 30 min ago without check_s{s}.json (CHECK7 crashed?): "
+                                 "the arm waits; the coordinator checks the job log")
+                except Exception:
+                    pass
     unsub = [G.facts(gid, a, lr, s, st)["name"] for st, a, lr, s in runs if not (R / f"SUBMITTED_{G.facts(gid, a, lr, s, st)['name']}").exists()]
     return dec, ready, unsub
 
