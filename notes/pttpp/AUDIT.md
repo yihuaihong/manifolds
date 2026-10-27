@@ -319,3 +319,8 @@ byte (t2/render_same.py); selftest 82/82 (new: both primaries printed and NOT RE
 on a designed flip with the verdict text unchanged, L40S-only of the other sign -> unstable, NONE AT FLOOR vs FLOOR, REOPEN ->
 not final, REOPEN + C -> final); plumbing 29/29 (new P9: REOPEN + X -> X submitted -> still open -> STOP, or tie -> new C and its
 confirm jobs; P10: cost guard); the other read-outs unchanged. A fresh minimal audit follows.
+T2 deployed 2026-10-26 ~20:01: read-out snapshot runs/pttpp/readout = git archive d7a2b04 (pttpp_summary.py 69c9e6171fb1), pick_tpp.py
+1ce0af7293e8, maybe_select.sh 6732ce2772f6 (T1), make_jobs_pttpp.py 218991699dee; FROZEN.txt rewritten. decisions/tpp7-93m-t0.745.json:
+seq 2 REOPEN none, seq 3 X none@3.84e-2 (amend T2); the X jobs 21042897-21042900 passed --test-only and were submitted by the
+hook (planned GPU-h then B200 141.9, L40S + A100 249.2). The hook was run by hand once for every group (catch-up). Regression
+of the other read-outs: identical (regress_t2.out). A fresh minimal audit of T1 + T2 runs (read-only).

@@ -1,0 +1,82 @@
+{
+ "group": "tpp7-93m-t0.745",
+ "log": [
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "1.92e-2",
+    "open": null,
+    "grid": [
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "mean": {
+     "9.6e-3": 3.441936295269628,
+     "1.92e-2": 3.8130914247580914
+    },
+    "bpb": {
+     "9.6e-3": 1.444907662895861,
+     "1.92e-2": 1.3846527225003906
+    },
+    "near": [
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "reasons": null
+   },
+   "seq": 0,
+   "time": "2026-10-26T18:45:17",
+   "job": "21032464"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "2.4e-3",
+   "basis": {
+    "status": "ok",
+    "best": "2.4e-3",
+    "open": null,
+    "grid": [
+     "2.4e-3",
+     "4.8e-3"
+    ],
+    "mean": {
+     "2.4e-3": 13.718084623084623,
+     "4.8e-3": 11.877764944431611
+    },
+    "bpb": {
+     "2.4e-3": 1.5047169280076789,
+     "4.8e-3": 1.512460139438866
+    },
+    "near": [
+     "2.4e-3",
+     "4.8e-3"
+    ],
+    "reasons": null
+   },
+   "seq": 1,
+   "time": "2026-10-26T18:54:28",
+   "job": "21032568"
+  },
+  {
+   "seq": 2,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T2",
+   "time": "2026-10-26T20:01:43",
+   "why": "Amendment T2 item 3: both none lrs at the floor (3.44 / 3.81), the edge pick 1.92e-2 came from the bpb tie-break; one step up first"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "X",
+   "lr": "3.84e-2",
+   "amend": "T2",
+   "time": "2026-10-26T20:01:43",
+   "why": "Amendment T2 item 3: the pre-registered extension above the edge, seeds 0-3"
+  }
+ ]
+}
