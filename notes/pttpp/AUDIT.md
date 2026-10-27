@@ -276,3 +276,46 @@ call maybe_select.sh by path, so they use the new files.
   ~0.14). The L40S-only slope is always printed; option: write a size effect only when both slopes agree in sign.
 - (#8 / #9) At a fixed tpp the steps also grow with size (814-42,912; warmup 8-429 steps), and the tpp by total parameters
   rises from 0.335 (93M) to 0.656 (1.07B) on the 0.745 line: printed per cell, not corrected.
+
+## Amendment T2 (written 2026-10-26T20:00:08-04:00; the coordinator's decisions of 2026-10-26 evening, before any read-out of a pttpp cell)
+Nothing of any pttpp cell has been read except the automatic selection of tpp7-93m-t0.745 (its stage-A areas in
+decisions/, already noted in T1). The read-out has not been run on any pttpp result.
+1. **lr selection (no gate).** The verdicts are unchanged. Every Q1 / Q2 verdict line now ends with the label
+   " [lr-sensitive: ...]" when one tie-band swap (one arm of one cell at another lr within 2 area points of its pick; the
+   swap is on seeds 0-3, the only seeds the alternatives have) gives a seeds-0-3 slope of the other sign than the
+   seeds-0-3 slope at the picks; the swaps (sign and CI) are printed in "## sensitivity" (the lowest-median-t50 lr too,
+   which does not set the label). The selftest showed why this matters: a fixed 2% shift of none's t50 in single cells
+   (no size effect by design, no seed noise in it) gave a Delta area slope whose seed-bootstrap CI excluded 0 on one line,
+   since the CI covers seed noise only; that test now uses an exact no-effect design.
+2. **7% primary metric: the user's choice, pending.** Options: primary = area (the coordinator's proposal: Delta area
+   primary, ln R_0.5 secondary with the same sign; reason: the window opens at 0.05 S, so along a tpp line T moves with N
+   and R's denominator is tied to the opening) or primary = log R_0.5 (the design of 2026-10-26). The read-out prints every
+   7% verdict (Q1 per line and combined, Q2) under both, labelled "[primary = area]" / "[primary = log R_0.5]". The
+   choice is registered in runs/pttpp/PRIMARY.txt ('area' or 'lnR50') with a line here, BEFORE anyone reads a verdict; until
+   then the read-out prints "NOT REGISTERED YET" and its verdicts are not read (the selection steps read no verdict).
+   2% is unchanged (Delta area primary).
+3. **93M@0.745 none: a pre-registered extension; and a floor rule for every cell.**
+   - decisions/tpp7-93m-t0.745.json gets two entries (stage names of the folded log, make_jobs_pttpp.effective): REOPEN of
+     none's C at 1.92e-2 (amend T2) and X = none@3.84e-2 (one ladder step above the edge; seeds 0-3, ~1 L40S-h). When the X
+     runs finish, the unchanged selection step applies F87 rule 1 to none {9.6e-3, 1.92e-2, 3.84e-2}: closed -> C at the
+     pick (if the pick is 1.92e-2 its confirm seeds 4-7 already exist); 3.84e-2 open again -> STOP (the user).
+   - "Confirm first suspended": Slurm refuses scontrol hold / uhold for this user ("Unspecified error"), and the batch HOLD
+     file would stop every job, so none@1.92e-2 seeds 4-7 (21035121-24) run as submitted (~1 L40S-h); they count only if the
+     new selection picks 1.92e-2, else they are descriptive.
+   - Floor rule (every cell): none's area < 5 (chance 0 + 5) at every lr it ran (the pick's 8-seed mean and every other
+     lr's selection-seed mean; reused cells: their 3e8 lrs with seeds 0-3) -> "NONE AT FLOOR": out of every slope, reported
+     in "## none-at-floor cells". If the prior is also below 5 the cell is FLOOR (uninformative), as S3.
+4. **A size effect also needs the L40S-only slope of the same sign.** A 7% all-size Q1 verdict that would be SHOWN becomes
+   DIRECTION UNSTABLE when the L40S-only 8-seed slope of the same primary metric has the other sign (point estimate) or
+   cannot be computed.
+5. The B200 bridge stays as designed.
+6. **Cost guard.** Before any submission the selection step computes the planned GPU-h (every decided run + C for every arm
+   still without one + the bridge; make_jobs_pttpp.planned_hours) and submits nothing while it exceeds B200 180 h or
+   L40S + A100 300 h ("COST GUARD" in select_<group>.log; the coordinator decides). Now: B200 141.9 h, L40S + A100 243.6 h
+   (+1.0 h for item 3).
+Code (decisions folded with REOPEN, runs_of keeps every submitted C once, planned_hours / COST_MAX; pick_tpp.py's state from
+the fold + the cost guard; the read-out's T2 items 1-4): the amended generator renders all 168 submitted job files byte for
+byte (t2/render_same.py); selftest 82/82 (new: both primaries printed and NOT REGISTERED / REGISTERED, the lr-sensitive label
+on a designed flip with the verdict text unchanged, L40S-only of the other sign -> unstable, NONE AT FLOOR vs FLOOR, REOPEN ->
+not final, REOPEN + C -> final); plumbing 29/29 (new P9: REOPEN + X -> X submitted -> still open -> STOP, or tie -> new C and its
+confirm jobs; P10: cost guard); the other read-outs unchanged. A fresh minimal audit follows.

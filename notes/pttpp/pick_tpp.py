@@ -14,6 +14,9 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
 Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T2: the state of an arm is the decision log folded in order (make_jobs_pttpp.effective: REOPEN withdraws a C);
+before any submission the cost guard: the planned GPU-h (make_jobs_pttpp.planned_hours) must stay within COST_MAX
+(B200 180 h, L40S + A100 300 h), else nothing is submitted ("COST GUARD" in the log; the coordinator decides).
 Amendment T1 (build audit, before any pttpp result was read): a 7% run counts as finished only once its job wrote
 check_s<seed>.json (as the 2% check.json; a run JSON without it read as 'check missing' -> WITHHELD -> a permanent STOP);
 the read-out is retried 3 times 30 s apart (a run JSON being rewritten by a running job); TMPDIR / XDG_RUNTIME_DIR of
@@ -70,7 +73,9 @@ def finished(G, gid, F):
 
 
 def state(G, gid):
-    dec = {(e["arm"], e["stage"]): e for e in G.decisions(gid)["log"]}
+    eff = G.effective(gid)
+    dec = {(a, k): {"lr": eff[a][k]} for a in G.ARMS for k in ("X", "C") if eff[a][k]}
+    dec.update({(a, "STOP"): {} for a in G.ARMS if eff[a]["STOP"]})
     open_arms = [a for a in G.ARMS if (a, "C") not in dec and (a, "STOP") not in dec]
     runs = G.runs_of(gid)
     ready = [a for a in open_arms
@@ -156,6 +161,13 @@ def decide(G, gid):
     if not unsub:
         log(gid, "nothing to submit")
         return
+    ph = G.planned_hours()
+    over = {k: round(v, 1) for k, v in ph.items() if v > G.COST_MAX[k]}
+    if over:
+        log(gid, f"COST GUARD: planned GPU-h {({k: round(v, 1) for k, v in ph.items()})} exceed {G.COST_MAX} in {over}: "
+                 f"{len(unsub)} jobs NOT submitted (the coordinator decides; rerun maybe_select.sh after approval)")
+        return
+    log(gid, f"planned GPU-h {({k: round(v, 1) for k, v in ph.items()})} within {G.COST_MAX}")
     q = subprocess.run(["myquota"], capture_output=True, text=True)
     m = re.search(r"/scratch\s.*?\(([\d.]+)%\)", q.stdout.replace("\x1b", " "))
     if m and float(m.group(1)) >= DISK_MAX:

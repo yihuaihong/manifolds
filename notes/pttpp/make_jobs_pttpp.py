@@ -250,16 +250,42 @@ def g2():
 
 
 def decisions(gid):
-    """pick_tpp.py's decisions for a group: {"log": [{"seq", "arm", "stage" X | C | STOP, "lr", ...}]}"""
+    """pick_tpp.py's decisions for a group: {"log": [{"seq", "arm", "stage" X | C | STOP | REOPEN, "lr", ...}]}, append-only.
+    Amendment T2: REOPEN (an amendment entry: "amend" names it) withdraws the arm's current C; a later C may follow. At most
+    one X per arm, at most one C per arm between REOPENs, nothing after a STOP; the seqs are 0, 1, 2, ... in order."""
     f = R / "decisions" / f"{gid}.json"
     d = json.loads(f.read_text()) if f.exists() else {"log": []}
-    seen = set()
+    assert [e["seq"] for e in d["log"]] == list(range(len(d["log"]))), (gid, "decision seqs")
+    st = {a: {"X": None, "C": None, "STOP": False} for a in ARMS}
     for e in d["log"]:
-        assert e["stage"] in ("X", "C", "STOP") and e["arm"] in ARMS and (e["arm"], e["stage"]) not in seen, e
-        seen.add((e["arm"], e["stage"]))
-        if e["stage"] != "STOP":
-            assert e["lr"] in LADDER, e
+        a, k = e["arm"], e["stage"]
+        assert k in ("X", "C", "STOP", "REOPEN") and a in ARMS and not st[a]["STOP"], e
+        if k == "X":
+            assert st[a]["X"] is None and st[a]["C"] is None and e["lr"] in LADDER, e
+            st[a]["X"] = e["lr"]
+        elif k == "C":
+            assert st[a]["C"] is None and e["lr"] in LADDER, e
+            st[a]["C"] = e["lr"]
+        elif k == "REOPEN":
+            assert st[a]["C"] is not None and e.get("amend"), e
+            st[a]["C"] = None
+        else:
+            st[a]["STOP"] = True
     return d
+
+
+def effective(gid):
+    """{arm: {"X": lr or None, "C": lr or None (the current one), "STOP": bool}} folded over the decision log"""
+    st = {a: {"X": None, "C": None, "STOP": False} for a in ARMS}
+    for e in decisions(gid)["log"]:
+        a, k = e["arm"], e["stage"]
+        if k in ("X", "C"):
+            st[a][k] = e["lr"]
+        elif k == "REOPEN":
+            st[a]["C"] = None
+        else:
+            st[a]["STOP"] = True
+    return st
 
 
 def runs_of(gid):
@@ -271,8 +297,8 @@ def runs_of(gid):
             assert e["lr"] not in GRID[gid][e["arm"]] and e["lr"] in (step_out(GRID[gid][e["arm"]][1], "upper"),
                                                                        step_out(GRID[gid][e["arm"]][0], "lower")), e
             out += [("X", e["arm"], e["lr"], s) for s in c["sel"]]
-        elif e["stage"] == "C":
-            out += [("C", e["arm"], e["lr"], s) for s in c["conf"]]
+        elif e["stage"] == "C":   # every C ever decided (a withdrawn C's jobs were submitted; Amendment T2): once each
+            out += [r_ for r_ in (("C", e["arm"], e["lr"], s) for s in c["conf"]) if r_ not in out]
     return out
 
 
@@ -701,6 +727,27 @@ def all_groups():
 
 def opt(name, default=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+
+
+def planned_hours():
+    """GPU-h by bucket ('b200', 'other' = L40S + A100) of every run decided or still to come under the design: stage A,
+    the decided X runs, every decided C, and C for each arm without a C yet (Amendment T2 cost guard)"""
+    tot = {"b200": 0.0, "other": 0.0}
+    for gid in GROUPS:
+        st = effective(gid)
+        rs = runs_of(gid)
+        for a in ARMS:
+            if st[a]["C"] is None and not st[a]["STOP"]:
+                rs = rs + [("C", a, GRID[gid][a][0], s) for s in GROUPS[gid]["conf"]]
+        for stg, a, lr, s in rs:
+            F = facts(gid, a, lr, s, stg)
+            tot["b200" if F["hw"] == "b200" else "other"] += F["est_h"]
+    for stg, a, lr, s in bridge_runs():
+        tot["b200"] += facts(BRIDGE, a, lr, s, stg)["est_h"]
+    return tot
+
+
+COST_MAX = {"b200": 180.0, "other": 300.0}   # Amendment T2 (coordinator 2026-10-26): stop before exceeding
 
 
 def plan():

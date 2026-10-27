@@ -173,7 +173,7 @@ def build(name, cellfun, bridge_none_shift=0.0, mutate=None, altfun=None):
 
 
 def line_of(txt, start):
-    m = [l for l in txt.splitlines() if l.strip().startswith(start)]
+    m = [l.strip() for l in txt.splitlines() if l.strip().startswith(start)]
     return m[0] if m else ""
 
 
@@ -226,8 +226,12 @@ check(abs(S.fit_slope(x, 3 * x + 1) - 3) < 1e-12 and abs(S.fit_slope(np.r_[x, x]
 sizeeff = base(lambda st, size, tpp, s: 0.15 * math.exp(0.25 * lnN(size)))   # R_0.5 = (0.15 / 0.04) N^0.25: grows with N
 t = build("size_effect", sizeeff)
 for ln in ("7% tpp 0.745 (all sizes)", "7% tpp 0.318 (all sizes)"):
-    check("SHOWN: the gain is larger at larger sizes" in line_of(t, f"-> {ln}"), f"size_effect: {ln} -> shown, larger")
-check("SHOWN on both lines" in line_of(t, "=> Q1 7%"), "size_effect: Q1 7% shown on both lines")
+    for pv in ("[primary = area]", "[primary = log R_0.5]"):
+        check(line_of(t, f"-> {ln} {pv}").startswith(f"-> {ln} {pv}: SHOWN: the gain is larger at larger sizes")
+              and "lr-sensitive" not in line_of(t, f"-> {ln} {pv}"), f"size_effect: {ln} {pv} -> shown, larger, no lr label")
+for pv in ("[primary = area]", "[primary = log R_0.5]"):
+    check("SHOWN on both lines" in line_of(t, f"=> {pv} Q1 7%"), f"size_effect: Q1 7% {pv} shown on both lines")
+check("NOT REGISTERED YET" in t and "REGISTERED]" not in t, "T2: no PRIMARY.txt -> both verdicts printed, marked not registered")
 check("bridge PASS" in t, "size_effect: bridge PASS (B200 curves = L40S curves)")
 m = re.search(r"7% tpp 0.745, all sizes \[PRIMARY\]\n.*\n.*\n    ln R_0.5\s+([+-][\d.]+)", t)
 check(m is not None and abs(float(m.group(1)) - 0.25) < 0.05, f"size_effect: ln R_0.5 slope ~ the designed 0.25 ({m.group(1) if m else None})")
@@ -249,10 +253,12 @@ check(t.count("facts (descriptive, T1)") >= 15 and "window opens at" in t and "t
 reg = t.split("## descriptive regression")[1].split("## sensitivity")[0]
 check("b (ln N)" in reg and "NOT IDENTIFIED" not in reg, "regression: identified on the full design (several N and T)")
 
-t = build("no_effect", base(lambda st, size, tpp, s: 0.15 * jitter("ne", size, tpp, sd=0.02)))
-check("NOT SHOWN" in line_of(t, "-> 7% tpp 0.745 (all sizes)") and "NOT SHOWN" in line_of(t, "-> 7% tpp 0.318 (all sizes)"),
+t = build("no_effect", base(lambda st, size, tpp, s: 0.15))
+check(all("NOT SHOWN" in line_of(t, f"-> 7% tpp {ln} (all sizes) {pv}") for ln in ("0.745", "0.318")
+          for pv in ("[primary = area]", "[primary = log R_0.5]")),
       "no_effect: both 7% lines -> not shown (CI includes 0)")
-check("Q1 7%: NOT SHOWN" in line_of(t, "=> Q1 7%"), "no_effect: Q1 7% not shown")
+check(all("Q1 7%: NOT SHOWN" in line_of(t, f"=> {pv} Q1 7%") for pv in ("[primary = area]", "[primary = log R_0.5]")),
+      "no_effect: Q1 7% not shown under both primaries")
 
 
 def flip(st, size, tpp, arm, s):   # 2%: seeds 0-3 gain grows steeply with N, seeds 4-7 declines mildly (Delta area)
@@ -277,8 +283,9 @@ def metflip(st, size, tpp, arm, s):   # 7%: R_0.5 grows with N, Delta area falls
 
 
 t = build("metric_flip", metflip)
-l7 = line_of(t, "-> 7% tpp 0.745 (all sizes)")
-check("DIRECTION UNSTABLE" in l7 and "other metric" in l7, f"metric_flip: R_0.5 shown, Delta area opposite -> unstable ({l7.strip()[:120]})")
+for pv in ("[primary = area]", "[primary = log R_0.5]"):
+    l7 = line_of(t, f"-> 7% tpp 0.745 (all sizes) {pv}")
+    check("DIRECTION UNSTABLE" in l7 and "other metric" in l7, f"metric_flip {pv}: main CI excludes 0, the other metric opposite -> unstable ({l7.strip()[:110]})")
 
 
 def floorcens(st, size, tpp, arm, s):
@@ -305,8 +312,9 @@ def tokeff(st, size, tpp, arm, s):   # R_0.5 larger with fewer tokens at the sam
 
 
 t = build("token_effect", tokeff)
-check("SHOWN: the gain is larger with fewer tokens" in line_of(t, "-> Q2 7% pooled"), "token_effect: Q2 pooled -> shown, fewer tokens")
-NOEFF = base(lambda st, size, tpp, s: 0.15 * jitter("ne", size, tpp, sd=0.02))
+for pv in ("[primary = area]", "[primary = log R_0.5]"):
+    check("SHOWN: the gain is larger with fewer tokens" in line_of(t, f"-> Q2 7% pooled {pv}"), f"token_effect: Q2 pooled {pv} -> shown, fewer tokens")
+NOEFF = base(lambda st, size, tpp, s: 0.15)
 
 
 def slowalt(st, size, tpp, arm, s):   # none's tied twin (within 2 area points) at 93M and 294M on the 0.745 line is 12% slower
@@ -331,6 +339,76 @@ if m and len(sw) == 2:
     lo_, hi_ = sorted(float(v) for _, v in sw)
     check(nflip == want and lo_ < b0 and ((nflip == 0) == ("the sign depends on the lr choice" not in qr.split("\n")[0])),
           f"lr_flip: a slower none twin lowers the slope ({b0:+.3f} -> {sw}); sign changes {nflip} counted right and flagged iff > 0")
+    lv = line_of(t, "-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]")
+    check(("[lr-sensitive: seeds 0-3 slope" in lv) == (nflip > 0) and "93m@0.745 none@" in lv and lv.startswith(
+          "-> 7% tpp 0.745 (all sizes) [primary = log R_0.5]: NOT SHOWN"), f"T2 lr_flip: the verdict keeps its text and gets the lr-sensitive label ({lv[:160]})")
+def l40flip(st, size, tpp, arm, s):   # R_0.5 falls slightly over 93M-505M, 1.07B far above: all sizes up, L40S-only down
+    if arm == "win-ctx":
+        return FP * jitter(st, size, tpp, arm, s, sd=0.01), 1.0
+    f = 0.45 if size == "1b" else 0.15 * math.exp(-0.06 * lnN(size))
+    return f * jitter(st, size, tpp, arm, s, sd=0.01), 1.0
+
+
+t = build("l40s_flip", l40flip)
+for pv in ("[primary = area]", "[primary = log R_0.5]"):
+    la = line_of(t, f"-> 7% tpp 0.745 (all sizes) {pv}")
+    check("DIRECTION UNSTABLE" in la and "the L40S-only slope has the other sign" in la,
+          f"T2 l40s_flip {pv}: all sizes would be SHOWN, the L40S-only slope opposite -> unstable ({la[:150]})")
+    ll = line_of(t, f"-> 7% tpp 0.745 (L40S only (1.07B left out)) {pv}")
+    check("SHOWN: the gain is larger" not in ll, f"T2 l40s_flip {pv}: the L40S-only verdict is not 'larger' ({ll[:120]})")
+
+
+def nonefloor(st, size, tpp, arm, s):   # 93M@0.745: none at the floor at both lrs (area ~3), the prior learns
+    if st == "7" and size == "93m" and tpp == "0.745" and arm == "none":
+        return 0.5, 0.03
+    if st == "7" and size == "93m" and tpp == "0.318":
+        return 0.5, 0.03                   # both arms at the floor: FLOOR (uninformative), not NONE AT FLOOR
+    return sizeeff(st, size, tpp, arm, s)
+
+
+t = build("none_floor", nonefloor)
+r93 = "\n".join(l for l in t.splitlines() if "N_nonemb 42.0M; tpp 0.7449" in l)
+r93b = "\n".join(l for l in t.splitlines() if "N_nonemb 42.0M; tpp 0.3178" in l)
+nfs = t.split("## none-at-floor cells")[1].split("\n## ")[0]
+check("NONE AT FLOOR" in r93 and "** FLOOR" not in r93 and "** FLOOR" in r93b and "NONE AT FLOOR" not in r93b,
+      "T2 none_floor: 93M@0.745 NONE AT FLOOR; 93M@0.318 (both arms) FLOOR")
+check("7% 93m@0.745: none" in nfs and "93m@0.318" not in nfs, "T2 none_floor: reported in the none-at-floor section")
+check(all("93m@0.745" not in x for x in re.findall(r"    (?:Delta area|ln R_0.5).*", t.split("## Q1")[1].split("## descriptive")[0])),
+      "T2 none_floor: 93M@0.745 is in no slope")
+
+
+def reg_area(root):
+    (root / "pttpp" / "PRIMARY.txt").write_text("area\n")
+
+
+t = build("registered", sizeeff, mutate=reg_area)
+check("REGISTERED = primary = area" in t and "[primary = area, REGISTERED]: SHOWN" in t and "[primary = log R_0.5, REGISTERED]" not in t,
+      "T2: PRIMARY.txt = area -> marked as the registered primary")
+
+
+def reopen(root):   # REOPEN withdraws none's C of tpp7-93m-t0.745; no new C yet -> the cell is not final
+    f = root / "pttpp" / "decisions" / "tpp7-93m-t0.745.json"
+    d = json.loads(f.read_text())
+    d["log"].append({"seq": len(d["log"]), "arm": "none", "stage": "REOPEN", "amend": "T2"})
+    f.write_text(json.dumps(d))
+
+
+t = build("reopen", sizeeff, mutate=reopen)
+check("NOTFINAL" in line_of(t, "7% 93m tpp 0.745") and "none: no C decision yet" in line_of(t, "7% 93m tpp 0.745")
+      and "PROVISIONAL" in t, "T2 REOPEN: the withdrawn C leaves the cell not final")
+
+
+def reopen_c(root):
+    reopen(root)
+    f = root / "pttpp" / "decisions" / "tpp7-93m-t0.745.json"
+    d = json.loads(f.read_text())
+    d["log"].append({"seq": len(d["log"]), "arm": "none", "stage": "C", "lr": G.GRID["tpp7-93m-t0.745"]["none"][0]})
+    f.write_text(json.dumps(d))
+
+
+t = build("reopen_c", sizeeff, mutate=reopen_c)
+check("NOTFINAL" not in line_of(t, "7% 93m tpp 0.745") and line_of(t, "=> [primary = log R_0.5] Q1 7%") ==
+      line_of(build("size_effect", sizeeff), "=> [primary = log R_0.5] Q1 7%"), "T2 REOPEN then C at the same lr: final again, same verdict")
 t = build("bridge_fail", sizeeff, bridge_none_shift=1.5)
 check("bridge FAIL" in t and "[PRIMARY]" in line_of(t, "7% tpp 0.745, L40S only"), "bridge_fail: FAIL -> the L40S-only slope is the primary")
 check("[descriptive]" in line_of(t, "7% tpp 0.745, all sizes"), "bridge_fail: the all-size slope becomes descriptive")
@@ -348,7 +426,7 @@ def partial(root):   # a run JSON being rewritten by its running job (not atomic
     d = root / "pttpp/out/tpp7-93m-t0.318-lr4.8e-3-win-ctx"
     (d / "run_whole_helix3_seed9_tpp7-93m-t0.318-lr4.8e-3-win-ctx.json").write_text('{"args": {"tag": "_tpp7-93m')
 t2 = build("partial_json", sizeeff, mutate=partial)
-check("UNREADABLE (being written; treated as unfinished)" in t2 and line_of(t2, "=> Q1 7%") == line_of(build("size_effect", sizeeff), "=> Q1 7%"),
+check("UNREADABLE (being written; treated as unfinished)" in t2 and line_of(t2, "=> [primary = log R_0.5] Q1 7%") == line_of(build("size_effect", sizeeff), "=> [primary = log R_0.5] Q1 7%"),
       "partial JSON: noted as unreadable, the read-out completes with the same Q1 verdict")
 check("WITHHELD" in line_of(t, "7% 294m tpp 0.745") and "294m@0.745" not in t.split("7% tpp 0.745, all sizes")[1].split("->")[0]
       and "PROVISIONAL" in t, "integrity: a bad step-0 lm withholds the cell, it leaves the slopes, the read-out says PROVISIONAL")

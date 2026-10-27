@@ -296,9 +296,17 @@ def budget(D, key):
 
 # ---------------------------------------------------------------- decisions and selection
 def decisions(D, gid):
+    """{(arm, stage): entry} of the decision log folded in seq order: X / C / STOP set, REOPEN (Amendment T2) withdraws the
+    arm's current C (a later C replaces it)"""
     f = D.Rd / "decisions" / f"{gid}.json"
-    log = json.loads(f.read_text())["log"] if f.exists() else []
-    return {(e["arm"], e["stage"]): e for e in log}
+    log = sorted(json.loads(f.read_text())["log"], key=lambda e: e["seq"]) if f.exists() else []
+    out = {}
+    for e in log:
+        if e["stage"] == "REOPEN":
+            out.pop((e["arm"], "C"), None)
+        else:
+            out[(e["arm"], e["stage"])] = e
+    return out
 
 
 def select_arm(D, gid, arm):
@@ -410,8 +418,33 @@ def build_cells(D):
         cell["open_M"] = G.window_events(cell["S"])[0][0][0] * G.TOK_STEP / 1e6
         cell["E"] = G.EVAL_3E8 if cell["S"] == G.STEPS_3E8 else G.eval_every_of(cell["S"])
         cell["floor"] = (cell["an"].mean() < FLOOR_AREA and cell["ap"].mean() < FLOOR_AREA) or R.censored_median(cell["tp0.5"])
+        # Amendment T2: none at the floor at every lr it ran (the pick's 8-seed mean and every other lr's selection-seed mean)
+        cell["none_lrs"] = none_lr_means(D, cell)
+        cell["none_floor"] = (not cell["floor"]) and all(v < FLOOR_AREA for v in cell["none_lrs"].values())
         cell["grad"] = grad_stats(D, cell)
     return cells
+
+
+_ALTS = {}
+
+
+def none_lr_means(D, cell):
+    """{lr: mean area} of none at every lr of the cell: the pick over its 8 seeds, the others over their selection seeds
+    (new cells: the group's stage A / X runs; reused cells: the 3e8 lrs of F87 ptlr / ptsize999 / pt2s505, seeds 0-3)"""
+    out = {cell["lr"]["none"]: float(cell["an"].mean())}
+    if cell["gid"]:
+        sel = D.G.GROUPS[cell["gid"]]["sel"]
+        for lr in {k[2] for k in D.runs if k[0] == cell["gid"] and k[1] == "none"} - {cell["lr"]["none"]}:
+            ks = [(cell["gid"], "none", lr, s) for s in sel]
+            if all(k in D.runs for k in ks):
+                out[lr] = float(np.mean([area_of(D, k) for k in ks]))
+    else:
+        if "a" not in _ALTS:
+            _ALTS["a"] = alt_runs(D)
+        for (st, sz, a, lr), rs in _ALTS["a"].items():
+            if (st, sz, a) == (cell["setting"], cell["size"], "none") and lr != cell["lr"]["none"] and all(s in rs for s in MAIN):
+                out[lr] = float(np.mean([R.area(rs[s]) for s in MAIN]))
+    return out
 
 
 def grad_stats(D, cell):
@@ -590,7 +623,10 @@ def print_cells(cells, out, G=None):
               f"{'>=' if R.censored_median(c['tp0.5']) else ''}{tp:.1f}M tokens = {tp * 1e6 / c['T'] * probs:,.0f} lines"
               + (f"; {c['sel_note']}" if c["sel_note"] else "")
               + (f"  ** FLOOR: uninformative (both areas < {FLOOR_AREA:g} or the prior's t50 median censored), out of every slope"
-                 if c["floor"] else "") + f"  [{c['src']}]", file=out)
+                 if c["floor"] else "")
+              + (f"  ** NONE AT FLOOR (T2: none < {FLOOR_AREA:g} at every lr it ran: "
+                 + ", ".join(f"{lr} {v:.1f}" for lr, v in sorted(c["none_lrs"].items(), key=lambda x: float(x[0])))
+                 + "): out of every slope, reported separately" if c["none_floor"] else "") + f"  [{c['src']}]", file=out)
         print(f"  {'':24s}       facts (descriptive, T1): {c['S']} steps, warmup {max(1, c['S'] // 100)} steps, eval every {c['E']} "
               f"steps = {c['E'] * G.TOK_STEP / 1e6:.2f}M tokens; tpp by total parameters {c['T'] / c['n_params']:.3f}; window opens at "
               f"{c['open_M']:.2f}M tokens; prior t50 / opening {tp / c['open_M']:.2f}, t50 - opening {tp - c['open_M']:+.2f}M; "
@@ -643,6 +679,47 @@ def print_slopes(title, res, out):
 def decide(res, primary, dirs):
     other = "area" if primary == "lnR50" else "lnR50"
     return verdict(res[(primary, "0-7")], res[(primary, "4-7")], res[(other, "0-7")], dirs)
+
+
+def swap_rows(use, m, xkey, g_, V, tie_only):
+    """seeds-0-3 slope of metric m over the cells `use` with one (cell, arm) at an alternative lr (V from variants());
+    tie_only: only alternatives within 2 area points of the pick (the tie band) -> (base slope, [(label, arm, lr, why, slope)])"""
+    base = slope(use, m, MAIN, xkey, g_)
+    rows = []
+    keys = [(c["setting"], label(c)) for c in use]
+    for key, arm, lr, why, v in V:
+        if key not in keys or (tie_only and "within 2 area points" not in why):
+            continue
+        if m != "area" and r_status(v, MAIN) != "point":
+            rows.append((key[1], arm, lr, why, None))
+            continue
+        rows.append((key[1], arm, lr, why, slope([v if (c["setting"], label(c)) == key else c for c in use], m, MAIN, xkey, g_)))
+    return base, rows
+
+
+def lr_label(use, m, xkey, g_, V):
+    """' [lr-sensitive: ...]' when a tie-band swap gives a seeds-0-3 slope of the other sign than at the picks (Amendment T2:
+    a label only, the verdict is unchanged), else ''"""
+    base, rows = swap_rows(use, m, xkey, g_, V, True)
+    if base is None or base.get("bad"):
+        return ""
+    fl = [f"{lab} {arm}@{lr} {sl['b']:+.3f} [{sl['lo']:+.3f}, {sl['hi']:+.3f}]" for lab, arm, lr, _, sl in rows
+          if sl and not sl.get("bad") and sgn(sl["b"]) != sgn(base["b"])]
+    return f" [lr-sensitive: seeds 0-3 slope {base['b']:+.3f} at the picks, other sign with {'; '.join(fl)}]" if fl else ""
+
+
+def registered_primary(D):
+    """Amendment T2: the 7% primary metric is the user's choice, registered in runs/pttpp/PRIMARY.txt ('area' or
+    'lnR50') before any verdict is read; None while not registered"""
+    f = D.Rd / "PRIMARY.txt"
+    if not f.exists():
+        return None
+    v = f.read_text().split()[0]
+    assert v in ("area", "lnR50"), v
+    return v
+
+
+PRIM_NAME = {"area": "primary = area", "lnR50": "primary = log R_0.5"}
 
 
 Q1_DIRS = {1: "the gain is larger at larger sizes (same tpp)", -1: "the gain is smaller at larger sizes (same tpp)"}
@@ -718,56 +795,89 @@ def full(D, out):
     print_cells(cells, out, G)
     bv = bridge(D, out)
     print_grad(cells, out)
-    fin = [c for c in cells.values() if c["status"] == "final" and not c["floor"]]
+    fin = [c for c in cells.values() if c["status"] == "final" and not c["floor"] and not c["none_floor"]]
     notfin = [label(c) + f" ({c['setting']}%, {c['status']})" for c in cells.values() if c["status"] != "final"]
     prov = f"  PROVISIONAL: not final: {', '.join(notfin)}" if notfin else ""
-    print("\n## Q1 size effect at fixed tpp: slope vs ln N_nonemb per tpp line (primary metric: 7% ln R_0.5, 2% Delta area; "
-          "verdict = AUDIT.md rule V1-V4)" + ("\n" + prov if prov else ""), file=out)
+    nf = [c for c in cells.values() if c["status"] == "final" and c["none_floor"]]
+    print("\n## none-at-floor cells (Amendment T2: none < 5 at every lr it ran; out of every slope, reported here)", file=out)
+    for c in nf:
+        L = cell_line(c, ALL8)
+        print(f"  {c['setting']}% {label(c)}: none {L['an']:.1f} / prior {L['ap']:.1f}; Delta area {L['area'][0]:+.1f} "
+              f"[{L['area'][1]:+.1f}, {L['area'][2]:+.1f}]; R_0.5 {L['R0.5'][0]['text'].split(' ')[0]}; none lrs "
+              + ", ".join(f"{lr} {v:.1f}" for lr, v in sorted(c["none_lrs"].items(), key=lambda x: float(x[0]))), file=out)
+    if not nf:
+        print("  none", file=out)
+    V = variants(D, cells, fin, alt_runs(D))
+    reg = registered_primary(D)
+    print("\n## 7% primary metric (Amendment T2): " + (f"REGISTERED = {PRIM_NAME[reg]} (runs/pttpp/PRIMARY.txt)" if reg else
+          "NOT REGISTERED YET: the 7% verdicts are printed under both choices and are NOT to be read until the user's choice "
+          "is registered in runs/pttpp/PRIMARY.txt"), file=out)
+    print("\n## Q1 size effect at fixed tpp: slope vs ln N_nonemb per tpp line (7%: verdicts under primary = area and primary "
+          "= log R_0.5; 2%: Delta area; rules V1-V4 + T2: a SHOWN 7% all-size verdict also needs the L40S-only 8-seed slope "
+          "of the same sign; ' [lr-sensitive]' = a tie-band lr swap flips the seeds-0-3 slope, a label only)"
+          + ("\n" + prov if prov else ""), file=out)
     calls = {}
     for st, line in (("7", "0.745"), ("7", "0.318"), ("2", "0.745")):
         cs = sorted([c for c in fin if c["setting"] == st and c["tpp"] == line], key=lambda c: c["nne"])
-        prim = "lnR50" if st == "7" else "area"
-        variants = [("all sizes", cs)]
+        prims = ("area", "lnR50") if st == "7" else ("area",)
+        variants_ = [("all sizes", cs)]
         if st == "7":
-            variants.append(("L40S only (1.07B left out)", [c for c in cs if c["hw"] != "b200"]))
-        for vname, vc in variants:
-            res = unit_slopes(vc, "nne")
-            text, cat = decide(res, prim, Q1_DIRS)
+            variants_.append(("L40S only (1.07B left out)", [c for c in cs if c["hw"] != "b200"]))
+        res_v = {vname: unit_slopes(vc, "nne") for vname, vc in variants_}
+        for vname, vc in variants_:
+            res = res_v[vname]
             use = st == "2" or (vname.startswith("all") and bv == "pass") or (vname.startswith("L40S") and bv in ("fail", "withheld"))
             tag = ("PRIMARY" if use else "descriptive") + ("" if st == "2" or bv in ("pass", "fail", "withheld") else " (bridge incomplete)")
             print_slopes(f"{st}% tpp {line}, {vname} [{tag}]", res, out)
-            print(f"    -> {st}% tpp {line} ({vname}): {text}", file=out)
-            if use:
-                calls[(st, line)] = (cat, text, sgn(res[(prim, "0-7")]["b"]) if res[(prim, "0-7")] else 0)
-    c7 = [calls.get(("7", ln)) for ln in ("0.745", "0.318")]
-    if None in c7:
-        q1 = "Q1 7%: waiting for the bridge (no primary variant yet)"
-    else:
-        cats = [c[0] for c in c7]
-        if all(c == "shown" for c in cats) and c7[0][2] == c7[1][2]:
-            q1 = f"Q1 7%: SHOWN on both lines: {Q1_DIRS[c7[0][2]]}"
-        elif "unstable" in cats or (cats.count("shown") == 2 and c7[0][2] != c7[1][2]):
-            q1 = "Q1 7%: DIRECTION UNSTABLE (a line is unstable, or the two lines show opposite directions)"
-        elif cats.count("shown") == 1:
-            i = cats.index("shown")
-            q1 = f"Q1 7%: shown on the tpp {('0.745', '0.318')[i]} line only ({Q1_DIRS[c7[i][2]]}); the other line: {cats[1 - i]}"
+            for prim in prims:
+                text, cat = decide(res, prim, Q1_DIRS)
+                if st == "7" and vname.startswith("all") and cat == "shown":   # T2 (4): the L40S-only slope must agree in sign
+                    l4 = res_v["L40S only (1.07B left out)"][(prim, "0-7")]
+                    if l4 is None or l4.get("bad") or sgn(l4["b"]) != sgn(res[(prim, "0-7")]["b"]):
+                        text, cat = (f"DIRECTION UNSTABLE: {text[len('SHOWN: '):]}, but the L40S-only slope "
+                                     + ("cannot be computed" if l4 is None or l4.get("bad") else f"has the other sign ({l4['b']:+.3f})")
+                                     + " (T2)"), "unstable"
+                use_c = [c for c in vc if prim == "area" or r_status(c, ALL8) == "point"]
+                lab = lr_label(use_c, prim, "nne", None, V)
+                pn = f" [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}]" if st == "7" else ""
+                print(f"    -> {st}% tpp {line} ({vname}){pn}: {text}{lab}", file=out)
+                if use:
+                    calls[(st, line, prim)] = (cat, text, sgn(res[(prim, "0-7")]["b"]) if res[(prim, "0-7")] and not res[(prim, "0-7")].get("bad") else 0)
+    for prim in ("area", "lnR50"):
+        c7 = [calls.get(("7", ln, prim)) for ln in ("0.745", "0.318")]
+        if None in c7:
+            q1 = "Q1 7%: waiting for the bridge (no primary variant yet)"
         else:
-            q1 = f"Q1 7%: NOT SHOWN (lines: {', '.join(cats)})"
-    print(f"  => {q1}" + (" [PROVISIONAL]" if notfin else ""), file=out)
+            cats = [c[0] for c in c7]
+            if all(c == "shown" for c in cats) and c7[0][2] == c7[1][2]:
+                q1 = f"Q1 7%: SHOWN on both lines: {Q1_DIRS[c7[0][2]]}"
+            elif "unstable" in cats or (cats.count("shown") == 2 and c7[0][2] != c7[1][2]):
+                q1 = "Q1 7%: DIRECTION UNSTABLE (a line is unstable, or the two lines show opposite directions)"
+            elif cats.count("shown") == 1:
+                i = cats.index("shown")
+                q1 = f"Q1 7%: shown on the tpp {('0.745', '0.318')[i]} line only ({Q1_DIRS[c7[i][2]]}); the other line: {cats[1 - i]}"
+            else:
+                q1 = f"Q1 7%: NOT SHOWN (lines: {', '.join(cats)})"
+        print(f"  => [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}] {q1}" + (" [PROVISIONAL]" if notfin else ""), file=out)
     print("\n## Q2 token effect at fixed size: slope vs ln T (total tokens), 7%; PRIMARY = pooled within size (size fixed "
           "effects, every size with >= 2 informative cells; 1.07B's cells are both B200), per size descriptive"
           + ("\n" + prov if prov else ""), file=out)
     cs = sorted([c for c in fin if c["setting"] == "7"], key=lambda c: (c["nne"], c["T"]))
-    res = unit_slopes(cs, "T", groups=[c["size"] for c in cs])
+    grp = [c["size"] for c in cs]
+    res = unit_slopes(cs, "T", groups=grp)
     print_slopes("7% pooled within size [PRIMARY]", res, out)
-    text, cat = decide(res, "lnR50", Q2_DIRS)
-    print(f"    -> Q2 7% pooled: {text}" + (" [PROVISIONAL]" if notfin else ""), file=out)
+    for prim in ("area", "lnR50"):
+        text, cat = decide(res, prim, Q2_DIRS)
+        keep = [i for i, c in enumerate(cs) if prim == "area" or r_status(c, ALL8) == "point"]
+        lab = lr_label([cs[i] for i in keep], prim, "T", [grp[i] for i in keep], V)
+        print(f"    -> Q2 7% pooled [{PRIM_NAME[prim]}{', REGISTERED' if reg == prim else ''}]: {text}{lab}"
+              + (" [PROVISIONAL]" if notfin else ""), file=out)
     for size in G.SIZES:
         sc = [c for c in cs if c["size"] == size]
         if len(sc) >= 2:
             r2 = unit_slopes(sc, "T")
             print_slopes(f"7% {size} ({', '.join('tpp ' + c['tpp'] for c in sc)}) [descriptive]", r2, out)
-            print(f"    -> {size}: {decide(r2, 'lnR50', Q2_DIRS)[0]} [descriptive]", file=out)
+            print(f"    -> {size}: area {decide(r2, 'area', Q2_DIRS)[0]} | log R_0.5 {decide(r2, 'lnR50', Q2_DIRS)[0]} [descriptive]", file=out)
     print("\n## descriptive regression (7%, every informative cell): gain ~ a + b ln N_nonemb + c ln T; T is also the number "
           "of arithmetic lines seen (4 x 32 x steps), so c reads equally as 'more problems seen'; on a tpp line ln T = ln N + "
           "const, the 3e8 column and the two lines separate b and c", file=out)
@@ -857,17 +967,17 @@ def sensitivity(D, cells, fin, out):
           "ONLY: no verdict above uses it)", file=out)
     alts = alt_runs(D)
     V = variants(D, cells, fin, alts)
-    lines = [("Q1 7% tpp 0.745", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.745", "lnR50"),
-             ("Q1 7% tpp 0.318", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.318", "lnR50"),
-             ("Q1 2% tpp 0.745", "nne", None, lambda c: c["setting"] == "2" and c["tpp"] == "0.745", "area"),
-             ("Q2 7% pooled within size", "T", "size", lambda c: c["setting"] == "7", "lnR50")]
+    lines = [("Q1 7% tpp 0.745", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.745", None),
+             ("Q1 7% tpp 0.318", "nne", None, lambda c: c["setting"] == "7" and c["tpp"] == "0.318", None),
+             ("Q1 2% tpp 0.745", "nne", None, lambda c: c["setting"] == "2" and c["tpp"] == "0.745", None),
+             ("Q2 7% pooled within size", "T", "size", lambda c: c["setting"] == "7", None)]
     for name, xkey, grp, sel, prim in lines:
         cs = sorted([c for c in fin if sel(c)], key=lambda c: (c["nne"], c["T"]))
         if len(cs) < 2:
             print(f"  {name}: fewer than 2 informative cells", file=out)
             continue
         gr = [c[grp] for c in cs] if grp else None
-        print(f"  {name} (primary {'ln R_0.5' if prim == 'lnR50' else 'Delta area'}):", file=out)
+        print(f"  {name}:", file=out)
         # (a) R slopes with the '>=' cells at their bound (a bound at the left end biases a size / token slope upward)
         keep = [i for i, c in enumerate(cs) if r_status(c, ALL8) in ("point", ">=")]
         b = [s_ for s_ in (slope([cs[i] for i in keep], "lnR50", ss, xkey, [gr[i] for i in keep] if gr else None) for ss, _ in SETS)]
@@ -878,24 +988,14 @@ def sensitivity(D, cells, fin, out):
         r5 = unit_slopes(c5, xkey, groups=gr)
         print(f"    without b11: Delta area 0-7 {fmt_slope(r5[('area', '0-7')])}, 4-7 {fmt_slope(r5[('area', '4-7')])}; ln R_0.5 0-7 "
               f"{fmt_slope(r5[('lnR50', '0-7')])}, 4-7 {fmt_slope(r5[('lnR50', '4-7')])}", file=out)
-        # (c) lr selection: seeds 0-3 slope with one cell's arm at a tied / t50-best alternative lr
-        for m in (prim, "area" if prim == "lnR50" else "lnR50"):
+        # (c) lr selection: seeds 0-3 slope with one cell's arm at a tied / t50-best alternative lr (sign and CI)
+        for m in ("area", "lnR50"):
             use = cs if m == "area" else [c for c in cs if r_status(c, ALL8) == "point"]
             g_ = [c[grp] for c in use] if grp else None
-            base = slope(use, m, MAIN, xkey, g_)
+            base, rows = swap_rows(use, m, xkey, g_, V, False)
             if base is None or base.get("bad"):
                 print(f"    lr-selection ({m}): no base slope", file=out)
                 continue
-            rows = []
-            for key, arm, lr, why, v in V:
-                lab = key[1]
-                if key not in [(c["setting"], label(c)) for c in use]:   # a 2% and a 7% cell share a label
-                    continue
-                if m != "area" and r_status(v, MAIN) != "point":
-                    rows.append((lab, arm, lr, why, None))
-                    continue
-                vs = [v if (c["setting"], label(c)) == key else c for c in use]
-                rows.append((lab, arm, lr, why, slope(vs, m, MAIN, xkey, g_)))
             got = [r_[4]["b"] for r_ in rows if r_[4] and not r_[4].get("bad")]
             flips = sum(sgn(b_) != sgn(base["b"]) for b_ in got)
             print(f"    lr-selection ({'ln R_0.5' if m == 'lnR50' else 'Delta area'}, seeds 0-3): base {fmt_slope(base)}; "
