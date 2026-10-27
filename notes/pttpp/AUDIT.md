@@ -515,3 +515,17 @@ the upper grid edge without an X, so if one of them becomes NONE AT FLOOR the as
    T6 deployed 2026-10-27T07:03:24-04:00: pick_tpp.py b30567ca52a9 (git show 61175a6; atomic rename under HOLD
    07:01:54-07:03:24, after 90 s without a group lock); FROZEN.txt's pick_tpp.py line rewritten, 26 shas re-checked; the
    hook by hand once per group at 07:03 (each: nothing to do). A fresh minimal audit (read-only) follows.
+T6 audit (fresh general-purpose agent, read-only, blind; notes/batch1_build/audit_pttpp_t6.md in the review repo; recorded
+2026-10-27, before any read-out of a pttpp cell): **no blocking and no important item.** Confirmed on synthetic roots with
+the deployed files: upper-edge tie -> X -> C (no second extension, also when the X lr becomes the new edge); X worse -> C;
+2% (pt2main) tie -> X -> C; lower-edge pick -> C; 1.07B -> X on seeds 0-1 (B200 slots, real --test-only), then C seeds 2-7;
+the cells end final, not withheld; the T5 pick_tpp.py gives C on the same data (the test separates the versions). The two
+REOPEN + X logs carry no numbers; the 8 X jobs = render() byte for byte; FROZEN 26/26. Points for the coordinator (not
+changed): (1) T6 keys on the pick, not on the area argmax: a tie whose area argmax is the upper edge but whose bpb
+tie-break picked the lower edge is not extended (505M@0.318 none, C at the lower edge, was not checked: that needs the
+basis); (2) win-ctx is not extended by design (two win-ctx C sit at an upper edge without X: 294M@0.745 2.4e-3, 93M@0.318
+9.6e-3); (3) cost headroom in the worst case (every undecided arm extended once): B200 167.9 / 180, L40S + A100 285.3 / 300,
+not enough for one more 1.07B X (13 h) or an extension of the 294M@0.745 STOP (~17 h): the COST GUARD then stops the
+submission, as designed; a 1.07B upper-edge tie now waits for its X (2 x ~6.5 B200-h) before C; (4) the --decide list in
+pick_tpp.py's header still says "no open bracket -> C" (the T6 exception is in its Amendment paragraph). T5's minor items
+(llmadd-burst-ro is a working checkout, etc.) still hold.
