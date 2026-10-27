@@ -563,3 +563,19 @@ allows only one step beyond the stage-A grid, and the read-out's select_arm() ta
    archive 8f798cd (pttpp_summary.py 85d2a0ffbde2; T6 snapshot kept as readout.pre_t7), make_jobs_pttpp.py ad538e40275c
    (atomic rename); FROZEN.txt rewritten (26 files re-checked; 3 lines changed). Hooks by hand for every group at 17:38: nothing
    to do. A fresh minimal audit (read-only) follows, since code beyond the constant and the decision entries changed.
+T7 audit (fresh general-purpose agent, read-only, blind; notes/batch1_build/audit_pttpp_t7.md in the review repo; recorded
+2026-10-27, before any read-out of a pttpp cell): **no blocking and no important item.** Confirmed: the T6 and T7 generator
+and read-out fold every existing log identically (8 groups with logs + 1.07B); 294M@0.745's log is refused by T6 and gives
+none X 3.84e-2 / no C / no STOP under T7, and the T6 read-out would have kept the STOP and dropped 1.92e-2 from the grid
+(the read-out change was deployed at 17:35:56, before the entries at 17:37); 24 constructed logs refused / accepted as
+intended; on fake roots with the deployed files the second X -> C at the new edge (no T6 step) or C at 1.92e-2, final, not
+withheld; the 4 X jobs = render() byte for byte (264 / 264), only the lr differs from the first X's jobs; FROZEN 26/26.
+Minor, recorded (not changed; all reachable only through hand-written amendment entries): (1) step_out wraps around at the
+bottom of the ladder (LADDER[-1]), so a hand-written second lower X below 1.5e-4 would pass: check lrs by hand; (2) some
+malformed X entries are refused only by runs_of(), after the log is replaced; such an entry would stop every group's
+submission (planned_hours walks all groups) with a logged --check crash: future hand entries are validated on a copy before
+the replace; (3) the grammar is looser than "anything else is refused" above: a REOPEN of a STOP followed by a C (no X), and
+a later REOPEN + X after such a C, pass; both need amendment entries; (4) pick_tpp.py's docstring still says 300 h (the
+value used is G.COST_MAX = 310); the read-out's "in force" lists only the last X (both are in the raw log). Costs: planned
+L40S + A100 286.4 / 310, B200 141.9 / 180; worst case (every arm without X / C / STOP extended once) 292.4 / 310 and
+167.9 / 180. The 4 X jobs are estimated to start 2026-10-30; 294M@0.745 stays PROVISIONAL until its C.
