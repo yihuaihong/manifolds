@@ -313,7 +313,7 @@ for k in D.LINES:
             if info["open"] is None:
                 info["status"] = "final"
             elif k == D.REUSED:
-                info.update(status="stop", why="7% bracket open on its sub-grid (the reused cells have no expansion)")
+                info.update(status="stop", why=f"{LAB[4]} bracket open on its sub-grid (the reused cells have no expansion)")
             elif expanded:
                 info.update(status="stop", why=f"open at the {info['open']} edge after the one-step expansion: the user's call")
             else:
@@ -330,7 +330,7 @@ for k in D.LINES:
 if all(OUT["select"][str(D.REUSED)][a]["status"] == "final" for a in D.ARMS):
     got = (OUT["select"][str(D.REUSED)]["none"]["best"], OUT["select"][str(D.REUSED)]["win-ctx"]["best"])
     if got != ("8e-3", "2e-3"):
-        print(f"  WARNING: the 7% sub-grid selection {got} differs from F87's (8e-3, 2e-3); the rule's output is used")
+        print(f"  WARNING: the {LAB[4]} sub-grid selection {got} differs from F87's (8e-3, 2e-3); the rule's output is used")
 
 
 # ---------------------------------------------------------------- rule 3: per share at the selected lrs
@@ -561,10 +561,22 @@ else:
                             "prior_over_lm_median": {LAB[k]: cov[k]["prior_over_lm_median"] for k in inf},
                             "lm_share_median": {LAB[k]: cov[k]["lm_share_median"] for k in inf},
                             "slope_log_first_ratio": Q.ols(inf, y)[0]}
-        print("  covariate (lambda fixed, so the prior's pull changes with the share; descriptive): |g_prior| / |g_lm| at the first "
-              "on-eval, median over 8 seeds: " + ", ".join(f"{LAB[k]} {cov[k]['first_on_prior_over_lm_median']:.2f}" for k in inf)
+        print("  covariate (descriptive; lambda fixed, and the ratio also changes with lr: at 8.50% 1.58 / 1.18 / 0.95 at 1e-3 / 2e-3 / "
+              "4e-3, so across shares with different selected lrs it mixes lr and share): |g_prior| / |g_lm| at the selected lr, first "
+              "on-eval, median over 8 seeds: " + ", ".join(f"{LAB[k]} (win-ctx@{share_data[k][1][2]}) {cov[k]['first_on_prior_over_lm_median']:.2f}" for k in inf)
               + "; over every on-eval: " + ", ".join(f"{LAB[k]} {cov[k]['prior_over_lm_median']:.2f}" for k in inf)
               + f"; slope of log(first-on ratio) per ln(share) {OUT['covariate']['slope_log_first_ratio']:+.3f}")
+    # descriptive: the same lr at every share (the 8.50% selected lrs: win-ctx 2e-3 / none 8e-3; none has no prior gradient)
+    same = {k: (k, "win-ctx", "2e-3") for k in D.LINES}
+    if all(main.get(kk) is not None for kk in same.values()):
+        cs = {k: grad_stats(kk, D.MAIN) for k, kk in same.items()}
+        if all(cs.values()):
+            OUT["covariate_same_lr"] = {"lr": "2e-3", "seeds": "0-3",
+                                        "first_on_prior_over_lm_median": {LAB[k]: cs[k]["first_on_prior_over_lm_median"] for k in D.LINES},
+                                        "prior_over_lm_median": {LAB[k]: cs[k]["prior_over_lm_median"] for k in D.LINES}}
+            print("  covariate at one lr (descriptive): win-ctx@2e-3 (the 8.50% selected lr; none at its 8e-3 has no prior gradient), seeds "
+                  "0-3, |g_prior| / |g_lm| first on-eval median: " + ", ".join(f"{LAB[k]} {cs[k]['first_on_prior_over_lm_median']:.2f}" for k in D.LINES)
+                  + "; over every on-eval: " + ", ".join(f"{LAB[k]} {cs[k]['prior_over_lm_median']:.2f}" for k in D.LINES))
     # ---------------------------------------------------------------- rule 5: verdict
     cen = {k: OUT["shares"][str(k)]["none_t50_censored_8"] for k in inf}
     name = {"dA": "Delta area", "lR50": "log R_0.5"}
@@ -596,9 +608,10 @@ else:
     if near:
         print(f"  note: the prior's t50 is within 2 evals of the window's opening at {', '.join(near)}: there R and Delta area are "
               f"set mostly by none (the prior cannot be faster); read the gain's change with the share as a change of none's deficit")
-    # mandatory with any verdict (amendment 2026-10-26): both ends are biased the same way (2% / 4%: R censored; 8.5% / 17%:
-    # the prior near its ceiling, Delta area compressed), both enlarging "the lower the share, the larger the gain"; which arm
-    # moves the gain is read from the two arms' absolute areas
+    # mandatory with any verdict (amendments 2026-10-26): the high-share end (prior near its ceiling, Delta area compressed)
+    # enlarges "the lower the share, the larger the gain"; the low-share end (none's R censored, a lower bound) makes the
+    # secondary R's negative slope look smaller (conservative); P = Delta area does not use R. Which arm moves the gain is
+    # read from the two arms' absolute areas
     s8 = sl.get("8", {})
     if s8.get("area_none", {}).get("slope") is not None:
         an_, aw_ = s8["area_none"], s8["area_prior"]
@@ -613,8 +626,9 @@ else:
         v = readings[pick]
         wording = None
         if v["zh"].startswith("显示了") and "算术越少" in v["zh"]:
-            wording = ("写法：增益随占比下降而增大，其中多少来自 none 的缺口、多少来自先验，看两组 arm 的绝对面积（上面 attribution 行，必须同时报）；"
-                       "两端的偏差同向放大这一方向：2% / 4% 的 R 被删失，8.5% / 17% 先验近上限、面积差被压缩")
+            wording = ("写法：增益随占比下降而增大，其中多少来自 none 的缺口、多少来自先验，看两组 arm 的绝对面积（上面 attribution 行，必须同时报）。"
+                       f"高占比端（{LAB[4]} / {LAB[8]}）先验接近上限，面积差被压缩，这会放大『占比越低增益越大』。"
+                       f"低占比端（{LAB[1]} / {LAB[2]}）R 被删失，只是下界，这会让次指标 R 的负斜率显得更小，是保守的。主指标面积差不用 R。")
         elif v["zh"].startswith("显示了"):
             wording = "写法：增益随占比上升而增大；必须同时报 attribution 行（两组 arm 的绝对面积）"
         OUT["verdict"] = dict(v, reading=pick, readings=readings, wording=wording)
@@ -622,6 +636,6 @@ else:
     else:
         OUT["verdict"] = {"label": "pending: the reading is not chosen", "zh": "待定", "why": "RULE5_READING unset", "readings": readings}
         print("  VERDICT: pending -- RULE5_READING unset")
-    print("  (no confirmatory comparison with F86 / F87 cross-batch numbers; the 7% row is the ptlr cells themselves)")
+    print(f"  (no confirmatory comparison with F86 / F87 cross-batch numbers; the {LAB[4]} row is the ptlr cells themselves)")
 if A.json:
     Path(A.json).write_text(json.dumps(OUT, indent=1, default=float))

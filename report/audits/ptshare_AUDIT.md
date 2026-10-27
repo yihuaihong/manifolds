@@ -162,7 +162,7 @@ Every win-ctx run: prior_on_frac 0.350; bpb 1.19-1.27; none: prior never on.
 - (added by the pre-submission amendment, 2026-10-26 19:29 EDT) lambda is fixed, so the prior / LM gradient ratio changes
   with the share (first on-eval 3.5-7.8 at 2%, 1.3-2.5 at 7% in earlier batches): reported per share as a covariate. The
   nominal shares are measured as 2.12 / 4.25 / 8.50 / 17.00%: every read-out output uses the measured values. Both ends
-  are biased towards "the lower the share, the larger the gain" (2% / 4%: R censored; 8.5% / 17%: Delta area compressed).
+  are biased towards "the lower the share, the larger the gain" (2% / 4%: R censored; 8.5% / 17%: Delta area compressed). [2026-10-26 20:22 EDT text amendment: half of this is wrong, see "Text-only amendment" at the end]
 - At >= 7% the prior is at its speed limit: the window opens at 15.0M tokens and the 7% prior's t50 is 19.9-24.2M (one to
   two evals later; real ptlr / ptgw runs). There R_0.5 is about t50(none) / 20M and Delta area about 89 - area(none), so a
   change of the gain with the share mostly measures a change of none's deficit, not of the prior's effect (audit item 2).
@@ -234,7 +234,8 @@ further amendment). Supersedes the corresponding text above where they differ.
      support one direction only, and a bound that leaves the direction open counts as "不一致" (-> "方向不稳").
    - Main test, guardrail (P on seeds 4-7 only, same sign) and the verdict words are unchanged.
    - Both ends are biased the same way: at 2% / 4% none's R is censored (a lower bound); at 8.5% / 17% the prior sits near
-     its ceiling and the area gain is compressed. Both enlarge "the lower the share, the larger the gain". A shown negative
+     its ceiling and the area gain is compressed. Both enlarge "the lower the share, the larger the gain". [2026-10-26 20:22 EDT text amendment: half of this is wrong, see "Text-only amendment" at the end]
+     A shown negative
      slope is therefore written "增益随占比下降而增大，其中多少来自 none 的缺口、多少来自先验，看两组 arm 的绝对面积", and the
      attribution line (both arms' absolute-area slopes with CIs and the per-share absolute areas) is mandatory with it.
 3. Edge rule confirmed: expand only when the best lr is at a grid edge and beats its neighbour by more than 2 points (F87's
@@ -243,10 +244,28 @@ further amendment). Supersedes the corresponding text above where they differ.
    - At high shares the prior is near its ceiling (above).
    - lambda is fixed, so the prior / LM gradient ratio changes with the share (first on-eval: 2% 3.5-7.8, 7% 1.3-2.5, earlier
      batches); the read-out reports it per share as a covariate (median first-on-eval and all-on-eval |g_prior| / |g_lm|,
-     and the slope of its log against ln(share)), descriptive.
+     and the slope of its log against ln(share)), descriptive. [2026-10-26 20:22 EDT: the ratio also depends on lr; see "Text-only amendment"]
    - The nominal 2 / 4 / 7 / 14% are measured as 2.12 / 4.25 / 8.50 / 17.00% (CPU replay, seeds 0-7); every read-out output
      names a share by its measured value (ptshare_design.share_label). The nominal names remain only in tags and job names.
 Code: read-out branch arith-dose (this amendment's commit), ptshare_selftest.py 109 checks PASS (reading A with P = Delta area
 in every scenario, the mandatory attribution line and its identity Delta-area slope = prior slope - none slope, the covariate
 line, measured labels in every output, only the chosen reading computed without --show_both); the job texts are unchanged
 except that they point to the new read-out snapshot; minimal fresh audit of the read-out diff after submission.
+
+## Text-only amendment (2026-10-26 20:22 EDT; after submission, before any ptshare result or read-out)
+Coordinator, after the post-submission minimal audit found the bias sentence half wrong. Only text and descriptive lines change;
+the verdict logic is line-for-line unchanged (ptshare_rules.py, ptshare_design.py, ptshare_pick.py: no diff; in
+ptshare_summary.py only the wording string, the comments, the covariate print lines, one new descriptive covariate line and
+three nominal labels in printed notes). No new audit (coordinator): text-only, and the regression below shows identical numbers
+and verdicts.
+1. Bias sentence (replaces the two marked sentences above; the printed wording uses it):
+   「高占比端（8.50% / 17.00%）先验接近上限，面积差被压缩，这会放大『占比越低增益越大』。低占比端（2.12% / 4.25%）R 被删失，
+   只是下界，这会让次指标 R 的负斜率显得更小，是保守的。主指标面积差不用 R。」
+2. Covariate: the prior / LM gradient ratio changes with lr (8.50%: 1.58 / 1.18 / 0.95 at lr 1e-3 / 2e-3 / 4e-3), so across
+   shares with different selected lrs it mixes lr and share. The read-out prints the ratio at each share's selected lr and,
+   separately, at one lr for every share (win-ctx@2e-3, the 8.50% selected lr, seeds 0-3; none@8e-3 has no prior gradient);
+   both descriptive. The "7% 1.3-2.5" quoted above is ptgw main-W at lr 1e-3.
+3. P = Delta area at every share is confirmed as the coordinator's intent.
+Regression (llmadd_torch/scale_work/ptshare/reg_text.py; old = runs/ptshare/readout_a4de096, kept): on all 15 selftest scenario
+roots and the real data the JSON is identical except the text fields, and every differing printed line is a changed text line;
+selftest 110 checks PASS (new: the wording says the low end is conservative, the one-lr covariate line).

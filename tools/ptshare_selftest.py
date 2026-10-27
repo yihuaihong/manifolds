@@ -258,8 +258,11 @@ check(VA(J)["zh"] == "显示了（算术越少，增益越大）" and VA(J)["P"]
 check("attribution (mandatory): area none slope" in out and "area win-ctx slope" in out
       and abs(J["slopes"]["8"]["area_prior"]["slope"] - J["slopes"]["8"]["area_none"]["slope"] - J["slopes"]["8"]["dA"]["slope"]) < 1e-9,
       "A: the mandatory attribution line; Delta area slope = prior slope - none slope")
-check("covariate (lambda fixed" in out and set(J["covariate"]["first_on_prior_over_lm_median"]) == set(L.values()),
-      "A: the gradient-ratio covariate line")
+check("covariate (descriptive; lambda fixed" in out and set(J["covariate"]["first_on_prior_over_lm_median"]) == set(L.values())
+      and "covariate at one lr (descriptive): win-ctx@2e-3" in out and set(J["covariate_same_lr"]["prior_over_lm_median"]) == set(L.values()),
+      "A: the gradient-ratio covariate lines (selected lr; one lr)")
+check("是保守的" in J["verdict"]["wording"] and "同向" not in J["verdict"]["wording"] and f"高占比端（{L[4]} / {L[8]}）" in J["verdict"]["wording"],
+      "A: the bias wording (high end enlarges, low end conservative)")
 check(all(lab in out for lab in L.values()) and not any(x + "pct" in out for x in ("2", "4", "14")) and "7pct " not in out,
       "A: every output names the shares by their measured share")
 check(all(J["shares"][str(k)]["prior_t50_after_window"] > 0 for k in D.LINES) and "the prior's t50 is" in out
