@@ -510,6 +510,37 @@ def reopen_c(root):
 t = build("reopen_c", sizeeff, mutate=reopen_c)
 check("NOTFINAL" not in line_of(t, "7% 93m tpp 0.745") and line_of(t, "=> [primary = log R_0.5] Q1 7%") ==
       line_of(build("size_effect", sizeeff), "=> [primary = log R_0.5] Q1 7%"), "T2 REOPEN then C at the same lr: final again, same verdict")
+G294 = "tpp7-294m-t0.745"
+
+
+def second_x(root, final_c=True):   # T7: none X 1.92e-2 -> STOP -> REOPEN (the user) -> X 3.84e-2 [-> C at the pick]
+    for lr in ("1.92e-2", "3.84e-2"):   # the X runs (seeds 0-3), slower than the pick: the pick stays at the grid's edge tie
+        for s in G.GROUPS[G294]["sel"]:
+            t_, p_ = sizeeff("7", "294m", "0.745", "none", s)
+            put_new(root, G294, "none", lr, s, t_ * 1.6, p_, bpb=1.30)
+    f = root / "pttpp" / "decisions" / f"{G294}.json"
+    log = [{"seq": 0, "arm": "none", "stage": "X", "lr": "1.92e-2"}, {"seq": 1, "arm": "win-ctx", "stage": "C", "lr": G.GRID[G294]["win-ctx"][0]},
+           {"seq": 2, "arm": "none", "stage": "STOP", "lr": "1.92e-2"}, {"seq": 3, "arm": "none", "stage": "REOPEN", "amend": "T7"},
+           {"seq": 4, "arm": "none", "stage": "X", "lr": "3.84e-2", "amend": "T7"}]
+    if final_c:
+        log.append({"seq": 5, "arm": "none", "stage": "C", "lr": G.GRID[G294]["none"][0]})
+    f.write_text(json.dumps({"group": G294, "log": log}))
+
+
+t = build("second_x_open", sizeeff, mutate=lambda r: second_x(r, False))
+r294 = line_of(t, "7% 294m tpp 0.745")
+_tl = t.splitlines()
+_h = [i for i, l in enumerate(_tl) if l.strip().startswith(f"{G294} (selection seeds")]
+sx = [l for l in _tl[_h[0] + 1:_h[0] + 3] if l.strip().startswith("none: best") and "1.92e-2" in l and "3.84e-2" in l] if _h else []
+check(r294.startswith("7% 294m tpp 0.745 (l40s)") and "NOTFINAL" in r294 and "none: no C decision yet" in r294 and "STOP" not in r294
+      and len(sx) == 1 and all(lr in sx[0] for lr in ("4.8e-3", "9.6e-3")) and "ignored, not in the design" not in sx[0],
+      f"T7 second X: the REOPEN withdraws the STOP (cell waits for a C), the grid lists the 4 lrs, no stray ({r294[:120]}; {sx[:1]})")
+t = build("second_x_c", sizeeff, mutate=second_x)
+r294 = line_of(t, "7% 294m tpp 0.745")
+check("NOTFINAL" not in r294 and "WITHHELD" not in r294 and line_of(t, "=> [primary = log R_0.5] Q1 7%") ==
+      line_of(build("size_effect", sizeeff), "=> [primary = log R_0.5] Q1 7%") and "3:none X 3.84e-2 (T7)" not in t
+      and "2:none STOP 1.92e-2, 3:none REOPEN (T7), 4:none X 3.84e-2 (T7), 5:none C" in t,
+      f"T7 second X then C at the recomputed pick: the cell is final (not withheld), same verdict, raw log printed ({r294[:100]})")
 t = build("bridge_fail", sizeeff, bridge_none_shift=1.5)
 check("bridge FAIL" in t and "[PRIMARY]" in line_of(t, "7% tpp 0.745, L40S only"), "bridge_fail: FAIL -> the L40S-only slope is the primary")
 check("[descriptive]" in line_of(t, "7% tpp 0.745, all sizes"), "bridge_fail: the all-size slope becomes descriptive")

@@ -17,7 +17,8 @@ and the other metric's 8-seed point estimate has the same sign; CI including 0 -
 opposite -> "direction unstable". Amendment T5 (fourth audit, before any read-out): every Q1 slope table also prints the
 slope with the line's NONE AT FLOOR cells included (their gains over their 8 seeds; S4 still applies to the R slopes), and
 a SHOWN Q1 verdict becomes "DIRECTION UNSTABLE (none-at-floor cells)" when that 8-seed slope of its primary has the other
-sign (point estimate); other verdicts are unchanged.
+sign (point estimate); other verdicts are unchanged. Amendment T7 (the user's approval): a REOPEN after a STOP withdraws
+the STOP, and an arm's selection grid holds every X lr of its log (a user-approved second extension).
     python tools/pttpp_summary.py [--root <runs dir>] [--gen <make_jobs_pttpp.py>]            full read-out
     python tools/pttpp_summary.py --select <group> --json <file> [--root ...]                 a 7% group's lr selection
 """
@@ -348,25 +349,34 @@ def budget(D, key):
 # ---------------------------------------------------------------- decisions and selection
 def decisions(D, gid):
     """{(arm, stage): entry} of the decision log folded in seq order: X / C / STOP set, REOPEN (Amendment T2) withdraws the
-    arm's current C (a later C replaces it)"""
-    f = D.Rd / "decisions" / f"{gid}.json"
-    log = sorted(json.loads(f.read_text())["log"], key=lambda e: e["seq"]) if f.exists() else []
+    arm's current C (a later C replaces it); T7: a REOPEN after a STOP (the user's approval) withdraws the STOP; (arm, "X")
+    is the arm's last X entry, x_lrs() lists them all"""
     out = {}
-    for e in log:
+    for e in decision_log(D, gid):
         if e["stage"] == "REOPEN":
             out.pop((e["arm"], "C"), None)
+            out.pop((e["arm"], "STOP"), None)
         else:
             out[(e["arm"], e["stage"])] = e
     return out
 
 
+def decision_log(D, gid):
+    f = D.Rd / "decisions" / f"{gid}.json"
+    return sorted(json.loads(f.read_text())["log"], key=lambda e: e["seq"]) if f.exists() else []
+
+
+def x_lrs(D, gid, arm):
+    """every X lr of the arm (T7: a user-approved second extension adds a second one)"""
+    return {e["lr"] for e in decision_log(D, gid) if e["arm"] == arm and e["stage"] == "X"}
+
+
 def select_arm(D, gid, arm):
     """F87 rule 1 (7%: top-two tie, in-training bpb) / pt2main rule 1 (2%: every lr within 2, offline bpb) over the arm's
-    grid (stage A + the X lr) on the group's selection seeds -> dict(status, best, open, ...)"""
+    grid (stage A + the X lrs) on the group's selection seeds -> dict(status, best, open, ...)"""
     G = D.G
     c = G.GROUPS[gid]
-    dec = decisions(D, gid)
-    lrs = sorted(set(G.GRID[gid][arm]) | ({dec[(arm, "X")]["lr"]} if (arm, "X") in dec else set()), key=float)
+    lrs = sorted(set(G.GRID[gid][arm]) | x_lrs(D, gid, arm), key=float)
     stray = sorted({k[2] for k in D.runs if k[0] == gid and k[1] == arm and k[3] in c["sel"]} - set(lrs), key=float)
     out = dict(gid=gid, arm=arm, grid=lrs, sel=list(c["sel"]), stray=stray)
     miss = [(lr, s) for lr in lrs for s in c["sel"] if (gid, arm, lr, s) not in D.runs]
