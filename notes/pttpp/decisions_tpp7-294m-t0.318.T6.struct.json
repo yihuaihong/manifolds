@@ -1,0 +1,47 @@
+{
+ "group": "tpp7-294m-t0.318",
+ "note": "structure only (basis omitted: blind); the full log is runs/pttpp/decisions/tpp7-294m-t0.318.json",
+ "log": [
+  {
+   "seq": 0,
+   "arm": "none",
+   "stage": "C",
+   "lr": "1.92e-2",
+   "time": "2026-10-27T00:13:56",
+   "job": "21032893"
+  },
+  {
+   "seq": 1,
+   "arm": "win-ctx",
+   "stage": "X",
+   "lr": "1.2e-3",
+   "time": "2026-10-27T01:04:27",
+   "job": "21032901"
+  },
+  {
+   "seq": 2,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T6",
+   "time": "2026-10-27T06:43:57-04:00",
+   "why": "Amendment T6 (coordinator): none's pick at the upper grid edge is always extended one step up; the C at 1.92e-2 is withdrawn until F87 rule 1 is applied again"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "X",
+   "lr": "3.84e-2",
+   "amend": "T6",
+   "time": "2026-10-27T06:43:57-04:00",
+   "why": "Amendment T6: one ladder step above the upper edge, the selection seeds; then rule 1 over the three lrs; open again at either edge -> STOP (the user)"
+  },
+  {
+   "seq": 4,
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "1.2e-3",
+   "time": "2026-10-27T06:56:50",
+   "job": "21067017"
+  }
+ ]
+}

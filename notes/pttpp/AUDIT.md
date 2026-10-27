@@ -484,3 +484,34 @@ the line, not only the added ones. For the coordinator (not bugs): 294M@0.745 no
 06:12:11 (still open after its X 1.92e-2; the user decides; Q1 PROVISIONAL); 190M@0.318 and 294M@0.318 none were closed at
 the upper grid edge without an X, so if one of them becomes NONE AT FLOOR the asymmetry of T3 recurs: a general rule
 (extend or not) should be written before any read-out; Q2 is not covered by T5; F2 (PRIMARY.txt) is still open.
+
+## Amendment T6 (written 2026-10-27T06:50-04:00; the coordinator's decision after the T5 audit; before any read-out of a pttpp cell)
+1. **Rule (every group, 7% and 2%; both the picks already made and the later ones).** When none's pick is the UPPER edge of
+   its stage-A grid and the arm has not been extended yet, it is extended one ladder step up on the group's selection
+   seeds (X), whether the bracket is open (as before) or closed with the edge pick inside the 2-point tie band (before T6:
+   C at the edge). After that one extension the selection is the unchanged rule (7%: F87 rule 1; 2%: pt2main rule 1) over
+   the three lrs: closed -> C at the pick, open at either edge -> STOP (the user). win-ctx and the lower edge are unchanged.
+   Why: before any read-out, the two 93M cells were extended (T2, T5) and the other upper-edge cells were not.
+2. **Picks already made.** Checked over every group by the rule (scale_work/tpp/t6/t6_decide.py, structure only): only
+   tpp7-190m-t0.318 and tpp7-294m-t0.318 qualify (none C at the upper edge 1.92e-2, no X). 93M@0.745 (X 3.84e-2 in T2),
+   190M@0.745 (X 1.92e-2), 93M@0.318 (X 7.68e-2 in T5) are extended; 505M@0.318's pick is the lower edge; 294M@0.745 is
+   STOP (left to the user, not touched); 1.07B@0.745 and the two 2% groups have no decision yet (item 3 applies).
+   decisions/tpp7-190m-t0.318.json seq 3 REOPEN + seq 4 X none@3.84e-2, decisions/tpp7-294m-t0.318.json seq 2 REOPEN + seq 3
+   X none@3.84e-2 (amend T6; no numbers), written 06:44 under each group's lock; the hooks (by hand) passed --test-only and
+   submitted the X jobs: 190M@0.318 21084169, 21084170, 21084173, 21084236; 294M@0.318 21084248, 21084251, 21084255,
+   21084258. Planned GPU-h: L40S + A100 255.9 -> 268.4 (the reopened arms' C is counted once more, conservatively), B200
+   141.9, within COST_MAX. Their earlier confirm runs at 1.92e-2 count if rule 1 picks 1.92e-2 again.
+3. **Later picks: automatic (the smaller and safer of the two options).** pick_tpp.py --decide (T6): a none pick equal to
+   GRID[group]['none'][1] with no X decided -> X at one step up (why "T6: none's pick at the upper grid edge (closed within
+   the tie band): one step up"); the open case is the old code path; everything else unchanged. The read-out is not changed
+   (no "EDGE NOT EXTENDED" label is needed: after item 2 no upper-edge pick without an X exists, and the hook makes none).
+   Status at writing: code committed and tested, deployment and its audit follow (record below).
+   Tests: plumbing 53/53 (scale_work/tpp/t6; changed: P4 2% none tie at the upper edge -> X 1.92e-2, then C after the X runs;
+   P9 / P9b 7% floor tie at the upper edge -> X automatically, then STOP (X better by > 2) or C at the X lr (no second
+   extension); new P9c: a pre-T6 C at the upper edge + REOPEN + X by hand -> X submitted, C again, confirm jobs not
+   resubmitted; the lower edge (P5) and win-ctx (P1) unchanged). The read-out, maybe_select.sh and the generator are
+   unchanged (git diff fd8901b 61175a6 -- tools/ notes/pttpp/maybe_select.sh is empty), so the selftest and the regression
+   of T5 stand.
+   T6 deployed 2026-10-27T07:03:24-04:00: pick_tpp.py b30567ca52a9 (git show 61175a6; atomic rename under HOLD
+   07:01:54-07:03:24, after 90 s without a group lock); FROZEN.txt's pick_tpp.py line rewritten, 26 shas re-checked; the
+   hook by hand once per group at 07:03 (each: nothing to do). A fresh minimal audit (read-only) follows.
