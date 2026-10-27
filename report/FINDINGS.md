@@ -4539,3 +4539,64 @@
 - v ✓
 - vi 部分：B200 / L40S 与尺寸重合；1B 用 2 seed 选 lr；rule 8 的两个 CI 都在刀口上；读数不对 seed 4–7 判 rule 2；t90 列是到达 seed 的中位。
 - vii ✓
+
+## [2026-10-27] F96 下游通用基准（BLiMP / LAMBADA / HellaSwag / ARC-E / PIQA，零样本、全量 split，94 个模型，预注册，已过结果层对抗审查）：同 lr、同 seed 下，三个主对比的 15 个判词里没有 worse；9 个 non-inferior（margin 1 点，其中 P1 LAMBADA 是 CI 全在 0 以下的小代价，−0.63，0/4），6 个 undetermined（n = 4 分不出，不等于无代价）。同 lr 下 LM 仍有小代价（P2、P3 的 val loss 4/4 更高）。描述性的 gate-text@3e-4（λ 5、第 0 步开、正文位点）5 项全差 1.1–3.3 点，与它已知的 LM 代价（+0.06 bpb，4/4）同向
+
+**设置**：
+- 评测：tools/downstream_eval.py（eval sha 5d694e38ab75），每条序列以 `<eos>` 开头，fp32，≤ 512 位置，无截断。
+- 指标：BLiMP 是整句、无前导空格、严格 >；LAMBADA 是 acc（全部 token greedy）；HellaSwag 用 acc_norm；ARC-E、PIQA 用 acc。
+- 预注册：runs/downstream/AUDIT.md（A1–A3 都在看到项目分数之前提交）。known-answer 全部 PASS：GPT-2 LAMBADA 32.56 / ppl 40.06，BLiMP 82.52；随机初始化在 chance 附近；94 个模型的 load check 与训练记录逐位相同。
+- 读数：tools/downstream_readout.py（d7bdff1097e6），统计量是 seed 0–3 的配对差、95% t-CI（t = 3.18）。
+
+| 对比（同 lr、同 seed 0–3） | BLiMP | LAMBADA acc | HellaSwag acc_norm | ARC-E | PIQA | LAMBADA ppl 比 |
+|---|---|---|---|---|---|---|
+| P1 505M win-ctx@1.2e-3 − none@1.2e-3 | −0.72 [−2.39, +0.94] 1/4 undetermined | −0.63 [−0.92, −0.34] 0/4 non-inferior（小代价） | −0.11 [−0.90, +0.67] non-inferior | −0.46 [−2.48, +1.56] undetermined | +0.46 [−0.32, +1.24] non-inferior | ×1.016 [0.933, 1.106] |
+| P2 505M win-ctx@3e-4 − none@3e-4 | +0.30 [−0.55, +1.15] non-inferior | −0.20 [−0.80, +0.40] non-inferior | −0.10 [−0.52, +0.31] non-inferior | +0.01 [−1.51, +1.53] undetermined | +0.08 [−1.20, +1.36] undetermined | ×1.061 [1.021, 1.103] |
+| P3 190M all6-λ1@6e-4 − none@6e-4 | −0.12 [−0.93, +0.69] non-inferior | −0.24 [−1.15, +0.67] undetermined | −0.16 [−0.51, +0.20] non-inferior | −1.00 [−2.74, +0.74] 1/4 undetermined | +0.38 [−0.13, +0.90] non-inferior | ×1.049 [0.958, 1.149] |
+
+- 水平（none）：BLiMP 75–76，LAMBADA 12–14，HellaSwag 27.6–28.2（随机初始化 26.1），ARC-E 44–45，PIQA 58–58.5。
+- 同 lr 的 LM（训练中终值 val_loss，prior − none，nats/token）：
+  - P1 −0.003 / −0.010 / +0.010 / −0.011（测不出）；
+  - P2 +0.018 / +0.013 / +0.020 / +0.012（4/4）；
+  - P3 +0.041 / +0.028 / +0.046 / +0.018（4/4；F88 离线 +9.5e-3 bpb）。
+- P2 的 LAMBADA ppl 比 ×1.06，区间不含 1，与它的 LM 代价一致。
+
+**描述性**（不下判词）：
+- D1 gate-ctx@3e-4：BLiMP −0.54、HellaSwag −0.56（0/4）、ARC-E −1.05，其余约 0。
+- D2 gate-text@3e-4：BLiMP −2.22、LAMBADA −3.34、HellaSwag −1.14、ARC-E −3.01、PIQA −1.14（每项 0/4），LAMBADA ppl ×1.92。它的 LM 代价是 +0.196 到 +0.233 nats/token（bpb +0.058 到 +0.069，4/4），与 F82 的 53M gate-text +55e-3 同向；代价分布很广（67 个 BLiMP paradigm 里 54 个为负，LAMBADA 含数字 / 不含数字的条目一样掉）。
+- D3 only-numbers@6e-4：都在 ±0.5 内或 undetermined。
+- 对「LM 最优 lr 的 none」的 gap 是描述：505M 的 reference none@3e-4 是靠训练中 bpb 领先 2.8e-3 选出的；P1 那一行 lr 和训练代码都不同。
+
+**保留**：
+- n = 4，没有多重比较校正。
+- HellaSwag 上模型只比随机初始化高 1.5–2.1 点，margin 1 点几乎没有区分力。
+- P3 BLiMP 的 non-inferior 离 margin 只有 0.065，P1 LAMBADA / HellaSwag 只有 0.08 / 0.10。
+- 只评了最终 checkpoint，零样本，没有 few-shot。
+- 505M 的 lr 只在 3e-4 / 1.2e-3 两点上做了同 lr 对比。
+- 13-gram 污染可以忽略：LAMBADA 0.04%、HellaSwag 0.13–0.18%、ARC-E 0.29–0.36%、PIQA 0.05–0.07% 的条目，BLiMP 0；两臂共享训练数据。
+
+**不得写**：
+1. 「先验对通用能力无代价」「先验不损害通用能力」「下游完全不受影响」。15 个判词里 6 个 undetermined；P1 LAMBADA 是 0/4 的小代价；P2 / P3 同 lr 的 LM loss 4/4 更高，P2 LAMBADA ppl ×1.06 的区间不含 1。
+2. 把 undetermined 写成「无代价」「non-inferior」「差别在 1 点以内」。例如 P3 ARC-E 均值 −1.00（1/4），P1 BLiMP −0.72（1/4）。
+3. 不带限定的「HellaSwag 上无代价」。只比随机初始化高 1.5–2.1 点，margin 占这段能力的一半到三分之二。
+4. 用 D1 / D2 / D3 的判词。它们是描述性的，括号里的 worse 不是判词。
+5. 「先验伤通用能力」，并以 D2 为证。D2 是已知代价最大的配置（λ 5、第 0 步、正文位点），lr 没有为它调过；主 arm 是窗口 + 操作数位点。
+6. 把 gap-to-reference 当判词，或者写「调过 lr 的先验不比 LM 最优的 none 差」。lr（以及 P1 的训练代码）不同；reference 只领先 2.8e-3 bpb，在噪声内。
+7. 「先验提升了 PIQA / BLiMP / LAMBADA」。所有正均值的 CI 都含 0。
+8. 用 seed × item bootstrap 区间判显著。它不是判词，而且没按 paradigm 聚类（偏窄）：例如 D1 BLiMP 的 bootstrap 区间是 [−0.95, −0.10]，t-CI 却含 0。
+9. 「360 个模型」。实际 94 个，360 是读数表头的显示 bug。
+10. 把这里的 BLiMP 数和 harness 报告的 BLiMP 直接比（定义不同：无前导空格、平局算错）。HellaSwag 是 acc_norm，ARC-E / PIQA 是 acc（不是 acc_norm）。LAMBADA ppl 是每词 ppl，不是 token 级 ppl。
+11. 用 53M / 190M 7% 的 seed-0 单模型行下结论。pt999 none seed 0–3 的 BLiMP SD 是 0.80。
+12. 和 F56 并列，或写「与 F56 一致」。F56 是在 OLMo-2 检查点上续训，每项 500 题，设置完全不同。
+13. 「5 亿非嵌入参数」。505M 是总参数，非嵌入 403M。
+14. 不带 CI 的判词。刀口格（P3 BLiMP、P1 LAMBADA / HellaSwag）一定要带 CI 写。
+
+**审查状态**：一轮结果层对抗审查（全新子 agent，只读，独立重算，0 处不一致；notes/batch1_build/audit_downstream_results.md）。七项：
+- i ✓：读数全部独立重算，重跑读数逐字节相同；另用自写的 CPU 打分逐条对存储 hit（700/700）。
+- ii ✓
+- iii ✓：GPT-2、随机初始化、94/94 load check 逐位相同。
+- iv ✓：D2 有 LM 代价佐证，且代价分布很广。
+- v ✓
+- vi 部分：arm identity 断言区分不了 win / gate / text；BLiMP 的 7 个相同句对并不总是平局；表头模型数 bug；HellaSwag 接近随机初始化水平。
+- vii ✓
+
