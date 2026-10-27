@@ -14,6 +14,10 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
 Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T4 (third audit): OWN_FAILURES.txt is parsed leniently (comments, 's3'; a bad line is logged, never an exception)
+and applies to 7% runs only (2% follows pt2main: a failed run is re-run); a listed run counts only when its job is gone
+from the queue (SUBMITTED_<run> names the job id; squeue); the decision log is appended with a unique temp file and only if
+it did not change since it was read (else the round is logged and left to the next hook).
 Amendment T3 (second audit): a run listed in OWN_FAILURES.txt ('<tag> <seed>') counts as finished (the read-out scores it
 over all eval slots); a finished run JSON whose check file is still missing after 30 min is logged ("CHECK MISSING").
 Amendment T2: the state of an arm is the decision log folded in order (make_jobs_pttpp.effective: REOPEN withdraws a C);
@@ -56,20 +60,44 @@ def log(gid, msg):
     print(line, flush=True)
 
 
-def own_failures():
+def own_failures(gid=None):
+    """{(tag, seed)} of OWN_FAILURES.txt ('#' comments; seed may be s3); a line not understood is logged and skipped (T4)"""
     f = R / "OWN_FAILURES.txt"
     out = set()
     if f.exists():
         for line in f.read_text().splitlines():
-            if line.strip() and not line.startswith("#"):
-                t, s_ = line.split()
-                out.add((t, int(s_)))
+            w = line.split("#", 1)[0].split()
+            if not w:
+                continue
+            sd = w[1][1:] if len(w) == 2 and w[1][:1] in "sS" else (w[1] if len(w) == 2 else "")
+            if len(w) == 2 and sd.isdigit():
+                out.add((w[0], int(sd)))
+            elif gid:
+                log(gid, f"OWN_FAILURES.txt line ignored (want '<tag> <seed>'): {line!r}")
     return out
 
 
+def job_gone(F):
+    """True when the job of this run (SUBMITTED_<run>: 'Submitted batch job N') is no longer queued or running (T4)"""
+    f = R / f"SUBMITTED_{F['name']}"
+    try:
+        jid = f.read_text().split()[-1]
+        int(jid)
+    except Exception:
+        return True   # never submitted or unreadable: nothing in the queue for it
+    q = subprocess.run(["squeue", "-h", "-j", jid, "-o", "%T"], capture_output=True, text=True)
+    if q.returncode != 0:
+        return "Invalid job id" in (q.stdout + q.stderr)   # squeue cannot tell -> not gone
+    return not q.stdout.strip()
+
+
 def finished(G, gid, F, own=None):
-    if (F["tag"], F["seed"]) in (own_failures() if own is None else own):   # T3: an own failure counts (scored by the read-out)
-        return True
+    if F["setting"] == "7" and (F["tag"], F["seed"]) in (own_failures() if own is None else own):
+        # T3 / T4: a listed 7% run counts (the read-out scores it) once its job has left the queue
+        if job_gone(F):
+            return True
+        log(gid, f"OWN_FAILURES lists {F['name']}, but its job is still queued or running: not counted yet")
+        return False
     if F["setting"] == "2":
         t = R / "out2" / F["name"]
         f = list((t / F["tag"]).glob("run_*.json"))
@@ -93,7 +121,7 @@ def state(G, gid):
     dec.update({(a, "STOP"): {} for a in G.ARMS if eff[a]["STOP"]})
     open_arms = [a for a in G.ARMS if (a, "C") not in dec and (a, "STOP") not in dec]
     runs = G.runs_of(gid)
-    own = own_failures()
+    own = own_failures(gid)
     ready = [a for a in open_arms
              if all(finished(G, gid, G.facts(gid, a, lr, s, st), own) for st, aa, lr, s in runs if aa == a and st in ("A", "X"))]
     if G.GROUPS[gid]["setting"] == "7":   # T3: a run JSON at its last step without its job's check file for 30 min: say so
@@ -144,6 +172,7 @@ def readout(G, gid):
 
 
 def decide(G, gid):
+    log0 = G.decisions(gid)["log"]   # T4: the log this selection is based on (compared again before appending)
     dec, ready, unsub = state(G, gid)
     new = []
     if ready:
@@ -178,11 +207,15 @@ def decide(G, gid):
     if new:
         f = R / "decisions" / f"{gid}.json"
         f.parent.mkdir(exist_ok=True)
-        old = G.decisions(gid)["log"]
+        old = log0
         for i, e in enumerate(new):
             e.update(seq=len(old) + i, time=datetime.datetime.now().isoformat(timespec="seconds"),
                      job=os.environ.get("SLURM_JOB_ID", "none"))
-        tmp = f.with_name(f.name + ".tmp")
+        now_log = G.decisions(gid)["log"]
+        if now_log != old:   # T4: another selection appended meanwhile: leave this round to the next hook
+            log(gid, "the decision log changed during this selection: nothing recorded, the next hook decides")
+            return
+        tmp = f.with_name(f"{f.name}.{os.getpid()}.tmp")
         tmp.write_text(json.dumps({"group": gid, "log": old + new}, indent=1))
         tmp.replace(f)
         assert G.decisions(gid)["log"][:len(old)] == old   # append-only

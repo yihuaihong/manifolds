@@ -356,3 +356,29 @@ T2 floor rule this cell becomes NONE AT FLOOR (or FLOOR if the prior is below 5 
 Tests after the changes: selftest 86/86, plumbing 35/35 (P11, P12 new), the generator unchanged (its frozen sha stays), the other
 read-outs unchanged; a fresh minimal audit follows.
 T3 deployed 2026-10-26T21:03:33-04:00: read-out snapshot = git archive 7024038 (pttpp_summary.py eea32522fac1), pick_tpp.py 6838761ae987, maybe_select.sh ecc9e2ba90f4; FROZEN.txt rewritten; hooks run by hand once per group; regression of the other read-outs: REGRESSION PASS.
+
+## Amendment T4 (written 2026-10-26T21:56:42-04:00; third fresh audit (of T3), read-only; before any read-out of a pttpp cell)
+No path that submits a wrong job in the normal flow; every finding needs a manual edit of OWN_FAILURES.txt or an orphaned
+lock. Fixed:
+1. OWN_FAILURES.txt is parsed leniently ('#' comments, seed 's3'); a line not understood is logged / noted, never an
+   exception (one bad line used to stop every group's selection silently).
+2. A listed 7% run whose JSON finished training but has no passing check (e.g. CHECK7 crashed, or --save_model failed)
+   counts as an own failure scored as it ran (bpb worst), instead of WITHHELD -> STOP. A listed run that finished with its
+   check is a warning and is ignored.
+3. 2% runs follow pt2main's rules: OWN_FAILURES does not apply (pt2main_summary has no such rule); a failed 2% run is
+   re-run (the same job file; the trainer starts it again). A listed 2% run is noted as ignored.
+4. A listed 7% run counts only once its job has left the queue (the job id in SUBMITTED_<run>, squeue); a preempted /
+   requeued job listed by mistake is not counted ("still queued or running" in the log).
+5. Lock: the owner is the job id only inside a pttpp training job (SLURM_JOB_NAME llmadd_tpp-*), else pid:<host>:<pid>
+   (a selection by hand, also from the claude_host job). Takeover renames the old lock away only if it still names the
+   dead owner, then needs a fresh mkdir (a second caller then exits with a pending mark); an owner-less lock is stale only
+   after 10 min; T3's 2 h age rule is dropped (it let several callers run at once). pick_tpp.py appends to the decision log
+   only if the log did not change since the selection started, with a per-process temp file.
+6. The bridge's own failures count (it has no selection; a crash without JSON scores 0 for that seed). A pick with an own
+   failure on seeds 0-3 prints a NOTE that it has no lr swaps. A plumbing assertion that was always true is fixed.
+Not changed (documented): "CHECK MISSING" is logged only by a later selection call; when the crashing job is the group's
+last stage-A / X run nothing calls again, so the coordinator's watcher must look for pttpp jobs that ended with exit code 4
+(CHECK7 failed) or 1 (the trainer crashed before the hook).
+Tests: selftest 90/90 (new: lenient parsing, a listed finished run without check counts, a listed 2% run ignored, a listed
+bridge crash counts as 0), plumbing 39/39 (new P13 owner-less locks, P14 bad lines + a listed run whose job still runs);
+the generator unchanged; regression of the other read-outs to follow. A fresh minimal audit follows.

@@ -412,6 +412,31 @@ check("own failure without a run JSON (counts as area 0, bpb worst)" in t and "n
       "T3: an own failure without a run JSON counts (area 0); an unknown entry is a warning")
 r190 = [l for l in t.splitlines() if l.strip().startswith("4-7") or l.strip().startswith("7% 190m tpp 0.745")]
 check(any("/   0.0" not in l for l in r190), "T3: own_nojson read-out completes (cell rows printed)")
+import tempfile
+_tf = Path(tempfile.mkdtemp()) / "OWN_FAILURES.txt"
+_tf.write_text("# head\ntagA 3\ntagB s5   # OOM\n  # indented\nbroken\ntagC 1 2\ntagD x\n")
+_own, _bad = S.parse_own(_tf)
+check(_own == {("tagA", 3), ("tagB", 5)} and _bad == ["broken", "tagC 1 2", "tagD x"], f"T4: OWN_FAILURES parsed leniently ({_own}, {_bad})")
+
+
+def own_after_train(root):   # T4: a finished 7% run without its check, listed -> own failure (counts as run, bpb worst)
+    g = "tpp7-190m-t0.745"
+    tag = G.tag_of(g, "win-ctx", G.GRID[g]["win-ctx"][0])
+    (root / "pttpp/out" / tag / "check_s5.json").unlink()
+    t2_ = G.tag_of("tpp2-190m-t0.745", "none", G.GRID["tpp2-190m-t0.745"]["none"][0])
+    bt = G.tag_of(G.BRIDGE, "none", "9.6e-3")
+    for f in (root / "pttpp/out" / bt).glob("*seed2_*"):
+        f.unlink()
+    (root / "pttpp/out" / bt / "check_s2.json").unlink(missing_ok=True)
+    (root / "pttpp" / "OWN_FAILURES.txt").write_text(f"{tag} 5\n{t2_} 0\n{bt} 2\n")
+
+
+t = build("own_after_train", sizeeff, mutate=own_after_train)
+check("own failure after training (no passing check" in t and "WITHHELD" not in line_of(t, "7% 190m tpp 0.745"),
+      "T4: a listed finished run without its check counts as an own failure, the cell is not withheld")
+check("ignored (pt2main's rules: re-run it)" in t, "T4: a listed 2% run is ignored with a warning")
+check("own failure without a run JSON" in t and "tppb-505m-3e8-lr9.6e-3-none seed 2" in t and "INCOMPLETE (" not in t.split("## hardware bridge")[1].split("\n## ")[0] and "-> bridge FAIL (win-ctx area ✓, none area ✗" in t,
+      "T4: a listed bridge run without a JSON counts as area 0 (bridge complete; none drops 18 -> FAIL, as designed)")
 t = build("reopen", sizeeff, mutate=reopen)
 check("NOTFINAL" in line_of(t, "7% 93m tpp 0.745") and "none: no C decision yet" in line_of(t, "7% 93m tpp 0.745")
       and "PROVISIONAL" in t, "T2 REOPEN: the withdrawn C leaves the cell not final")

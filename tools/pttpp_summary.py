@@ -52,6 +52,24 @@ def load_gen(path):
     return G
 
 
+def parse_own(f):
+    """OWN_FAILURES.txt -> ({(tag, seed)}, [lines not understood]); '#' starts a comment, a seed may be written s3 (T4: a
+    malformed line is reported, never an exception: one bad line used to stop every group's selection)"""
+    out, bad = set(), []
+    if not Path(f).exists():
+        return out, bad
+    for line in Path(f).read_text().splitlines():
+        w = line.split("#", 1)[0].split()
+        if not w:
+            continue
+        sd = w[1][1:] if len(w) == 2 and w[1][:1] in "sS" else (w[1] if len(w) == 2 else "")
+        if len(w) == 2 and sd.isdigit():
+            out.add((w[0], int(sd)))
+        else:
+            bad.append(line)
+    return out, bad
+
+
 def load_json(f, notes=None):
     """json of a file; a run JSON is rewritten at every eval by its running job (not atomic), so a parse error is retried
     once after 2 s and then reported and skipped (Amendment T1): a skipped file is a run in progress (a finished run's JSON
@@ -89,13 +107,8 @@ class Data:
         self.G, self.root, self.Rd = G, Path(root), Path(root) / "pttpp"
         self.runs, self.notes, self.unfinished = {}, [], []
         self.size_of = {v[:4]: k for k, v in G.SIZES.items()}
-        own = set()
-        of = self.Rd / "OWN_FAILURES.txt"
-        if of.exists():
-            for line in of.read_text().splitlines():
-                if line.strip() and not line.startswith("#"):
-                    t, s = line.split()
-                    own.add((t, int(s)))
+        own, bad = parse_own(self.Rd / "OWN_FAILURES.txt")
+        self.notes += [f"WARNING: OWN_FAILURES.txt line ignored (want '<tag> <seed>'): {b!r}" for b in bad]
         self.own = own
         self._new7()
         self._new2()
@@ -109,16 +122,20 @@ class Data:
         G = self.G
         seen = {(rec["tag"], k[3]) for k, rec in self.runs.items()}
         for tag, s in sorted(self.own - seen):
-            key = next(((g, a, lr, s) for g in G.GROUPS for a in G.ARMS for lr in G.LADDER if G.tag_of(g, a, lr) == tag), None)
+            key = next(((g, a, lr, s) for g in list(G.GROUPS) + [G.BRIDGE] for a in G.ARMS for lr in G.LADDER
+                        if G.tag_of(g, a, lr) == tag), None)   # T4: the bridge too
             if key is None or not (0 <= s <= 7):
                 self.notes.append(f"WARNING: OWN_FAILURES lists {tag} {s}, which is no run of the design: ignored")
                 continue
+            if key[0] != G.BRIDGE and G.GROUPS[key[0]]["setting"] == "2":
+                self.notes.append(f"WARNING: OWN_FAILURES lists the 2% run {tag} {s}: ignored (pt2main's rules: re-run it)")
+                continue
             if any(k[:3] == key[:3] and k[3] == s for k, _, _, _ in self.unfinished):
                 continue
-            c = G.GROUPS[key[0]]
-            rec = dict(file=f"<no run JSON: {tag} seed {s}>", r={"args": {"tag": f"_{tag}", "seed": s, "bs": 32, "seq": 512}, "steps": G.steps_of(c["size"], c["line"]),
-                       "curve": []}, own=True, synthetic=True, check=None, off=None, bad=[], src="pttpp", setting=c["setting"],
-                       size=c["size"], tag=tag)
+            X = self.expect(key)
+            rec = dict(file=f"<no run JSON: {tag} seed {s}>", r={"args": {"tag": f"_{tag}", "seed": s, "bs": 32, "seq": 512}, "steps": X["S"],
+                       "curve": []}, own=True, synthetic=True, check=None, off=None, bad=[], src="pttpp", setting=X["setting"],
+                       size=X["size"], tag=tag)
             self.notes.append(f"own failure without a run JSON (counts as area 0, bpb worst): {tag} seed {s}")
             self._add(key, rec)
 
@@ -212,13 +229,22 @@ class Data:
     def _finish(self, rec, key):
         r = rec["r"]
         tag, s = rec["tag"], key[3]
+        listed = (tag, s) in self.own and rec["setting"] == "7"   # T4: 2% follows pt2main (a failed run is re-run, not listed)
+        if (tag, s) in self.own and rec["setting"] == "2":
+            self.notes.append(f"WARNING: OWN_FAILURES lists the 2% run {tag} {s}: ignored (pt2main's rules: re-run it)")
         if not R.finished(r):
-            if (tag, s) in self.own:
+            if listed:
                 rec["own"] = True
                 self.notes.append(f"own failure (counts; missing evals scored 0): {rec['file']}")
             else:
                 self.unfinished.append((key, rec["file"], r["curve"][-1]["step"] if r["curve"] else None, r["steps"]))
                 return
+        elif listed:   # T4: finished training, listed: an own failure if its job's check is missing / failed
+            if rec["src"] == "pttpp" and not (rec["check"] or {}).get("pass"):
+                rec["own"] = True
+                self.notes.append(f"own failure after training (no passing check; counts as run, bpb worst): {rec['file']}")
+            else:
+                self.notes.append(f"WARNING: OWN_FAILURES lists {tag} {s}, but {rec['file']} finished with its check: ignored")
         self._add(key, rec)
 
     # expected facts of a run of a key
@@ -957,6 +983,9 @@ def alt_runs(D):
     return out
 
 
+_NOSWAP = []
+
+
 def variants(D, cells, fin, alts):
     """per informative cell and arm: the other lrs whose seeds-0-3 mean area is within 2 points of the pick's, and the lr
     with the lowest median t50 (censored at the budget), each with seeds 0-3 -> [(cell label, arm, lr, why, variant cell)]"""
@@ -971,6 +1000,8 @@ def variants(D, cells, fin, alts):
                 pool = {lr: rs for (st, sz, a, lr), rs in alts.items() if (st, sz, a) == (c["setting"], c["size"], arm)}
                 pool[pick] = {s: D.runs[c["keys"][arm][s]]["r"] for s in MAIN}
             pool = {lr: rs for lr, rs in pool.items() if all(s in rs for s in MAIN)}
+            if pick not in pool and c["gid"]:   # T4: say so instead of a silent gap in the lr-sensitive label
+                _NOSWAP.append(f"{c['setting']}% {label(c)} {arm}: the pick has an own failure on seeds 0-3, no swap")
             if pick not in pool or len(pool) < 2:
                 continue
             ar = {lr: np.mean([R.area(rs[s]) for s in MAIN]) for lr, rs in pool.items()}
@@ -1036,6 +1067,8 @@ def sensitivity(D, cells, fin, out):
                   + (" ** the sign depends on the lr choice" if flips else ""), file=out)
             for lab, arm, lr, why, sl in rows:
                 print(f"      {lab} {arm}@{lr} ({why}): {fmt_slope(sl) if sl else 'R not a point value: skipped'}", file=out)
+    for n_ in sorted(set(_NOSWAP)):
+        print(f"  NOTE {n_}", file=out)
     no_alt = [f"{c['setting']}% {label(c)} {a}" for c in fin for a in G.ARMS if not any(v[0] == (c["setting"], label(c)) and v[1] == a for v in V)]
     print(f"  (no alternative lr with seeds 0-3 within 2 points or t50-best, or only selection seeds 0-1: {', '.join(no_alt) or 'none'})", file=out)
 
