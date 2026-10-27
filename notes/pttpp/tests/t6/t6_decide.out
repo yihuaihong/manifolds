@@ -1,0 +1,15 @@
+tpp7-93m-t0.745: none {'X': '3.84e-2', 'C': '1.92e-2', 'STOP': False}; grid 9.6e-3 / 1.92e-2
+tpp7-190m-t0.745: none {'X': '1.92e-2', 'C': '9.6e-3', 'STOP': False}; grid 4.8e-3 / 9.6e-3
+tpp7-294m-t0.745: none {'X': '1.92e-2', 'C': None, 'STOP': True}; grid 4.8e-3 / 9.6e-3
+tpp7-93m-t0.318: none {'X': '7.68e-2', 'C': None, 'STOP': False}; grid 1.92e-2 / 3.84e-2
+tpp7-190m-t0.318: none {'X': None, 'C': '1.92e-2', 'STOP': False}; grid 9.6e-3 / 1.92e-2  -> T6: REOPEN + X 3.84e-2
+tpp7-294m-t0.318: none {'X': None, 'C': '1.92e-2', 'STOP': False}; grid 9.6e-3 / 1.92e-2  -> T6: REOPEN + X 3.84e-2
+tpp7-505m-t0.318: none {'X': None, 'C': '9.6e-3', 'STOP': False}; grid 9.6e-3 / 1.92e-2
+tpp7-1b-t0.745: none {'X': None, 'C': None, 'STOP': False}; grid 1.2e-3 / 2.4e-3
+tpp2-190m-t0.745: none {'X': None, 'C': None, 'STOP': False}; grid 4.8e-3 / 9.6e-3
+tpp2-294m-t0.745: none {'X': None, 'C': None, 'STOP': False}; grid 4.8e-3 / 9.6e-3
+written tpp7-190m-t0.318 [(0, 'none', 'C', '1.92e-2', None), (1, 'win-ctx', 'X', '9.6e-3', None), (2, 'win-ctx', 'C', '4.8e-3', None), (3, 'none', 'REOPEN', None, 'T6'), (4, 'none', 'X', '3.84e-2', 'T6')]
+   X runs: [('X', 'win-ctx', '9.6e-3', 0), ('X', 'win-ctx', '9.6e-3', 1), ('X', 'win-ctx', '9.6e-3', 2), ('X', 'win-ctx', '9.6e-3', 3), ('X', 'none', '3.84e-2', 0), ('X', 'none', '3.84e-2', 1), ('X', 'none', '3.84e-2', 2), ('X', 'none', '3.84e-2', 3)]
+written tpp7-294m-t0.318 [(0, 'none', 'C', '1.92e-2', None), (1, 'win-ctx', 'X', '1.2e-3', None), (2, 'none', 'REOPEN', None, 'T6'), (3, 'none', 'X', '3.84e-2', 'T6')]
+   X runs: [('X', 'win-ctx', '1.2e-3', 0), ('X', 'win-ctx', '1.2e-3', 1), ('X', 'win-ctx', '1.2e-3', 2), ('X', 'win-ctx', '1.2e-3', 3), ('X', 'none', '3.84e-2', 0), ('X', 'none', '3.84e-2', 1), ('X', 'none', '3.84e-2', 2), ('X', 'none', '3.84e-2', 3)]
+planned GPU-h before {'b200': 141.93, 'other': 255.89} after {'b200': 141.93, 'other': 268.42} COST_MAX {'b200': 180.0, 'other': 300.0}

@@ -14,6 +14,10 @@ maybe_select.sh at the end of every job of the group (and by hand: bash maybe_se
             /scratch below 97%), make_jobs_pttpp.py --group <group> --test-only (unsubmitted jobs only) and, only if every
             line is OK, --submit
 Overrides (plumbing tests only): PTTPP_DIR, PTTPP_ROOT, PTTPP_GEN, PTTPP_READOUT, PTTPP_PY.
+Amendment T6 (coordinator, before any read-out): none's pick at the UPPER edge of its stage-A grid is always extended one
+ladder step up on the selection seeds (X), also when the bracket is closed (an edge pick within the tie band, which was C);
+after that extension the rule is unchanged (closed -> C at the pick, open at either edge -> STOP). Both settings (7%: F87
+rule 1, 2%: pt2main rule 1); win-ctx and the lower edge unchanged. Picks made before T6 were extended by REOPEN + X entries.
 Amendment T5 (fourth audit): --check exits 2 on any exception (e.g. the generator's import-time sha asserts) after logging
 it ("--check CRASHED"), instead of Python's 1, which maybe_select.sh read as "nothing to do"; the DISK GUARD line says
 that the next hook call of the group retries the submission and that by hand is needed when no job of the group is left.
@@ -198,7 +202,15 @@ def decide(G, gid):
                 new.append(dict(arm=a, stage="STOP", lr=None, why=f"{s['status']}: {(s.get('reasons') or [''])[0]}", basis=basis))
                 continue
             assert s["best"] in s["grid"] and s["best"] in G.LADDER, s
-            if not s["open"]:
+            # T6: none's pick at the upper edge of its stage-A grid, not extended yet -> one step up even if closed (an edge
+            # pick within the tie band); after that extension the unchanged rule applies (closed -> C, open -> STOP)
+            lo, hi = G.GRID[gid][a]
+            assert float(lo) < float(hi), G.GRID[gid][a]
+            up_edge = a == "none" and s["best"] == hi and (a, "X") not in dec
+            if up_edge and not s["open"]:
+                new.append(dict(arm=a, stage="X", lr=G.step_out(hi, "upper"), basis=basis,
+                                why="T6: none's pick at the upper grid edge (closed within the tie band): one step up"))
+            elif not s["open"]:
                 new.append(dict(arm=a, stage="C", lr=s["best"], basis=basis))
             elif (a, "X") in dec:
                 new.append(dict(arm=a, stage="STOP", lr=s["best"], why=f"bracket still OPEN at the {s['open']} edge after one "
