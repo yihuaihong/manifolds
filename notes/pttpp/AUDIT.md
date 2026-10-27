@@ -355,3 +355,4 @@ situation T2 item 3 extended at 93M@0.745, but the rule is not general, so the t
 T2 floor rule this cell becomes NONE AT FLOOR (or FLOOR if the prior is below 5 too) and leaves every slope. 190M@0.318 may follow.
 Tests after the changes: selftest 86/86, plumbing 35/35 (P11, P12 new), the generator unchanged (its frozen sha stays), the other
 read-outs unchanged; a fresh minimal audit follows.
+T3 deployed 2026-10-26T21:03:33-04:00: read-out snapshot = git archive 7024038 (pttpp_summary.py eea32522fac1), pick_tpp.py 6838761ae987, maybe_select.sh ecc9e2ba90f4; FROZEN.txt rewritten; hooks run by hand once per group; regression of the other read-outs: REGRESSION PASS.
