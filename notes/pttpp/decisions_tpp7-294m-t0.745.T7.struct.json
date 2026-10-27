@@ -1,0 +1,47 @@
+{
+ "group": "tpp7-294m-t0.745",
+ "note": "structure only (basis omitted: blind); the full log is runs/pttpp/decisions/tpp7-294m-t0.745.json",
+ "log": [
+  {
+   "seq": 0,
+   "arm": "none",
+   "stage": "X",
+   "lr": "1.92e-2",
+   "time": "2026-10-26T22:09:05",
+   "job": "21032593"
+  },
+  {
+   "seq": 1,
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "2.4e-3",
+   "time": "2026-10-27T00:26:46",
+   "job": "21032604"
+  },
+  {
+   "seq": 2,
+   "arm": "none",
+   "stage": "STOP",
+   "lr": "1.92e-2",
+   "time": "2026-10-27T06:12:11",
+   "job": "21052823"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T7",
+   "time": "2026-10-27T17:37:37-04:00",
+   "why": "Amendment T7: the user approved one more step above the X (2026-10-27); the STOP is withdrawn"
+  },
+  {
+   "seq": 4,
+   "arm": "none",
+   "stage": "X",
+   "lr": "3.84e-2",
+   "amend": "T7",
+   "time": "2026-10-27T17:37:37-04:00",
+   "why": "Amendment T7: one ladder step above the first X, seeds 0-3; then F87 rule 1 over the four lrs; open again -> STOP (the user), no automatic further step"
+  }
+ ]
+}

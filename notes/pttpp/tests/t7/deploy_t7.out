@@ -1,0 +1,7 @@
+[2026-10-27T17:34:19-04:00] HOLD set
+    90s no group lock for 90s: safe to swap
+FROZEN lines changed:
+> 85d2a0ffbde2 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pttpp_summary.py
+> 0b3a8726025d /scratch/yh6210/llmadd_torch/runs/pttpp/readout/COMMIT
+> ad538e40275c /scratch/yh6210/llmadd_torch/make_jobs_pttpp.py
+[2026-10-27T17:35:56-04:00] deployed 8f798cd (generator ad538e40275c, pttpp_summary.py 85d2a0ffbde2); 26 frozen files re-checked; HOLD removed

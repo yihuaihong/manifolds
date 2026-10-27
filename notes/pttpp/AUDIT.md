@@ -529,3 +529,37 @@ not enough for one more 1.07B X (13 h) or an extension of the 294M@0.745 STOP (~
 submission, as designed; a 1.07B upper-edge tie now waits for its X (2 x ~6.5 B200-h) before C; (4) the --decide list in
 pick_tpp.py's header still says "no open bracket -> C" (the T6 exception is in its Amendment paragraph). T5's minor items
 (llmadd-burst-ro is a working checkout, etc.) still hold.
+
+## Amendment T7 (started 2026-10-27; the user's approval of 2026-10-27, relayed by the coordinator: 「ok: 294M@0.745 再往上扩一档 lr。这需要把成本上限从 300 小时调到约 310 小时。」; before any read-out of a pttpp cell)
+Progress note (written first, in case the build stops): COST_MAX L40S + A100 300 -> 310 h (B200 180 unchanged), and a
+user-approved second extension of 294M@0.745 none (REOPEN of its STOP + X none@3.84e-2, seeds 0-3). This needs more than the
+constant and the decision entries: the generator's decisions() refuses any entry after a STOP and a second X, runs_of()
+allows only one step beyond the stage-A grid, and the read-out's select_arm() takes one X lr only (a second X would drop
+1.92e-2 from the grid). So the generator and the read-out change too, and T7 gets the full tests and a fresh audit.
+1. **COST_MAX** (make_jobs_pttpp.py, a frozen constant): L40S + A100 300 -> 310 h; B200 180 h unchanged.
+2. **294M@0.745 none** (STOP after X 1.92e-2, left to the user in T6): decisions/tpp7-294m-t0.745.json seq 3 REOPEN (withdraws
+   the STOP) + seq 4 X none@3.84e-2 (one ladder step above the first X, seeds 0-3), amend T7, no numbers, written 17:37 under
+   the group's lock by scale_work/tpp/t7/t7_decide.py. The hook (by hand) passed --test-only and submitted 21146504,
+   21146505, 21146506, 21146507. Planned GPU-h: L40S + A100 269.0 -> 286.4 (the arm's C counted conservatively), B200 141.9;
+   within COST_MAX 310 / 180. When they finish the unchanged selection applies F87 rule 1 to none {4.8e-3, 9.6e-3, 1.92e-2,
+   3.84e-2}: closed -> C at the pick (1.92e-2 or 3.84e-2: their confirm seeds; no T6 step, the arm has an X); open again ->
+   STOP (the user), no automatic further step.
+3. **Code (why a full test and audit, not only plumbing):** the generator's decisions() refused any entry after a STOP and a
+   second X, runs_of() allowed only one step beyond the stage-A grid, and the read-out's select_arm() added one X lr (the
+   last), which would have dropped 1.92e-2 from the grid. Now: a REOPEN with an amend may withdraw a STOP, after which one X
+   may follow, exactly one ladder step beyond the arm's last X in the same direction (anything else is refused: no amend, two
+   steps, the other direction, a C or an X straight after the STOP); effective() clears the STOP on REOPEN; the read-out's
+   decisions() drops the STOP on REOPEN and select_arm() uses every X lr of the log. pick_tpp.py and maybe_select.sh are
+   unchanged (the arm is open again through effective(), and its existing "X decided and still open -> STOP" applies).
+   Existing logs fold exactly as before (no REOPEN after a STOP existed).
+   Tests: selftest 108/108 (new: the REOPEN of a STOP + a second X -> the cell waits for a C, the grid lists 4 lrs, no stray;
+   then C at the recomputed pick -> final, not withheld); plumbing 65/65 (new P20: STOP -> REOPEN + X 3.84e-2 -> only the 4
+   new X jobs submitted after the real --test-only -> open again -> STOP, no third X; P20b tie -> C at the lower bpb; the
+   refused forms); the amended generator renders all 260 submitted job files byte for byte (render_same.py); the T6 and T7
+   read-outs give byte-identical full read-outs and --select outputs (3 groups) on 12 synthetic roots (diff_select.sh);
+   regression of the other read-outs: REGRESSION PASS. The temporary read-only copy make_jobs_pttpp_t7test.py (tests only)
+   was deleted after the deployment.
+   T7 deployed 2026-10-27T17:35:56-04:00 (HOLD 17:34:19-17:35:56, after 90 s without a group lock): read-out snapshot = git
+   archive 8f798cd (pttpp_summary.py 85d2a0ffbde2; T6 snapshot kept as readout.pre_t7), make_jobs_pttpp.py ad538e40275c
+   (atomic rename); FROZEN.txt rewritten (26 files re-checked; 3 lines changed). Hooks by hand for every group at 17:38: nothing
+   to do. A fresh minimal audit (read-only) follows, since code beyond the constant and the decision entries changed.
