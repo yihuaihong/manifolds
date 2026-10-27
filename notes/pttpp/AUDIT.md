@@ -382,3 +382,4 @@ last stage-A / X run nothing calls again, so the coordinator's watcher must look
 Tests: selftest 90/90 (new: lenient parsing, a listed finished run without check counts, a listed 2% run ignored, a listed
 bridge crash counts as 0), plumbing 39/39 (new P13 owner-less locks, P14 bad lines + a listed run whose job still runs);
 the generator unchanged; regression of the other read-outs to follow. A fresh minimal audit follows.
+T4 deployed 2026-10-26T22:02:14-04:00: read-out snapshot = git archive 0b74254 (pttpp_summary.py 59aeb1b2fa93), pick_tpp.py abe513922808, maybe_select.sh 2f0bb97c0e28; FROZEN.txt rewritten; hooks run by hand once per group; regression of the other read-outs: REGRESSION PASS.
