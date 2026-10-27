@@ -1,0 +1,3 @@
+written [(0, 'none', 'C', '3.84e-2', None), (1, 'win-ctx', 'C', '9.6e-3', None), (2, 'none', 'REOPEN', None, 'T5'), (3, 'none', 'X', '7.68e-2', 'T5')]
+X runs: [('X', 'none', '7.68e-2', 0), ('X', 'none', '7.68e-2', 1), ('X', 'none', '7.68e-2', 2), ('X', 'none', '7.68e-2', 3)]
+planned GPU-h before {'b200': 141.93, 'other': 263.16} after {'b200': 141.93, 'other': 264.58} COST_MAX {'b200': 180.0, 'other': 300.0}

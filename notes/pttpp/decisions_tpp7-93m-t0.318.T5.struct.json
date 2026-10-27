@@ -1,0 +1,39 @@
+{
+ "group": "tpp7-93m-t0.318",
+ "note": "structure only (basis omitted: blind); the full log is runs/pttpp/decisions/tpp7-93m-t0.318.json",
+ "log": [
+  {
+   "seq": 0,
+   "arm": "none",
+   "stage": "C",
+   "lr": "3.84e-2",
+   "time": "2026-10-26T20:19:11",
+   "job": "21032614"
+  },
+  {
+   "seq": 1,
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "time": "2026-10-26T22:20:55",
+   "job": "21032628"
+  },
+  {
+   "seq": 2,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T5",
+   "time": "2026-10-27T06:08:34-04:00",
+   "why": "Amendment T5 item 2(a) (coordinator, fourth audit F3): the one-step extension that 93M@0.745 none got in T2 item 3; the C at the upper grid edge 3.84e-2 is withdrawn until F87 rule 1 is applied again"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "X",
+   "lr": "7.68e-2",
+   "amend": "T5",
+   "time": "2026-10-27T06:08:34-04:00",
+   "why": "Amendment T5 item 2(a): one ladder step above the upper edge, seeds 0-3; then rule 1 over {1.92e-2, 3.84e-2, 7.68e-2}; open again at either edge -> STOP (the user)"
+  }
+ ]
+}

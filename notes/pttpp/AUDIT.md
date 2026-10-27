@@ -383,3 +383,87 @@ Tests: selftest 90/90 (new: lenient parsing, a listed finished run without check
 bridge crash counts as 0), plumbing 39/39 (new P13 owner-less locks, P14 bad lines + a listed run whose job still runs);
 the generator unchanged; regression of the other read-outs to follow. A fresh minimal audit follows.
 T4 deployed 2026-10-26T22:02:14-04:00: read-out snapshot = git archive 0b74254 (pttpp_summary.py 59aeb1b2fa93), pick_tpp.py abe513922808, maybe_select.sh 2f0bb97c0e28; FROZEN.txt rewritten; hooks run by hand once per group; regression of the other read-outs: REGRESSION PASS.
+
+## Coordinator note (2026-10-27 ~04:40 EDT; before any read-out of a pttpp cell)
+- The build agent stopped on an API spend limit after deploying T4. It left uncommitted edits ("T5": OWN_FAILURES entries
+  counted only once the job has left the queue; a listed run whose check FAILED stays an integrity failure). They were
+  never deployed (the frozen read-out is still git archive 0b74254). They are saved as scale_work/tpp/t5_uncommitted.patch
+  and stashed in the worktree.
+- Until T5 is completed, tested and audited, nobody edits OWN_FAILURES.txt by hand. The normal flow does not use it
+  (the file does not exist).
+- The fresh audit of T4 announced above had no report on disk. The coordinator runs a new one (read-only) of the deployed
+  T4, and of whether T5 is needed.
+- PRIMARY.txt (7% primary metric) is still not registered: it waits for the user's choice. No verdict is read before it.
+
+## Amendment T5 (written 2026-10-27T06:12-04:00; the fourth fresh audit (of the deployed T4; notes/batch1_build/audit_pttpp_t4.md in the review repo) and the coordinator's decisions on it; before any read-out of a pttpp cell)
+Blind as before: the build session ran no read-out on the real root and opened no decision basis, DECISION line,
+readout_<group>.txt or locks/sel_*.json; it printed only the structural fields (seq / arm / stage / lr / amend) of the
+decision logs, to write item 2(a). The selection steps ran as automated. The selftest's known answer no longer reads
+runs/pttpp (item 4).
+1. **F1 fixed (important: a requeued job blocked by its own lock).** maybe_select.sh alive(): an owner equal to the caller
+   (`[ "$o" = "$me" ] && return 1`) is not alive. A job killed while it held the lock (SIGKILL, node failure: the EXIT trap
+   does not run) and requeued with the same id used to find its own id running in squeue, leave a pending mark and exit 0
+   (logged only to its stdout); the group then waited for the next job's hook, for ever if it was the stage's last job (T4's
+   regression of T3's `"$other" != "$me"`). Only this one line of the earlier builder's unfinished lock rewrite was taken (its
+   60 s / 30 min age rules were not). Plumbing P15: the requeued job (its id = a running job) takes its own lock over,
+   selects and releases; a caller with another job id, and a caller by hand, still leave a pending mark at a live owner's
+   lock (also 3 h old). The auditor's reproduction (scale_work/tpp/t5/final/lock_repro.sh): T4 2f0bb97c0e28 "held by
+   20284046: pending mark left", nothing decided, lock and mark left; T5 30f575efb51e takes it over, decides, releases.
+2. **F3: the floor handling made symmetric.**
+   a. **93M@0.318 none gets the extension 93M@0.745 none got in T2 item 3.** decisions/tpp7-93m-t0.318.json: seq 2 REOPEN of
+      none's C at 3.84e-2 (amend T5), seq 3 X none@7.68e-2 (one ladder step above the upper edge, seeds 0-3; amend T5),
+      written under the group's lock by scale_work/tpp/t5/final/t5_decide.py (asserts the state before and after; this
+      paragraph is their record: the select log has no DECISION line for them; the entries carry no number). The X jobs
+      21083281-21083284 passed --test-only and were submitted by the hook (planned GPU-h L40S + A100 263.2 -> 264.6 h (C for the reopened arm counted at its lower grid lr, conservatively), B200 141.9 h, within COST_MAX). When they finish,
+      the unchanged selection applies F87 rule 1 to none {1.92e-2, 3.84e-2, 7.68e-2}: closed -> C at the pick (3.84e-2: its
+      confirm seeds 4-7 exist and count; 7.68e-2 within 2 of 3.84e-2 -> C at 7.68e-2 and its confirm seeds are submitted);
+      open again at either edge -> STOP (the user). The cell is NOTFINAL until then.
+   b. **Read-out.** Every Q1 slope table (7% 0.745 and 0.318, all sizes and L40S only; 2% 0.745) prints one more line: the
+      slopes (Delta area and ln R_0.5, seeds 0-7 and 4-7) with the line's NONE AT FLOOR cells included, their gains over
+      their 8 seeds (S4 unchanged: a '>=' cell stays out of the R slopes; the line names it), or "no such cell on this line".
+      A Q1 verdict that would be SHOWN becomes "DIRECTION UNSTABLE (none-at-floor cells): ..." when that 8-seed slope of its
+      primary has the other sign (point estimate); checked after T2 item 4; the Q1 combination line then carries
+      "[none-at-floor cells flip the sign on the tpp <line> line (T5)]". Every other verdict is unchanged (NOT SHOWN stays NOT
+      SHOWN; a non-finite inclusive slope changes nothing). Under primary = log R_0.5 a NONE AT FLOOR cell is normally '>='
+      and so cannot flip anything. Q2 is not covered (the coordinator's decision names Q1; the same cells also leave the Q2
+      pooled slope: a point for the coordinator).
+3. **OWN_FAILURES (T5-own): shelved, not deployed.** scale_work/tpp/t5_uncommitted.patch and stash@{0} of the worktree are
+   kept as they are. The file does not exist and nothing writes it. **Nobody edits runs/pttpp/OWN_FAILURES.txt by hand
+   before T5-own is completed and audited.** Also not deployed (the earlier builder's drafts): scale_work/tpp/t5/
+   maybe_select.sh and pick_tpp.py, and scale_work/tpp/plumb_tpp.py's T5 edits (they test the age rules). The deployed T5
+   files and their tests are scale_work/tpp/t5/final (git: notes/pttpp/tests/t5).
+4. Minor items:
+   - DISK GUARD: the decisions are kept and the next hook call of the group retries the submission (--check sees the
+     unsubmitted runs: plumbing P17, 98% -> nothing submitted, 94% on the next call -> submitted); the log line now says so
+     and names the command to run by hand when no job of the group is left (the watcher greps "DISK GUARD"). /scratch at
+     T5: 4.59 / 5.00 TB (91.75%), 2026-10-27 06:10.
+   - --check crash: pick_tpp.py --check exits 2 on any exception (the generator's import-time sha asserts included) and logs
+     "--check CRASHED"; maybe_select.sh logs "pick_tpp.py --check FAILED (rc 2 ...)" and returns 2 (the job prints
+     "maybe_select.sh failed (rc 2)"; the job's own exit code is unchanged). Plumbing P16 (and the bridge still rc 1).
+   - make_jobs_pttpp_t5test.py deleted (byte-identical to the frozen generator 218991699dee; nothing referenced it; its
+     .pyc too).
+   - FROZEN.txt also lists pt2s505_refs.json 479e394771e9 and rb6scale_refs.json b65472eb3d29 (the generator asserts them at
+     import: F4) and the 8 llmadd-burst-ro results/*-pt2s190-*/dry_inputs.txt that the 2% selection reads (358-361 s0-3,
+     382-385 s4-7: F5). A change now stops every group's selection with "FROZEN FILE CHANGED" in its log (explicit) instead
+     of an assert in one place. Do not pull / checkout in /scratch/yh6210/llmadd-burst-ro while this batch runs.
+   - F10: the selftest's known answer reads a root that holds only symlinks to the reused batches (ptlr, ptlr_1b, pt2s505,
+     ptsize999) and an empty pttpp/; asserted that no pttpp run is read.
+   - Recorded, not changed: F2 (PRIMARY.txt is still not registered, while the decision basis implies the direction of the
+     7% Delta area at seeds 0-3: the user registers it without reading decisions / select logs; nobody relays their numbers;
+     the T5 decision entries carry none); F6 (disk headroom); F7 (a 2% job that crashes after training leaves no log line:
+     the watcher also looks at non-zero exit codes of 2% jobs); F8 (unregistered verdict text is printed: a procedural
+     constraint); the "held ... pending mark left" message of maybe_select.sh still goes only to the job's stdout.
+Tests: selftest 106/106 (new: a NONE AT FLOOR cell that flips a SHOWN area slope -> DIRECTION UNSTABLE (none-at-floor cells)
+on both 0.745 variants, ln R_0.5 unchanged, the combination line labelled; one that agrees in sign -> SHOWN unchanged under
+both primaries; one next to a NOT SHOWN slope of the other sign -> NOT SHOWN unchanged; the known answer on the reused-only
+root); plumbing 48/48 (P15-P17 new); lock reproduction; the T4 vs T5 read-out on the selftest's synthetic roots differs only
+in the Q1 header, the added lines and the designed flip (diff_readout.sh); regression of the other read-outs: REGRESSION
+PASS (byte-identical); the generator unchanged.
+T5 deployed 2026-10-27T06:07:59-04:00: read-out snapshot runs/pttpp/readout = git archive fd8901b (pttpp_summary.py
+d9fdc2d80443; readout_rules.py, pt999_summary.py, pt2main_summary.py unchanged), pick_tpp.py 435d7e7e8898, maybe_select.sh
+30f575efb51e (both git show fd8901b, put in place by atomic renames: a bash still running the old maybe_select.sh keeps its
+file); the old snapshot kept as readout.pre_t5; FROZEN.txt rewritten (26 files, every sha re-checked). HOLD was set
+06:06:24-06:07:59 and the swap waited for 90 s without any group lock. Then (06:08-06:09) the item 2(a) entries and the hook
+of tpp7-93m-t0.318 (X jobs 21083281-21083284 submitted), and the hook once by hand for every group at 06:10 (each: nothing to
+do, no log line). The generator is unchanged (218991699dee). Scripts and outputs: scale_work/tpp/t5/final (deploy_t5.sh,
+t5_decide.py, hooks_by_hand.sh; git notes/pttpp/tests/t5). A fresh minimal audit (read-only) follows.

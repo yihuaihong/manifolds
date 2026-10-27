@@ -1,11 +1,11 @@
-# pttpp frozen files (sha256[:12] path), checked by maybe_select.sh before any selection (runs/pttpp/AUDIT.md; Amendment T4)
-59aeb1b2fa93 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pttpp_summary.py
+# pttpp frozen files (sha256[:12] path), checked by maybe_select.sh before any selection (runs/pttpp/AUDIT.md; Amendment T5)
+d9fdc2d80443 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pttpp_summary.py
 e91ee8a8a846 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/readout_rules.py
 01e2fec07499 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pt999_summary.py
 68c3b7c26de2 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pt2main_summary.py
-4042bf032aff /scratch/yh6210/llmadd_torch/runs/pttpp/readout/COMMIT
-abe513922808 /scratch/yh6210/llmadd_torch/runs/pttpp/pick_tpp.py
-2f0bb97c0e28 /scratch/yh6210/llmadd_torch/runs/pttpp/maybe_select.sh
+858cd3aaf048 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/COMMIT
+435d7e7e8898 /scratch/yh6210/llmadd_torch/runs/pttpp/pick_tpp.py
+30f575efb51e /scratch/yh6210/llmadd_torch/runs/pttpp/maybe_select.sh
 218991699dee /scratch/yh6210/llmadd_torch/make_jobs_pttpp.py
 d10d720c1242 /scratch/yh6210/llmadd_torch/pttpp_refs.json
 8dd7b3407459 /scratch/yh6210/llmadd_torch/make_jobs_ptlr1b.py
@@ -15,3 +15,13 @@ a3bce3ab63c1 /scratch/yh6210/llmadd_torch/runs/pttpp/code7/tools/pretrain_range.
 93e22bf4c4c0 /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/pretrain_range.py
 a2e8a9621383 /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/make_pt2main_tasks.py
 226f4cac70ea /scratch/yh6210/llmadd_torch/runs/pttpp/code2/tools/offline_lm.py
+479e394771e9 /scratch/yh6210/llmadd_torch/pt2s505_refs.json
+b65472eb3d29 /scratch/yh6210/llmadd_torch/rb6scale_refs.json
+b2c95cb3c415 /scratch/yh6210/llmadd-burst-ro/results/358-pt2s190-lr6e-4-none-s0/dry_inputs.txt
+a4397a3eb381 /scratch/yh6210/llmadd-burst-ro/results/359-pt2s190-lr6e-4-none-s1/dry_inputs.txt
+edb3fc885eb6 /scratch/yh6210/llmadd-burst-ro/results/360-pt2s190-lr6e-4-none-s2/dry_inputs.txt
+a0a1520d6839 /scratch/yh6210/llmadd-burst-ro/results/361-pt2s190-lr6e-4-none-s3/dry_inputs.txt
+3e615e251de7 /scratch/yh6210/llmadd-burst-ro/results/382-pt2s190-lr4.8e-3-none-s4/dry_inputs.txt
+6b017718bcae /scratch/yh6210/llmadd-burst-ro/results/383-pt2s190-lr4.8e-3-none-s5/dry_inputs.txt
+9efea219f5f6 /scratch/yh6210/llmadd-burst-ro/results/384-pt2s190-lr4.8e-3-none-s6/dry_inputs.txt
+771ca8dea3c8 /scratch/yh6210/llmadd-burst-ro/results/385-pt2s190-lr4.8e-3-none-s7/dry_inputs.txt
