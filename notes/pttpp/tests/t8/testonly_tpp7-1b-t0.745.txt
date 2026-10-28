@@ -1,0 +1,5 @@
+OK  tpp7-1b-t0.745-lr3e-4-win-ctx-s0: sbatch: Job 21164991 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr3e-4-win-ctx-s1: sbatch: Job 21164994 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr6e-4-win-ctx-s0: sbatch: Job 21164995 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr6e-4-win-ctx-s1: sbatch: Job 21164996 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+pttpp tpp7-1b-t0.745: 8 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; test-only

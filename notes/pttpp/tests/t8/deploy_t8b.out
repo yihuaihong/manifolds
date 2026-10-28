@@ -1,0 +1,41 @@
+    30s no group lock for 30s
+[2026-10-27T20:50:07-04:00] locks taken: /scratch/yh6210/llmadd_torch/runs/pttpp/locks/tpp7-1b-t0.745 /scratch/yh6210/llmadd_torch/runs/pttpp/locks/tpp7-190m-t0.318
+archived 21033033 tpp7-1b-t0.745-lr3e-4-win-ctx-s0 (CANCELLED by 4550886 , restarts 0)
+archived 21033034 tpp7-1b-t0.745-lr3e-4-win-ctx-s1 (CANCELLED by 4550886 , restarts 0)
+archived 21033035 tpp7-1b-t0.745-lr6e-4-win-ctx-s0 (CANCELLED by 4550886 , restarts 0)
+archived 21033036 tpp7-1b-t0.745-lr6e-4-win-ctx-s1 (CANCELLED by 4550886 , restarts 0)
+archived 21033041 tppb-505m-3e8-lr1.2e-3-win-ctx-s0 (CANCELLED by 4550886 , restarts 0)
+archived 21033042 tppb-505m-3e8-lr1.2e-3-win-ctx-s1 (CANCELLED by 4550886 , restarts 0)
+archived 21033043 tppb-505m-3e8-lr1.2e-3-win-ctx-s2 (CANCELLED by 4550886 , restarts 0)
+archived 21033044 tppb-505m-3e8-lr1.2e-3-win-ctx-s3 (CANCELLED by 4550886 , restarts 0)
+OK  tpp7-1b-t0.745-lr3e-4-win-ctx-s0: sbatch: Job 21164991 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr3e-4-win-ctx-s1: sbatch: Job 21164994 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr6e-4-win-ctx-s0: sbatch: Job 21164995 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-1b-t0.745-lr6e-4-win-ctx-s1: sbatch: Job 21164996 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s0: sbatch: Job 21164999 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s1: sbatch: Job 21165000 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s2: sbatch: Job 21165001 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s3: sbatch: Job 21165002 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5: sbatch: Job 21165003 to start at 2026-10-30T03:04:19 a using 8 processors on nodes gl005 in partition l40s_public
+OK  tpp7-190m-t0.318-lr3.84e-2-none-s2: sbatch: Job 21165005 to start at 2026-10-30T03:04:21 a using 8 processors on nodes gl005 in partition l40s_public
+tpp7-1b-t0.745-lr3e-4-win-ctx-s0 Submitted batch job 21165008
+tpp7-1b-t0.745-lr3e-4-win-ctx-s1 Submitted batch job 21165009
+tpp7-1b-t0.745-lr6e-4-win-ctx-s0 Submitted batch job 21165011
+tpp7-1b-t0.745-lr6e-4-win-ctx-s1 Submitted batch job 21165012
+tppb-505m-3e8-lr1.2e-3-win-ctx-s0 Submitted batch job 21165033
+tppb-505m-3e8-lr1.2e-3-win-ctx-s1 Submitted batch job 21165034
+tppb-505m-3e8-lr1.2e-3-win-ctx-s2 Submitted batch job 21165035
+tppb-505m-3e8-lr1.2e-3-win-ctx-s3 Submitted batch job 21165038
+tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5 Submitted batch job 21165051
+tpp7-190m-t0.318-lr3.84e-2-none-s2 Submitted batch job 21165052
+diff job_tpp7-1b-t0.745-lr3e-4-win-ctx-s0.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot0 #SBATCH --job-name=llmadd_tpp-b200-slot4 
+diff job_tpp7-1b-t0.745-lr3e-4-win-ctx-s1.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot1 #SBATCH --job-name=llmadd_tpp-b200-slot5 
+diff job_tpp7-1b-t0.745-lr6e-4-win-ctx-s0.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot2 #SBATCH --job-name=llmadd_tpp-b200-slot6 
+diff job_tpp7-1b-t0.745-lr6e-4-win-ctx-s1.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot3 #SBATCH --job-name=llmadd_tpp-b200-slot7 
+diff job_tppb-505m-3e8-lr1.2e-3-win-ctx-s0.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot0 #SBATCH --job-name=llmadd_tpp-b200-slot4 
+diff job_tppb-505m-3e8-lr1.2e-3-win-ctx-s1.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot1 #SBATCH --job-name=llmadd_tpp-b200-slot5 
+diff job_tppb-505m-3e8-lr1.2e-3-win-ctx-s2.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot2 #SBATCH --job-name=llmadd_tpp-b200-slot6 
+diff job_tppb-505m-3e8-lr1.2e-3-win-ctx-s3.sbatch: #SBATCH --job-name=llmadd_tpp-b200-slot3 #SBATCH --job-name=llmadd_tpp-b200-slot7 
+identical job_tpp7-190m-t0.318-lr3.84e-2-none-s2.sbatch
+identical job_tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5.sbatch
+[2026-10-27T20:50:49-04:00] T8 part 2 done; locks released at exit

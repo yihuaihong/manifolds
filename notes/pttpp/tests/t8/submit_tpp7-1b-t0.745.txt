@@ -1,0 +1,5 @@
+tpp7-1b-t0.745-lr3e-4-win-ctx-s0 Submitted batch job 21165008
+tpp7-1b-t0.745-lr3e-4-win-ctx-s1 Submitted batch job 21165009
+tpp7-1b-t0.745-lr6e-4-win-ctx-s0 Submitted batch job 21165011
+tpp7-1b-t0.745-lr6e-4-win-ctx-s1 Submitted batch job 21165012
+pttpp tpp7-1b-t0.745: 8 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; submitted

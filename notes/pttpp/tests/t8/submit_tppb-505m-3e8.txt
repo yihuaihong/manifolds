@@ -1,0 +1,5 @@
+tppb-505m-3e8-lr1.2e-3-win-ctx-s0 Submitted batch job 21165033
+tppb-505m-3e8-lr1.2e-3-win-ctx-s1 Submitted batch job 21165034
+tppb-505m-3e8-lr1.2e-3-win-ctx-s2 Submitted batch job 21165035
+tppb-505m-3e8-lr1.2e-3-win-ctx-s3 Submitted batch job 21165038
+pttpp tppb-505m-3e8: 8 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; submitted

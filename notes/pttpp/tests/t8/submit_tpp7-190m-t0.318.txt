@@ -1,0 +1,3 @@
+tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5 Submitted batch job 21165051
+tpp7-190m-t0.318-lr3.84e-2-none-s2 Submitted batch job 21165052
+pttpp tpp7-190m-t0.318: 32 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; submitted

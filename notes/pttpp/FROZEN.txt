@@ -1,4 +1,4 @@
-# pttpp frozen files (sha256[:12] path), checked by maybe_select.sh before any selection (runs/pttpp/AUDIT.md; Amendment T7)
+# pttpp frozen files (sha256[:12] path), checked by maybe_select.sh before any selection (runs/pttpp/AUDIT.md; Amendment T8)
 85d2a0ffbde2 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pttpp_summary.py
 e91ee8a8a846 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/readout_rules.py
 01e2fec07499 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/pt999_summary.py
@@ -6,7 +6,7 @@ e91ee8a8a846 /scratch/yh6210/llmadd_torch/runs/pttpp/readout/tools/readout_rules
 0b3a8726025d /scratch/yh6210/llmadd_torch/runs/pttpp/readout/COMMIT
 b30567ca52a9 /scratch/yh6210/llmadd_torch/runs/pttpp/pick_tpp.py
 30f575efb51e /scratch/yh6210/llmadd_torch/runs/pttpp/maybe_select.sh
-ad538e40275c /scratch/yh6210/llmadd_torch/make_jobs_pttpp.py
+b4bfa6eb248d /scratch/yh6210/llmadd_torch/make_jobs_pttpp.py
 d10d720c1242 /scratch/yh6210/llmadd_torch/pttpp_refs.json
 8dd7b3407459 /scratch/yh6210/llmadd_torch/make_jobs_ptlr1b.py
 a5a7fb60eedc /scratch/yh6210/llmadd_torch/make_jobs_pt2s505.py

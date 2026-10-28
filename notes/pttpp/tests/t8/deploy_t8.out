@@ -1,0 +1,21 @@
+    60s no group lock for 60s
+[2026-10-27T20:48:10-04:00] locks taken: /scratch/yh6210/llmadd_torch/runs/pttpp/locks/tpp7-1b-t0.745 /scratch/yh6210/llmadd_torch/runs/pttpp/locks/tpp7-190m-t0.318
+[2026-10-27T20:48:11-04:00] generator ad538e40275c -> b4bfa6eb248d; FROZEN.txt rewritten and checked
+tpp7-1b-t0.745-lr3e-4-win-ctx-s0 21033033
+tpp7-1b-t0.745-lr3e-4-win-ctx-s1 21033034
+tpp7-1b-t0.745-lr6e-4-win-ctx-s0 21033035
+tpp7-1b-t0.745-lr6e-4-win-ctx-s1 21033036
+tppb-505m-3e8-lr1.2e-3-win-ctx-s0 21033041
+tppb-505m-3e8-lr1.2e-3-win-ctx-s1 21033042
+tppb-505m-3e8-lr1.2e-3-win-ctx-s2 21033043
+tppb-505m-3e8-lr1.2e-3-win-ctx-s3 21033044
+KEPT 21033033 tpp7-1b-t0.745-lr3e-4-win-ctx-s0 (state PENDING): not resubmitted
+KEPT 21033034 tpp7-1b-t0.745-lr3e-4-win-ctx-s1 (state PENDING): not resubmitted
+KEPT 21033035 tpp7-1b-t0.745-lr6e-4-win-ctx-s0 (state PENDING): not resubmitted
+KEPT 21033036 tpp7-1b-t0.745-lr6e-4-win-ctx-s1 (state PENDING): not resubmitted
+KEPT 21033041 tppb-505m-3e8-lr1.2e-3-win-ctx-s0 (state PENDING): not resubmitted
+KEPT 21033042 tppb-505m-3e8-lr1.2e-3-win-ctx-s1 (state PENDING): not resubmitted
+KEPT 21033043 tppb-505m-3e8-lr1.2e-3-win-ctx-s2 (state PENDING): not resubmitted
+KEPT 21033044 tppb-505m-3e8-lr1.2e-3-win-ctx-s3 (state PENDING): not resubmitted
+tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5 21080784
+tpp7-190m-t0.318-lr3.84e-2-none-s2 21084173

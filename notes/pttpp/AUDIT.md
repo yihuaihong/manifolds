@@ -579,3 +579,52 @@ a later REOPEN + X after such a C, pass; both need amendment entries; (4) pick_t
 value used is G.COST_MAX = 310); the read-out's "in force" lists only the last X (both are in the raw log). Costs: planned
 L40S + A100 286.4 / 310, B200 141.9 / 180; worst case (every arm without X / C / STOP extended once) 292.4 / 310 and
 167.9 / 180. The 4 X jobs are estimated to start 2026-10-30; 294M@0.745 stays PROVISIONAL until its C.
+
+## Amendment T8 (started 2026-10-27 evening; the user's decision of 2026-10-27, relayed by the coordinator: arXiv v1 waits for pttpp, 「多开一些卡，让其尽快」, without breaking the hardware design: 7% small sizes L40S only, 1.07B and the B200 bridge B200 only, 2% A100 only, as pt2s505; before any read-out of a pttpp cell)
+Progress note (written first): assessing B200 parallelism (4 singleton slots -> more), 2% A100 on a second account,
+L40S priority, and the remaining work. Nothing changed yet.
+Progress (2026-10-27 ~21:00, facts only, nothing changed yet): (a) account 625 cannot use any A100 partition (sbatch
+--test-only: allocation failure on a100 / a100_tandon / _cilvr / _cds / _chemistry / _plus); 520_tandon_advanced reaches only
+a100_tandon (the same Tandon group cap that holds the 2% jobs, reason QOSGrpGRES): 2% stays as it is. Every pttpp 2% run so far
+and pt2s505 ran on NVIDIA A100-SXM4-80GB (gpu.csv, 29 / 29 and 32 / 32). (b) 625 reaches B200 only on the public b200 pool
+(estimated start later than 520's b200_tandon_prem): one account (520) with more slots is the simpler choice. (c) The per-user
+gpu48 cap (gres/gpu=16) is per user across accounts and partitions and also covers the B200 jobs that got gpu48: a second
+account on l40s_public adds no GPUs. pttpp nice 20 < ptshare 2000 < dim 5000 (pttpp first among our own pending jobs).
+(d) **Found: two runs lost to the deployment HOLD.** A job that starts while runs/pttpp/HOLD exists exits at once (the kill
+switch, exit 0); two pttpp jobs started inside the T5 / T6 HOLD windows and never trained: 21080784
+(tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5, stage C) and 21084173 (tpp7-190m-t0.318-lr3.84e-2-none-s2, stage X; its log is the
+single line "HOLD present: exiting"). Three other jobs met HOLD only in their hook after a passing check (harmless: the hooks
+were run by hand after each deployment). The 190M@0.318 group would have waited for ever. Fix in T8: these two runs are
+resubmitted with the same job files, and deployments no longer set HOLD.
+Progress: the 8-slot generator committed (627e6fc) and tested (render check, plumbing 65/65, selftest 108/108, regression
+PASS); deployment (deploy_t8.sh: no HOLD; cancels only still-pending B200 jobs whose slot changes; resubmits them and the two
+lost runs) starts now.
+1. **B200: 8 singleton slots instead of 4** (make_jobs_pttpp.py SLOTS 4 -> 8; slot = index in b200_order mod 8). Why the
+   append-only rule ("a submitted job file is never rewritten") allows this one change: it changes scheduling only, not
+   training; every resubmitted job file differs from the cancelled one in exactly the line '#SBATCH --job-name=
+   llmadd_tpp-b200-slot<k>' (diffs in deploy_t8b.out); runs at index 0-3 keep their slot (i % 4 = i % 8), so their files
+   are unchanged; the job comment "singleton slots keep at most 4 B200 runs at a time" predates T8 and is kept verbatim
+   (now 8). One account (520) only: 625 reaches only the public b200 pool, and two accounts would need run_guard against a
+   double run; singleton names are per user, so 8 distinct names give 8 concurrent runs. Cancelled (all PENDING, restarts 0;
+   scancel --state=PENDING): 21033033, 21033034, 21033035, 21033036 (1.07B stage A, win-ctx 3e-4 / 6e-4, seeds 0-1) and
+   21033041, 21033042, 21033043, 21033044 (bridge win-ctx seeds 0-3). Resubmitted after --test-only: 21165008, 21165009,
+   21165011, 21165012 (slots 4-7) and 21165033, 21165034, 21165035, 21165038 (slots 4-7). Kept: 21033029 (preempted once,
+   resumes from its ckpt), 21033030 / 21033031 (running), 21033037-40 (bridge none, slots 0-3). Afterwards 3 B200 runs
+   running and 5 eligible (slots 0, 4-7). Note: the gpu48 cap (16 GPUs per user) also covers B200 jobs that got gpu48, so 8
+   B200 runs can take up to 8 of the 16 that L40S / A100 jobs share.
+2. **2% A100: unchanged.** 625 cannot use an A100 partition; 520_tandon_advanced only a100_tandon, under the same group cap.
+3. **7% L40S: unchanged.** nice 20 (pttpp) < 2000 (ptshare) < 5000 (dim): pttpp starts first among our pending jobs. 520 can
+   also submit to l40s_public, but the gpu48 per-user cap is shared across accounts and l40s_public's group cap is shared by
+   all its users: no gain.
+4. **The two runs lost to HOLD resubmitted** with their original job files (byte-identical): 21165051
+   (tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5) and 21165052 (tpp7-190m-t0.318-lr3.84e-2-none-s2); the lost jobs' files and flags
+   are in scale_work/tpp/t8/lost. From now on deployments do not set HOLD (T8 swapped the generator by an atomic rename with
+   FROZEN.txt rewritten right after; a hook in that second logs FROZEN FILE CHANGED and the hooks are run by hand afterwards).
+5. Remaining work and the completion estimate: runs/pttpp/T8_remaining.md (per group; optimistic 10-29, conservative 11-02).
+Tests: render check (t8_render.py: every non-B200 group identical; B200 index < 4 identical, the others only the slot line;
+decided 1.07B stages the same in a fake root), plumbing 65/65 and selftest 108/108 with the 8-slot generator, regression
+PASS; after the deployment every one of the 264 submitted job files = the rendering (render_same_after.out). Deployed
+2026-10-27T20:48:11-04:00 (generator b4bfa6eb248d; FROZEN.txt rewritten, 26 shas checked). deploy_t8.sh stopped after its
+step 4 (sacct still read PENDING right after the scancel, so the cancelled jobs were first marked KEPT; then a grep without
+a match ended it under set -e); deploy_t8b.sh re-took the locks, checked each job CANCELLED with restarts 0, archived their
+files and submitted (20:50). Hooks by hand for every group at 20:52: nothing to do. A fresh minimal audit follows.

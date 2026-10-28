@@ -1,0 +1,5 @@
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s0: sbatch: Job 21164999 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s1: sbatch: Job 21165000 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s2: sbatch: Job 21165001 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+OK  tppb-505m-3e8-lr1.2e-3-win-ctx-s3: sbatch: Job 21165002 to start at 2026-10-30T21:51:43 a using 16 processors on nodes gb001 in partition b200_tandon_prem
+pttpp tppb-505m-3e8: 8 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; test-only

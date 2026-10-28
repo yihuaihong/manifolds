@@ -1,0 +1,3 @@
+OK  tpp7-190m-t0.318-lr4.8e-3-win-ctx-s5: sbatch: Job 21165003 to start at 2026-10-30T03:04:19 a using 8 processors on nodes gl005 in partition l40s_public
+OK  tpp7-190m-t0.318-lr3.84e-2-none-s2: sbatch: Job 21165005 to start at 2026-10-30T03:04:21 a using 8 processors on nodes gl005 in partition l40s_public
+pttpp tpp7-190m-t0.318: 32 jobs rendered in /scratch/yh6210/llmadd_torch/runs/pttpp; test-only
