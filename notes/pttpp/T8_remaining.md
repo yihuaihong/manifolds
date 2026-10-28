@@ -34,3 +34,7 @@ GPU-h on the designed hardware (planning rates; X = a possible extension before 
 | L40S | 10-28 | 10-30 (test-only estimate of a new start: 10-30 03:04) |
 | A100 | 10-29 | 10-31 (about 1.1 runs / h so far through the group cap) |
 | whole batch | 10-29 | 11-02 |
+
+Note (T8 audit): the L40S conservative date can slip to 10-31 to 11-02 (an l40s_public probe at 20:15 estimated a new start at
+11-01 17:53; 294M@0.745 and 190M@0.318 none still need X and then a newly submitted C), and the batch's conservative 11-02 is
+not a hard bound (B200 preemption; a possible 1.07B X wave).

@@ -628,3 +628,21 @@ PASS; after the deployment every one of the 264 submitted job files = the render
 step 4 (sacct still read PENDING right after the scancel, so the cancelled jobs were first marked KEPT; then a grep without
 a match ended it under set -e); deploy_t8b.sh re-took the locks, checked each job CANCELLED with restarts 0, archived their
 files and submitted (20:50). Hooks by hand for every group at 20:52: nothing to do. A fresh minimal audit follows.
+T8 audit (fresh general-purpose agent, read-only, blind; notes/batch1_build/audit_pttpp_t8.md in the review repo; recorded
+2026-10-27, before any read-out of a pttpp cell): **no blocking and no important item.** Confirmed: only SLOTS and a
+docstring changed; 256 non-B200 runs render byte for byte; of the 16 B200 runs only index 4-7 and 12-15 differ, in the slot
+line only (i % 8 < 4 keeps its slot, so the bridge none jobs 8-11 too); decided 1.07B stages (C only, X then C, STOP ->
+REOPEN -> second X -> C) the same; the 8 cancelled jobs CANCELLED with restarts 0 and no start; at most one live job per run,
+the flags = the live job ids; 264 flags = 264 rendered runs; the two lost runs were the only jobs that ended on HOLD at start;
+FROZEN 26/26; the account / GPU facts. Corrections to the T8 text above:
+- Disk: with 8 B200 slots the transient B200 ckpts can reach about 8 x 12.9 = 103 GB (+ one copy while writing), not "<= 4 x
+  12.9" ("Cost and disk"). /scratch was 4.65 / 5.00 TB (93.0%) at T8. DISK GUARD stops new submissions only, not a running
+  job writing a ckpt (a full disk crashes the trainer before the hook, exit 1): the watcher alerts at /scratch >= 96%.
+- Priority: pttpp's nice 20 is first among the L40S (ptshare 2000) and A100 (dim 5000) jobs of this user; another project's
+  nice-0 jobs (mr3h_*, on the public b200 pool and on h100_tandon, gpu48) rank ahead and count toward the same 16-GPU gpu48
+  cap; they belong to another session and are not touched.
+- Dates: the L40S conservative date can be 10-31 to 11-02 (a probe at 20:15 estimated a new l40s_public start at 11-01 17:53,
+  and 294M@0.745 / 190M@0.318 none still need X then C); the batch's conservative 11-02 is not a hard bound (B200
+  preemption, a possible 1.07B X). T8_remaining.md carries this note.
+- Loss detection: a job that ends on HOLD exits 0 (COMPLETED), which the exit-code watcher (codes 4 and 1, T4) does not see.
+  The watcher also checks that every run whose SUBMITTED job has left the queue has its run JSON and check (0 misses at T8).
