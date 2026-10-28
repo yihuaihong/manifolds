@@ -1,0 +1,25 @@
+== l40s
+   tpp7-190m-t0.318     C gone           1 runs    0.5 h
+   tpp7-190m-t0.318     X gone           1 runs    0.5 h
+   tpp7-294m-t0.318     C PENDING        1 runs    1.1 h
+   tpp7-294m-t0.745     X PENDING        4 runs    8.7 h
+   totals: {'done': (197, 209.5), 'gone': (2, 1.0), 'PENDING': (5, 9.8)}
+== b200
+   tpp7-1b-t0.745       A PENDING        5 runs   32.5 h
+   tpp7-1b-t0.745       A RUNNING        2 runs   13.0 h
+   tppb-505m-3e8        A PENDING        8 runs   11.9 h
+   totals: {'PENDING': (13, 44.4), 'RUNNING': (2, 13.0), 'done': (1, 6.5)}
+== a100
+   tpp2-190m-t0.745     X PENDING        8 runs    4.9 h
+   tpp2-294m-t0.745     A PENDING        3 runs    4.5 h
+   tpp2-294m-t0.745     C PENDING        4 runs    6.0 h
+   totals: {'done': (29, 29.3), 'PENDING': (15, 15.4)}
+== C still to decide (counted at the lower grid lr's est_h)
+   a100  tpp2-190m-t0.745     none     4 runs   2.5 h
+   a100  tpp2-190m-t0.745     win-ctx  4 runs   2.5 h
+   a100  tpp2-294m-t0.745     win-ctx  4 runs   6.0 h
+   b200  tpp7-1b-t0.745       none     6 runs  39.0 h
+   b200  tpp7-1b-t0.745       win-ctx  6 runs  39.0 h
+   l40s  tpp7-190m-t0.318     none     4 runs   2.0 h
+   l40s  tpp7-294m-t0.745     none     4 runs   8.7 h
+planned_hours {'b200': 141.9, 'other': 286.4}

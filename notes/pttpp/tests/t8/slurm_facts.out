@@ -1,0 +1,153 @@
+=== date 2026-10-27T20:15:46-04:00
+=== associations of yh6210
+torch_pr_520_tandon_advanced||normal|||||
+torch_pr_520_tandon_priority||normal|||||
+torch_pr_625_general||normal|||||
+users||normal|||||
+=== QOS
+normal|0|||||||
+h200_tandon|0||||cpu=1792,gres/gpu=112,mem=28000G|||
+h200_courant|0||||cpu=1408,gres/gpu=88,mem=22000G|||
+h200_cds|0||||cpu=384,gres/gpu=24,mem=6000G|||
+h200_bpeher|0||||cpu=384,gres/gpu=24,mem=6000G|||
+h200_public|0||||cpu=384,gres/gpu=24,mem=6000G|||
+l40s_courant|0||||cpu=1664,gres/gpu=52,mem=6500G|||
+l40s_mren|0||||cpu=128,gres/gpu=4,mem=500G|||
+l40s_lpinto|0||||cpu=256,gres/gpu=8,mem=1000G|||
+l40s_public|0||||cpu=6656,gres/gpu=208,mem=26000G|||
+gpu48|0|gres/gpu=16||500||2-00:00:00||
+gpu168|0|gres/gpu=4||50||7-00:00:00||
+gpuplus|0|gres/gpu=64||50||7-00:00:00||
+cpuprem|0|cpu=20000||5000||2-00:00:00||
+rtx6000_lzanna|0||||cpu=128,gres/gpu=8,mem=1400G|||
+rtx6000_bpeher|0||||cpu=128,gres/gpu=8,mem=1400G|||
+h100_tandon|0||||cpu=1440,gres/gpu=60,mem=22500G|||
+a100_cilvr|0||||cpu=512,gres/gpu=32,mem=4000G|||
+a100_cds|0||||cpu=480,gres/gpu=24,mem=6000G|||
+a100_chemistry|0||||cpu=1120,gres/gpu=56,mem=14000G|||
+a100_tandon|0||||cpu=1184,gres/gpu=60,mem=14500G|||
+rtx6000_courant|0||||cpu=128,gres/gpu=8,mem=1400G|||
+rtx6000_economics|0||||cpu=128,gres/gpu=8,mem=1400G|||
+rtx6000_xwang|0||||cpu=128,gres/gpu=8,mem=1400G|||
+rtx6000_humanities|0||||cpu=128,gres/gpu=8,mem=1400G|||
+hpl|0|gres/gpu=272||50||2-00:00:00||
+b200_courant_short|0||||gres/gpu=2|06:00:00||
+=== partitions (name, avail, nodes, gres, features, allowaccounts, allowqos)
+PartitionName=h200_bpeher	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h200_bpeher	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200_tandon	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h200_tandon	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200_courant	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h200_courant	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200_cds	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h200_cds	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200_public	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h200_public	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h200_plus	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=4352,mem=70074000M,node=34,billing=4352,gres/gpu=272
+PartitionName=h100_tandon	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=h100_tandon	   TRES=cpu=1440,mem=23175000M,node=15,billing=1440,gres/gpu=60
+PartitionName=h100	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=1440,mem=23175000M,node=15,billing=1440,gres/gpu=60
+PartitionName=h100_plus	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=1440,mem=23175000M,node=15,billing=1440,gres/gpu=60
+PartitionName=l40s_mren	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=l40s_mren	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=l40s_lpinto	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=l40s_lpinto	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=l40s_courant	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=l40s_courant	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=l40s_public	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=l40s_public	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=l40s	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=l40s_plus	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=8704,mem=34884000M,node=68,billing=8704,gres/gpu=272
+PartitionName=a100_cilvr	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=a100_cilvr	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=a100_cds	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=a100_cds	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=a100_chemistry	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=a100_chemistry	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=a100_tandon	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=a100_tandon	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=a100	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=a100_plus	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=3296,mem=39560000M,node=43,billing=3296,gres/gpu=172
+PartitionName=b200_plus	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=1664,mem=40170000M,node=13,billing=1664,gres/gpu=104
+PartitionName=b200_jdpablo	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=256,mem=6180000M,node=2,billing=256,gres/gpu=16
+PartitionName=b200_gdurett	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=384,mem=9270000M,node=3,billing=384,gres/gpu=24
+PartitionName=b200_psharma	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=256,mem=6180000M,node=2,billing=256,gres/gpu=16
+PartitionName=b200_mren	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=128,mem=3090000M,node=1,billing=128,gres/gpu=8
+PartitionName=b200_courant_short	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=b200_courant_short	   TRES=cpu=128,mem=3090000M,node=1,billing=128,gres/gpu=8
+PartitionName=b200_cgsb	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=128,mem=3090000M,node=1,billing=128,gres/gpu=8
+PartitionName=b200_courant	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=768,mem=18540000M,node=6,billing=768,gres/gpu=48
+PartitionName=b200_tandon_prem	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=256,mem=6180000M,node=2,billing=256,gres/gpu=16
+PartitionName=b200_courant_prem	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=1536,mem=37080000M,node=12,billing=1536,gres/gpu=96
+PartitionName=b200	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=1920,mem=46350000M,node=15,billing=1920,gres/gpu=120
+PartitionName=cpu_prem	   AllowGroups=ALL AllowAccounts=ALL AllowQos=ALL	   AllocNodes=ALL Default=NO QoS=N/A	   TRES=cpu=44928,mem=339356000M,node=372,billing=44928,gres/gpu=944
+=== GPU types per partition (sinfo)
+a100_cds|gpu:a100:4(S:0-1)|cuda,a100|43|up
+a100_chemistry|gpu:a100:4(S:0-1)|cuda,a100|43|up
+a100_cilvr|gpu:a100:4(S:0-1)|cuda,a100|43|up
+a100_plus|gpu:a100:4(S:0-1)|cuda,a100|43|up
+a100_tandon|gpu:a100:4(S:0-1)|cuda,a100|43|up
+a100|gpu:a100:4(S:0-1)|cuda,a100|43|up
+all|gpu:b200:8(S:0-1)|cuda,b200|15|up
+all|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+b200_cgsb|gpu:b200:8(S:0-1)|cuda,b200|1|up
+b200_courant_prem|gpu:b200:8(S:0-1)|cuda,b200|12|up
+b200_courant_short|gpu:b200:8(S:0-1)|cuda,b200|1|up
+b200_courant|gpu:b200:8(S:0-1)|cuda,b200|6|up
+b200_gdurett|gpu:b200:8(S:0-1)|cuda,b200|3|up
+b200_jdpablo|gpu:b200:8(S:0-1)|cuda,b200|2|up
+b200_mren|gpu:b200:8(S:0-1)|cuda,b200|1|up
+b200_plus|gpu:b200:8(S:0-1)|cuda,b200|13|up
+b200_psharma|gpu:b200:8(S:0-1)|cuda,b200|2|up
+b200_tandon_prem|gpu:b200:8(S:0-1)|cuda,b200|2|up
+b200|gpu:b200:8(S:0-1)|cuda,b200|15|up
+cpu_prem|gpu:a100:4(S:0-1)|cuda,a100|43|up
+cpu_prem|gpu:b200:8(S:0-1)|cuda,b200|15|up
+cpu_prem|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+cpu_short|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s_courant|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s_lpinto|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s_mren|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s_plus|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s_public|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+l40s|gpu:l40s:4(S:0-1)|cuda,l40s|68|up
+=== this batch's jobs (llmadd_tpp-*): id name account partition state nice priority reason
+35
+15 torch_pr_520_tandon_priority|a100_tandon|PENDING
+1 torch_pr_520_tandon_priority|b200,b200_tandon_prem|PENDING
+12 torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING
+2 torch_pr_520_tandon_priority|b200_tandon_prem|RUNNING
+5 torch_pr_625_general|l40s_public|PENDING
+=== B200 slot jobs
+21033029|llmadd_tpp-b200-slot1|torch_pr_520_tandon_priority|b200,b200_tandon_prem|PENDING|20|12344|None|0:00|9:00:00
+21033031|llmadd_tpp-b200-slot3|torch_pr_520_tandon_priority|b200_tandon_prem|RUNNING|20|12598|None|6:41|8:53:19
+21033030|llmadd_tpp-b200-slot2|torch_pr_520_tandon_priority|b200_tandon_prem|RUNNING|20|12598|None|38:26|8:21:34
+21033044|llmadd_tpp-b200-slot3|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033043|llmadd_tpp-b200-slot2|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033042|llmadd_tpp-b200-slot1|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033041|llmadd_tpp-b200-slot0|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033040|llmadd_tpp-b200-slot3|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033039|llmadd_tpp-b200-slot2|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033038|llmadd_tpp-b200-slot1|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033037|llmadd_tpp-b200-slot0|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|3:00:00
+21033036|llmadd_tpp-b200-slot3|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|9:00:00
+21033035|llmadd_tpp-b200-slot2|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|9:00:00
+21033034|llmadd_tpp-b200-slot1|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|Dependency|0:00|9:00:00
+21033033|llmadd_tpp-b200-slot0|torch_pr_520_tandon_priority|b200_tandon_prem,b200|PENDING|20|12226|None|0:00|9:00:00
+=== other own jobs (ptshare / dim / others): name account partition state nice
+      1 claude_host|torch_pr_625_general|cl,cs|PENDING|0
+      1 claude_host|torch_pr_625_general|cs|RUNNING|0
+      1 llmadd_ptshare-53m-lr1.6e-2-14pct-none-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-14pct-none-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-14pct-none-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-14pct-none-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-2pct-none-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-2pct-none-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-2pct-none-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-2pct-none-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-4pct-none-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-4pct-none-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-4pct-none-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1.6e-2-4pct-none-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-14pct-win-ctx-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-14pct-win-ctx-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-14pct-win-ctx-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-14pct-win-ctx-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-2pct-win-ctx-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-2pct-win-ctx-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-2pct-win-ctx-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-2pct-win-ctx-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-4pct-win-ctx-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-4pct-win-ctx-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-4pct-win-ctx-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr1e-3-4pct-win-ctx-s3|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr2e-3-14pct-win-ctx-s0|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr2e-3-14pct-win-ctx-s1|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr2e-3-14pct-win-ctx-s2|torch_pr_625_general|l40s_public|PENDING|2000
+      1 llmadd_ptshare-53m-lr2e-3-14pct-win-ctx-s3|torch_pr_625_general|l40s_public|PENDING|2000

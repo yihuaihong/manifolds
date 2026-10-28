@@ -318,12 +318,13 @@ def bridge_runs():
 
 
 def b200_order():
-    """every B200 run in a fixed order (slot = index mod 4): tpp7-1b stage A, the bridge, then tpp7-1b's decided stages"""
+    """every B200 run in a fixed order (slot = index mod SLOTS): tpp7-1b stage A, the bridge, then tpp7-1b's decided stages"""
     one = [("tpp7-1b-t0.745",) + r for r in runs_of("tpp7-1b-t0.745")]
     return one[:8] + [(BRIDGE,) + r for r in bridge_runs()] + one[8:]
 
 
-SLOTS = 4
+SLOTS = 8   # Amendment T8 (the user, 2026-10-27: more GPUs, the same hardware): 4 -> 8 singleton slots; index < 4 keeps its slot,
+            # the job text is otherwise unchanged (its comment 'at most 4 B200 runs' predates T8 and is kept verbatim)
 
 
 # ---------------------------------------------------------------- per run facts
