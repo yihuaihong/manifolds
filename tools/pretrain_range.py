@@ -83,6 +83,26 @@ args omit the two flags at their defaults).
   pre-clip norm of the total gradient as clip_grad_norm_ saw it (grad_total), the clip coefficient min(1, 1 / (grad_total
   + 1e-6)) (clip_coef), and the LM share grad_lm / |g_lm + g_prior| (grad_lm_share; g_prior lambda_t-weighted; 1.0 when
   the loss is the LM alone) with |g_lm + g_prior| itself (grad_T; double path of grad_total).
+Rev E 2026-11-03 (ptdom, the single-domain pretraining screen of the F81 fine-tuning positives; opt-in, intent spec
+llmadd_torch/runs/ptdom/AUDIT.md). Only when --domains names an ANCHOR domain (stars, landmarks, languages, colours,
+cities); otherwise the trainer is Rev D (default path and every Rev B / C / D path bit-identical; no new flag).
+  Anchor-comparison domains = tools/ft36.py's question family on tools/manifold_domains.py's tables: every valid
+  comparison of the domain's rule (manifold_domains._pair_answer, the atlas margins), at most 1500 (ft36.pair_questions,
+  its fixed subset seed 7), each in both orders, as the training line 'Q: <PAIR / PAIR2 template> <answer>\n'
+  ('Q: Which star is closer to Achernar in the night sky, Acrux or Algieba? Answer: Acrux\n'). Split per seed (stream
+  4200 + seed, its own SeedSequence: children 1-5 split, 6-10 shuffled target, 11-15 eval contexts of ANCHOR[i]): 40% of
+  the unordered option pairs {b, c} held out with every anchor and both orders (ft36.split; F81's key). Prior: 1 - CKA of
+  the hooked states at the LAST token of each item name in the line (anchor a and both options; ft36's site: the token
+  holding the item's last character; asserted to end exactly at the name's end and to be the last token of ' ' + name)
+  vs the domain's primary atlas target (manifold_atlas.primary: sphere / tree / hue); the tree target (languages) uses
+  the raw centred Gram as ft36 (RAW_GRAM: column weights carry the hierarchy), the others the trainer's centred_gram.
+  Evaluation in the domain eval position (text + one numbers training line + the question): exact match (as Rev B) and
+  the 2-way choice: summed log-prob of ' <answer>\n' vs ' <other option>\n' after the same prompt and context (ft36's
+  scoring), hit iff strictly larger; read-out held_2way (all held-out questions, both orders: chance 50% exactly for an
+  option-order bias). With an anchor domain the cyclic domains also log the k-way choice (<d>_<set>_kway: argmax of the
+  answer-token logit over the n item tokens; single-token items asserted) and every eval logs the gradient split of the
+  decomposition (grad_T = |g_lm + sum lambda g_d|, grad_lm_share = grad_lm / grad_T) and of the backward (grad_total,
+  clip_coef, grad_T_reldiff).
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -117,6 +137,7 @@ HELD_ANS_PER = 3      # H_ans rows per held number with sum h (+3 with a 4-digit
 REVC_DEFAULTS = {"held_operands": 0, "wd": 0.1}   # Rev C flags: kept out of the run JSON's args at these values
 HELD_BLOCKS = 9       # Rev D (--held_strat value_freq): the hundreds blocks 100-199 .. 900-999, two halves each
 REVD_DEFAULTS = {"held_strat": "freq", "lam_decay": False}   # Rev D flags: kept out of the run JSON's args at these values
+REVE_DEFAULTS = {"anc_eval_max": 0}   # Rev E (testing only): kept out of the run JSON's args at this value
 
 
 def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
@@ -208,7 +229,12 @@ def held_out(rng, per_bucket=150):
 # EXTRA[i], 11-15 = the eval contexts of EXTRA[i]: seen subset, then per set and context the numbers line and the text
 # end), 5000 line order (of the domain lines after the numbers line), 10**6 + step logging.
 EXTRA =("months", "weekdays", "clock", "s4", "dim")   # fixed order: the RNG children are indexed by it
-ALL_DOMAINS = ("numbers",) + EXTRA
+# Rev E (ptdom): anchor-comparison domains (fixed order: the children of SeedSequence(4200 + seed) are indexed by it)
+ANCHOR = ("stars", "landmarks", "languages", "colours", "cities")
+ALL_DOMAINS = ("numbers",) + EXTRA + ANCHOR
+ANC_HELD = 0.4        # held-out share of the option pairs (ft36 make_split)
+ANC_STREAM = 4200     # SeedSequence(4200 + seed).spawn(16): 1 + i split, 6 + i shuffled target, 11 + i eval contexts of ANCHOR[i]
+ANC_RAW = ("tree", "within")   # ft36.RAW_GRAM: targets whose column weights carry the structure (raw centred Gram)
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
           "November", "December")
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -245,6 +271,11 @@ PARA = {"months": ("What month is {k} {u} after{I}?{J}\n", "Date math:{I} + {k} 
 PARA_SETS = ("held", "seen")   # the eval sets every template is scored on (the read-out sub-splits are masks of held)
 
 
+def PARA_OF(d):
+    """Rev E: the held-out-format templates of domain d (none for the anchor domains)."""
+    return PARA.get(d, ())
+
+
 def circle(n: int) -> np.ndarray:
     a = 2 * np.pi * np.arange(n) / n
     return np.stack([np.cos(a), np.sin(a)], 1)
@@ -274,14 +305,22 @@ def cka_cov(A: np.ndarray, B: np.ndarray) -> float:
     return float(np.linalg.norm(A.T @ B) ** 2 / (np.linalg.norm(A.T @ A) * np.linalg.norm(B.T @ B)))
 
 
-def far_perm(F: np.ndarray, rng, refs, n_try: int = 3000, thr: float = 0.15):
+def gram_raw(F: np.ndarray) -> np.ndarray:
+    """Rev E: centred Gram of the raw (centred, unscaled) features: ft36's gram for its RAW_GRAM targets."""
+    F = np.asarray(F, np.float64)
+    F = F - F.mean(0)
+    return F @ F.T
+
+
+def far_perm(F: np.ndarray, rng, refs, n_try: int = 3000, thr: float = 0.15, gram=None):
     """(max CKA to the references, permutation q): the first q with max_ref CKA(F[q], ref) < thr, else the farthest of
-    n_try (toy_struct.far_perm / pretrain_rainbow.wrong, on the domain's own stream)."""
-    Gs = [gram_std(R) for R in refs]
+    n_try (toy_struct.far_perm / pretrain_rainbow.wrong, on the domain's own stream). gram: Rev E (raw targets) only."""
+    gram = gram or gram_std
+    Gs = [gram(R) for R in refs]
     best = (2.0, None)
     for _ in range(n_try):
         q = rng.permutation(len(F))
-        G1 = gram_std(F[q])
+        G1 = gram(F[q])
         c = max(float((G0 * G1).sum() / (np.linalg.norm(G0) * np.linalg.norm(G1))) for G0 in Gs)
         if c < best[0]:
             best = (c, q)
@@ -449,6 +488,8 @@ def main() -> None:
     ap.add_argument("--dim_train", type=float, default=0.5, help="--domains: dim relation-class split, train fraction")
     ap.add_argument("--dom_eval_rows", type=int, default=200, help="--domains: min rows per eval set (contexts x questions)")
     ap.add_argument("--dom_seen", type=int, default=150, help="--domains: trained questions per seen eval set")
+    ap.add_argument("--anc_eval_max", type=int, default=0, help="Rev E, TESTING ONLY (CPU smoke runs): evaluate only the "
+                    "first N held-out questions of each anchor domain (0 = all of them, the design)")
     args = ap.parse_args()
     DOM = bool(args.domains)
     lst = lambda s: [v for v in s.split(",") if v]
@@ -468,6 +509,9 @@ def main() -> None:
     REVC = HO or args.site == "emb" or args.wd != REVC_DEFAULTS["wd"]   # Rev C logging (lr_now / wd_now) only then
     VF = args.held_strat == "value_freq"   # Rev D
     REVD = VF or args.lam_decay            # Rev D logging (lam_now, grad_total, clip_coef, grad_lm_share) only then
+    REVE = DOM and bool(set(DOMS) & set(ANCHOR))   # Rev E (ptdom): anchor domains, k-way / 2-way choice, gradient split
+    assert REVE or args.anc_eval_max == 0, "--anc_eval_max needs an anchor domain in --domains"
+    assert args.anc_eval_max >= 0 and args.anc_eval_max % 2 == 0, "--anc_eval_max: even (both orders of a comparison)"
     if HO:
         assert args.tokenization == "whole" and not DOM, "--held_operands: whole-number tokens, no --domains"
         if not VF:
@@ -570,10 +614,13 @@ def main() -> None:
     max_ans = max(int(v[1].max()) for v in evalsets.values())
 
     # ---------------------------------------------------------------- Rev B: domain lines, splits, targets, eval sets
-    EXT = [d for d in EXTRA if d in DOMS]       # the enabled non-number domains, in the fixed order
+    EXT = [d for d in EXTRA if d in DOMS] + [d for d in ANCHOR if d in DOMS]   # the enabled non-number domains, in the fixed order
     DPRI = [d for d in EXT if d in DPRI_ALL]    # their active priors
     lam_num = args.lam                          # the numbers prior's weight (default path: --lam)
     DLINE, DPOOL, DINFO, DTAB, DTAB_ACT, DHELD, dom_evalsets = {}, {}, {}, {}, {}, {}, {}
+    # Rev E: the other option's line of an anchor question (d, q) -> (ids, answer start, span length); the matching eval
+    # rows per eval set name; k-way candidate token ids of the cyclic domains; the raw-Gram domains; anchor item tokens
+    DALT, dom_alt, KWAY, DRAW, ANAME = {}, {}, {}, set(), {}
     if DOM:
         import toy_struct as ts
         dom_ss = np.random.SeedSequence(4100 + args.seed).spawn(16)
@@ -587,6 +634,47 @@ def main() -> None:
             assert nm.isascii() and nm.isalpha() and nm.islower() and len(enc(" " + nm)) == 1, nm
         assert not (set(S4_NAMES) & set(DIM_NAMES)) and len(S4_NAMES) == 24 and len(DIM_NAMES) == 27
         S4N, DIMN = list(S4_NAMES), list(DIM_NAMES)
+        if REVE:   # Rev E: the anchor domains' tables and questions (ft36's question family), the k-way candidates
+            import ft36
+            from manifold_atlas import primary as md_primary
+            from manifold_domains import domains as md_domains
+            anc_ss = np.random.SeedSequence(ANC_STREAM + args.seed).spawn(16)
+            MD = md_domains()
+            AQ, AIT, ATN = {}, {}, {}   # questions (ft36 dicts), items, primary target name
+            for d in [d for d in EXT if d in ANCHOR]:
+                AIT[d], ATN[d] = MD[d]["items"], md_primary(MD[d], d)
+                assert ATN[d] in MD[d]["targets"] and d in set(ft36.PAIR) | set(ft36.PAIR2), d
+                AQ[d] = ft36.pair_questions(d, MD[d])
+                ANAME[d] = [enc(" " + it) for it in AIT[d]]   # an item's tokens as they occur in a line (after a space)
+                if ATN[d] in ANC_RAW:
+                    DRAW.add(d)
+            for d in [d for d in EXT if d in CYCLIC]:   # k-way choice: the n item tokens of a cyclic domain (single tokens)
+                cand = [enc(f" {(MONTHS if d == 'months' else WEEKDAYS)[i]}") if d != "clock" else enc(f"{i}")
+                        for i in range(CYCLIC[d])]
+                assert all(len(c) == 1 for c in cand) and len({c[0] for c in cand}) == CYCLIC[d], (d, cand)
+                KWAY[d] = [c[0] for c in cand]
+
+        def anc_line(d, q):
+            """Rev E: (ids, sites, answer start, span length) of anchor question q of domain d and its other option's line
+            (ids, answer start, span length). ids = 'Q: ...? Answer:' + ' <answer>\\n' (= the whole line tokenised); sites
+            = (position, item) of the LAST token of each item name in the prompt (ft36.last_token: the token holding the
+            item's last character), asserted to end exactly at the name's end, the next token to start after it, and the
+            name's tokens ' ' + name to end at that position."""
+            Q = AQ[d][q]; it_ = AIT[d]
+            ans, alt = it_[Q["opts"][Q["ans"]]], it_[Q["opts"][1 - Q["ans"]]]
+            P_ = enc(Q["prompt"]); A_ = enc(f" {ans}\n"); B_ = enc(f" {alt}\n")
+            ids = enc(Q["prompt"] + f" {ans}\n")
+            assert ids == P_ + A_ and enc(Q["prompt"] + f" {alt}\n") == P_ + B_, (d, q, "prompt + answer tokenisation")
+            offs = tok(Q["prompt"], add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
+            assert len(offs) == len(P_), (d, q)
+            sites = []
+            for it, (c0, c1) in Q["occ"]:
+                t = [j for j, (s0, e0) in enumerate(offs) if s0 <= c1 - 1 < e0][-1]
+                nm = ANAME[d][it]
+                assert offs[t][1] == c1 and t + 1 < len(offs) and offs[t + 1][0] >= c1, (d, q, it, "site token != the name's end")
+                assert P_[t - len(nm) + 1:t + 1] == nm and Q["prompt"][c0:c1] == it_[it], (d, q, it, "name tokens")
+                sites.append((t, it))
+            return (ids, sorted(sites), len(P_), len(A_)), (P_ + B_, len(P_), len(B_))
 
         def pieces_line(pieces):
             """pieces [(text, role)], role None / ('site', item) / 'ans' -> (ids, [(pos, item)], answer start, answer
@@ -677,10 +765,54 @@ def main() -> None:
 
         DTASK ={d: ts.build_task(d) for d in ("s4", "dim") if d in EXT}
         for d in EXT:
-            ix = EXTRA.index(d)
-            sr = np.random.default_rng(dom_ss[1 + ix])
+            ANC = d in ANCHOR   # Rev E: an anchor domain draws from its own SeedSequence (the Rev B streams untouched)
+            ix = ANCHOR.index(d) if ANC else EXTRA.index(d)
+            ss_ = anc_ss if ANC else dom_ss
+            sr = np.random.default_rng(ss_[1 + ix])
             info, masks = {}, {}
-            if d in CYCLIC:
+            if ANC:   # Rev E: ft36's comparisons; 40% of the option pairs {b, c} held out (every anchor, both orders)
+                Q_, it_ = AQ[d], AIT[d]
+                keys = [Q["key"] for Q in Q_]
+                assert len(Q_) % 2 == 0 and all(Q_[i ^ 1]["key"] == Q_[i]["key"] and Q_[i ^ 1]["opts"] == Q_[i]["opts"][::-1]
+                                                and Q_[i ^ 1]["ans"] == 1 - Q_[i]["ans"] for i in range(len(Q_))), (d, "both orders")
+                split_seed = int(sr.integers(2 ** 31))
+                hk = ft36.split(keys, ANC_HELD, split_seed)
+                train_q = [i for i, k in enumerate(keys) if k not in hk]
+                held_s = [i for i, k in enumerate(keys) if k in hk]
+                assert not ({keys[i] for i in train_q} & {keys[i] for i in held_s}), (d, "an option pair on both sides")
+                tr_pairs = {frozenset(Q_[j]["opts"]) for j in train_q}
+                assert not any(frozenset(Q_[i]["opts"]) in tr_pairs for i in held_s), (d, "held option pair trained (either order)")
+                for q in range(len(Q_)):
+                    DLINE[d, q], DALT[d, q] = anc_line(d, q)
+                right = lambda i: Q_[i]["opts"][Q_[i]["ans"]]
+                wrong = lambda i: Q_[i]["opts"][1 - Q_[i]["ans"]]
+                acnt = np.bincount([right(i) for i in train_q], minlength=len(it_))
+                # heuristic line (known answer, no geometry): answer the option that is more often the right answer in training
+                heur = float(np.mean([0.5 if acnt[right(i)] == acnt[wrong(i)] else float(acnt[right(i)] > acnt[wrong(i)])
+                                      for i in held_s]))
+                # second heuristic line: the summed log-prob of a span favours fewer tokens (an untrained model scores
+                # ~-ln V per token), so 'answer the option with fewer tokens' is the scoring's own bias (ties 0.5)
+                ln_ = lambda i, w: len(ANAME[d][w(i)])
+                heur_s = float(np.mean([0.5 if ln_(i, right) == ln_(i, wrong) else float(ln_(i, right) < ln_(i, wrong))
+                                        for i in held_s]))
+                F_ = np.asarray(MD[d]["targets"][ATN[d]], dtype=np.float64)
+                ntk = [len(n_) for n_ in ANAME[d]]
+                tsha = hashlib.sha256(json.dumps({"items": it_, "target": ATN[d], "F": np.round(F_, 9).tolist(),
+                                                  "q": [[Q["prompt"], it_[right(i)], it_[wrong(i)]] for i, Q in enumerate(Q_)]}
+                                                 ).encode()).hexdigest()[:12]
+                info.update(n_items=len(it_), target=ATN[d], raw_gram=d in DRAW, n_comparisons=len(Q_) // 2, n_keys=len(set(keys)),
+                            n_held_keys=len(hk), held_frac=ANC_HELD, split_seed=split_seed, chance_uniform=0.5, chance_majority=0.5,
+                            readout="held_2way", chance_readout=0.5, n_readout=len(held_s), heuristic_ansfreq=heur,
+                            heuristic_shorter=heur_s,
+                            n_answers_trained=int((acnt > 0).sum()),
+                            n_held_answer_untrained=int(sum(acnt[right(i)] == 0 for i in held_s)),
+                            item_tokens={"1": ntk.count(1), "2": ntk.count(2), "3+": sum(n_ >= 3 for n_ in ntk)},
+                            site_rule="the last token of each item name (' ' + name) in the prompt: anchor and both options",
+                            table={"sha": tsha, "items": it_, "target": ATN[d], "source": "manifold_domains.domains() + "
+                                   "ft36.pair_questions (cap 1500, subset seed 7, both orders)"})
+                sets = {"held": held_s}
+                DTAB[d] = F_
+            elif d in CYCLIC:
                 n = CYCLIC[d]
                 forbid = frozenset()   # no-wrap clock lines state h + k: never train a held-out numbers pair this way
                 if d == "clock":
@@ -786,8 +918,8 @@ def main() -> None:
                 info.update(chance_readout=max(1 / Dd["n_items"], float(np.mean(Yte[ro] == maj))), n_readout=int(ro.sum()))
                 sets = {"held": held_s}
             info["chance"] = max(info["chance_uniform"], info["chance_majority"])
-            for q in train_q + [q for qs in sets.values() for q in qs]:   # lines, decode asserts
-                (ids, sites, a0, al), astr, ins = dom_q(d, q)
+            for q in ([] if ANC else train_q + [q for qs in sets.values() for q in qs]):   # lines, decode asserts (anchors:
+                (ids, sites, a0, al), astr, ins = dom_q(d, q)                              # anc_line above)
                 assert tok.decode(ids[a0:]).strip() == astr and [tok.decode([ids[p]]).strip() for p, _ in sites] == ins, (d, q)
                 DLINE[d, q] = (ids, sites, a0, al)
             heldc = {tuple(DLINE[d, q][0][:DLINE[d, q][2]]) for qs in sets.values() for q in qs}
@@ -796,16 +928,17 @@ def main() -> None:
             DPOOL[d] = train_q
             F = DTAB[d]
             refs = [F, Dd["targets"]["R_sign"]] if d == "s4" else [F]
-            c_far, qperm = far_perm(F, np.random.default_rng(dom_ss[6 + ix]), refs)
-            assert d == "s4" or c_far < 0.15, (d, c_far)
-            assert abs(cka_np(F, F) - 1) < 1e-9 and abs(float(cka(torch.tensor(F), centred_gram(F, "cpu"))) - 1) < 1e-4, d
+            c_far, qperm = far_perm(F, np.random.default_rng(ss_[6 + ix]), refs, gram=gram_raw if d in DRAW else None)
+            assert d == "s4" or c_far < 0.15 or (ANC and d not in DSHUF), (d, c_far)   # Rev E: asserted where it is used
+            KF = (lambda F_: torch.tensor(gram_raw(F_), dtype=torch.float32)) if d in DRAW else (lambda F_: centred_gram(F_, "cpu"))
+            assert abs((cka_np(F, F) if d not in DRAW else 1.0) - 1) < 1e-9 and abs(float(cka(torch.tensor(F), KF(F))) - 1) < 1e-4, d
             DTAB_ACT[d] = F[qperm] if d in DSHUF else F
             info.update(n_train=len(train_q), **{f"n_{k}": len(v) for k, v in sets.items()}, shuf_cka_to_true=c_far,
                         shuf_cka_refs=["R", "R_sign"] if d == "s4" else ["true"], target_dim=int(F.shape[1]),
                         prior=d in DPRI, shuf=d in DSHUF, lam=LAMD[d])
-            er_d = np.random.default_rng(dom_ss[11 + ix])   # eval contexts / seen subset
+            er_d = np.random.default_rng(ss_[11 + ix])   # eval contexts / seen subset
             sets["seen"] = [train_q[j] for j in er_d.permutation(len(train_q))[:args.dom_seen]]
-            nT = len(PARA[d])
+            nT = len(PARA_OF(d))
             for t_ in range(nT):   # A2: held-out-format lines of the evaluated questions; scored span = the training line's
                 for q in [q for nm_ in PARA_SETS for q in sets[nm_]]:
                     PLINE[d, t_, q] = para_q(d, t_, q)
@@ -816,6 +949,9 @@ def main() -> None:
                     assert tuple(ids[:a0]) != tuple(DLINE[d, q][0][:DLINE[d, q][2]]), (d, t_, q, "paraphrase = training prompt")
             n_rej = 0
             for nm_, qs in sets.items():
+                if ANC and nm_ == "held" and args.anc_eval_max:   # Rev E, testing only: the first N held-out questions
+                    qs = qs[:args.anc_eval_max]
+                    info["n_readout"] = len(qs)
                 nctx = min(8, max(1, math.ceil(args.dom_eval_rows / len(qs))))
                 assert nctx <= 9   # per-question hit counts are stored as one digit each (hits_<set>)
                 # A2: one context per (context index, question): a numbers TRAINING line and the end of a val text chunk;
@@ -843,11 +979,24 @@ def main() -> None:
                     dom_evalsets[name] = (torch.tensor(np.stack(rows), device=dev), torch.tensor(lens, device=dev),
                                           np.array(sites_ev, dtype=np.int64).reshape(-1, 3), mk, d, np.array(qi, dtype=np.int64), len(qs))
                     DCTX[name] = ntx
+                    if ANC and cka_sites:   # Rev E: the other option's rows, the same contexts (text end, numbers line)
+                        rows_b, lens_b = [], []
+                        for j, nids, oe in ctx:
+                            ids_b, a0_b, al_b = DALT[d, qs[j]]
+                            n_ = args.seq - len(nids) - len(ids_b)
+                            rows_b.append(np.concatenate([np.asarray(val[oe - n_:oe], dtype=np.int64), np.asarray(nids, dtype=np.int64),
+                                                          np.asarray(ids_b, dtype=np.int64)]))
+                            lens_b.append(al_b)
+                        dom_alt[name] = (torch.tensor(np.stack(rows_b), device=dev), torch.tensor(lens_b, device=dev))
                 # per question (in the order of hits_<set>): the question, its independence unit for the bootstrap
-                # (cyclic: the (item, k mod n) class, both k held together; s4 / dim: toy_struct's relation class) and
-                # its sub-split masks
-                cls_q = ([int(i) * CYCLIC[d] + int(k) % CYCLIC[d] for i, k in qs] if d in CYCLIC
-                         else [int(DTASK[d]["cls"][q]) for q in qs])
+                # (cyclic: the (item, k mod n) class, both k held together; s4 / dim: toy_struct's relation class; Rev E
+                # anchors: the option pair {b, c}, the split key) and its sub-split masks
+                if ANC:
+                    kid_ = {k: i for i, k in enumerate(sorted(set(keys)))}
+                    cls_q = [kid_[keys[q]] for q in qs]
+                else:
+                    cls_q = ([int(i) * CYCLIC[d] + int(k) % CYCLIC[d] for i, k in qs] if d in CYCLIC
+                             else [int(DTASK[d]["cls"][q]) for q in qs])
                 info[f"eval_{nm_}"] = {"questions": len(qs), "contexts": nctx, "rows": len(ctx),
                                        "q": [list(map(int, q)) if d in CYCLIC else int(q) for q in qs], "cls": cls_q,
                                        "masks": {k: "".join("1" if b else "0" for b in v) for k, v in masks.get(nm_, {}).items()}}
@@ -859,6 +1008,8 @@ def main() -> None:
                         formats={f"p{t_ + 1}": PARA[d][t_] for t_ in range(nT)})
             DINFO[d] = info
         dom_max_ans = max(int(v[1].max()) for v in dom_evalsets.values()) if dom_evalsets else 0
+        if dom_alt:   # Rev E: the other option's spans are scored in the same logits window
+            dom_max_ans = max([dom_max_ans] + [int(v[1].max()) for v in dom_alt.values()])
         allh = set().union(*DHELD.values()) if DHELD else set()   # no held-out prompt of any domain is a training prompt
         assert not (allh & {tuple(DLINE[d, q][0][:DLINE[d, q][2]]) for d in EXT for q in DPOOL[d]}), "cross-domain leak"
         # A2: no held-out-format template ever occurs in a training line. (1) No training line (every domain's training
@@ -869,7 +1020,7 @@ def main() -> None:
                                                                       for a, b in ((0, 0), (7, 538), (999, 999), (45, 6))]
         tr_str = [tok.decode(t_) for t_ in tr_lines]
         for d in EXT:
-            tpls = [tp for t_ in PARA[d] for tp in ((t_,) if isinstance(t_, str) else t_)]
+            tpls = [tp for t_ in PARA_OF(d) for tp in ((t_,) if isinstance(t_, str) else t_)]
             for tp in tpls:
                 rx = re.compile("".join(".+?" if i_ % 2 else re.escape(p) for i_, p in enumerate(re.split(r"\{(\w)\}", tp))))
                 hit = [s_ for s_ in tr_str if rx.search(s_)]
@@ -1346,6 +1497,13 @@ def main() -> None:
                             for p_ in range(S_ - L_, S_)))
         return out_
 
+    def span_logp(lg, x, ln, K_):
+        """Rev E: per row the summed teacher-forced log-prob of its scored span (its last ln tokens), from the logits of
+        the last K_ + 1 positions (lg; ans_score's computation): the 2-way choice compares it between the two options."""
+        lgf = lg[:, :-1].float()
+        lp = lgf.gather(-1, x[:, -K_:][..., None])[..., 0] - torch.logsumexp(lgf, -1)
+        return (lp * (torch.arange(K_, device=dev)[None] >= (K_ - ln)[:, None])).sum(1)
+
     @torch.no_grad()
     def evaluate(step) -> dict:
         model.eval()
@@ -1436,7 +1594,7 @@ def main() -> None:
             if DOM:   # Rev B: per-domain exact match (answer through the newline) + item-state CKA to the TRUE target
                 states = {d: {L: [] for L in read_layers} for d in EXT}
                 for name, (ids, lens, sites_ev, mk, d, qi_, nq_) in dom_evalsets.items():
-                    hits = []
+                    hits, lp_a, kh = [], [], []
                     for i in range(0, len(ids), 250):
                         x, ln = ids[i:i + 250], lens[i:i + 250]
                         lg = model(input_ids=x, logits_to_keep=dom_max_ans + 1).logits
@@ -1451,17 +1609,51 @@ def main() -> None:
                         for L in (read_layers if len(m) else ()):   # item states of these prompts (the hooks of this
                             # forward); A2: the held-out-format sets have no sites (CKA on the training template only)
                             states[d][L].append((store[L][torch.tensor(m[:, 0] - i, device=dev), torch.tensor(m[:, 1], device=dev)].float(), m[:, 2]))
+                        if REVE and name in dom_alt:   # Rev E: the answer's span log-prob (this forward) for the 2-way choice
+                            lp_a.append(span_logp(lg, x, ln, dom_max_ans))
+                        if REVE and d in KWAY:   # Rev E: k-way choice = argmax of the answer-token logit over the n items
+                            ar_, cand_ = torch.arange(len(x), device=dev), torch.tensor(KWAY[d], device=dev)
+                            eq_ = cand_[None] == x[ar_, x.shape[1] - ln][:, None]   # the answer's first token among the n
+                            assert bool((eq_.sum(1) == 1).all()), (name, "answer token not one of the k-way candidates")
+                            kh.append(lg[ar_, dom_max_ans - ln][:, cand_].argmax(-1) == eq_.float().argmax(-1))
                     hit = torch.cat(hits).cpu().numpy()
                     res[name] = float(hit.mean())
                     for k, msk in mk.items():
                         res[f"{name}_{k}"] = float(hit[msk].mean()) if msk.any() else None
                     # per question: correct contexts (0..contexts), one digit each, question order of DINFO eval_<set>
                     res[f"hits_{name}"] = "".join(map(str, np.bincount(qi_[hit.astype(bool)], minlength=nq_).tolist()))
+                    if REVE and d in KWAY:
+                        hk_ = torch.cat(kh).cpu().numpy()
+                        res[f"{name}_kway"] = float(hk_.mean())
+                        res[f"hitsk_{name}"] = "".join(map(str, np.bincount(qi_[hk_.astype(bool)], minlength=nq_).tolist()))
+                        # known answer: an exact-match hit's first token is the vocabulary argmax, so also the k-way argmax
+                        res[f"kway_em_bad_{name}"] = int((hit.astype(bool) & ~hk_.astype(bool)).sum())
+                        if dev == "cpu":
+                            assert res[f"kway_em_bad_{name}"] == 0, (name, res[f"kway_em_bad_{name}"])
+                    if REVE and name in dom_alt:   # Rev E: the other option's rows (same contexts), the 2-way choice
+                        xb_, lb_, lp_b = dom_alt[name][0], dom_alt[name][1], []
+                        for i in range(0, len(xb_), 250):
+                            x, ln = xb_[i:i + 250], lb_[i:i + 250]
+                            lg = model(input_ids=x, logits_to_keep=dom_max_ans + 1).logits
+                            lp_b.append(span_logp(lg, x, ln, dom_max_ans))
+                            if i == 0:   # double path on the first 4 rows (ans_logp_direct: full forward, head per position)
+                                dpd = max(abs(a_ - b_) for a_, b_ in zip(ans_logp_direct(x[:4], ln[:4]), lp_b[-1][:4].tolist()))
+                        la_, lb2 = torch.cat(lp_a).float().cpu().numpy(), torch.cat(lp_b).float().cpu().numpy()
+                        h2 = la_ > lb2
+                        res[f"{name}_2way"] = float(h2.mean())
+                        res[f"hits2_{name}"] = "".join(map(str, np.bincount(qi_[h2], minlength=nq_).tolist()))
+                        res[f"ties2_{name}"] = int((la_ == lb2).sum())
+                        res[f"lpmargin_{name}"] = float(np.mean(la_ - lb2))   # mean log-prob margin answer - other option
+                        res[f"lp_dp_maxdiff_{name}"] = float(dpd)
+                        if dev == "cpu":
+                            assert dpd < 2e-2 and float(la_.max()) <= 1e-5 and float(lb2.max()) <= 1e-5, (name, dpd)
                 for d in EXT:
                     cs = []
                     for L in read_layers:
                         H = torch.cat([a for a, _ in states[d][L]]); v = np.concatenate([b for _, b in states[d][L]])
-                        cs.append(float(cka(H, centred_gram(DTAB[d][v], dev)))); res[f"cka_{d}@L{L}"] = cs[-1]
+                        Kd = (torch.tensor(gram_raw(DTAB[d][v]), dtype=torch.float32, device=dev) if d in DRAW
+                              else centred_gram(DTAB[d][v], dev))   # Rev E: raw Gram for the tree target (ft36)
+                        cs.append(float(cka(H, Kd))); res[f"cka_{d}@L{L}"] = cs[-1]
                     res[f"cka_{d}"] = float(np.mean(cs))
         model.train()
         return res
@@ -1511,13 +1703,30 @@ def main() -> None:
             for q in DPOOL[d][:2]:
                 ids, sites, a0, al = DLINE[d, q]
                 print(f"  train line {q}: {show_line(ids, {p for p, _ in sites}, a0)!r} sites {sites} answer span {al}")
+            if d in ANCHOR:   # Rev E: the site rule, asserted on every line of the domain; the other option's line
+                n_chk = 0
+                for q in range(len(AQ[d])):
+                    ids, sites, a0, al = DLINE[d, q]
+                    for p, it in sites:
+                        nm = ANAME[d][it]
+                        assert ids[p - len(nm) + 1:p + 1] == nm and p < a0 and tok.decode(nm).strip() == AIT[d][it], (d, q, it)
+                        assert not tok.decode(ids[p + 1:p + 2])[:1].isalnum(), (d, q, it, "the next token continues the name")
+                        n_chk += 1
+                ex = [(AIT[d][i], [tok.decode([t]) for t in ANAME[d][i]]) for i in range(len(AIT[d])) if len(ANAME[d][i]) > 1][:3]
+                print(f"  site rule: the prior and the CKA read-out use the LAST token of each item name (' ' + name, as tokenised "
+                      f"in the line; anchor and both options): {n_chk} sites in {len(AQ[d])} lines asserted; "
+                      f"{sum(len(n_) > 1 for n_ in ANAME[d])}/{len(AIT[d])} items multi-token, e.g. "
+                      + "; ".join(f"{nm!r} = {pc} -> site {pc[-1]!r}" for nm, pc in ex))
+                q0 = DPOOL[d][0]
+                print(f"  other-option line {q0}: {show_line(DALT[d, q0][0], {p for p, _ in DLINE[d, q0][1]}, DALT[d, q0][1])!r} "
+                      f"(2-way: the same prompt, the other option's span scored)")
             qh = i_["eval_held"]["q"][0]
             qh = tuple(qh) if d in CYCLIC else qh
-            for t_ in range(len(PARA[d])):
+            for t_ in range(len(PARA_OF(d))):
                 ids, sites, a0, al = PLINE[d, t_, qh]
                 print(f"  fmt p{t_ + 1} line {qh}: {show_line(ids, {p for p, _ in sites}, a0)!r} answer span {al} = the training line's")
             for nm_ in ("held", "heldE", "seen"):
-                names = [f"{d}_{nm_}"] + ([f"{d}_p{t_ + 1}_{nm_}" for t_ in range(len(PARA[d]))] if nm_ == "held" else [])
+                names = [f"{d}_{nm_}"] + ([f"{d}_p{t_ + 1}_{nm_}" for t_ in range(len(PARA_OF(d)))] if nm_ == "held" else [])
                 for name in names:
                     if name not in dom_evalsets:
                         continue
@@ -1529,6 +1738,11 @@ def main() -> None:
                         print(f"  eval {name[len(d) + 1:]} row {rr} (len {len(row)}, text {nt_} tokens, numbers line at {nt_}.., "
                               f"sites at {sorted(st)}, scored {L_} tokens at {len(row) - L_}..{len(row) - 1}): "
                               f"...{show_line(row[lo:], {p - lo for p in st}, len(row) - L_ - lo)!r}")
+                        if name in dom_alt and rr == 0:   # Rev E: the same context with the other option scored
+                            rb_, Lb_ = dom_alt[name][0][0].tolist(), int(dom_alt[name][1][0])
+                            assert rb_[:len(rb_) - Lb_][-(len(row) - L_ - nt_):] == row[nt_:len(row) - L_], (name, "context")
+                            print(f"  eval {name[len(d) + 1:]}_other row 0 (len {len(rb_)}, scored {Lb_} tokens at "
+                                  f"{len(rb_) - Lb_}..{len(rb_) - 1}): ...{show_line(rb_[lo - (Lb_ - L_):], set(), len(rb_) - Lb_ - lo + (Lb_ - L_))!r}")
         # training rows with each domain in each slot after the numbers line (slot 1 = the eval position)
         g, K_ = {}, args.extra_lines
         for _ in range(20):
@@ -1716,10 +1930,15 @@ def main() -> None:
 
     def dom_prior(d, table):
         """1 - CKA of the states at domain d's item sites in this batch (mean over --geo_layers) vs table[item]; None
-        when the batch has fewer than 4 sites or 3 distinct items (no usable Gram)."""
+        when the batch has fewer than 4 sites or 3 distinct items (no usable Gram). Rev E: the raw centred Gram of the
+        batch's target rows for a RAW_GRAM target (languages' tree, as ft36), else prior()'s centred_gram."""
         m = batch.dsite[d]
         if len(m) < 4 or len(set(m[:, 2].tolist())) < 3:
             return None
+        if d in DRAW:
+            r_, p_ = torch.tensor(m[:, 0], device=dev), torch.tensor(m[:, 1], device=dev)
+            K_ = torch.tensor(gram_raw(table[m[:, 2]]), dtype=torch.float32, device=dev)
+            return sum(1 - cka(store[L][r_, p_], K_) for L in geo_layers) / len(geo_layers)
         return prior(m, table)
 
     def dom_grads(lm_loss, ops, on, usable, gl, dgeo):
@@ -1758,6 +1977,9 @@ def main() -> None:
             tot = a if tot is None else tot + a
         if tot is not None:
             info.update(grad_prior=float(tot.norm()), grad_cos=cos(v["lm"], tot))
+        if REVE:   # Rev E: the decomposition's total |g_lm + sum lambda g_d| and the LM share (1.0: the loss is the LM alone)
+            info["grad_T"] = float((v["lm"] + tot).norm()) if tot is not None else info["grad_lm"]
+            info["grad_lm_share"] = info["grad_lm"] / max(info["grad_T"], 1e-12) if tot is not None else 1.0
         return info
 
     def dom_eval_log(s, on, dgeo):
@@ -1801,11 +2023,20 @@ def main() -> None:
                 if k in DINFO[d]:
                     mt[f"{d}_{k}"] = curve_metrics(curve, lambda e, n=f"{d}_{DINFO[d][k]}": e.get(n), pst)
                     mt[f"{d}_{k}"].update(set=f"{d}_{DINFO[d][k]}", chance=100 * DINFO[d][f"chance_{k}"])
-            for t_ in range(len(PARA[d])):   # A2: held-out-format templates: the same read-out sub-split, and seen
+            for t_ in range(len(PARA_OF(d))):   # A2: held-out-format templates: the same read-out sub-split, and seen
                 pre = f"{d}_p{t_ + 1}"
                 mt[f"{pre}_readout"] = curve_metrics(curve, lambda e, n=f"{pre}_{DINFO[d]['readout']}": e.get(n), pst)
                 mt[f"{pre}_readout"].update(set=f"{pre}_{DINFO[d]['readout']}", chance=100 * DINFO[d]["chance_readout"])
                 mt[f"{pre}_seen"] = curve_metrics(curve, lambda e, n=f"{pre}_seen": e.get(n), pst)
+            if REVE and d in ANCHOR:   # Rev E: the 2-way choice on the seen set (the read-out above is held_2way)
+                mt[f"{d}_seen_2way"] = curve_metrics(curve, lambda e, n=f"{d}_seen_2way": e.get(n), pst)
+                mt[f"{d}_seen_2way"].update(set=f"{d}_seen_2way", chance=50.0)
+            if REVE and d in KWAY:   # Rev E: the k-way choice on the read-out sets (chance as the exact-match read-out's)
+                for k in ("readout", "readoutE"):
+                    if k in DINFO[d]:
+                        mt[f"{d}_{k}_kway"] = curve_metrics(curve, lambda e, n=f"{d}_{DINFO[d][k]}_kway": e.get(n), pst)
+                        mt[f"{d}_{k}_kway"].update(set=f"{d}_{DINFO[d][k]}_kway", chance=100 * DINFO[d][f"chance_{k}"])
+                mt[f"{d}_seen_kway"] = curve_metrics(curve, lambda e, n=f"{d}_seen_kway": e.get(n), pst)
         return mt
 
     curve, t0 = [], time.time()
@@ -1847,6 +2078,10 @@ def main() -> None:
                 assert (batch.np == x.cpu().numpy()).all()
                 for d in EXT:
                     for r_, p_, v_ in batch.dsite[d][:8].tolist():
+                        if d in ANCHOR:   # Rev E: the site = the last token of the item name; the name's tokens end there
+                            nm_ = ANAME[d][v_]
+                            assert x[r_, p_ - len(nm_) + 1:p_ + 1].tolist() == nm_ and tok.decode(nm_).strip() == AIT[d][v_], (d, r_, p_, v_)
+                            continue
                         assert tok.decode([int(x[r_, p_])]).strip() == item_name(d, v_), (d, r_, p_, v_)
         if s == 0:   # operand positions point at the operands' last tokens; answer spans decode to the sums
             for r_, p_, v_ in ops[:16].tolist():
@@ -1963,6 +2198,13 @@ def main() -> None:
                     r["grad_T_reldiff"] = abs(r["grad_T"] - gt_) / max(gt_, 1e-12)
                     if dev == "cpu":
                         assert r["grad_T_reldiff"] < 0.05, (s, r["grad_T"], gt_)
+            if REVE:   # Rev E: the backward's pre-clip norm and the clip coefficient; the decomposition's double path
+                gt_ = float(g_total)
+                r.update(grad_total=gt_, clip_coef=min(1.0, 1.0 / (gt_ + 1e-6)))
+                if r.get("grad_T") is not None:
+                    r["grad_T_reldiff"] = abs(r["grad_T"] - gt_) / max(gt_, 1e-12)
+                    if dev == "cpu":
+                        assert r["grad_T_reldiff"] < 0.05, (s, r["grad_T"], gt_)
             if HO:
                 r.update(held_rej=dyn["held"]["rej"], held_lines_scanned=dyn["held"]["lines"],
                          held_data_sha=dyn["held"]["data_sha"][:16])
@@ -1970,7 +2212,8 @@ def main() -> None:
             print(json.dumps(r), flush=True)
             res_ = {"args": {k: v for k, v in vars(args).items() if (DOM or k not in DOM_ARGS)
                              and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])
-                             and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])}, "steps": steps,
+                             and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])
+                             and not (k in REVE_DEFAULTS and v == REVE_DEFAULTS[k])}, "steps": steps,
                     "geo_layers": geo_layers, "read_layers": read_layers,
                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
@@ -1978,9 +2221,12 @@ def main() -> None:
             if HO:   # Rev C: H, its counts, the eval sets' pairs and masks, the exposure during training
                 res_.update(held_operands=HINFO, held_exposure={k: dyn["held"][k].tolist() for k in ("st", "st_on", "raw")})
             if DOM:   # Rev B: domain set-up and the per-domain read-outs of this curve
+                dep_ = {"toy_struct.py": hashlib.sha256((Path(__file__).parent / "toy_struct.py").read_bytes()).hexdigest()[:12]}
+                if REVE:   # Rev E: the modules that build the anchor domains
+                    dep_.update({f_: hashlib.sha256((Path(__file__).parent / f_).read_bytes()).hexdigest()[:12]
+                                 for f_ in ("ft36.py", "manifold_domains.py", "manifold_atlas.py")})
                 res_.update(domains=DINFO, lam_domains=LAMD, lam_rule=args.lam_rule, nonce={"s4": S4N, "dim": DIMN},
-                            dep_sha={"toy_struct.py": hashlib.sha256((Path(__file__).parent / "toy_struct.py").read_bytes()).hexdigest()[:12]},
-                            metrics=dom_metrics(curve))
+                            dep_sha=dep_, metrics=dom_metrics(curve))
             path.write_text(json.dumps(res_, indent=1))
         if args.ckpt_every and (s + 1) % args.ckpt_every == 0 and s < steps - 1:
             tmp = ck.with_name(ck.name + ".tmp")
