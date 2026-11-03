@@ -795,6 +795,11 @@ def main() -> None:
                 ln_ = lambda i, w: len(ANAME[d][w(i)])
                 heur_s = float(np.mean([0.5 if ln_(i, right) == ln_(i, wrong) else float(ln_(i, right) < ln_(i, wrong))
                                         for i in held_s]))
+                # sub-splits of the read-out (masks of held): the questions each heuristic gets wrong or ties, and 'hard'
+                # = both (the secondary read-out <d>_held_2way_hard: neither answer frequency nor length solves them)
+                af_w = np.array([acnt[right(i)] <= acnt[wrong(i)] for i in held_s])
+                sh_w = np.array([ln_(i, right) >= ln_(i, wrong) for i in held_s])
+                masks["held"] = {"ansfreq_wrong": af_w, "shorter_wrong": sh_w, "hard": af_w & sh_w}
                 F_ = np.asarray(MD[d]["targets"][ATN[d]], dtype=np.float64)
                 ntk = [len(n_) for n_ in ANAME[d]]
                 tsha = hashlib.sha256(json.dumps({"items": it_, "target": ATN[d], "F": np.round(F_, 9).tolist(),
@@ -803,7 +808,7 @@ def main() -> None:
                 info.update(n_items=len(it_), target=ATN[d], raw_gram=d in DRAW, n_comparisons=len(Q_) // 2, n_keys=len(set(keys)),
                             n_held_keys=len(hk), held_frac=ANC_HELD, split_seed=split_seed, chance_uniform=0.5, chance_majority=0.5,
                             readout="held_2way", chance_readout=0.5, n_readout=len(held_s), heuristic_ansfreq=heur,
-                            heuristic_shorter=heur_s,
+                            heuristic_shorter=heur_s, n_hard=int((af_w & sh_w).sum()),
                             n_answers_trained=int((acnt > 0).sum()),
                             n_held_answer_untrained=int(sum(acnt[right(i)] == 0 for i in held_s)),
                             item_tokens={"1": ntk.count(1), "2": ntk.count(2), "3+": sum(n_ >= 3 for n_ in ntk)},
@@ -999,7 +1004,7 @@ def main() -> None:
                              else [int(DTASK[d]["cls"][q]) for q in qs])
                 info[f"eval_{nm_}"] = {"questions": len(qs), "contexts": nctx, "rows": len(ctx),
                                        "q": [list(map(int, q)) if d in CYCLIC else int(q) for q in qs], "cls": cls_q,
-                                       "masks": {k: "".join("1" if b else "0" for b in v) for k, v in masks.get(nm_, {}).items()}}
+                                       "masks": {k: "".join("1" if b else "0" for b in v[:len(qs)]) for k, v in masks.get(nm_, {}).items()}}
                 if nm_ in PARA_SETS:   # same questions, units, masks and contexts as eval_<set> (not repeated)
                     for t_ in range(nT):
                         info[f"eval_p{t_ + 1}_{nm_}"] = {"questions": len(qs), "contexts": nctx, "rows": len(ctx),
@@ -1641,6 +1646,8 @@ def main() -> None:
                         la_, lb2 = torch.cat(lp_a).float().cpu().numpy(), torch.cat(lp_b).float().cpu().numpy()
                         h2 = la_ > lb2
                         res[f"{name}_2way"] = float(h2.mean())
+                        for k, msk in mk.items():   # Rev E: the read-out's sub-splits (the heuristic-hard questions)
+                            res[f"{name}_2way_{k}"] = float(h2[msk].mean()) if msk.any() else None
                         res[f"hits2_{name}"] = "".join(map(str, np.bincount(qi_[h2], minlength=nq_).tolist()))
                         res[f"ties2_{name}"] = int((la_ == lb2).sum())
                         res[f"lpmargin_{name}"] = float(np.mean(la_ - lb2))   # mean log-prob margin answer - other option
@@ -2031,6 +2038,8 @@ def main() -> None:
             if REVE and d in ANCHOR:   # Rev E: the 2-way choice on the seen set (the read-out above is held_2way)
                 mt[f"{d}_seen_2way"] = curve_metrics(curve, lambda e, n=f"{d}_seen_2way": e.get(n), pst)
                 mt[f"{d}_seen_2way"].update(set=f"{d}_seen_2way", chance=50.0)
+                mt[f"{d}_readout_hard"] = curve_metrics(curve, lambda e, n=f"{d}_held_2way_hard": e.get(n), pst)
+                mt[f"{d}_readout_hard"].update(set=f"{d}_held_2way_hard", chance=50.0, n=DINFO[d]["n_hard"])
             if REVE and d in KWAY:   # Rev E: the k-way choice on the read-out sets (chance as the exact-match read-out's)
                 for k in ("readout", "readoutE"):
                     if k in DINFO[d]:
