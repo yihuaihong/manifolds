@@ -103,6 +103,23 @@ cities); otherwise the trainer is Rev D (default path and every Rev B / C / D pa
   answer-token logit over the n item tokens; single-token items asserted) and every eval logs the gradient split of the
   decomposition (grad_T = |g_lm + sum lambda g_d|, grad_lm_share = grad_lm / grad_T) and of the backward (grad_total,
   clip_coef, grad_T_reldiff).
+Rev F 2026-11-04 (ptdom Amendment A3: 24 candidate domains in four batches; opt-in, intent spec
+llmadd_torch/runs/ptdom/AUDIT.md "Amendment A3"). Only when --domains names a Rev F domain (NEWDOM below); otherwise the
+trainer is Rev E (default path, every Rev B / C / D path and the Rev E anchor path bit-identical; no new flag).
+  Comparison domains (PAIR2_NEW: countries, animals, country_size, animal_size, people, units, compass, prefixes, ranks,
+  kinship, life_stages, scalar_adj) take the Rev E anchor path unchanged (ft36.pair_questions on manifold_domains tables,
+  the option-pair split, sites at the last token of each item name in the prompt: the anchor when the template has one
+  and both options; the 2-way read-out, its heuristic lines and hard mask). k-step domains (OFFSET_NEW: zodiac, planets,
+  elements, chinese_zodiac, geo_periods, greek) = ft36.offset_questions (manifold_domains.OFFSET's template '<k> <unit>
+  after <x> is', "Q: " prefix, k in words up to twenty; cyclic: k = 1..2n; linear: the template's k range, the answer
+  inside the table) with the training line 'Q: <prompt> <answer>\n'; split = ft36's make_split: 40% of the keys held out
+  (cyclic: the (item, k mod n) class, a held class with k mod n = 0 given back; linear: the (item, k) question, keys given
+  back until every start item and every k is trained); prior site = the last token of the start item's name; target =
+  the atlas primary (cyclic: circle; linear: line); read-out = the k-way choice over the n items (argmax of the answer
+  position's logit over the items' first tokens, distinct by assertion; chance max(1 / n, majority training answer)).
+  Every Rev F domain draws its split / shuffled target / eval contexts from its own stream: SeedSequence(4300 + seed)
+  .spawn(3 x 18), children 3 i, 3 i + 1, 3 i + 2 of NEWDOM[i] (the Rev B 4100 and the Rev E 4200 streams untouched); the
+  training lines cycle over the batch's domains in the fixed order EXTRA + ANCHOR + NEWDOM as before.
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -231,7 +248,16 @@ def held_out(rng, per_bucket=150):
 EXTRA =("months", "weekdays", "clock", "s4", "dim")   # fixed order: the RNG children are indexed by it
 # Rev E (ptdom): anchor-comparison domains (fixed order: the children of SeedSequence(4200 + seed) are indexed by it)
 ANCHOR = ("stars", "landmarks", "languages", "colours", "cities")
-ALL_DOMAINS = ("numbers",) + EXTRA + ANCHOR
+# Rev F (ptdom A3): the batches' new domains in a fixed order (the children of SeedSequence(4300 + seed) are indexed by it;
+# within a batch the training lines cycle over its domains in this order): B1, then B2, then B3 (AUDIT.md Amendment A3)
+NEWDOM = ("countries", "animals", "country_size", "animal_size", "people", "units",
+          "zodiac", "compass", "planets", "elements", "prefixes", "ranks",
+          "chinese_zodiac", "kinship", "life_stages", "geo_periods", "greek", "scalar_adj")
+OFFSET_NEW = ("zodiac", "planets", "elements", "chinese_zodiac", "geo_periods", "greek")   # k-step (manifold_domains.OFFSET)
+PAIR2_NEW = tuple(d for d in NEWDOM if d not in OFFSET_NEW)                               # comparisons (manifold_domains.PAIR2)
+COMPD = ANCHOR + PAIR2_NEW   # the comparison domains: the Rev E anchor path (2-way choice)
+NEW_STREAM = 4300     # SeedSequence(4300 + seed).spawn(3 * 18): 3 i split, 3 i + 1 shuffled target, 3 i + 2 eval contexts of NEWDOM[i]
+ALL_DOMAINS = ("numbers",) + EXTRA + ANCHOR + NEWDOM
 ANC_HELD = 0.4        # held-out share of the option pairs (ft36 make_split)
 ANC_STREAM = 4200     # SeedSequence(4200 + seed).spawn(16): 1 + i split, 6 + i shuffled target, 11 + i eval contexts of ANCHOR[i]
 ANC_RAW = ("tree", "within")   # ft36.RAW_GRAM: targets whose column weights carry the structure (raw centred Gram)
@@ -509,7 +535,8 @@ def main() -> None:
     REVC = HO or args.site == "emb" or args.wd != REVC_DEFAULTS["wd"]   # Rev C logging (lr_now / wd_now) only then
     VF = args.held_strat == "value_freq"   # Rev D
     REVD = VF or args.lam_decay            # Rev D logging (lam_now, grad_total, clip_coef, grad_lm_share) only then
-    REVE = DOM and bool(set(DOMS) & set(ANCHOR))   # Rev E (ptdom): anchor domains, k-way / 2-way choice, gradient split
+    REVF = DOM and bool(set(DOMS) & set(NEWDOM))   # Rev F (ptdom A3): the batches' new comparison / k-step domains
+    REVE = (DOM and bool(set(DOMS) & set(ANCHOR))) or REVF   # Rev E (ptdom): anchor domains, k-way / 2-way choice, gradient split
     assert REVE or args.anc_eval_max == 0, "--anc_eval_max needs an anchor domain in --domains"
     assert args.anc_eval_max >= 0 and args.anc_eval_max % 2 == 0, "--anc_eval_max: even (both orders of a comparison)"
     if HO:
@@ -615,6 +642,7 @@ def main() -> None:
 
     # ---------------------------------------------------------------- Rev B: domain lines, splits, targets, eval sets
     EXT = [d for d in EXTRA if d in DOMS] + [d for d in ANCHOR if d in DOMS]   # the enabled non-number domains, in the fixed order
+    EXT += [d for d in NEWDOM if d in DOMS]     # Rev F (empty unless a Rev F domain is named)
     DPRI = [d for d in EXT if d in DPRI_ALL]    # their active priors
     lam_num = args.lam                          # the numbers prior's weight (default path: --lam)
     DLINE, DPOOL, DINFO, DTAB, DTAB_ACT, DHELD, dom_evalsets = {}, {}, {}, {}, {}, {}, {}
@@ -641,7 +669,7 @@ def main() -> None:
             anc_ss = np.random.SeedSequence(ANC_STREAM + args.seed).spawn(16)
             MD = md_domains()
             AQ, AIT, ATN = {}, {}, {}   # questions (ft36 dicts), items, primary target name
-            for d in [d for d in EXT if d in ANCHOR]:
+            for d in [d for d in EXT if d in COMPD]:   # Rev F: the new comparison domains take the same path
                 AIT[d], ATN[d] = MD[d]["items"], md_primary(MD[d], d)
                 assert ATN[d] in MD[d]["targets"] and d in set(ft36.PAIR) | set(ft36.PAIR2), d
                 AQ[d] = ft36.pair_questions(d, MD[d])
@@ -652,6 +680,18 @@ def main() -> None:
                 cand = [enc(f" {(MONTHS if d == 'months' else WEEKDAYS)[i]}") if d != "clock" else enc(f"{i}")
                         for i in range(CYCLIC[d])]
                 assert all(len(c) == 1 for c in cand) and len({c[0] for c in cand}) == CYCLIC[d], (d, cand)
+                KWAY[d] = [c[0] for c in cand]
+            OQ, OCYC = {}, {}   # Rev F: k-step questions (ft36.offset_questions dicts) and whether the domain is cyclic
+            new_ss = np.random.SeedSequence(NEW_STREAM + args.seed).spawn(3 * len(NEWDOM)) if REVF else None
+            for d in [d for d in EXT if d in OFFSET_NEW]:
+                AIT[d], ATN[d] = MD[d]["items"], md_primary(MD[d], d)
+                assert ATN[d] in MD[d]["targets"] and d in ft36.OFFSET and ATN[d] not in ANC_RAW, d
+                OQ[d], OCYC[d] = ft36.offset_questions(d, MD[d])
+                assert OCYC[d] == (ft36.OFFSET[d][1] == "cyclic") and ATN[d] == ("circle" if OCYC[d] else "line"), (d, ATN[d])
+                ANAME[d] = [enc(" " + it) for it in AIT[d]]
+                # k-way choice over the n items: the first token of each item's scored span ' <item>\n' (distinct, asserted)
+                cand = [enc(f" {it}\n") for it in AIT[d]]
+                assert len({c[0] for c in cand}) == len(AIT[d]), (d, "the items' first tokens are not distinct")
                 KWAY[d] = [c[0] for c in cand]
 
         def anc_line(d, q):
@@ -675,6 +715,42 @@ def main() -> None:
                 assert P_[t - len(nm) + 1:t + 1] == nm and Q["prompt"][c0:c1] == it_[it], (d, q, it, "name tokens")
                 sites.append((t, it))
             return (ids, sorted(sites), len(P_), len(A_)), (P_ + B_, len(P_), len(B_))
+
+        def off_line(d, q):
+            """Rev F: (ids, sites, answer start, span length) of k-step question q of domain d: ids = 'Q: <k> <unit> after
+            <x> ...' + ' <answer>\\n' (= the whole line tokenised); the one site = the LAST token of the start item's name
+            (anc_line's rule and asserts); the answer's first token = the item's k-way candidate."""
+            Q = OQ[d][q]; it_ = AIT[d]
+            ans = it_[Q["ans"]]
+            P_ = enc(Q["prompt"]); A_ = enc(f" {ans}\n")
+            ids = enc(Q["prompt"] + f" {ans}\n")
+            assert ids == P_ + A_ and A_[0] == KWAY[d][Q["ans"]], (d, q, "prompt + answer tokenisation")
+            offs = tok(Q["prompt"], add_special_tokens=False, return_offsets_mapping=True)["offset_mapping"]
+            assert len(offs) == len(P_) and len(Q["occ"]) == 1, (d, q)
+            it, (c0, c1) = Q["occ"][0]
+            t = [j for j, (s0, e0) in enumerate(offs) if s0 <= c1 - 1 < e0][-1]
+            nm = ANAME[d][it]
+            assert offs[t][1] == c1 and t + 1 < len(offs) and offs[t + 1][0] >= c1, (d, q, it, "site token != the name's end")
+            assert P_[t - len(nm) + 1:t + 1] == nm and Q["prompt"][c0:c1] == it_[it], (d, q, it, "name tokens")
+            return ids, [(t, it)], len(P_), len(A_)
+
+        def off_split(Q_, cyc, frac, seed):
+            """Rev F: the held-out keys of a k-step domain = ft36.main's make_split: ft36.split of the keys (40%); cyclic:
+            a held class with k mod n = 0 (the identity shifts) is given back; linear: held keys are given back (the first
+            offending one in sorted order, repeatedly) until every start item x and every k of a held question is trained."""
+            held = ft36.split([Q["key"] for Q in Q_], frac, seed)
+            if cyc:
+                return {h for h in held if h[1] != 0}
+            by_key = {}
+            for Q in Q_:
+                by_key.setdefault(Q["key"], []).append(Q)
+            while True:
+                tr = [Q for Q in Q_ if Q["key"] not in held]
+                xs, ks_ = {Q["xk"][0] for Q in tr}, {Q["xk"][1] for Q in tr}
+                bad = [h for h in sorted(held) if any(Q["xk"][0] not in xs or Q["xk"][1] not in ks_ for Q in by_key[h])]
+                if not bad:
+                    return held
+                held.discard(bad[0])
 
         def pieces_line(pieces):
             """pieces [(text, role)], role None / ('site', item) / 'ans' -> (ids, [(pos, item)], answer start, answer
@@ -765,10 +841,16 @@ def main() -> None:
 
         DTASK ={d: ts.build_task(d) for d in ("s4", "dim") if d in EXT}
         for d in EXT:
-            ANC = d in ANCHOR   # Rev E: an anchor domain draws from its own SeedSequence (the Rev B streams untouched)
-            ix = ANCHOR.index(d) if ANC else EXTRA.index(d)
-            ss_ = anc_ss if ANC else dom_ss
-            sr = np.random.default_rng(ss_[1 + ix])
+            ANC = d in COMPD    # Rev E: an anchor domain draws from its own SeedSequence (the Rev B streams untouched)
+            OFF = d in OFFSET_NEW   # Rev F: a k-step domain
+            if d in NEWDOM:     # Rev F: its own children of SeedSequence(4300 + seed) (the 4100 / 4200 streams untouched)
+                ix = NEWDOM.index(d)
+                ch_split, ch_shuf, ch_eval = new_ss[3 * ix], new_ss[3 * ix + 1], new_ss[3 * ix + 2]
+            else:
+                ix = ANCHOR.index(d) if ANC else EXTRA.index(d)
+                ss_ = anc_ss if ANC else dom_ss
+                ch_split, ch_shuf, ch_eval = ss_[1 + ix], ss_[6 + ix], ss_[11 + ix]
+            sr = np.random.default_rng(ch_split)
             info, masks = {}, {}
             if ANC:   # Rev E: ft36's comparisons; 40% of the option pairs {b, c} held out (every anchor, both orders)
                 Q_, it_ = AQ[d], AIT[d]
@@ -815,6 +897,54 @@ def main() -> None:
                             site_rule="the last token of each item name (' ' + name) in the prompt: anchor and both options",
                             table={"sha": tsha, "items": it_, "target": ATN[d], "source": "manifold_domains.domains() + "
                                    "ft36.pair_questions (cap 1500, subset seed 7, both orders)"})
+                if d in NEWDOM:   # Rev F: comparisons without an anchor ('Which ... more, b or c?'): the two options only
+                    has_a = all(len(Q["occ"]) == 3 for Q in Q_)
+                    assert has_a or all(len(Q["occ"]) == 2 for Q in Q_), d
+                    info.update(has_anchor=has_a, site_rule="the last token of each item name (' ' + name) in the prompt: "
+                                + ("anchor and both options" if has_a else "both options (no anchor in the template)"),
+                                stream=f"SeedSequence({NEW_STREAM} + seed) children {3 * ix}, {3 * ix + 1}, {3 * ix + 2}")
+                sets = {"held": held_s}
+                DTAB[d] = F_
+            elif OFF:   # Rev F: ft36's k-step questions; ft36's make_split by key (cyclic (x, k mod n); linear (x, k))
+                Q_, it_, cyc = OQ[d], AIT[d], OCYC[d]
+                n = len(it_)
+                keys = [Q["key"] for Q in Q_]
+                split_seed = int(sr.integers(2 ** 31))
+                hk = off_split(Q_, cyc, ANC_HELD, split_seed)
+                train_q = [i for i, k in enumerate(keys) if k not in hk]
+                held_s = [i for i, k in enumerate(keys) if k in hk]
+                assert held_s and not ({keys[i] for i in train_q} & {keys[i] for i in held_s}), (d, "a key on both sides")
+                if cyc:   # every held shift class is trained on some item (ft36's assert); no identity shift held
+                    assert {keys[i][1] for i in train_q if keys[i][1]} >= {keys[i][1] for i in held_s} and all(keys[i][1] for i in held_s), d
+                    assert all(Q_[i]["key"] == (Q_[i]["xk"][0], Q_[i]["xk"][1] % n) for i in range(len(Q_))), d
+                else:     # every start item and every k of a held question is trained (ft36's give-back)
+                    assert {Q_[i]["xk"][0] for i in train_q} >= {Q_[i]["xk"][0] for i in held_s}, d
+                    assert {Q_[i]["xk"][1] for i in train_q} >= {Q_[i]["xk"][1] for i in held_s}, d
+                    assert all(Q_[i]["key"] == Q_[i]["xk"] for i in range(len(Q_))), d
+                assert all((Q["xk"][0] + Q["xk"][1]) % n == Q["ans"] if cyc else Q["xk"][0] + Q["xk"][1] == Q["ans"] for Q in Q_), (d, "k-step answer")
+                for q in range(len(Q_)):
+                    DLINE[d, q] = off_line(d, q)
+                ans_tr = np.bincount([Q_[i]["ans"] for i in train_q], minlength=n)
+                maj = int(ans_tr.argmax())
+                F_ = np.asarray(MD[d]["targets"][ATN[d]], dtype=np.float64)
+                ntk = [len(n_) for n_ in ANAME[d]]
+                tsha = hashlib.sha256(json.dumps({"items": it_, "target": ATN[d], "F": np.round(F_, 9).tolist(),
+                                                  "q": [[Q["prompt"], it_[Q["ans"]]] for Q in Q_]}).encode()).hexdigest()[:12]
+                ks_all = sorted({Q["xk"][1] for Q in Q_})
+                info.update(n_items=n, target=ATN[d], raw_gram=False, cyclic=cyc, n_questions=len(Q_), n_keys=len(set(keys)),
+                            n_held_keys=len(hk), held_frac=ANC_HELD, split_seed=split_seed, k_range=[ks_all[0], ks_all[-1]],
+                            chance_uniform=1 / n, chance_majority=float(np.mean([Q_[i]["ans"] == maj for i in held_s])),
+                            readout="held", n_readout=len(held_s), n_answers_trained=int((ans_tr > 0).sum()),
+                            n_held_answer_untrained=int(sum(ans_tr[Q_[i]["ans"]] == 0 for i in held_s)),
+                            item_tokens={"1": ntk.count(1), "2": ntk.count(2), "3+": sum(n_ >= 3 for n_ in ntk)},
+                            kway="argmax of the answer position's logit over the n items' first tokens (distinct)",
+                            site_rule="the last token of the start item's name (' ' + name) in the prompt",
+                            stream=f"SeedSequence({NEW_STREAM} + seed) children {3 * ix}, {3 * ix + 1}, {3 * ix + 2}",
+                            table={"sha": tsha, "items": it_, "target": ATN[d], "source": "manifold_domains.domains() + "
+                                   "ft36.offset_questions (manifold_domains.OFFSET templates)"})
+                info["chance_readout"] = max(info["chance_uniform"], info["chance_majority"])
+                if cyc:   # the start plus the shift passes the period (descriptive sub-split)
+                    masks["held"] = {"wrap": np.array([Q_[i]["xk"][0] + Q_[i]["xk"][1] % n >= n for i in held_s])}
                 sets = {"held": held_s}
                 DTAB[d] = F_
             elif d in CYCLIC:
@@ -923,7 +1053,7 @@ def main() -> None:
                 info.update(chance_readout=max(1 / Dd["n_items"], float(np.mean(Yte[ro] == maj))), n_readout=int(ro.sum()))
                 sets = {"held": held_s}
             info["chance"] = max(info["chance_uniform"], info["chance_majority"])
-            for q in ([] if ANC else train_q + [q for qs in sets.values() for q in qs]):   # lines, decode asserts (anchors:
+            for q in ([] if (ANC or OFF) else train_q + [q for qs in sets.values() for q in qs]):   # lines, decode asserts (anchors:
                 (ids, sites, a0, al), astr, ins = dom_q(d, q)                              # anc_line above)
                 assert tok.decode(ids[a0:]).strip() == astr and [tok.decode([ids[p]]).strip() for p, _ in sites] == ins, (d, q)
                 DLINE[d, q] = (ids, sites, a0, al)
@@ -933,15 +1063,15 @@ def main() -> None:
             DPOOL[d] = train_q
             F = DTAB[d]
             refs = [F, Dd["targets"]["R_sign"]] if d == "s4" else [F]
-            c_far, qperm = far_perm(F, np.random.default_rng(ss_[6 + ix]), refs, gram=gram_raw if d in DRAW else None)
-            assert d == "s4" or c_far < 0.15 or (ANC and d not in DSHUF), (d, c_far)   # Rev E: asserted where it is used
+            c_far, qperm = far_perm(F, np.random.default_rng(ch_shuf), refs, gram=gram_raw if d in DRAW else None)
+            assert d == "s4" or c_far < 0.15 or ((ANC or OFF) and d not in DSHUF), (d, c_far)   # Rev E: asserted where it is used
             KF = (lambda F_: torch.tensor(gram_raw(F_), dtype=torch.float32)) if d in DRAW else (lambda F_: centred_gram(F_, "cpu"))
             assert abs((cka_np(F, F) if d not in DRAW else 1.0) - 1) < 1e-9 and abs(float(cka(torch.tensor(F), KF(F))) - 1) < 1e-4, d
             DTAB_ACT[d] = F[qperm] if d in DSHUF else F
             info.update(n_train=len(train_q), **{f"n_{k}": len(v) for k, v in sets.items()}, shuf_cka_to_true=c_far,
                         shuf_cka_refs=["R", "R_sign"] if d == "s4" else ["true"], target_dim=int(F.shape[1]),
                         prior=d in DPRI, shuf=d in DSHUF, lam=LAMD[d])
-            er_d = np.random.default_rng(ss_[11 + ix])   # eval contexts / seen subset
+            er_d = np.random.default_rng(ch_eval)   # eval contexts / seen subset
             sets["seen"] = [train_q[j] for j in er_d.permutation(len(train_q))[:args.dom_seen]]
             nT = len(PARA_OF(d))
             for t_ in range(nT):   # A2: held-out-format lines of the evaluated questions; scored span = the training line's
@@ -954,7 +1084,7 @@ def main() -> None:
                     assert tuple(ids[:a0]) != tuple(DLINE[d, q][0][:DLINE[d, q][2]]), (d, t_, q, "paraphrase = training prompt")
             n_rej = 0
             for nm_, qs in sets.items():
-                if ANC and nm_ == "held" and args.anc_eval_max:   # Rev E, testing only: the first N held-out questions
+                if (ANC or OFF) and nm_ == "held" and args.anc_eval_max:   # Rev E, testing only: the first N held-out questions
                     qs = qs[:args.anc_eval_max]
                     info["n_readout"] = len(qs)
                 nctx = min(8, max(1, math.ceil(args.dom_eval_rows / len(qs))))
@@ -996,7 +1126,7 @@ def main() -> None:
                 # per question (in the order of hits_<set>): the question, its independence unit for the bootstrap
                 # (cyclic: the (item, k mod n) class, both k held together; s4 / dim: toy_struct's relation class; Rev E
                 # anchors: the option pair {b, c}, the split key) and its sub-split masks
-                if ANC:
+                if ANC or OFF:   # Rev F: a k-step domain's unit = its split key ((x, k mod n) / (x, k))
                     kid_ = {k: i for i, k in enumerate(sorted(set(keys)))}
                     cls_q = [kid_[keys[q]] for q in qs]
                 else:
@@ -1710,9 +1840,10 @@ def main() -> None:
             for q in DPOOL[d][:2]:
                 ids, sites, a0, al = DLINE[d, q]
                 print(f"  train line {q}: {show_line(ids, {p for p, _ in sites}, a0)!r} sites {sites} answer span {al}")
-            if d in ANCHOR:   # Rev E: the site rule, asserted on every line of the domain; the other option's line
+            if d in COMPD or d in OFFSET_NEW:   # Rev E: the site rule, asserted on every line of the domain; the other option's line
                 n_chk = 0
-                for q in range(len(AQ[d])):
+                QQ = AQ[d] if d in COMPD else OQ[d]
+                for q in range(len(QQ)):
                     ids, sites, a0, al = DLINE[d, q]
                     for p, it in sites:
                         nm = ANAME[d][it]
@@ -1720,13 +1851,19 @@ def main() -> None:
                         assert not tok.decode(ids[p + 1:p + 2])[:1].isalnum(), (d, q, it, "the next token continues the name")
                         n_chk += 1
                 ex = [(AIT[d][i], [tok.decode([t]) for t in ANAME[d][i]]) for i in range(len(AIT[d])) if len(ANAME[d][i]) > 1][:3]
+                who = ("anchor and both options" if d in ANCHOR or i_.get("has_anchor") else
+                       "both options; no anchor in the template" if d in COMPD else "the start item")   # batch A: unchanged text
                 print(f"  site rule: the prior and the CKA read-out use the LAST token of each item name (' ' + name, as tokenised "
-                      f"in the line; anchor and both options): {n_chk} sites in {len(AQ[d])} lines asserted; "
+                      f"in the line; {who}): {n_chk} sites in {len(QQ)} lines asserted; "
                       f"{sum(len(n_) > 1 for n_ in ANAME[d])}/{len(AIT[d])} items multi-token, e.g. "
                       + "; ".join(f"{nm!r} = {pc} -> site {pc[-1]!r}" for nm, pc in ex))
                 q0 = DPOOL[d][0]
-                print(f"  other-option line {q0}: {show_line(DALT[d, q0][0], {p for p, _ in DLINE[d, q0][1]}, DALT[d, q0][1])!r} "
-                      f"(2-way: the same prompt, the other option's span scored)")
+                if d in COMPD:
+                    print(f"  other-option line {q0}: {show_line(DALT[d, q0][0], {p for p, _ in DLINE[d, q0][1]}, DALT[d, q0][1])!r} "
+                          f"(2-way: the same prompt, the other option's span scored)")
+                else:   # Rev F: the k-way candidates (the n items' first tokens)
+                    print(f"  k-way candidates ({len(KWAY[d])}, distinct first tokens of ' <item>\\n'): "
+                          + ", ".join(f"{AIT[d][i]!r} {tok.decode([KWAY[d][i]])!r}" for i in range(len(AIT[d]))))
             qh = i_["eval_held"]["q"][0]
             qh = tuple(qh) if d in CYCLIC else qh
             for t_ in range(len(PARA_OF(d))):
@@ -2035,7 +2172,7 @@ def main() -> None:
                 mt[f"{pre}_readout"] = curve_metrics(curve, lambda e, n=f"{pre}_{DINFO[d]['readout']}": e.get(n), pst)
                 mt[f"{pre}_readout"].update(set=f"{pre}_{DINFO[d]['readout']}", chance=100 * DINFO[d]["chance_readout"])
                 mt[f"{pre}_seen"] = curve_metrics(curve, lambda e, n=f"{pre}_seen": e.get(n), pst)
-            if REVE and d in ANCHOR:   # Rev E: the 2-way choice on the seen set (the read-out above is held_2way)
+            if REVE and d in COMPD:   # Rev E: the 2-way choice on the seen set (the read-out above is held_2way; Rev F: every comparison domain)
                 mt[f"{d}_seen_2way"] = curve_metrics(curve, lambda e, n=f"{d}_seen_2way": e.get(n), pst)
                 mt[f"{d}_seen_2way"].update(set=f"{d}_seen_2way", chance=50.0)
                 mt[f"{d}_readout_hard"] = curve_metrics(curve, lambda e, n=f"{d}_held_2way_hard": e.get(n), pst)
@@ -2087,7 +2224,7 @@ def main() -> None:
                 assert (batch.np == x.cpu().numpy()).all()
                 for d in EXT:
                     for r_, p_, v_ in batch.dsite[d][:8].tolist():
-                        if d in ANCHOR:   # Rev E: the site = the last token of the item name; the name's tokens end there
+                        if d in ANAME:   # Rev E: the site = the last token of the item name; the name's tokens end there (Rev F: every new domain)
                             nm_ = ANAME[d][v_]
                             assert x[r_, p_ - len(nm_) + 1:p_ + 1].tolist() == nm_ and tok.decode(nm_).strip() == AIT[d][v_], (d, r_, p_, v_)
                             continue
