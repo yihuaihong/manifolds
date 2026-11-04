@@ -120,6 +120,23 @@ trainer is Rev E (default path, every Rev B / C / D path and the Rev E anchor pa
   Every Rev F domain draws its split / shuffled target / eval contexts from its own stream: SeedSequence(4300 + seed)
   .spawn(3 x 18), children 3 i, 3 i + 1, 3 i + 2 of NEWDOM[i] (the Rev B 4100 and the Rev E 4200 streams untouched); the
   training lines cycle over the batch's domains in the fixed order EXTRA + ANCHOR + NEWDOM as before.
+Rev G 2026-11-04 (ptdom Amendment A4, before any submission; intent spec llmadd_torch/runs/ptdom/AUDIT.md "Amendment A4").
+Evaluation only (training, data, splits, sites, priors and every logged training quantity unchanged); only the k-way
+domains of a Rev E / F run (months in batch A, the OFFSET_NEW k-step domains) are affected; the default path and every
+Rev B / C / D path bit-identical.
+  (1) The k-way read-out on the FULL item span (<d>_<set>_kspan, the new primary): per eval row, every item c's summed
+  teacher-forced log-prob of its span ' <item c>\n' after the same prompt and context (ft36 / F81's accuracy; the newline
+  closes the span as in ft36, so no item wins by being another's prefix: asserted); the candidate rows keep the 2-way's
+  convention (the same text END and numbers line, the text start moved so that every row has --seq tokens); the answer's
+  own candidate row IS the eval row (asserted token for token) and is scored again in the candidate pass (double path vs
+  the eval forward: lpk_own_maxdiff); hit iff the answer's span log-prob is strictly larger than every other item's (a tie
+  is a miss: tiesk_<set>); per-question hits hitsks_<set>; mean margin lpkmargin_<set>; the direct per-position double
+  path on the first 4 candidate rows (lpk_dp_maxdiff). The first-token k-way choice (<set>_kway) stays as the secondary
+  line.
+  (2) The first-token k-way known answer is tie-aware: an exact-match hit whose first-token k-way choice is another item
+  counts as a violation (kway_em_bad_<set>) only when the two logits differ by more than one bf16 step at their magnitude
+  (2^-7 x max |logit|); within it, a bf16 tie (kway_em_tie_<set>, logged). With an exact-match hit the answer token is the
+  vocabulary argmax, so a violation can only be an index error.
 
     python tools/pretrain_range.py --data <bins> --tokenizer <olmo2> --out <dir> --tokenization digits --target digitcirc --seed 0
 """
@@ -649,6 +666,9 @@ def main() -> None:
     # Rev E: the other option's line of an anchor question (d, q) -> (ids, answer start, span length); the matching eval
     # rows per eval set name; k-way candidate token ids of the cyclic domains; the raw-Gram domains; anchor item tokens
     DALT, dom_alt, KWAY, DRAW, ANAME = {}, {}, {}, set(), {}
+    # Rev G: the k-way domains' candidate SPANS (every item's ' <item>\n' tokens as the domain's lines contain them) and the
+    # candidate rows of every k-way eval set (rows, span lengths, the answer's candidate index per eval row)
+    KSPAN, dom_kalt, dom_max_k = {}, {}, 0
     if DOM:
         import toy_struct as ts
         dom_ss = np.random.SeedSequence(4100 + args.seed).spawn(16)
@@ -681,6 +701,9 @@ def main() -> None:
                         for i in range(CYCLIC[d])]
                 assert all(len(c) == 1 for c in cand) and len({c[0] for c in cand}) == CYCLIC[d], (d, cand)
                 KWAY[d] = [c[0] for c in cand]
+                # Rev G: the full span = the answer piece + the line's closing piece, tokenised as pieces_line does (dom_q):
+                # ' <month>' + '\n' (clock: '<h>' + ':00\n'); = every eval row's scored span (asserted at the eval sets)
+                KSPAN[d] = [c + (enc(":00\n") if d == "clock" else enc("\n")) for c in cand]
             OQ, OCYC = {}, {}   # Rev F: k-step questions (ft36.offset_questions dicts) and whether the domain is cyclic
             new_ss = np.random.SeedSequence(NEW_STREAM + args.seed).spawn(3 * len(NEWDOM)) if REVF else None
             for d in [d for d in EXT if d in OFFSET_NEW]:
@@ -693,6 +716,10 @@ def main() -> None:
                 cand = [enc(f" {it}\n") for it in AIT[d]]
                 assert len({c[0] for c in cand}) == len(AIT[d]), (d, "the items' first tokens are not distinct")
                 KWAY[d] = [c[0] for c in cand]
+                KSPAN[d] = cand   # Rev G: the full span ' <item>\n' (= off_line's answer span A_)
+            for d, sp_ in KSPAN.items():   # Rev G (ft36's assert): no candidate span is a prefix of another
+                assert not any(a_ != b_ and b_[:len(a_)] == a_ for a_ in sp_ for b_ in sp_), (d, "a k-span candidate is a prefix of another")
+                assert all(s_[0] == k_ for s_, k_ in zip(sp_, KWAY[d])), (d, "k-span first tokens != the k-way candidates")
 
         def anc_line(d, q):
             """Rev E: (ids, sites, answer start, span length) of anchor question q of domain d and its other option's line
@@ -1123,6 +1150,25 @@ def main() -> None:
                                                           np.asarray(ids_b, dtype=np.int64)]))
                             lens_b.append(al_b)
                         dom_alt[name] = (torch.tensor(np.stack(rows_b), device=dev), torch.tensor(lens_b, device=dev))
+                    if REVE and d in KSPAN:   # Rev G: the k-way FULL-SPAN choice: every item's span after the same prompt
+                        # and context (the 2-way's convention: the same text end and numbers line, the text start moved so
+                        # that the row has --seq tokens); the answer's own candidate row is the eval row itself (asserted)
+                        rows_k, lens_k, ans_k = [], [], []
+                        for (j, nids, oe), row_ in zip(ctx, rows):
+                            ids, _, a0, al = get(qs[j])
+                            a_ = (qs[j][0] + qs[j][1]) % CYCLIC[d] if d in CYCLIC else OQ[d][qs[j]]["ans"]
+                            assert ids[a0:] == KSPAN[d][a_] and al == len(KSPAN[d][a_]), (name, qs[j], "answer span != its k-span candidate")
+                            for c_, sp_ in enumerate(KSPAN[d]):
+                                ids_c = ids[:a0] + sp_
+                                n_ = args.seq - len(nids) - len(ids_c)
+                                assert n_ > 0, (name, qs[j], c_)
+                                rc_ = np.concatenate([np.asarray(val[oe - n_:oe], dtype=np.int64), np.asarray(nids, dtype=np.int64),
+                                                      np.asarray(ids_c, dtype=np.int64)])
+                                assert len(rc_) == args.seq and (c_ != a_ or np.array_equal(rc_, row_)), (name, qs[j], c_, "candidate row")
+                                rows_k.append(rc_); lens_k.append(len(sp_))
+                            ans_k.append(a_)
+                        dom_kalt[name] = (torch.tensor(np.stack(rows_k), device=dev), torch.tensor(lens_k, device=dev),
+                                          torch.tensor(ans_k, device=dev))
                 # per question (in the order of hits_<set>): the question, its independence unit for the bootstrap
                 # (cyclic: the (item, k mod n) class, both k held together; s4 / dim: toy_struct's relation class; Rev E
                 # anchors: the option pair {b, c}, the split key) and its sub-split masks
@@ -1139,12 +1185,23 @@ def main() -> None:
                     for t_ in range(nT):
                         info[f"eval_p{t_ + 1}_{nm_}"] = {"questions": len(qs), "contexts": nctx, "rows": len(ctx),
                                                          "same_questions_as": f"eval_{nm_}"}
+            if REVE and d in KSPAN:   # Rev G: the full-span k-way read-out (the primary k-way metric)
+                # the scorer's own bias (known answer, no geometry; the k-way analog of the 2-way's shorter-option line): an
+                # untrained model scores ~ -ln V per token, so it picks the item(s) with the fewest span tokens; its expected
+                # accuracy on the held-out questions (1 / the number of shortest items when the answer is one of them)
+                ln_k = [len(s_) for s_ in KSPAN[d]]
+                sh_k = {i for i, v in enumerate(ln_k) if v == min(ln_k)}
+                ans_h = [((q[0] + q[1]) % CYCLIC[d] if d in CYCLIC else OQ[d][q]["ans"]) for q in held_s]
+                info.update(kspan="summed log-prob of every item's span ' <item>\\n' after the prompt (ft36 / F81); hit iff the "
+                            "answer's is strictly larger than every other item's; the first-token k-way choice is the secondary line",
+                            kspan_tokens=ln_k, heuristic_shortest_kspan=float(np.mean([(a_ in sh_k) / len(sh_k) for a_ in ans_h])))
             info.update(context_layout="text + 1 numbers training line + the question (slot 1)", n_ctx_pairs_redrawn=n_rej,
                         formats={f"p{t_ + 1}": PARA[d][t_] for t_ in range(nT)})
             DINFO[d] = info
         dom_max_ans = max(int(v[1].max()) for v in dom_evalsets.values()) if dom_evalsets else 0
         if dom_alt:   # Rev E: the other option's spans are scored in the same logits window
             dom_max_ans = max([dom_max_ans] + [int(v[1].max()) for v in dom_alt.values()])
+        dom_max_k = max([int(v[1].max()) for v in dom_kalt.values()], default=0)   # Rev G: the candidate spans' logits window
         allh = set().union(*DHELD.values()) if DHELD else set()   # no held-out prompt of any domain is a training prompt
         assert not (allh & {tuple(DLINE[d, q][0][:DLINE[d, q][2]]) for d in EXT for q in DPOOL[d]}), "cross-domain leak"
         # A2: no held-out-format template ever occurs in a training line. (1) No training line (every domain's training
@@ -1729,7 +1786,7 @@ def main() -> None:
             if DOM:   # Rev B: per-domain exact match (answer through the newline) + item-state CKA to the TRUE target
                 states = {d: {L: [] for L in read_layers} for d in EXT}
                 for name, (ids, lens, sites_ev, mk, d, qi_, nq_) in dom_evalsets.items():
-                    hits, lp_a, kh = [], [], []
+                    hits, lp_a, kh, kgap, ktol, lp_k = [], [], [], [], [], []
                     for i in range(0, len(ids), 250):
                         x, ln = ids[i:i + 250], lens[i:i + 250]
                         lg = model(input_ids=x, logits_to_keep=dom_max_ans + 1).logits
@@ -1746,11 +1803,18 @@ def main() -> None:
                             states[d][L].append((store[L][torch.tensor(m[:, 0] - i, device=dev), torch.tensor(m[:, 1], device=dev)].float(), m[:, 2]))
                         if REVE and name in dom_alt:   # Rev E: the answer's span log-prob (this forward) for the 2-way choice
                             lp_a.append(span_logp(lg, x, ln, dom_max_ans))
+                        if REVE and name in dom_kalt:   # Rev G: the same for the k-span double path of the answer's own row
+                            lp_k.append(span_logp(lg, x, ln, dom_max_ans))
                         if REVE and d in KWAY:   # Rev E: k-way choice = argmax of the answer-token logit over the n items
                             ar_, cand_ = torch.arange(len(x), device=dev), torch.tensor(KWAY[d], device=dev)
                             eq_ = cand_[None] == x[ar_, x.shape[1] - ln][:, None]   # the answer's first token among the n
                             assert bool((eq_.sum(1) == 1).all()), (name, "answer token not one of the k-way candidates")
-                            kh.append(lg[ar_, dom_max_ans - ln][:, cand_].argmax(-1) == eq_.float().argmax(-1))
+                            lc_ = lg[ar_, dom_max_ans - ln][:, cand_].float()   # bf16 logits, exactly representable in float
+                            w_, a_ = lc_.argmax(-1), eq_.float().argmax(-1)
+                            kh.append(w_ == a_)
+                            # Rev G: the gap between the chosen and the answer's logit, and one bf16 step at their magnitude
+                            kgap.append((lc_[ar_, w_] - lc_[ar_, a_]).abs())
+                            ktol.append(2.0 ** -7 * torch.maximum(lc_[ar_, w_].abs(), lc_[ar_, a_].abs()))
                     hit = torch.cat(hits).cpu().numpy()
                     res[name] = float(hit.mean())
                     for k, msk in mk.items():
@@ -1761,10 +1825,39 @@ def main() -> None:
                         hk_ = torch.cat(kh).cpu().numpy()
                         res[f"{name}_kway"] = float(hk_.mean())
                         res[f"hitsk_{name}"] = "".join(map(str, np.bincount(qi_[hk_.astype(bool)], minlength=nq_).tolist()))
-                        # known answer: an exact-match hit's first token is the vocabulary argmax, so also the k-way argmax
-                        res[f"kway_em_bad_{name}"] = int((hit.astype(bool) & ~hk_.astype(bool)).sum())
+                        # known answer: an exact-match hit's first token is the vocabulary argmax, so also the k-way argmax;
+                        # Rev G: tie-aware (a different k-way choice within one bf16 step of the answer's logit is a tie)
+                        gap_, tol_ = torch.cat(kgap).cpu().numpy(), torch.cat(ktol).cpu().numpy()
+                        dis_ = hit.astype(bool) & ~hk_.astype(bool)
+                        res[f"kway_em_bad_{name}"] = int((dis_ & (gap_ > tol_)).sum())
+                        res[f"kway_em_tie_{name}"] = int((dis_ & ~(gap_ > tol_)).sum())
                         if dev == "cpu":
                             assert res[f"kway_em_bad_{name}"] == 0, (name, res[f"kway_em_bad_{name}"])
+                    if REVE and name in dom_kalt:   # Rev G: the k-way FULL-SPAN choice (every item's ' <item>\n' after the prompt)
+                        xk_, lk_, ak_ = dom_kalt[name]
+                        nK_, sk_, dpk = len(KSPAN[d]), [], 0.0
+                        for i in range(0, len(xk_), 250):
+                            x, ln = xk_[i:i + 250], lk_[i:i + 250]
+                            lg = model(input_ids=x, logits_to_keep=dom_max_k + 1).logits
+                            sk_.append(span_logp(lg, x, ln, dom_max_k))
+                            if i == 0:   # direct per-position double path on the first 4 candidate rows
+                                dpk = max(abs(a_ - b_) for a_, b_ in zip(ans_logp_direct(x[:4], ln[:4]), sk_[-1][:4].tolist()))
+                        S_ = torch.cat(sk_).float().view(-1, nK_)            # [eval rows, items]
+                        ark_ = torch.arange(len(S_), device=dev)
+                        own_ = S_[ark_, ak_]
+                        mo_ = S_.masked_fill(Fn.one_hot(ak_, nK_).bool(), -math.inf).max(1).values   # the best other item
+                        hks_ = (own_ > mo_).cpu().numpy()
+                        res[f"{name}_kspan"] = float(hks_.mean())
+                        for k, msk in mk.items():
+                            res[f"{name}_kspan_{k}"] = float(hks_[msk].mean()) if msk.any() else None
+                        res[f"hitsks_{name}"] = "".join(map(str, np.bincount(qi_[hks_], minlength=nq_).tolist()))
+                        res[f"tiesk_{name}"] = int((own_ == mo_).sum())
+                        res[f"lpkmargin_{name}"] = float((own_ - mo_).mean())
+                        res[f"lpk_dp_maxdiff_{name}"] = float(dpk)
+                        # the answer's candidate row = the eval row: its span log-prob from the eval forward (other logits window)
+                        res[f"lpk_own_maxdiff_{name}"] = float((own_ - torch.cat(lp_k).float()).abs().max())
+                        if dev == "cpu":
+                            assert dpk < 2e-2 and res[f"lpk_own_maxdiff_{name}"] < 2e-2 and float(S_.max()) <= 1e-5, (name, dpk, res[f"lpk_own_maxdiff_{name}"])
                     if REVE and name in dom_alt:   # Rev E: the other option's rows (same contexts), the 2-way choice
                         xb_, lb_, lp_b = dom_alt[name][0], dom_alt[name][1], []
                         for i in range(0, len(xb_), 250):
@@ -1864,6 +1957,20 @@ def main() -> None:
                 else:   # Rev F: the k-way candidates (the n items' first tokens)
                     print(f"  k-way candidates ({len(KWAY[d])}, distinct first tokens of ' <item>\\n'): "
                           + ", ".join(f"{AIT[d][i]!r} {tok.decode([KWAY[d][i]])!r}" for i in range(len(AIT[d]))))
+            if d in KSPAN:   # Rev G (not in the DRY rows: the batch references are unchanged): the full-span candidates and
+                # one eval row's candidate rows (the same context; the span scored)
+                nm_k = (list(MONTHS if d == "months" else WEEKDAYS) if d in ("months", "weekdays") else
+                        [str(i) for i in range(24)] if d == "clock" else AIT[d])
+                print(f"  k-span candidates ({len(KSPAN[d])}, the summed log-prob of each item's span after the prompt; the "
+                      f"primary k-way read-out): " + ", ".join(f"{nm_k[i]!r} {[tok.decode([t]) for t in KSPAN[d][i]]}"
+                                                                for i in range(len(KSPAN[d]))))
+                xk_, lk_, ak_ = dom_kalt[f"{d}_held"]
+                X0_, L0_ = dom_evalsets[f"{d}_held"][0][0].tolist(), int(dom_evalsets[f"{d}_held"][1][0])
+                for c_ in sorted({int(ak_[0]), (int(ak_[0]) + 1) % len(KSPAN[d])}):
+                    rk_, Lk_ = xk_[c_].tolist(), int(lk_[c_])
+                    assert rk_[-Lk_:] == KSPAN[d][c_] and rk_[:-Lk_][-(len(X0_) - L0_ - DCTX[f"{d}_held"][0]):] == X0_[DCTX[f"{d}_held"][0]:len(X0_) - L0_]
+                    print(f"  kspan eval held row 0, candidate {nm_k[c_]!r}{' (the answer: = the eval row)' if c_ == int(ak_[0]) else ''} "
+                          f"(len {len(rk_)}, scored {Lk_} tokens at {len(rk_) - Lk_}..{len(rk_) - 1}): ...{show_line(rk_[-(Lk_ + 30):], set(), 30)!r}")
             qh = i_["eval_held"]["q"][0]
             qh = tuple(qh) if d in CYCLIC else qh
             for t_ in range(len(PARA_OF(d))):
@@ -2183,6 +2290,12 @@ def main() -> None:
                         mt[f"{d}_{k}_kway"] = curve_metrics(curve, lambda e, n=f"{d}_{DINFO[d][k]}_kway": e.get(n), pst)
                         mt[f"{d}_{k}_kway"].update(set=f"{d}_{DINFO[d][k]}_kway", chance=100 * DINFO[d][f"chance_{k}"])
                 mt[f"{d}_seen_kway"] = curve_metrics(curve, lambda e, n=f"{d}_seen_kway": e.get(n), pst)
+            if REVE and d in KSPAN:   # Rev G: the full-span k-way choice on the same sets (the primary k-way read-out)
+                for k in ("readout", "readoutE"):
+                    if k in DINFO[d]:
+                        mt[f"{d}_{k}_kspan"] = curve_metrics(curve, lambda e, n=f"{d}_{DINFO[d][k]}_kspan": e.get(n), pst)
+                        mt[f"{d}_{k}_kspan"].update(set=f"{d}_{DINFO[d][k]}_kspan", chance=100 * DINFO[d][f"chance_{k}"])
+                mt[f"{d}_seen_kspan"] = curve_metrics(curve, lambda e, n=f"{d}_seen_kspan": e.get(n), pst)
         return mt
 
     curve, t0 = [], time.time()
