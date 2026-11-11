@@ -1,7 +1,8 @@
 # llmadd-burst
 
 Runs LLM_addition extension experiments on NYU HPC Burst, driven entirely through git. Only our own code
-lives here; the collaborator's repository is not copied in.
+lives here; the collaborator's repository (firefly's LLM_addition_code) is not copied in, and no file in this
+repository is copied from it.
 
 ## How it works
 
@@ -49,3 +50,24 @@ Cancel one task from anywhere: add its name to `burst/cancel.list` and push.
 
 Stop everything: `scancel -n llmadd_sentinel` (running tasks: `scancel -n llmadd_<task>`), or set
 `ENABLED=0` in `burst/config.env` to stop new submissions.
+
+## Torch-side code and side branches
+
+Results are reported in `report/FINDINGS.md` (F numbers). Not every run went through Burst:
+
+- `torch/llmadd_torch/`: a snapshot of the code and records of the batches run on the NYU Torch cluster (job
+  generators, per-batch read-out / selection / submission scripts, pre-registrations `AUDIT.md`, tests and audit
+  reports). The jobs ran from `/scratch` on Torch, not from this copy. `torch/README.md` maps each batch to its
+  FINDINGS entries.
+- Branches kept off `main` (trainer or read-out revisions of individual batches):
+
+| branch | contents | FINDINGS |
+|---|---|---|
+| `ptdom` | `tools/pretrain_range.py` Rev E–G: anchor-comparison and k-step domains, heuristic-hard splits, k-way read-out | F100, F101 |
+| `downstream` | `tools/downstream_eval.py`, `downstream_readout.py`, `make_downstream_jobs.py`, pre-registration | F96 |
+| `fig1-export` | `pretrain_range.py --save_at`, `tools/fig1_export.py`, `fig1_logcka.py` | F92 |
+| `ft999` | `tools/manifold_train.py --add3`, `tools/ft999_summary.py` | F93 |
+| `ladder-1b` | `ptscale_summary.py` read-out for the 1B point (ptlr_1b) | F87 |
+| `ladder-tpp` | pttpp read-out and records (`notes/pttpp`; builds on `scale-ladder`) | F97 |
+| `scale-ladder` | rainbow6 190M / 505M read-outs and records (`notes/rb6_*`) | F88 |
+| `arith-dose` | ptshare (arithmetic-share dose) design and read-out | — |
