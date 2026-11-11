@@ -1,4 +1,4 @@
-"""Second copy of every PENDING llmadd job under account torch_pr_625_general on the public L40S partition (user-approved
+"""Second copy of every PENDING llmadd job under account <slurm-account> on the public L40S partition (user-approved
 2026-10-14: the Tandon A100/H100 quota gives this user ~1 GPU at a time). Copies are job_g625_<original>.sbatch next to
 the original, identical except for the account / partition lines. Duplicates are safe: the training scripts' run guard
 (tools/run_guard.py) and the atlas's skip-if-done make the second copy to start exit at once.
@@ -22,9 +22,9 @@ n_sub = 0
 for name, f in sorted(by_name.items()):
     src = Path(f)
     txt = src.read_text()
-    txt = re.sub(r"^#SBATCH --account=.*$", "#SBATCH --account=torch_pr_625_general", txt, flags=re.M)
+    txt = re.sub(r"^#SBATCH --account=.*$", "#SBATCH --account=<slurm-account>", txt, flags=re.M)
     txt = re.sub(r"^#SBATCH --partition=.*$", "#SBATCH --partition=l40s_public", txt, flags=re.M)
-    assert txt.count("torch_pr_625_general") == 1 and txt.count("l40s_public") == 1, f
+    assert txt.count("<slurm-account>") == 1 and txt.count("l40s_public") == 1, f
     dst = src.with_name("job_g625_" + src.name.removeprefix("job_l40s_").removeprefix("job_"))
     dst.write_text(txt)
     flag = src.parent / f"SUBMITTED_g625_{name}"

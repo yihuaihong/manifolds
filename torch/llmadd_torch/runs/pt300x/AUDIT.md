@@ -70,10 +70,10 @@ default), --lr, --out, --tag, and on B200 --ckpt_every 500; vs the pttpp B200 br
 else; CHECK7 byte-identical to pttpp's.
 
 ## Hardware (one GPU type per size, never mixed inside a size)
-- **93M on L40S**: account torch_pr_625_general, l40s_public, QOS gpu48, --nice=20, 8 CPUs / 64 GB, time 04:00 (pttpp's
+- **93M on L40S**: account <slurm-account>, l40s_public, QOS gpu48, --nice=20, 8 CPUs / 64 GB, time 04:00 (pttpp's
   rule max(1, ceil(5 x est) / 2) h on the 1.44 h estimate), --requeue: as 53M / 190M / 505M.
 - **294M on B200**: as the pttpp B200 jobs (1.07B@0.745 and the bridge), header line for line: account
-  torch_pr_520_tandon_priority, no --partition, `--constraint=b200 --comment="preemption=yes"` (the preemptible B200 pools),
+  <slurm-account>, no --partition, `--constraint=b200 --comment="preemption=yes"` (the preemptible B200 pools),
   --gres=gpu:1, --nice=20, 16 CPUs / 128 GB, time 03:00 (= the bridge's; one segment, a requeue restarts the clock),
   --requeue, --open-mode=append, per-run log file; 8 singleton slots `llmadd_p3x-b200-slot0..7` with
   --dependency=singleton (this batch's own names, separate from pttpp's llmadd_tpp-b200-slot*); ckpt every 500 steps and

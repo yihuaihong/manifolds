@@ -536,7 +536,7 @@ EDT.
   - Rate model (Device section): 47.1 process-h = 9.5 planned L40S-h (2 x 4.76 h); --time 10 h each.
   - Stage 1 measured box5 m6 at 6.5 ms/step for none and 3.4-4.8 for assign / controls, against the model's 7.96, so
     the actual cost is likely ~15-20 % below plan.
-  - Account torch_pr_625_general, l40s_public, gpu48, --nice 500; the same snapshot (toy_struct ea797e5321d3), sha and
+  - Account <slurm-account>, l40s_public, gpu48, --nice 500; the same snapshot (toy_struct ea797e5321d3), sha and
     L40S checks as Stage 1.
   - **Submitted 2026-10-25 05:59:53 EDT** (after --print and the CPU smoke of the rendered Stage-2 and P1 commands; the P2 smoke finished later): s2-box5-m6-j0 =
     **20877109**, s2-box5-m6-j1 = **20877110** (`--stage2 --diag --diag_q --submit --only ... --nice 500`).
@@ -625,7 +625,7 @@ EDT.
         inputs printed.
   - **Submitted 2026-10-25 11:45 EDT**, before that out_a3/ did not exist: a3-box5-m6-j0 = **20892854**, j1 =
     **20892856**; a3long-box5-m6-j0 = **20892858**, j1 = **20892860** (`--a3 --submit --only ... --nice 500`; L40S,
-    torch_pr_625_general).
+    <slurm-account>).
   - **Planned cost:** 37.6 process-h = 8.0 L40S-h; --time 5 + 5 + 4 + 4 h.
 - **Amendment A3.1** (from the A3 review's important item I1). Registered 12:08:11 EDT, with 0 run JSONs in out_a3/ (none
   read).

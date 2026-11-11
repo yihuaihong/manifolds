@@ -26,7 +26,7 @@ addition (a)-(c) from the writing session. Everything below was written before a
   - In-run asserts: two held-out passes per eval; `hits.sum() == n_test - n_wrong`; `|hits.mean() - test| <= 1e-6`.
   - code_sha in every JSON stays b74a78cb5472.
 - Generator: `/scratch/yh6210/llmadd_torch/make_jobs_toyf84fu.py`. It follows the conventions of make_jobs_toynone3 /
-  make_jobs_toyprior_lr: account torch_pr_625_general, partition l40s_public, qos gpu48, 1 GPU, 8 CPU, 32G, --requeue,
+  make_jobs_toyprior_lr: account <slurm-account>, partition l40s_public, qos gpu48, 1 GPU, 8 CPU, 32G, --requeue,
   5 seed processes per job, `--threads 1 --eval_every 100`, `toy_struct.py --summarize <out>` at the end, the HOLD
   switch, and SUBMITTED_<name> flags.
   - The generator asserts both shas.
@@ -336,7 +336,7 @@ Pending at the time of writing; result appended below when it returns.
 
 ## Amendment A100 (2026-10-21, user: 「需要现在该提交的都可以提交」; written before any g5 result exists)
 - **What**: the rescue test at the S4 wall cells 0.2 / 0.3 (wall cells per the F89 addendum), run entirely on A100
-  (a100_tandon, torch_pr_520_tandon_priority). 26 jobs, about 12 GPU-h:
+  (a100_tandon, <slurm-account>). 26 jobs, about 12 GPU-h:
   - the toyshape none grid: 19 configs x 5 seeds x 200k per fraction (runs/toyshape_a100);
   - the toyshape R@always cells: lr 1e-3 / 1e-2, 50k, with their shape / ctl arms;
   - g5: R@always + specrand@always at lr 3e-3 / 1e-2 / 3e-2, 200k (runs/toyf84fu_a100).

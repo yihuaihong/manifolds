@@ -13,7 +13,7 @@ with tied embeddings the prior also moves the answer classifier rows of the numb
 TEXT WINDOW (2026-10-14, pttext results audit at 10..99: a text prior switched on at step 0 -- whole run or gate --
 costs +0.12..0.15 nats of final val loss, the window (0.05, 0.4) only +0.01..0.03 with the same speed-up): 7% and 2%
 helix3 text prior in the window (0.05, 0.4), 8 seeds each.
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -58,7 +58,7 @@ for tag, extra, seeds in jobs:
         job = R / f"job_{jt}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_pt999-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

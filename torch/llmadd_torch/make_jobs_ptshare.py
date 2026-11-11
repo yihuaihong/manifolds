@@ -41,7 +41,7 @@ RO_FILES = ("ptshare_design.py", "arith_share.py", "ptshare_summary.py", "ptshar
             "ptshare_refs.json")
 PTLR_GEN = B / "make_jobs_ptlr.py"           # read-only; its file sha was 85c3bf083bc9 on 2026-10-26
 PTLR_TEMPLATE_SHA = "c9b834f3679a"            # sha256[:12] of the unparsed G, ARM, WANT, flags and job f-string
-SEL_ACCOUNT, SEL_PARTITION = "torch_pr_520_tandon_priority", "cpu_short"   # = the pt2s505 selection job's
+SEL_ACCOUNT, SEL_PARTITION = "<slurm-account>", "cpu_short"   # = the pt2s505 selection job's
 sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()[:12]
 
 

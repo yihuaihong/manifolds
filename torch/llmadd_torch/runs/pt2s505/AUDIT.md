@@ -63,7 +63,7 @@ recorded chain a3bce3ab63c1 -> 3c99f6f8cb17 (runs/ptheld) -> 93e22bf4c4c0 (runs/
 (git archive of tools/ at the committed HEAD of branch scale-ladder). Generator llmadd_torch/make_jobs_pt2s505.py.
 
 ## Jobs
-24 + 8 jobs, account torch_pr_520_tandon_priority, a100_tandon, gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
+24 + 8 jobs, account <slurm-account>, a100_tandon, gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
 `--time=11:00:00` (2 x 5.3 h, the A100 estimate from L40S 6.4 h, rounded up), `--requeue`. Planned ~32 x 5.3 = 170 A100-h.
 
 ## Tests before submission (CPU; scripts / logs: the session scratchpad's scale/ and llmadd_torch/scale_work/)

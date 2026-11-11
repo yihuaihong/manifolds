@@ -2,7 +2,7 @@
 3e8 tokens; OLMo-2-style models of 190M (d 768, 12 layers) and 505M (d 1024, 24 layers) parameters (tied 100k-token
 embedding included; the F71 model is 53M), lr 6e-4 / 3e-4. Arms: none, gate-ctx (the default recipe: in-context prior, self-timed gate),
 ctx-shuf (wrong geometry) at 7% arithmetic; none, gate-ctx at 2%. Seeds 0-3. Resumable checkpoints every 2000 steps.
-Account torch_pr_625_general on the public L40S partition.
+Account <slurm-account> on the public L40S partition.
 --submit submits the jobs not yet submitted (runs/ptsize/SUBMITTED_<tag>)."""
 import shutil, subprocess, sys
 from pathlib import Path
@@ -26,7 +26,7 @@ for sz, cfg in SIZES.items():
             job = R / f"job_{tag}.sbatch"
             job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptsize-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

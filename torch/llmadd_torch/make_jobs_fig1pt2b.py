@@ -12,7 +12,7 @@ Code: runs/fig1_pt2b/code = git archive of tools/ at the COMMITTED HEAD of the f
 code/COMMIT records HEAD and the sha256[:12] of the trainer and every module it imports; the generator refuses to render
 when the snapshot differs from HEAD; every sbatch re-checks the trainer's sha (exit 3), runs --dry_inputs and requires
 the sha256 of its 9 DRY lines = the Burst / Torch seed-0 value of pt2main (exit 3), and exits 0 when runs/fig1_pt2b/HOLD
-exists. Account torch_pr_520_tandon_priority, a100_tandon, QoS gpu48, --nice=50.
+exists. Account <slurm-account>, a100_tandon, QoS gpu48, --nice=50.
     python make_jobs_fig1pt2b.py [--print] [--test-only] [--submit]"""
 import hashlib, shutil, subprocess, sys
 from pathlib import Path
@@ -89,7 +89,7 @@ for arm, lr, ARM, WANT in CELLS:
     job = R / f"job_{arm}-s0.sbatch"
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name={jn}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

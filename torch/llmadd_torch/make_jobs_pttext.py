@@ -3,7 +3,7 @@ FineWeb text of each training row (--geo_site text), never on the arithmetic lin
 run could use without synthetic data. Same setup as ptu (unordered split, 3e8 tokens), seeds 0-3, 7% (4 lines) and
 2% (1 line) arithmetic. Arms: text (whole run), text window (0.05, 0.4), text + self-timed gate, text shuffled (whole).
 References from ptu: none, ctx-helix, gate-ctx, ctx-shuf (7%); 2pct-none, 2pct-ctx-helix (2%); plus 2pct-gate-ctx here.
-Account torch_pr_625_general on the public L40S partition (user-approved 2026-10-14).
+Account <slurm-account> on the public L40S partition (user-approved 2026-10-14).
 --submit submits the jobs not yet submitted (runs/pttext/SUBMITTED_<cond>_s<seed>)."""
 import shutil, subprocess, sys
 from pathlib import Path
@@ -26,7 +26,7 @@ for tag, extra, lines in jobs:
         job = R / f"job_{tag}_s{seed}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_pttext-{tag}-s{seed}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

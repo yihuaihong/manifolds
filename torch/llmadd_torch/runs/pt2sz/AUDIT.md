@@ -64,7 +64,7 @@ d_model, n_layers, n_heads, d_ff, out, tag; vs pt2same 53M: + lr; vs pttpp tpp2-
 tokens, eval_every (the 3e8 defaults here), ckpt_every (2000 here as pt2same; pttpp's 2% jobs had none), out, tag.
 
 ## Hardware
-Torch a100_tandon (every node NVIDIA A100-SXM4-80GB), account torch_pr_520_tandon_priority, qos gpu48, 1 GPU, 8 CPUs, 64G,
+Torch a100_tandon (every node NVIDIA A100-SXM4-80GB), account <slurm-account>, qos gpu48, 1 GPU, 8 CPUs, 64G,
 `--requeue` (TIMEOUT is not requeued, preemption is and resumes from the 2000-step ckpt), `--nice=1000`; the GPU guard
 `*A100*80GB*` exits 3 on anything else (A100-40GB, L40S, H100, ...): one GPU type for the whole batch and for every
 reused cell (F98's 48 runs: all A100-SXM4-80GB, re-checked by the read-out from node.txt).
@@ -127,7 +127,7 @@ the commands `make_jobs_pt2sz.py --stage X|C --size S --arm A --test-only` / `--
 
 ## References (llmadd_torch/pt2sz_refs.json, sha256[:12] bb92a90edc26; a NEW file: pttpp_refs.json is frozen and untouched)
 CPU job (scale_work/pt2sz/refs_pt2sz.py + refs_cpu.sh via ~/research_tools/cputest/cpu_run.sh, cpu_short, 16 CPUs, account
-torch_pr_625_general; job 21999483 COMPLETED, refs_table.txt "ALL IDENTITIES HOLD"), pttpp's method on this batch's snapshot
+<slurm-account>; job 21999483 COMPLETED, refs_table.txt "ALL IDENTITIES HOLD"), pttpp's method on this batch's snapshot
 and the jobs' own ARGS:
 - `--dry_inputs`, both sizes x both arms x seeds 0-7: rc 0, the model line, 3 rows x 2 operand sites, the target line only
   for win-ctx; the 9 DRY rows' sha256 identical across the arms and = make_jobs_pttpp.dry2 (the Burst pt2s190 rows of the

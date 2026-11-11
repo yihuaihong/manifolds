@@ -19,7 +19,7 @@ Code: tools/ at the repo HEAD (git archive) + the WORKING-TREE tools/pretrain_ra
 public and the agent does not commit). code/COMMIT records HEAD and the sha256[:12] of the trainer and of every module it
 imports. The generator refuses to render when code/tools/pretrain_range.py differs from the repo's working tree (refresh
 = delete code/, only before any submission); every sbatch re-checks the sha at start and exits 3 before any GPU work.
-Account torch_pr_625_general on the public L40S partition, QoS gpu48. --submit submits jobs not yet submitted
+Account <slurm-account> on the public L40S partition, QoS gpu48. --submit submits jobs not yet submitted
 (SUBMITTED_<job> flags); a pending job exits at start when runs/ptheld/HOLD exists.
     python make_jobs_ptheld.py [--confirm_seeds] [--submit]"""
 import hashlib, shutil, subprocess, sys
@@ -118,7 +118,7 @@ for grp, a, lr, wd, mult, seeds in CELLS:
         job = R / f"job_{jt}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptheld-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

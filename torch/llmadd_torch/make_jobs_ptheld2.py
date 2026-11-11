@@ -28,7 +28,7 @@ code/COMMIT records HEAD and the sha256[:12] of the trainer and of every module 
 when the snapshot's trainer differs from HEAD's or the working tree's, or an imported module differs from HEAD's; every
 cell's flags are asserted (intended values present, no other flag, no flag twice); every sbatch re-checks the trainer's
 sha at start (exit 3) and exits 0 when runs/ptheld2/HOLD exists.
-Account torch_pr_625_general on the public L40S partition, QoS gpu48. --submit submits jobs not yet submitted
+Account <slurm-account> on the public L40S partition, QoS gpu48. --submit submits jobs not yet submitted
 (SUBMITTED_<job> flags); --print also prints every job's ARGS. Without --submit nothing is submitted.
     python make_jobs_ptheld2.py [--print] [--site tandon] [--supp] [--supp2] [--supp3] [--submit]"""
 import hashlib, shutil, subprocess, sys
@@ -38,7 +38,7 @@ sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()[:12]
 TOK = B / "models/OLMo-2-1124-7B/stage1-step2000-tokens9B"
 R = B / "runs" / "ptheld2"
 # --site tandon (amendment SITE, user decision 2026-10-21: the public L40S queue estimated a start on 10-27): every cell
-# on A100 (a100_tandon, account torch_pr_520_tandon_priority) in runs/ptheld2t (its own out / HOLD / SUBMITTED), with the
+# on A100 (a100_tandon, account <slurm-account>) in runs/ptheld2t (its own out / HOLD / SUBMITTED), with the
 # L40S batch's code snapshot copied byte for byte; the trainer args are unchanged except the --out root
 TANDON = "--site" in sys.argv and sys.argv[sys.argv.index("--site") + 1] == "tandon"
 assert "--site" not in sys.argv or TANDON, "--site tandon is the only alternative site"
@@ -49,8 +49,8 @@ if TANDON:
     for f in ("pretrain_range.py", "pretrain_helix.py", "numlib.py", "digit_split_data.py", "run_guard.py", "COMMIT"):
         q = "tools/" + f if f != "COMMIT" else f
         assert sha(R / "code" / q) == sha(R0 / "code" / q), f
-ACCOUNT, PARTITION, JOBP = (("torch_pr_520_tandon_priority", "a100_tandon", "ptheld2t") if TANDON else
-                            ("torch_pr_625_general", "l40s_public", "ptheld2"))
+ACCOUNT, PARTITION, JOBP = (("<slurm-account>", "a100_tandon", "ptheld2t") if TANDON else
+                            ("<slurm-account>", "l40s_public", "ptheld2"))
 PY = "/scratch/yh6210/miniconda3/envs/open_r1/bin/python"
 DEPS = ("pretrain_range.py", "pretrain_helix.py", "numlib.py", "digit_split_data.py", "run_guard.py")   # what it imports
 BRANCH = "ptheld2-build"

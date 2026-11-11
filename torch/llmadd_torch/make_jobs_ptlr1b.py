@@ -11,7 +11,7 @@ the GPU type (B200, preemptible: a preempted job is requeued with its id and res
 Intent spec and pre-registered rules: runs/ptlr_1b/AUDIT.md. Stages: A = none {2.4e-3, 4.8e-3, 9.6e-3} and win-ctx {3e-4,
 6e-4, 1.2e-3}, seeds 0-1 (12 runs); B = seeds 2-3 at each arm's pick (picks.json, written by maybe_select.sh after stage
 A); C = confirm seeds 4-7 at the picks, only when runs/ptlr_1b/APPROVE_C exists (the coordinator's approval).
-Every run is queued under two accounts (torch_pr_520_tandon_priority: b200_tandon_prem or b200; torch_pr_625_general:
+Every run is queued under two accounts (<slurm-account>: b200_tandon_prem or b200; <slurm-account>:
 b200); tools/run_guard.py lets the first copy compute it and the other exit (F87 practice). At most 4 runs at a time: job
 names llmadd_ptlr1b-slot<k> with --dependency=singleton (k = run index mod 4; both copies of a run share its slot).
     python make_jobs_ptlr1b.py [--test-only | --submit]"""
@@ -28,7 +28,7 @@ TOK = B / "models/OLMo-2-1124-7B/stage1-step2000-tokens9B"
 R = B / "runs" / "ptlr_1b"
 F87 = B / "runs" / "ptlr" / "code"   # F87's own snapshot: the extracted tools/ must equal it file by file
 PIN, PIN_SHA = "64abc19", "a3bce3ab63c1"
-ACCOUNTS = ("torch_pr_520_tandon_priority", "torch_pr_625_general")   # submitted in this order
+ACCOUNTS = ("<slurm-account>", "<slurm-account>")   # submitted in this order
 HOURS = "05:00:00"    # one segment (a requeued job restarts the clock); a run is ~3.0 B200-h (smoke: 0.55 s/step)
 SLOTS = 4
 CKPT_EVERY = "500"

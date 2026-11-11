@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=llmadd_323b
-#SBATCH --account=torch_pr_520_tandon_advanced
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon,h100_tandon,h200_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

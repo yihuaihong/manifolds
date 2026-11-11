@@ -7,7 +7,7 @@ job_text() / render_args() with every assert inside them. make_jobs_ptlr1b's mai
 "__main__" (ast-asserted below: importing it renders and submits nothing). The only in-process change is none's lr
 grid, widened by 1.2e-3 so that render_args accepts it. B2 jobs = job_text() with the job name replaced
 (llmadd_ptlr1b-b2-<run>) and one line added at the end (maybe_select_b2.sh); stage B / C jobs = job_text() unchanged
-(slot index as make_jobs_ptlr1b.cells() would give it). Submitted with --account=torch_pr_520_tandon_priority only; flags
+(slot index as make_jobs_ptlr1b.cells() would give it). Submitted with --account=<slurm-account> only; flags
 SUBMITTED_<run>_520 (make_jobs_ptlr1b's naming); a submitted job file is never rewritten.
     python make_jobs_ptlr1b_b2.py --stage {b2,B,C} [--print] [--test-only] [--submit]"""
 import ast
@@ -36,7 +36,7 @@ B2_LR = "1.2e-3"
 assert M.GRID["none"] == ("2.4e-3", "4.8e-3", "9.6e-3") and B2_LR not in M.GRID["none"]
 M.GRID = {**M.GRID, "none": (B2_LR,) + M.GRID["none"]}   # in-process only: render_args now accepts none@1.2e-3
 ACCT = M.ACCOUNTS[0]
-assert ACCT == "torch_pr_520_tandon_priority"
+assert ACCT == "<slurm-account>"
 R = M.R
 WIN_PICK = "6e-4"   # AUDIT B2 item 2: readout_A's win-ctx pick, unchanged by B2
 

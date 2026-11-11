@@ -1,7 +1,7 @@
 """Torch jobs (P1, 2026-10-14): experiment B (operands 0..999, whole tokens) with the prior only while it helps:
 self-timed gate (on while the in-batch first-line exact match EMA < 0.5) and window (0.05, 0.4), for helix3 and the
 per-place circles; val bits/byte logged as the language-modelling cost (whole-run priors cost +1-2% in ptrange).
-References from ptrange (whole run): none, helix3, digitcirc. Seeds 0-3. Account torch_pr_625_general, public L40S.
+References from ptrange (whole run): none, helix3, digitcirc. Seeds 0-3. Account <slurm-account>, public L40S.
 --submit submits the jobs not yet submitted (runs/ptrangeg/SUBMITTED_<tag>)."""
 import shutil, subprocess, sys
 from pathlib import Path
@@ -22,7 +22,7 @@ for tg, extra in conds:
         job = R / f"job_{tag}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptrangeg-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

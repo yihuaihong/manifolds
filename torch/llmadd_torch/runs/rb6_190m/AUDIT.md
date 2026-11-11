@@ -126,7 +126,7 @@ llmadd_torch/scale_work/ (refs.py, step0_ng.py, e2e.py and their logs / outputs)
 | sbatch --test-only | 16/16 accepted (a100_tandon, start estimates 06:02-09:47) |
 
 ## Jobs
-16 jobs, account torch_pr_520_tandon_priority, a100_tandon, QoS gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
+16 jobs, account <slurm-account>, a100_tandon, QoS gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
 `--time=05:30:00` (2 x 2.1 h x 1.2 = 5.04 h for the rainbow, rounded up to the half hour), `--requeue` (a requeued job resumes from its checkpoint;
 run_guard keeps one writer). Planned ~16 x 2.6 = 42 A100-h.
 

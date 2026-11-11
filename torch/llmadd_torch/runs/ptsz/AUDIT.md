@@ -96,7 +96,7 @@ Nothing else: the trainer, data, tokens, evals, window, lambda, site, layers rul
 decision-log validation are pt300x's.
 
 ## Hardware
-All on L40S, one GPU type for the whole batch: account torch_pr_625_general, l40s_public, QOS gpu48 (16 GPUs per user across
+All on L40S, one GPU type for the whole batch: account <slurm-account>, l40s_public, QOS gpu48 (16 GPUs per user across
 the user's gpu48 jobs, shared with ptdom / ptshare), `--nice=1000` [amendment N1: --nice=100], 8 CPUs / 64 GB, --requeue; GPU-name guard 'L40S' (exit 4
 before any training on anything else). Reused L40S cells: 53M / 190M / 505M (F87, L40S logs) and 93M (pt300x, all L40S; F99's
 results audit verified every log). The B200 cells (F99's 294M and 1.07B) enter only descriptive lines.

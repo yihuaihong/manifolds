@@ -4,7 +4,7 @@ tools/pretrain_range.py, operands 0..999, helix3, 3e8 tokens, same data / split 
 2/3 of the depth (4,8 / 8,16; 53M: 2,4). Arms, seeds 0-3:
   190M: 7% none, gate-ctx, gate-text, shuf-ctx; 2% none, gate-ctx, gate-text
   505M: 7% none, gate-ctx, gate-text
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -37,7 +37,7 @@ for tag, extra, seeds in jobs:
         job = R / f"job_{jt}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptsize999-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

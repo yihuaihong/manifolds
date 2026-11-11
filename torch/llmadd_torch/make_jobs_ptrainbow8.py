@@ -22,7 +22,7 @@ for arm in ARMS:
         job = R / f"job_{tag}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptrainbow-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

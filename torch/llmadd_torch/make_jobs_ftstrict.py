@@ -21,7 +21,7 @@ for dom, ck in JOBS:
     job = R / f"job_{tag}.sbatch"
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ftstrict-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

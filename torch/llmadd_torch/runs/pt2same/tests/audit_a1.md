@@ -35,7 +35,7 @@
 | DRY 摘要 | 哈希与主作业同 seed 相同，并且等于各自孪生 run 的 dry_inputs.txt 前 9 行的哈希（8/8） | a1_check §2、§3 |
 | 检查脚本 CHECK_PY | 全文相同。intent JSON 只差 lr（0.004 / 0.016）和 tag，所以 CHECK_PY 会独立核对 trainer 实际记录下来的 lr，是 lr 的第二条路径 | 归一化 diff |
 | GPU 守卫、HOLD、sha | 都相同（`*A100*80GB*`、`$R/HOLD`、WANT_SHA 逐模块检查、COMMIT）。bash -n 8/8 通过 | 归一化 diff |
-| #SBATCH | 用 scontrol 核对：Nice=20、a100_tandon、gpu48、torch_pr_520_tandon_priority、02:00:00、Requeue=1、8 CPU、64G、gres/gpu:1 | scontrol show job |
+| #SBATCH | 用 scontrol 核对：Nice=20、a100_tandon、gpu48、<slurm-account>、02:00:00、Requeue=1、8 CPU、64G、gres/gpu:1 | scontrol show job |
 | sha 校验 | a1/JOBS.sha256 与 8 个文件一致，Slurm 持有的脚本也与之一致（逐字节）。FROZEN.sha256 当前全部 OK；主 JOBS.sha256 也 OK | sha256sum、scontrol write batch_script |
 
 **次要 1a：没有 submit_a1.sh，A1 提交没有经过清单校验和 FROZEN 校验。**

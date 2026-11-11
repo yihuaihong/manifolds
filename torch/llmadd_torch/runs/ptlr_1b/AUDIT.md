@@ -64,8 +64,8 @@ Extending a grid needs the user.
 - **C: confirm seeds 4-7 at the picks (8 runs).** Only if runs/ptlr_1b/APPROVE_C exists (the coordinator's approval of the
   cost). If the file is there when stage A ends, C is submitted with B. Otherwise touch it later and run
   `make_jobs_ptlr1b.py --submit` (it skips SUBMITTED_*).
-- **Two copies of every run**, one per account: torch_pr_520_tandon_priority (b200_tandon_prem or b200; can preempt on
-  b200) and torch_pr_625_general (b200). tools/run_guard.py lets the first copy compute the run and makes the other exit.
+- **Two copies of every run**, one per account: <slurm-account> (b200_tandon_prem or b200; can preempt on
+  b200) and <slurm-account> (b200). tools/run_guard.py lets the first copy compute the run and makes the other exit.
   A requeued job keeps its id and its claim; a copy that starts while the claimant is pending takes the claim over and
   resumes from the ckpt (F87 practice).
 - **At most 4 runs at a time.** Job names are llmadd_ptlr1b-slot<k> with `--dependency=singleton`, where k = run index
@@ -372,8 +372,8 @@ ranges" except none@9.6e-3's in-training bpb 1.1457 (slightly above 1.12; the co
       - "Expected ranges": none@4.8e-3's bpb 1.1240 is also above 1.12, not only 9.6e-3's 1.1457.
       - Item 1 says "one added line": two lines are appended (a comment and the call).
     - **Notes:**
-      - The B2 job files say `#SBATCH --account=torch_pr_625_general` (as every stage-A file; the account comes from the
-        command line). A manual resubmission must pass `--account=torch_pr_520_tandon_priority`.
+      - The B2 job files say `#SBATCH --account=<slurm-account>` (as every stage-A file; the account comes from the
+        command line). A manual resubmission must pass `--account=<slurm-account>`.
       - Stage B now has no 625 copies. B1 item 10 left that to the user; it matches the user's choice for stage A.
       - The automatic chain has no myquota step: /scratch is at 4.62 / 5.00 TB, and stage B adds at most about 75 GB.
       - sbatch from a B200 node is untested (the plumbing ran on cpu_short). Read stage B's first log for the GPU name

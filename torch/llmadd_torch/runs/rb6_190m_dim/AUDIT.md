@@ -88,7 +88,7 @@ python tools/rb6scale_dim_summary.py readout /scratch/yh6210/llmadd_torch/runs/r
 Every job of this batch: `#SBATCH --nice=5000` (all other llmadd jobs: nice 20). Slurm priority weights here: age <= 1000,
 partition 10000, fairshare and job size equal for the account's own jobs, so a nice of 5000 keeps these jobs behind every
 other job of this account in the same partition / QoS, however long they wait. Same account / partition / QoS as
-rb6_190m_ext: torch_pr_520_tandon_priority, a100_tandon, gpu48, 1 GPU, 8 CPUs, 64G, `--time=05:30:00`, `--requeue`.
+rb6_190m_ext: <slurm-account>, a100_tandon, gpu48, 1 GPU, 8 CPUs, 64G, `--time=05:30:00`, `--requeue`.
 The selection job: cpu_short, 2 CPUs, 24G, 2 h.
 
 ### Cost
@@ -138,7 +138,7 @@ metrics and the job pipeline are rb6_190m's, already audited).
 ## Submitted (2026-10-25 ~22:35 EDT)
 D1: 4 jobs 20936532-20936535 (none@3.84e-2 s0-3; SUBMITTED_<name> flags hold sbatch's output); priority 6644 at
 submission vs ~11,700 for this account's other pending jobs (nice 5000 = the user's "queue last"); account
-torch_pr_520_tandon_priority, a100_tandon, gpu48, 1 GPU, 8 CPUs, 64G, `--time=05:30:00`, `--requeue`. Code c6dcb6e
+<slurm-account>, a100_tandon, gpu48, 1 GPU, 8 CPUs, 64G, `--time=05:30:00`, `--requeue`. Code c6dcb6e
 (= runs/rb6_190m/code), trainer 93e22bf4c4c0. Selection + automatic D2: job 20936536 (select_job.sbatch, cpu_short,
 `--dependency=afterany:20936532:20936533:20936534:20936535`; SUBMITTED_select); read-out tool frozen in
 runs/rb6_190m_dim/select_code (scale-ladder 8251667, rb6scale_dim_summary.py 70954a2d0c56). Frozen (chmod a-w) until D2 is

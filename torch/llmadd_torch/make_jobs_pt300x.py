@@ -213,7 +213,7 @@ def job_x(F, slot=None):
         assert slot is not None and 0 <= slot < SLOTS
         head = f"""#SBATCH --job-name=llmadd_p3x-b200-slot{slot}
 #SBATCH --dependency=singleton
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=b200
 #SBATCH --comment="preemption=yes"
@@ -228,7 +228,7 @@ def job_x(F, slot=None):
     else:
         assert F["hw"] == "l40s" and slot is None
         head = f"""#SBATCH --job-name=llmadd_{F['name']}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

@@ -558,7 +558,7 @@ def pilot_job(bodies):
     hw = HW["b200"]
     text = f"""#!/bin/bash
 #SBATCH --job-name=llmadd_{PREFIX}-pilot
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=b200
 #SBATCH --comment="preemption=yes"

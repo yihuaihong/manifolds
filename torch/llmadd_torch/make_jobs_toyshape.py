@@ -26,7 +26,7 @@ toy_struct's split assert -- rule "the first five seeds whose split passes", AUD
 Every run: --shape_log, --eval_every 100, --threads 1, 5 seed processes per GPU; every mod run: --mod_twins (test_fresh =
 held-out questions whose commuted twin is not in training; the split stays toy_grok's question split, AUDIT.md).
 Conditional cells (bracket extension beyond a non-flat edge, PRE-REGISTERED): the NONE_EXT block below, not generated.
-Account torch_pr_625_general, l40s_public, gpu48. Kill switch: runs/toyshape/HOLD. --submit submits jobs not yet
+Account <slurm-account>, l40s_public, gpu48. Kill switch: runs/toyshape/HOLD. --submit submits jobs not yet
 submitted; --only name1,name2 restricts --submit to those jobs (calibrators first, AUDIT.md "Cost").
 
 --cpu (2026-10-20, AUDIT.md amendment "CPU move", before any result): the SAME runs (cells, arms, seeds, lrs, wds,
@@ -155,7 +155,7 @@ def job(name, lines, limit_h, comment):
     p = R / f"job_{name}.sbatch"
     body = f"""#!/bin/bash
 #SBATCH --job-name=llmadd_toyshape-{name}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1
@@ -226,7 +226,7 @@ def cpu_job(name, lanes, comment):
     p = R / f"job_{name}.sbatch"
     body = f"""#!/bin/bash
 #SBATCH --job-name=llmadd_toyshapecpu-{name}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition={PART}
 #SBATCH --nodes=1
 #SBATCH --ntasks=1

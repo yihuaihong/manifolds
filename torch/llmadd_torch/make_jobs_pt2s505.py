@@ -13,7 +13,7 @@ reads the batch with pt2main's own pre-registered rules. Every job = the pt2main
 snapshot shas, an A100 guard, the data sha256, --dry_inputs (model line, 3 rows with 2 operand sites, the target table,
 the 9 DRY rows' sha256 = the Torch CPU 505M dry run = the Burst pt2s190 rows with this model line), training, offline_lm,
 make_pt2main_tasks.CHECK_PY verbatim with the 505M intent -> check.json (exit 4 on a fail). Account
-torch_pr_520_tandon_priority, a100_tandon, gpu48, nice 20.
+<slurm-account>, a100_tandon, gpu48, nice 20.
     python make_jobs_pt2s505.py [--stage main | --stage confirm --picks <json>] [--print] [--test-only] [--submit]"""
 import hashlib
 import json

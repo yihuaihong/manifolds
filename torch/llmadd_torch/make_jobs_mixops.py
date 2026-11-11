@@ -29,7 +29,7 @@ for name, ck, args, tl in jobs:
     model = B / "models/OLMo-2-1124-7B" / CK[ck]
     (R / "job.sbatch").write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_{name}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon,h100_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

@@ -210,7 +210,7 @@ final3 gain, chance, heuristic lines, step-0 value and the heuristic-hard subset
    sec/step, GPU util / memory.
 
 ## Hardware, jobs, cost
-- [A3 / A4: every batch on B200, A4.6] L40S only: account torch_pr_625_general, partition l40s_public, QoS gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
+- [A3 / A4: every batch on B200, A4.6] L40S only: account <slurm-account>, partition l40s_public, QoS gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
   `--time=03:00:00`, `--requeue`; logs llmadd_torch/logs/llmadd_ptdom-<arm>-lr<lr>-s<seed>_<jobid>.out.
 - Timing basis: L40S / A100-40GB = 1.31 at 53M 2% (pt999-2pct 3,429-3,459 s vs pt2b 2,635 s); rb6 53M K 2 = 3,075 s on
   A100 -> 1.12 h on L40S; ptdom's eval rows ~1.1x rb6's plus the other-option forwards -> plan **1.3 L40S-h per run**

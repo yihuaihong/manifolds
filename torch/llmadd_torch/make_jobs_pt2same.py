@@ -14,7 +14,7 @@ Burst task's intent except code_sha, tag and the step-0 lm reference (asserted a
 Every job: HOLD, the snapshot's shas, an A100-80GB guard (exit 3 on anything else), the data sha256, an INTENT line,
 --dry_inputs (model line, 2 operand sites per row, target table, the 9 DRY rows' sha256 = make_pt2main_tasks.DRY = the
 Burst run's own dry_inputs.txt of this cell and seed, asserted here), training (--save_model --ckpt_every 2000, --requeue
-resumes), offline_lm.py, CHECK_PY -> check.json (exit 4 on a fail), gpu.csv. Account torch_pr_520_tandon_priority,
+resumes), offline_lm.py, CHECK_PY -> check.json (exit 4 on a fail), gpu.csv. Account <slurm-account>,
 a100_tandon, gpu48, nice 20.
 Reused read-only (sha256[:12] asserted; importing them runs no main(), asserted by ast): make_jobs_pttpp.py (_extract, SIZES /
 N_nonemb, the 190M step-0 references), make_jobs_pt2s505.py, make_jobs_rb6scale.py (WANT_SHA, accounts, BURST).
@@ -57,7 +57,7 @@ PIN2, PIN2_CODE = TP.PIN2, TP.PIN2_CODE   # 7f1d06b, runs/pt2s505/code
 assert PIN2 == "7f1d06b" and PIN2_CODE == B / "runs" / "pt2s505" / "code"
 EXTRA_SHA = {"make_pt2main_tasks.py": "a2e8a9621383", "readout_rules.py": "e91ee8a8a846", "pt2main_summary.py": "68c3b7c26de2"}
 ACCOUNT, PARTITION, QOS, NICE = J.ACCOUNT, J.PARTITION, J.QOS, J.NICE
-assert (ACCOUNT, PARTITION, QOS, NICE) == ("torch_pr_520_tandon_priority", "a100_tandon", "gpu48", 20)
+assert (ACCOUNT, PARTITION, QOS, NICE) == ("<slurm-account>", "a100_tandon", "gpu48", 20)
 GPU_CASE = "*A100*80GB*"   # Torch a100_tandon: 'NVIDIA A100-SXM4-80GB' (every pt2s505 / pttpp 2% node.txt)
 BURST = J.BURST            # /scratch/yh6210/llmadd-burst-ro (origin/main of the Burst repo; read only)
 

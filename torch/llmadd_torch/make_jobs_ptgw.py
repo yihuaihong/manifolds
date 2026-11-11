@@ -10,7 +10,7 @@ None references with saved models where none exist yet: lr 5e-4 and 6e8 tokens (
 7pct-none, 8 seeds, saved). Seeds 0-3, every run saves its model (offline LM re-evaluation, tools/offline_lm.py).
 Free references already queued: pt999 7pct-gate-ctx (gate from step 0), 7pct-whole-ctx, sens-lr5e-4-gate-ctx,
 sens-Lall-gate-ctx; pt999b 7pct-win-ctx (= main-W on another snapshot, no saved models).
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -38,7 +38,7 @@ for st, sc in cells:
         job = R / f"job_{jt}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptgw-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

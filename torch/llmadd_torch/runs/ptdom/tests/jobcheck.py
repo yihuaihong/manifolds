@@ -46,7 +46,7 @@ for a, lr, s in jobs:
     cp = txt.split("<<'PY' | tee \"$OUT/check.txt\"\n", 1)[1].split("PY\necho \"## done", 1)[0]
     n_ok["check"] += cp == M.CHECK_PY and compile(cp, "check", "exec") is not None
     n_ok["args"] += f'ARGS="{M.args_of(a, lr, s, R / "out" / name)}"' in txt and txt.count("'" + json.dumps(I, separators=(",", ":")) + "' \"$ARGS\" <<'PY'") == 1
-    hd = ["--account=torch_pr_625_general", "--partition=l40s_public", "--qos=gpu48", "--nice=20", "--time=03:00:00",
+    hd = ["--account=<slurm-account>", "--partition=l40s_public", "--qos=gpu48", "--nice=20", "--time=03:00:00",
           "--requeue", "--gres=gpu:1"]
     n_ok["header"] += all(f"#SBATCH {h}" in txt for h in hd) and "*L40S*) ;;" in txt and 'if [ -e "$R/HOLD" ]' in txt
 T(f"92 stage-A job files: bash -n / intent / CHECK_PY / ARGS (+ passed to CHECK_PY) / header+guards", all(v == 92 for v in n_ok.values()), n_ok)

@@ -122,7 +122,7 @@ def build(stage, picks=None, refs_gate=True):
     assert head == SNAP_COMMIT == X.SNAP_COMMIT and X.SRC_BATCH == M.B / "runs" / "rb6_190m", head
     pin_sha = M.WANT_SHA["pretrain_range.py"]
     assert M.WANT_SHA == X.WANT_SHA and M.SIZES[SIZE] == X.SIZES[SIZE] and (M.ACCOUNT, M.PARTITION, M.QOS, M.NICE) == \
-        ("torch_pr_520_tandon_priority", "a100_tandon", "gpu48", 20)
+        ("<slurm-account>", "a100_tandon", "gpu48", 20)
     sys.path.insert(0, str(R / "code" / "tools"))
     import make_rb6m_tasks as G   # the snapshot's generator modules (as make_jobs_rb6scale.main)
     import make_rb6_tasks as P

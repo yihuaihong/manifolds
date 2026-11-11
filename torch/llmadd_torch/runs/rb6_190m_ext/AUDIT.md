@@ -164,7 +164,7 @@ review (v) is launched by the coordinator after submission. i / iii / iv: – (m
 pipeline are rb6_190m's, already audited).
 
 ## Submitted (2026-10-22 ~20:10 EDT)
-24 jobs 20665778-20665837 (SUBMITTED_<name> flags hold sbatch's output), seed-major; account torch_pr_520_tandon_priority,
+24 jobs 20665778-20665837 (SUBMITTED_<name> flags hold sbatch's output), seed-major; account <slurm-account>,
 a100_tandon, QoS gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G, `--time=05:30:00` (rb6_190m's; its runs took 2.4 h), `--requeue`.
 Planned ~24 x 2.5 = 60 A100-h; ~18 GB of saved models (/scratch had ~250 GB free). Code c6dcb6e (= runs/rb6_190m/code),
 trainer 93e22bf4c4c0; read-out tools/rb6scale_ext_summary.py 00f76a1fc62d (scale-ladder 9ac63ee, not pushed); logs

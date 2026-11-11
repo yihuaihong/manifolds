@@ -11,7 +11,7 @@ the 9 DRY rows' sha256 = the Burst pt2s190 rows of the seed with this model line
 llmadd_torch/pt2sz_refs.json), training (--save_model --ckpt_every 2000, --requeue resumes), offline_lm.py (full val),
 make_pt2main_tasks.CHECK_PY verbatim with this run's intent -> check.json; then (stage A / X only, seeds 0-3) the model file
 is removed after a passing check (pttpp job2's rule: offline_lm has used it; AUDIT.md "Disk"); the job exits with the
-check's code. Account torch_pr_520_tandon_priority, a100_tandon, gpu48, nice 1000; job names llmadd_p2z-<run>.
+check's code. Account <slurm-account>, a100_tandon, gpu48, nice 1000; job names llmadd_p2z-<run>.
 Trainer = pt2same's / pt2s505's snapshot: runs/pt2sz/code = `git archive 7f1d06b tools/` (pretrain_range.py
 93e22bf4c4c0), asserted equal to runs/pt2s505/code and runs/pt2same/code file by file.
 lr selection = pt300x's protocol (AUDIT.md "lr selection"): stage A = 4 consecutive ladder rungs per arm x seeds 0-3;
@@ -68,7 +68,7 @@ assert WANT_SHA is P2.WANT_SHA is TP.WANT_SHA2 and WANT_SHA["pretrain_range.py"]
 PIN2, PIN2_CODE = PS.PIN2, PS.PIN2_CODE      # 7f1d06b, runs/pt2s505/code
 EXTRA_SHA = PS.EXTRA_SHA                     # make_pt2main_tasks / readout_rules / pt2main_summary of the snapshot
 ACCOUNT, PARTITION, QOS, GPU_CASE = PS.ACCOUNT, PS.PARTITION, PS.QOS, PS.GPU_CASE
-assert (ACCOUNT, PARTITION, QOS, GPU_CASE) == ("torch_pr_520_tandon_priority", "a100_tandon", "gpu48", "*A100*80GB*")
+assert (ACCOUNT, PARTITION, QOS, GPU_CASE) == ("<slurm-account>", "a100_tandon", "gpu48", "*A100*80GB*")
 NICE = 1000                                  # the user (2026-11-05): ptdom > new sizes > ptshare (2000); pt2same had 20
 assert PS.NICE == 20 and NICE != PS.NICE
 

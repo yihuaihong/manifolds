@@ -5,7 +5,7 @@ Intent spec and PRE-REGISTERED rules: runs/toystruct/AUDIT.md.
 One job per (task, fraction): 5 seeds as 5 parallel processes, all arms per process (paired by seed: same init,
 same split), then the summary (pre-registered tests) of that cell, once every process has finished.
 Budget (steps) and --time: see BUDGET / MS_PER_STEP below (AUDIT.md "Budget" and "Cost").
-Account torch_pr_625_general on the public L40S partition. Writes job files only; --submit submits jobs not yet
+Account <slurm-account> on the public L40S partition. Writes job files only; --submit submits jobs not yet
 submitted (SUBMITTED_<tag> flag files). Kill switch: a job exits at start while runs/toystruct/HOLD exists.
 Default = the design as approved (S4 fractions 0.3 / 0.6, six arms per task, window [0, 2000)). Options (each the
 user's call; AUDIT.md "Open decisions"), every one written into the job name so cells never mix in one out/ dir:
@@ -85,7 +85,7 @@ def main() -> None:
         job = R / f"job_{tag}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_toystruct-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

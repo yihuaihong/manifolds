@@ -10,7 +10,7 @@ no shuffled control at the prefix site -> helix3_shuf prefix window. Both 4 seed
 A separate batch because pt999 jobs were already running on their snapshot (fdfadfd) when --site prefix was added; the
 ctx / text training paths are identical between the two snapshots (CPU check, scratchpad/test_prefix.sh). Analyse
 with tools/pt999_summary.py runs/pt999/out runs/pt999b/out (tags are unique across the two).
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -41,7 +41,7 @@ for a, extra in ARM.items():
         R.mkdir(parents=True, exist_ok=True)
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_pt999b-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

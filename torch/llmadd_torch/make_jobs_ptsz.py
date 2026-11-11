@@ -7,7 +7,7 @@ The fixed-3e8-token 7% size ladder (F87 ptlr / ptlr_1b, F99 pt300x) gets four mo
   391m = d960 x 20, 15 heads, d_ff 3840 (N_nonemb 294,989,760)   new, never seen (294M-505M midpoint +0.013)
   731m = d1152 x 29, 18 heads, d_ff 4608 (N_nonemb 615,911,040)  new, never seen (505M-1.07B midpoint -0.001)
 (exact counts: scale_work/ptsz/shapes_ptsz.py, the trainer's own build_model on the meta device; names = rounded totals).
-All on L40S (account torch_pr_625_general, l40s_public, QOS gpu48, --nice=100 (amendment N1), GPU-name guard 'L40S'); one GPU type for the
+All on L40S (account <slurm-account>, l40s_public, QOS gpu48, --nice=100 (amendment N1), GPU-name guard 'L40S'); one GPU type for the
 whole batch. Protocol = pt300x (= F87 ptlr) exactly, except shape, lr grid, --nice and (runs over ~4 h) --ckpt_every 2000:
 3e8 tokens = 18,310 steps of 32 x 512 (the trainer's default --tokens 3e8: no --tokens / --eval_every flag), eval every 250
 steps (75 evals), 1% warmup, window (0.05, 0.4), lambda 5, ctx site, --arith_lines 4 (7%); arms 'none' / 'win-ctx' = F87's.
@@ -325,7 +325,7 @@ def intent_x(F):
 # ---------------------------------------------------------------- the job (make_jobs_pttpp.job7's body via pt300x, this batch's paths)
 def header(F):
     return f"""#SBATCH --job-name=llmadd_{F['name']}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1
@@ -438,7 +438,7 @@ def smoke_job():
         line(*fb[0]) + " && " + line(*fb[1]) + "\n  " + line(*fb[2]) + "\nfi\n" + "\n".join(line(*x) for x in segs[2:])
     return f"""#!/bin/bash
 #SBATCH --job-name=llmadd_psz-smoke731
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

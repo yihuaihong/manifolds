@@ -30,7 +30,7 @@ Per (task, m):
 Every run: --shape_log --eval_every 100 --threads 1 --ckpt_dir <cell>/ckpt --ckpt_every 10000 --deadline <job end - 15 min>
 (a requeued / time-limited run resumes from its checkpoint; a finished run is skipped: its JSON exists).
 Jobs: per group the runs are packed (largest first) into lanes of one process each, 5 lanes per job (one L40S);
---time = 2 x the job's planned time (rate model below), at least 2 h. Account torch_pr_625_general.
+--time = 2 x the job's planned time (rate model below), at least 2 h. Account <slurm-account>.
 Append-only guard: every job file is rendered in memory first; if any SUBMITTED job's file would change (or be deleted),
 the generator stops before writing anything.
 Kill switch: runs/newmani/HOLD. Options:
@@ -274,7 +274,7 @@ def job_body(name, lanes, plan_h, comment):
     assert limit_h <= 47, (name, limit_h)
     body = [f"""#!/bin/bash
 #SBATCH --job-name=llmadd_newmani-{name}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

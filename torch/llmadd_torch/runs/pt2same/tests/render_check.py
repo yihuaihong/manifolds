@@ -1,7 +1,7 @@
 """pt2same test: the 32 rendered job files.
 R1 32 files = the generator's rendering (JOBS.sha256 verifies; a second rendering in memory is byte-identical), names / tags
    unique and used by no other batch's run directory; bash -n on every file.
-R2 the #SBATCH header of every job: account torch_pr_520_tandon_priority, a100_tandon, gpu48, 1 GPU, nice 20, 8 CPUs, 64G,
+R2 the #SBATCH header of every job: account <slurm-account>, a100_tandon, gpu48, 1 GPU, nice 20, 8 CPUs, 64G,
    --requeue, the size's time limit; every job holds HOLD, the 7 trainer-module sha checks, COMMIT, the A100-80GB case, the
    data sha256, INTENT, --dry_inputs + its 4 checks, training, offline_lm, CHECK_PY.
 R3 CHECK_PY block of every job = make_pt2main_tasks.CHECK_PY = the Burst twin task's block, byte for byte.
@@ -45,7 +45,7 @@ jn = [re.findall(r"^#SBATCH --job-name=(.*)$", f.read_text(), re.M)[0] for f in 
 say(len(set(jn)) == 32, "R1 Slurm job names unique")
 bn = [subprocess.run(["bash", "-n", str(f)], capture_output=True, text=True) for f in files]
 say(all(o.returncode == 0 and not o.stderr for o in bn), f"R1 bash -n: {sum(o.returncode == 0 for o in bn)}/32 clean")
-HEAD = {"--account": "torch_pr_520_tandon_priority", "--partition": "a100_tandon", "--qos": "gpu48", "--gres": "gpu:1", "--nice": "20",
+HEAD = {"--account": "<slurm-account>", "--partition": "a100_tandon", "--qos": "gpu48", "--gres": "gpu:1", "--nice": "20",
         "--cpus-per-task": "8", "--mem": "64G", "--requeue": None, "--output": f"{M.B}/logs/%x_%j.out"}
 MUST = ['if [ -e "$R/HOLD" ]; then echo "HOLD present: exiting"; exit 0; fi', 'cd "$R/code/tools"',
         'grep -q "pretrain_range.py 93e22bf4c4c0" "$R/code/COMMIT"', 'case "$GPU" in *A100*80GB*) ;;',

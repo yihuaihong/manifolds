@@ -57,7 +57,7 @@ identity, integrity, cross-size data identity, PROVISIONAL / strict refusal, no 
 - an OPEN bracket of either arm is printed next to its cells.
 
 ## Jobs
-Sweep 12 + main 12 = 24 jobs; account torch_pr_520_tandon_priority, a100_tandon, gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
+Sweep 12 + main 12 = 24 jobs; account <slurm-account>, a100_tandon, gpu48, `--nice=20`, 1 GPU, 8 CPUs, 64G,
 `--time=13:00:00` (2 x 6.3 h, the rainbow estimate at 505M; rounded up), `--requeue`. Planned ~24 x 6.3 = 151 A100-h.
 Checks inside every job: as rb6_190m (model line `model: 505.4M parameters; gradient checkpointing on`; DRY rows = the
 Torch CPU 505M dry run = the Burst 53M rows with this model line; step-0 lm vs the 505M CPU reference; ...).

@@ -32,7 +32,7 @@ for task, (frac, split, steps) in CELLS.items():
             job = R / f"job_{name}.sbatch"
             job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_toynone3-{name}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

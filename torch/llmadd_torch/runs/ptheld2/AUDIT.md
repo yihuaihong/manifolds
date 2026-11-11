@@ -385,7 +385,7 @@ production dry runs).
   was estimated to start on 10-27, and Burst's GPU budget was exhausted (294/296, 293/296). The user chose the tandon
   account.
 - Test-only estimates, single job:
-  - torch_pr_520_tandon_priority on a100_tandon: 10-21 19:37Z;
+  - <slurm-account> on a100_tandon: 10-21 19:37Z;
   - priority on h100_tandon: 10-22 05:01Z;
   - advanced: a100 10-24, h200 10-23, h100 10-26.
   - Chosen: priority + a100_tandon. CIA's convention reserves priority for inference; the user asked for the tandon
@@ -441,7 +441,7 @@ the added cells were chosen after the wd 1.0 result was seen, their criteria fix
 - The read-out on the current ptheld2t/out (no SUPP-3 run yet): layer A PROVISIONAL with RS(a) INCOMPLETE (none@8e-3-wd0.3
   missing); B no rescue (C1); 104 / 104 runs valid under the WD3 checks.
 - SUPP-3 jobs (A100 only: --supp3 needs --site tandon; snapshot runs/ptheld2t/code, trainer 93e22bf4c4c0, a100_tandon,
-  torch_pr_520_tandon_priority): none@8e-3 wd 0.3, none@1e-3, none@2e-3 4x, seeds 0-3 = 12 jobs; ~16 A100-h at the
+  <slurm-account>): none@8e-3 wd 0.3, none@1e-3, none@2e-3 4x, seeds 0-3 = 12 jobs; ~16 A100-h at the
   measured 0.66 h per 1x run and 2.64 h per 4x run in ptheld2t. The 104 tandon and the 104 L40S job files re-render
   byte-identical with and without --supp3 (md5 of all 208). Production-shape --dry_inputs of the three new cells: clean
   (0 H tokens in 6,400 lines). The tandon job files contain no GPU-type check (only nvidia-smi prints the name; Amendment

@@ -91,7 +91,7 @@ for g, (task, frac, split, steps), lr, wd, arms in JOBS:
            f"--lr {lr} --wd {wd} --eval_every 100 --threads 1 --out {out}")
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_toyf84fu-{name}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

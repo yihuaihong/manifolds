@@ -123,7 +123,7 @@ for k, a, s in PILOT:
     job = R / f"job_{jt}.sbatch"
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_rb6-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

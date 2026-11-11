@@ -30,7 +30,7 @@ arithmetic, the larger the gain". Here only the share changes.
 - Trainer: tools/ at commit 64abc19 (code_sha a3bce3ab63c1) = runs/ptlr/code; runs/ptshare/code is asserted file-by-file
   identical to runs/ptlr/code. 53M (d384 x 6, 52,672,128 parameters), 3e8 tokens = 18,310 steps of 32 x 512, AdamW (0.9,
   0.95) wd 0.1, 1% warmup, cosine to 0.1x, lambda 5, prior layers 2, 4, eval every 250 steps (75 evals), `--save_model
-  --ckpt_every 2000`; L40S (l40s_public, torch_pr_625_general, gpu48, 3 h limit, `--requeue`): all as ptlr 53M.
+  --ckpt_every 2000`; L40S (l40s_public, <slurm-account>, gpu48, 3 h limit, `--requeue`): all as ptlr 53M.
 - Arms: none (`--target none`); win-ctx (`--target helix3 --schedule window --window 0.05,0.4 --site ctx`).
 - Grids, seeds 0-3, for k = 1, 2, 8: none 4e-3 / 8e-3 / 1.6e-2; win-ctx 1e-3 / 2e-3 / 4e-3 (72 jobs). Why: centred on the
   7% best lrs (F87 53M: none 8e-3, win-ctx 2e-3, both brackets closed, confirm seeds agreeing); F86 pt2b (2%, 53M) selected

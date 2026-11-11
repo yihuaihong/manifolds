@@ -29,7 +29,7 @@ for tag, model in MODELS.items():
     job = R / f"job_{PFX}{tag}.sbatch"
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_atlas2-{tag}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition={PART}
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

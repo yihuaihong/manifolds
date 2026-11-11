@@ -16,7 +16,7 @@ Conditional cells: the CONDITIONAL block below CELLS (pre-registered in AUDIT.md
 Code snapshot = tools/ at commit PIN (git archive, so a later HEAD, e.g. Rev A, cannot change it); its
 pretrain_range.py is the ptgw snapshot (code_sha a3bce3ab63c1). Tags are unique across pt999 / pt999b / ptgw /
 ptsize999 (tools/pt999_summary.py asserts a unique (tag, seed) across directories).
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import hashlib, shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -108,7 +108,7 @@ for cell in CELLS:
         job = R / f"job_{jt}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ptlr-{jt}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

@@ -21,7 +21,7 @@ for tag, ck, arms, seeds, rank in jobs:
     out = R / "out" / (ck if rank == 8 else f"{ck}-r32")
     job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_rainbow-{tag}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon,h100_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

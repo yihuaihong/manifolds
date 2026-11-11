@@ -19,7 +19,7 @@ code/COMMIT records HEAD and the sha256[:12] of the trainer and of every module 
 render when the snapshot differs from HEAD or a trainer file is not the CPU-regression-tested one (WANT_SHA). Every sbatch:
 HOLD kill switch, the shas of the snapshot (exit 3), an A100 guard, the data sha256, --dry_inputs with the Burst task's
 input checks + the DRY row hash (exit 3 before training), training (requeue resumes from the checkpoint), offline_lm.py,
-CHECK_PY -> check.json (exit 4 on a failed check), gpu.csv. Account torch_pr_520_tandon_priority, a100_tandon, gpu48, nice 20.
+CHECK_PY -> check.json (exit 4 on a failed check), gpu.csv. Account <slurm-account>, a100_tandon, gpu48, nice 20.
     python make_jobs_rb6scale.py --batch rb6_190m [--print] [--test-only] [--submit]
     python make_jobs_rb6scale.py --batch rb6_505m --stage sweep [...]
     python make_jobs_rb6scale.py --batch rb6_505m --stage main --picks <picks.json> [...]"""
@@ -48,7 +48,7 @@ GEN = ("make_rb6m_tasks.py", "make_rb6_tasks.py")
 EXTRA_FILES = ("rainbow6_summary.py", "rb6scale_summary.py", "rb6scale_select.py", "readout_rules.py")
 DATA_SHA = ("4de2ed19093c37b302b6a1ced56136e6a8b805e6d6b48057a77316811704ff11",   # make_rb6_tasks.DATA (train.bin, val.bin)
             "d6f744a99b988ed6928fb588356cc8fe3d61bcf348b8d06fc0eece25c624a4c8")
-ACCOUNT, PARTITION, QOS, NICE = "torch_pr_520_tandon_priority", "a100_tandon", "gpu48", 20
+ACCOUNT, PARTITION, QOS, NICE = "<slurm-account>", "a100_tandon", "gpu48", 20
 SIZES = {
     # model flags, n_params (190M = pt2s190's 190297344; 505M = ptlr 500m's 505437184; the domains add no parameter: the
     # nonce names are existing tokens), the dry run's model line, prior / read-out layers (n_layers // 3, 2 n_layers // 3),

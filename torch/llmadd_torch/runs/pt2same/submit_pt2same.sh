@@ -4,7 +4,7 @@
 #   bash submit_pt2same.sh --go     submit them (sbatch --parsable) and write SUBMITTED_<run> with the job id
 # Order = JOBS.sha256 = the generator's order (seed-major, 190M before 53M, none before win-ctx), so the first wave shows
 # every cell. Before anything: every job file must match JOBS.sha256 (the generator's rendering) and the generator / read-out
-# must match FROZEN.sha256 (the tested versions). Jobs: account torch_pr_520_tandon_priority, a100_tandon, gpu48, nice 20.
+# must match FROZEN.sha256 (the tested versions). Jobs: account <slurm-account>, a100_tandon, gpu48, nice 20.
 # A submitted job is never resubmitted (its SUBMITTED_ flag); a re-run needs a new run name (change the generator).
 set -euo pipefail
 R=/scratch/yh6210/llmadd_torch/runs/pt2same

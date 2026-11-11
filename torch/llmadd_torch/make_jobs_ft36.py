@@ -3,7 +3,7 @@ every atlas domain. OLMo-2-7B at 42B tokens (the checkpoint with the clearest nu
 and 210B (days / months gains, F40); per domain none / prior / prior_shuf x seeds 0-2, LoRA r 8, lambda 20, layers
 4,8,12,16, 280 steps; splits without equivalent leakage (cyclic: (item, k mod n) classes). 6 jobs per checkpoint,
 6 domains each (the two costliest, numbers and years, in different jobs). Intent spec runs/ft36/AUDIT.md.
-Account torch_pr_625_general on the public L40S partition. --submit submits jobs not yet submitted."""
+Account <slurm-account> on the public L40S partition. --submit submits jobs not yet submitted."""
 import shutil, subprocess, sys
 from pathlib import Path
 B = Path("/scratch/yh6210/llmadd_torch"); REPO = Path("/home/yh6210/Research_Projects/llmadd-burst")
@@ -28,7 +28,7 @@ for ck, rev in CK.items():
         job = R / f"job_{tag}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ft36-{tag}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

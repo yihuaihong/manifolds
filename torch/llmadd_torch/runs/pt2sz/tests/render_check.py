@@ -1,7 +1,7 @@
 """pt2sz test: the 64 rendered stage-A job files.
 R1 64 files = the generator's rendering (a second rendering in memory is byte-identical; make_jobs_pt2sz --check passes),
    names / tags unique and used by no other batch's run directory; Slurm job names unique and = llmadd_p2z-<run>; bash -n.
-R2 the #SBATCH header of every job: account torch_pr_520_tandon_priority, a100_tandon, gpu48, 1 GPU, nice 1000, 8 CPUs,
+R2 the #SBATCH header of every job: account <slurm-account>, a100_tandon, gpu48, 1 GPU, nice 1000, 8 CPUs,
    64G, --requeue, the size's time limit, the log path; every job holds HOLD, the 7 trainer-module sha checks, COMMIT, the
    A100-80GB case, the data sha256, INTENT, --dry_inputs + its 4 checks, training, offline_lm, CHECK_PY with RC capture,
    the model removal (stage A: only after a passing check) and exit $RC; order: GPU guard before the inputs, the dry run
@@ -47,7 +47,7 @@ say(len(set(jn.values())) == 64 and all(v == "llmadd_" + k[4:-7] and v.startswit
     "R1 Slurm job names unique and = llmadd_p2z-<run>")
 bn = [subprocess.run(["bash", "-n", str(f)], capture_output=True, text=True) for f in files]
 say(all(x.returncode == 0 and not x.stderr for x in bn), f"R1 bash -n: {sum(x.returncode == 0 for x in bn)}/64 clean")
-HEAD = {"--account": "torch_pr_520_tandon_priority", "--partition": "a100_tandon", "--qos": "gpu48", "--gres": "gpu:1",
+HEAD = {"--account": "<slurm-account>", "--partition": "a100_tandon", "--qos": "gpu48", "--gres": "gpu:1",
         "--nice": "1000", "--cpus-per-task": "8", "--mem": "64G", "--requeue": None, "--output": f"{M.B}/logs/%x_%j.out"}
 MUST = ['if [ -e "$R/HOLD" ]; then echo "HOLD present: exiting"; exit 0; fi', 'cd "$R/code/tools"',
         'grep -q "pretrain_range.py 93e22bf4c4c0" "$R/code/COMMIT"', 'case "$GPU" in *A100*80GB*) ;;',

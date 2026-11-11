@@ -38,7 +38,7 @@ for ck, rev in CK.items():
             job = R / f"job_{tag}.sbatch"
             job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_ft999-{tag}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1

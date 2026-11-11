@@ -180,7 +180,7 @@ with tempfile.TemporaryDirectory() as tmp:
             seeds_ok = s in {"S": M2.S_SEEDS2, "S0": M2.S_SEEDS, "R1": M2.SEL, "R1pre": M2.SEL, "R1x": M2.SEL, "R2": M2.R2_SEEDS, "pilot": (0,)}[part]
             f_ok.append(subprocess.run(["bash", "-n"], input=txt.encode()).returncode == 0 and seeds_ok
                         and f"#SBATCH --job-name=llmadd_ptdom2-b200-slot{i % M2.N_SLOTS}\n#SBATCH --dependency=singleton\n" in hdr
-                        and "#SBATCH --account=torch_pr_520_tandon_priority" in hdr and "#SBATCH --constraint=b200" in hdr
+                        and "#SBATCH --account=<slurm-account>" in hdr and "#SBATCH --constraint=b200" in hdr
                         and '#SBATCH --comment="preemption=yes"' in hdr and "#SBATCH --time=03:00:00" in hdr and "#SBATCH --requeue" in hdr
                         and "#SBATCH --open-mode=append" in hdr and f"#SBATCH --output={B}/logs/llmadd_{name}_%j.out" in hdr
                         and name.startswith("ptdom2-") and f'[ -e "$R/HOLD_{part}" ]' in txt and f"R={M2.R};" in txt

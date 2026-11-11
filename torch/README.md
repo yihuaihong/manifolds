@@ -65,3 +65,5 @@ F numbers are the entries of `report/FINDINGS.md` that report the batch ("—": 
 | `toyf84fu` | toy follow-ups of F84 | F84, F89 |
 | `toyshape` | wall 2: shape-only prior | F89 |
 | `newmani` | new-manifold toy screen, stages 1 and 2 | F94, F95 |
+
+Slurm account names are redacted as `<slurm-account>` in this mirror and in the Torch result logs (2026-11-10); the jobs ran under the project's own Torch accounts.

@@ -46,7 +46,7 @@ Secondary (descriptive): the size of the Burst -> Torch site effect on the same 
   runs/pt2s505/code file by file (COMMIT copied verbatim; pretrain_range.py 93e22bf4c4c0 + every imported module's sha
   re-checked in every job). The 93e22bf4c4c0 default path was regression-tested against a3bce3ab63c1 (the Burst trainer) on
   CPU in pt2s505's tests (run JSON values identical, 36/36 model tensors bitwise, none / win-ctx / win-ctx grad ckpt on).
-- Hardware: Torch a100_tandon (every node NVIDIA A100-SXM4-80GB), account torch_pr_520_tandon_priority, qos gpu48, 1 GPU,
+- Hardware: Torch a100_tandon (every node NVIDIA A100-SXM4-80GB), account <slurm-account>, qos gpu48, 1 GPU,
   8 CPUs, 64G, `--requeue`, **`--nice=20`** (as pt2s505 and the user's instruction; note: the batches queued now use 2000 /
   5000, so these jobs go ahead of them on the same partition). Time limits 53M 02:00:00, 190M 05:00:00 (2.5 x plan rounded
   up to the half hour; TIMEOUT is not requeued, preemption is and resumes from the 2000-step ckpt).

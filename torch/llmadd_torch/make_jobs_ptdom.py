@@ -625,7 +625,7 @@ def render(P, batch, arm, lr, seed, ref, commit, rr=0, slot=None, stage="1", pil
     if hwk == "b200":   # pt300x's 294M header (make_jobs_pt300x.job_x), this batch's slot and log name
         head = f"""#SBATCH --job-name={sname}
 #SBATCH --dependency=singleton
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --gres=gpu:1
 #SBATCH --constraint=b200
 #SBATCH --comment="preemption=yes"
@@ -642,7 +642,7 @@ def render(P, batch, arm, lr, seed, ref, commit, rr=0, slot=None, stage="1", pil
                      f"singleton slot {slot} (batch {batch}: slots {SLOT0[batch]}..{SLOT0[batch] + SLOTS - 1}; 16 chains over the four batches)."))
     else:
         head = f"""#SBATCH --job-name={sname}
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=l40s_public
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1
