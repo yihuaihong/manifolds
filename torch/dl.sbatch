@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=llmadd_dl
-#SBATCH --account=torch_pr_625_general
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=cs
 #SBATCH --qos=cpu168
 #SBATCH --cpus-per-task=16

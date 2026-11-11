@@ -98,7 +98,7 @@ def main() -> None:
         job = R / "jobs" / f"job_{g}_{commit}.sbatch"
         job.write_text(f"""#!/bin/bash
 #SBATCH --job-name=llmadd_down_{g}
-#SBATCH --account=torch_pr_520_tandon_priority
+#SBATCH --account=<slurm-account>
 #SBATCH --partition=a100_tandon
 #SBATCH --qos=gpu48
 #SBATCH --gres=gpu:1
