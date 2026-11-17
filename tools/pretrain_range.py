@@ -274,7 +274,12 @@ OFFSET_NEW = ("zodiac", "planets", "elements", "chinese_zodiac", "geo_periods", 
 PAIR2_NEW = tuple(d for d in NEWDOM if d not in OFFSET_NEW)                               # comparisons (manifold_domains.PAIR2)
 COMPD = ANCHOR + PAIR2_NEW   # the comparison domains: the Rev E anchor path (2-way choice)
 NEW_STREAM = 4300     # SeedSequence(4300 + seed).spawn(3 * 18): 3 i split, 3 i + 1 shuffled target, 3 i + 2 eval contexts of NEWDOM[i]
-ALL_DOMAINS = ("numbers",) + EXTRA + ANCHOR + NEWDOM
+# Rev H (ptdom3): the toy-structure screen (tools/toy3.py, = toy3.TOY3, asserted at use): nonce / letter items, group-table and
+# box lines, exact-match read-outs as s4 / dim; their own SeedSequence(4400 + seed).spawn(3 x 6): 3 i split, 3 i + 1 shuffled
+# target, 3 i + 2 eval contexts of TOY3[i]; the training lines cycle over the batch's domains in the order EXTRA + ANCHOR +
+# NEWDOM + TOY3
+TOY3 = ("cyc12", "torus", "hcube", "d6", "box5", "caesar")
+ALL_DOMAINS = ("numbers",) + EXTRA + ANCHOR + NEWDOM + TOY3
 ANC_HELD = 0.4        # held-out share of the option pairs (ft36 make_split)
 ANC_STREAM = 4200     # SeedSequence(4200 + seed).spawn(16): 1 + i split, 6 + i shuffled target, 11 + i eval contexts of ANCHOR[i]
 ANC_RAW = ("tree", "within")   # ft36.RAW_GRAM: targets whose column weights carry the structure (raw centred Gram)
@@ -553,7 +558,8 @@ def main() -> None:
     VF = args.held_strat == "value_freq"   # Rev D
     REVD = VF or args.lam_decay            # Rev D logging (lam_now, grad_total, clip_coef, grad_lm_share) only then
     REVF = DOM and bool(set(DOMS) & set(NEWDOM))   # Rev F (ptdom A3): the batches' new comparison / k-step domains
-    REVE = (DOM and bool(set(DOMS) & set(ANCHOR))) or REVF   # Rev E (ptdom): anchor domains, k-way / 2-way choice, gradient split
+    REVT = DOM and bool(set(DOMS) & set(TOY3))     # Rev H (ptdom3): a toy3 domain
+    REVE = (DOM and bool(set(DOMS) & set(ANCHOR))) or REVF or REVT   # Rev E (ptdom): anchor domains, k-way / 2-way choice, gradient split
     assert REVE or args.anc_eval_max == 0, "--anc_eval_max needs an anchor domain in --domains"
     assert args.anc_eval_max >= 0 and args.anc_eval_max % 2 == 0, "--anc_eval_max: even (both orders of a comparison)"
     if HO:
@@ -660,6 +666,7 @@ def main() -> None:
     # ---------------------------------------------------------------- Rev B: domain lines, splits, targets, eval sets
     EXT = [d for d in EXTRA if d in DOMS] + [d for d in ANCHOR if d in DOMS]   # the enabled non-number domains, in the fixed order
     EXT += [d for d in NEWDOM if d in DOMS]     # Rev F (empty unless a Rev F domain is named)
+    EXT += [d for d in TOY3 if d in DOMS]       # Rev H (empty unless a toy3 domain is named)
     DPRI = [d for d in EXT if d in DPRI_ALL]    # their active priors
     lam_num = args.lam                          # the numbers prior's weight (default path: --lam)
     DLINE, DPOOL, DINFO, DTAB, DTAB_ACT, DHELD, dom_evalsets = {}, {}, {}, {}, {}, {}, {}
@@ -682,6 +689,16 @@ def main() -> None:
             assert nm.isascii() and nm.isalpha() and nm.islower() and len(enc(" " + nm)) == 1, nm
         assert not (set(S4_NAMES) & set(DIM_NAMES)) and len(S4_NAMES) == 24 and len(DIM_NAMES) == 27
         S4N, DIMN = list(S4_NAMES), list(DIM_NAMES)
+        if REVT:   # Rev H: the toy3 items (nonce names from toy3_nonce.json; caesar: the capital letters), each one token after a space
+            import toy3
+            assert toy3.TOY3 == TOY3, (toy3.TOY3, TOY3)
+            T3N = {d: [nm.strip() for nm in toy3.item_names(d)] for d in EXT if d in TOY3}
+            t3all = [nm for d in T3N for nm in T3N[d]]
+            assert len(set(t3all)) == len(t3all) and not (set(t3all) & (set(S4_NAMES) | set(DIM_NAMES))), "toy3 names not distinct"
+            for d in T3N:
+                ids_ = [enc(" " + nm) for nm in T3N[d]]
+                assert all(len(t_) == 1 for t_ in ids_) and len({t_[0] for t_ in ids_}) == len(ids_), (d, "toy3 items: one distinct token each")
+                assert all(tok.decode(t_).strip() == nm for t_, nm in zip(ids_, T3N[d])), (d, "toy3 items decode")
         if REVE:   # Rev E: the anchor domains' tables and questions (ft36's question family), the k-way candidates
             import ft36
             from manifold_atlas import primary as md_primary
@@ -805,6 +822,9 @@ def main() -> None:
                 nm = MONTHS if d == "months" else WEEKDAYS
                 return pieces_line([(f"{k} {u} after", None), (f" {nm[i]}", ("site", i)), (" is", None), (f" {nm[j]}", "ans"),
                                     ("\n", None)]), nm[j], [nm[i]]
+            if d in TOY3:   # Rev H: toy3.pieces (the sites = both input items, the answer item never a site)
+                pcs_, astr_, ins_ = toy3.pieces(DTASK[d], q, [" " + nm for nm in T3N[d]])
+                return pieces_line(pcs_), astr_, ins_
             Dd = DTASK[d]; x = Dd["X"][q]; c = int(Dd["Y"][q])
             if d == "s4":
                 a, b = int(x[0]), int(x[1])
@@ -867,10 +887,16 @@ def main() -> None:
                 nr += 1
 
         DTASK ={d: ts.build_task(d) for d in ("s4", "dim") if d in EXT}
+        if REVT:   # Rev H: the toy3 tables (deterministic) and their own stream (the 4100 / 4200 / 4300 streams untouched)
+            DTASK.update({d: toy3.build(d) for d in EXT if d in TOY3})
+            toy_ss = np.random.SeedSequence(toy3.TOY3_STREAM + args.seed).spawn(3 * len(TOY3))
         for d in EXT:
             ANC = d in COMPD    # Rev E: an anchor domain draws from its own SeedSequence (the Rev B streams untouched)
             OFF = d in OFFSET_NEW   # Rev F: a k-step domain
-            if d in NEWDOM:     # Rev F: its own children of SeedSequence(4300 + seed) (the 4100 / 4200 streams untouched)
+            if d in TOY3:       # Rev H: its own children of SeedSequence(4400 + seed)
+                ix = TOY3.index(d)
+                ch_split, ch_shuf, ch_eval = toy_ss[3 * ix], toy_ss[3 * ix + 1], toy_ss[3 * ix + 2]
+            elif d in NEWDOM:   # Rev F: its own children of SeedSequence(4300 + seed) (the 4100 / 4200 streams untouched)
                 ix = NEWDOM.index(d)
                 ch_split, ch_shuf, ch_eval = new_ss[3 * ix], new_ss[3 * ix + 1], new_ss[3 * ix + 2]
             else:
@@ -1021,6 +1047,34 @@ def main() -> None:
                 if d == "clock":
                     assert info["chance_readout"] == info["chance_wrap"]
                 DTAB[d] = circle(n)
+            elif d in TOY3:   # Rev H: toy3.split (toy_struct.split's two modes, the s4 / dim retry rule) and toy3.masks
+                Dd = DTASK[d]
+                mode, frac = toy3.SPLIT[d]
+                base = int(sr.integers(2 ** 31))
+                for att in range(200):   # every item a trained input and a trained answer (toy3.split asserts it)
+                    try:
+                        tr, te = toy3.split(Dd, frac, base + att, mode)
+                        break
+                    except AssertionError:
+                        continue
+                else:
+                    raise RuntimeError(f"no valid {d} split")
+                train_q, held_s = [int(i) for i in tr], [int(i) for i in te]
+                rows_ = [tuple(r) for r in Dd["X"].tolist()]
+                assert not ({rows_[i] for i in train_q} & {rows_[i] for i in held_s}), "held-out question in training"
+                m_, ro_name, ro = toy3.masks(Dd, tr, te, ts.s4_closure)
+                hard_ = m_.pop("hard", None); m_.pop("hard_ro", None)   # descriptive only (info), never an eval mask
+                masks["held"] = m_
+                maj = int(np.bincount(Dd["Y"][tr], minlength=Dd["n_items"]).argmax())
+                info.update(n_items=Dd["n_items"], split_mode=mode, train_frac=frac, split_seed=base + att, tier=Dd["tier"],
+                            chance_uniform=1 / Dd["n_items"], chance_majority=ts.majority_chance(Dd, tr, te),
+                            n_copy_held=int((~m_["nonid"]).sum()), readout=ro_name)
+                if hard_ is not None:   # held cells not derivable by associativity + Latin cancellation (s4_hard's analogue)
+                    info.update(closure_latin=float(1 - hard_.mean()), n_hard_closure=int(hard_.sum()))
+                assert ro.sum() >= 50, (d, int(ro.sum()))
+                info.update(chance_readout=max(1 / Dd["n_items"], float(np.mean(Dd["Y"][te][ro] == maj))), n_readout=int(ro.sum()))
+                DTAB[d] = Dd["targets"]["true"]
+                sets = {"held": held_s}
             else:
                 Dd = DTASK[d]
                 frac, mode = (args.s4_train, "question") if d == "s4" else (args.dim_train, "class")
@@ -2054,6 +2108,16 @@ def main() -> None:
             got = dict(zip(want, cnt.tolist()))
             assert got == want, {k: (got[k], want[k]) for k in want if got[k] != want[k]}
             print(f"nonce tokens: {len(want)} single tokens, occurrences in train.bin ({len(train)} tokens) as recorded: max {max(got.values())}")
+        if REVT and any(d in toy3.NONCE for d in T3N):   # Rev H: the toy3 nonce names re-counted (= toy3_nonce.json)
+            want = {nm: c for d in T3N if d in toy3.NONCE for nm, c in toy3.NONCE[d].items()}
+            ids_ = np.array([enc(" " + nm)[0] for nm in want])
+            cnt = np.zeros(len(ids_), dtype=np.int64)
+            for i in range(0, len(train), 50_000_000):
+                cnt += np.bincount(np.asarray(train[i:i + 50_000_000]), minlength=len(tok))[ids_]
+            got = dict(zip(want, cnt.tolist()))
+            assert got == want, {k: (got[k], want[k]) for k in want if got[k] != want[k]}
+            print(f"toy3 nonce tokens: {len(want)} single tokens, occurrences in train.bin as recorded: max {max(got.values())}"
+                  + ("; caesar: the capital letters (real tokens, not counted)" if "caesar" in T3N else ""))
 
     def prior_on(s):
         if Ftab is None and not DPRI:   # Rev B: domain priors share the schedule (DPRI is empty without --domains)
@@ -2176,6 +2240,8 @@ def main() -> None:
 
     # ---------------------------------------------------------------- Rev B helpers (used only with --domains)
     def item_name(d, v):
+        if d in TOY3:   # Rev H
+            return T3N[d][v]
         return {"months": MONTHS, "weekdays": WEEKDAYS}[d][v] if d in ("months", "weekdays") else (
             str(v) if d == "clock" else (S4N if d == "s4" else DIMN)[v])
 
@@ -2398,6 +2464,10 @@ def main() -> None:
         grad_info = {}
         if DOM and (s % eval_every == 0 or s == steps - 1):   # Rev B: every arm, LM and all true priors (+ the active ones)
             grad_info = dom_grads(lm_loss, ops, on, usable, gl, dgeo)
+            if s == 0 and REVT:   # Rev H: every toy3 domain's true prior has sites in the first batch and a non-zero gradient
+                for d in [d for d in EXT if d in TOY3]:
+                    assert grad_info.get(f"gnorm_true_{d}", 0.0) > 0, (d, "toy3 prior: no usable sites or a zero gradient at step 0")
+                print("step 0: toy3 true-prior gradient norms " + json.dumps({d: grad_info[f"gnorm_true_{d}"] for d in EXT if d in TOY3}), flush=True)
         elif (s % eval_every == 0 or s == steps - 1) and on and usable:   # LM vs prior pull, before clipping
             params = [q for q in model.parameters() if q.requires_grad]
             g1 = torch.autograd.grad(lm_loss, params, retain_graph=True, allow_unused=True)
@@ -2486,6 +2556,10 @@ def main() -> None:
                                  for f_ in ("ft36.py", "manifold_domains.py", "manifold_atlas.py")})
                 res_.update(domains=DINFO, lam_domains=LAMD, lam_rule=args.lam_rule, nonce={"s4": S4N, "dim": DIMN},
                             dep_sha=dep_, metrics=dom_metrics(curve))
+                if REVT:   # Rev H: the toy3 item names and modules
+                    res_["nonce"].update(T3N)
+                    dep_.update({f_: hashlib.sha256((Path(__file__).parent / f_).read_bytes()).hexdigest()[:12]
+                                 for f_ in ("toy3.py", "toy3_nonce.json")})
             path.write_text(json.dumps(res_, indent=1))
         if args.ckpt_every and (s + 1) % args.ckpt_every == 0 and s < steps - 1:
             tmp = ck.with_name(ck.name + ".tmp")

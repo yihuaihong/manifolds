@@ -12,6 +12,8 @@ the relation word determines the answer.
           12 nonce tokens                                                              rep, flattened (4)        rule; read-out fresh)
   box5    {-2..2}^2 exponent vectors,    "⟦a⟧ plus⟦b⟧ is⟦c⟧" / "⟦a⟧ minus⟦b⟧ is⟦c⟧"     coordinates (2)           relation class, 0.5
           25 nonce tokens                c = a +- b, only inside the box (dim's rule)                              (dim's rule)
+  caesar  Z_26, the capital letters      "⟦D⟧ shifted by⟦C⟧ is⟦F⟧" c = a + b mod 26 (A = 0)  circle (2)                class {a, b}, 0.5
+          (REAL tokens ' A'..' Z': very frequent in ordinary text, unlike the nonce domains; added 2026-11-17 by the coordinator)
 Dropped at the build (runs/ptdom3/tests/tok_survey.out): notes (12 pitch classes) - Gb / Bb and every sharp are two
 OLMo-2 tokens (' G' + 'b', ' C' + '#'), so 'the item's last token' is shared by several pitch classes; chess (a1..h8) - no
 square is a single token (' e' + '4'), the last token is the rank digit, shared by 8 squares and by the numbers operands.
@@ -31,12 +33,16 @@ from pathlib import Path
 
 import numpy as np
 
-TOY3 = ("cyc12", "torus", "hcube", "d6", "box5")   # fixed order: SeedSequence(4400 + seed) children 3 i, 3 i + 1, 3 i + 2
+TOY3 = ("cyc12", "torus", "hcube", "d6", "box5", "caesar")   # fixed order: SeedSequence(4400 + seed) children 3 i, 3 i + 1, 3 i + 2
 TOY3_STREAM = 4400
-GROUPS = ("cyc12", "torus", "hcube", "d6")   # binary group tables (X = a, b, eq; mul defined)
-SPLIT = {"cyc12": ("class", 0.5), "torus": ("class", 0.6), "hcube": ("class", 0.6), "d6": ("question", 0.5),
-         "box5": ("class", 0.5)}
-WORD = {"cyc12": " with", "torus": " and", "hcube": " xor", "d6": " then"}
+# d6 train fraction 0.5 -> 0.4 (2026-11-17): under the trainer stream the 0.5 split leaves 46 / 46 / 52 read-out cells (seeds 0-2),
+# below the trainer's n_readout >= 50 assert (kept); 0.4 gives 58 / 62 / 63 (tests/d6_split.py; 0.45 gives 53 / 53 / 57)
+GROUPS = ("cyc12", "torus", "hcube", "d6", "caesar")   # binary group tables (X = a, b, eq; mul defined)
+REAL = ("caesar",)   # real-token items (the capital letters; no nonce names)
+LETTERS = tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+SPLIT = {"cyc12": ("class", 0.5), "torus": ("class", 0.6), "hcube": ("class", 0.6), "d6": ("question", 0.4),
+         "box5": ("class", 0.5), "caesar": ("class", 0.5)}
+WORD = {"cyc12": " with", "torus": " and", "hcube": " xor", "d6": " then", "caesar": " shifted by"}
 # nonce names (toy3_nonce.json, written once by runs/ptdom3/tests/toy3_test.py from tok_survey.json: the rarest OLMo-2
 # single tokens ' xyz' over S4_NAMES' letters (consonants bcdfgjklmnprstvz, vowels aeiou), the 51 s4 / dim names excluded,
 # English words / slang, abbreviations, given names, common foreign function words and vulgar ones skipped (the skip list
@@ -71,6 +77,11 @@ def build(task: str) -> dict:
     {'true': F} (n_items x dim), mul (groups) and the per-question line pieces (render)."""
     if task == "cyc12":
         n = 12
+        mul = (np.arange(n)[:, None] + np.arange(n)[None]) % n
+        ang = 2 * np.pi * np.arange(n) / n
+        return _group(task, mul, np.stack([np.cos(ang), np.sin(ang)], 1))
+    if task == "caesar":   # Z_26 on the capital letters (A = 0): "D shifted by C is F" (the Caesar / Vigenere table)
+        n = 26
         mul = (np.arange(n)[:, None] + np.arange(n)[None]) % n
         ang = 2 * np.pi * np.arange(n) / n
         return _group(task, mul, np.stack([np.cos(ang), np.sin(ang)], 1))
@@ -125,6 +136,8 @@ def build(task: str) -> dict:
 
 def item_names(task: str) -> list:
     """The item strings as they appear in a line (with the leading space), item i = the i-th name of NONCE[task]."""
+    if task == "caesar":
+        return [" " + c for c in LETTERS]
     return [" " + n for n in NONCE[task]]
 
 
