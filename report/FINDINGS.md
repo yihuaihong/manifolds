@@ -5289,3 +5289,46 @@
 **审查状态**：结果层对抗审查（全新子 agent，只读，独立重算 0 处不一致，无阻断项；措辞 4 处已按审查改：Holm 下限 .546、NOT SHOWN 不写成零效应、FLOOR 的定义、星表 NOT FINAL 的原因，并补 lr 混淆标签）。七项：i ✓（面积四条路径）；ii ✓（check.json、data_sha）；iii ✓（继承 Part S 的自测与打乱 trace）；iv ✓（全新 seed）；v ✓；vi 部分（Tier L、FLOOR、lr 混淆、绑定嵌入）；vii ✓。
 
 **与前文的关系**：补全 F101 留下的 Part R。Part R 没有给出新的 PASS。按 pt6v2 的组合挑选规则（runs/pt6v2/AUDIT.md「Composition pick rule」），这 5 个领域全部出局（4 个 FLOOR；地标对 none 均值为负），「完美六流形」的替补候选只剩 ptdom3 的 toy3 领域。
+
+## [2026-11-19] F104 新候选流形筛选 + 复现（ptdom3 toy3：53M、3 亿 token，seed 0 筛 6 个领域，3 个过线的补 seed 1–2，B200，33 个 run，探索档，读数器已过代码审查）：box5（5×5 指数格）、hcube（5 维超立方）、torus（6×6 环面）三个 nonce 结构的先验在 3 个 seed 上都胜过调好 lr 的不加先验（曲线面积 +34.5 / +20.9 / +12.6，各 3/3，d 9.09 / 3.48 / 3.50）；box5 和 hcube 的增益保持到训练结束（final3 +20.3、+4.6），torus 的增益全在先验窗口内，训练结束时 none 反超（final3 −12.2，0/3）；cyc12、d6、caesar 两臂都在地板
+
+**设置**：
+- 用户 11-17 要求「多找一些 candidate」并批准 ptdom3 用 B200，目标是「完美六流形」（替换 S4 和人物）。6 个新领域都是 toy3 运算表，先验加在条目 token 上：cyc12（12 元循环群）、torus（6×6 环面）、hcube（5 维超立方，异或）、d6（12 元二面体群）、box5（{−2..2}² 上的向量加减）用 nonce token；caesar（凯撒字母移位）用真实字母 token。设计在 llmadd_torch/runs/ptdom3/AUDIT.md。
+- 筛选：seed 0，先验 lr {1e-3, 2e-3, 4e-3}，共享 none {2e-3, 4e-3, 8e-3, 1.6e-2}（23 个 run 含金丝雀，全部 VALID）。
+- 复现（runs/pt6v2/AUDIT.md「Composition pick rule」的 toy3 replication 条，提交前登记）：seed 0 的先验 pick 胜过 seed 0 最好的 none、且不在地板的领域补 seed 1–2：only-torus@1e-3、only-hcube@2e-3、only-box5@1e-3；共享 none@1.6e-2 seed 1–2，加 none@3.2e-2 seed 0–2（筛选里 none 到 1.6e-2 还在涨）。11 个 run，全部 COMPLETED、check 全过。
+- 增益 g = only-d@P − none@N，按 seed 配对；P、N 按 pt6v2 挑选规则（I1：一个 lr 在超过一半证据 seed 上有 run 才算；取均值最高，打平取较大 lr）。三个领域的 N 都是 1.6e-2：none@3.2e-2 的 3 seed 均值更低（torus 65.1 对 68.9，hcube 67.1 对 69.1，box5 17.5 对 20.2；但 seed 2 上 torus、hcube 的 3.2e-2 更高），none 的 lr 区间按均值已夹住。
+- 主指标：曲线面积（75 次评测的均值）。hcube 用 twin-free 子集（read-out 题的三元组不在任何训练事实里；每 seed 66–72 题），因为 82% 的 hcube 测试题能从训练题反推（筛选审查发现）；box5 去掉了否定双胞胎。
+- 读数：runs/ptdom3/readout_ptdom3r.py e328078abe3c（新写，过一次全新代码审查 runs/ptdom3/tests/audit_readout_rep.md，无阻断，6 处已改）→ tests/readout_rep_final_20261119T1638.{txt,json}；审查员的独立重算 indep.py 不 import 读数器，TOTAL diffs 0；与 pick_pt6v2.py 逐字段一致（84 个字段）。
+
+**结果**（曲线面积，%；3 seed；boot90 = 跨 seed 配对 bootstrap，k = 3 时很粗）：
+
+| 领域 | P / N | 每 seed g | 均值 [boot90]，d | 窗口内 / 窗口外 g | final3 g | 训练结束水平：先验 / none |
+|---|---|---|---|---|---|---|
+| box5 | 1e-3 / 1.6e-2 | +33.4、+31.4、+38.7 | **+34.5** [+32.1, +36.9]，9.09 | +55.1 / +23.6（各 3/3） | +20.3（3/3） | 45.0 / 24.7 |
+| hcube（twin-free） | 2e-3 / 1.6e-2 | +14.8、+21.2、+26.8 | **+20.9** [+16.9, +24.9]，3.48 | +47.6 / +6.8（各 3/3） | +4.6（2/3） | 96.8 / 92.2 |
+| torus | 1e-3 / 1.6e-2 | +8.5、+14.4、+14.9 | **+12.6** [+10.5, +14.8]，3.50 | +44.0（3/3）/ −4.0（0/3） | −12.2（0/3） | 82.6 / 94.8 |
+| cyc12（只有 s0） | 2e-3 / 3.2e-2 | −3.0 | — | — | −18.8 | FLOOR（两臂 ≤ 机会 8.3 + 5） |
+| d6（只有 s0，twin-free） | 1e-3 / 3.2e-2 | −4.1 | — | — | −7.5 | FLOOR |
+| caesar（只有 s0，真实字母） | 1e-3 / 3.2e-2 | +0.6 | — | — | −6.9 | FLOOR |
+
+- 曲线形状（逐 seed，粗采样）：
+  - torus 先验臂在窗口结束时（约 7250 步）已到 96.5–99.2，窗口关闭后降到 80.1–85.9；none@1.6e-2 同时从 83.7–94.7 升到 93.6–97.6，约 9000 步后反超。
+  - box5 先验臂窗口内到 85–87，关窗后降到 38–53，但始终高于 none（训练结束 23–29）。
+  - hcube 先验臂约 2000 步就到 95–98、关窗后保持 96–98；none 到训练后段才到 92–98。
+- 同 lr 的增益（只有 seed 0 有同 lr 的 none）：torus +63.6、hcube +35.0、box5 +33.7（2e-3）。
+- 三个领域都满足 pt6v2 挑选规则 E1–E5。按登记的排序（d，再 g）：box5 9.09、torus 3.50、hcube 3.48 → pt6v2 的组合 = 数字 + 量纲格、城市、国家、torus、box5（runs/pt6v2/AUDIT.md「The pick」）。torus 和 hcube 的 d 只差 0.02。
+- 先验臂的 LM 梯度占比中位 0.99–1.00（先验开启期间），裁剪系数 1.00。
+
+**限定**：
+1. 都是 Tier L：目标坐标编码了整张运算表（模型拿到了结构，不是自己发现的）；没有打乱目标对照。
+2. torus 的增益是「学得更快」，不是终点更高：面积增益全部来自先验窗口内，训练结束时调好 lr 的 none 更高（−12.2，0/3）；先验臂关窗后有明显回落。box5 关窗后也回落，但仍高出 none 约 20 点。
+3. P 和 N 都在同一批 seed 上按均值选出（P 一侧 g 偏高，N 一侧 g 偏低）；seed 0 也参与了选 lr。
+4. 3 个 seed，boot90 只有 10 种不同的重采样均值；判级是「支持」（3 个 seed 同号，|均值| 大于 seed 全距），不是确认档。
+5. seed 1–2 的 twin-free 掩码没有审查员计数，只做了能做的断言。
+
+**能写**：「三个新的 nonce 结构先验（box5、hcube、torus）在 3 个 seed 上都比调好 lr 的不加先验学得更快（曲线面积 +34.5 / +20.9 / +12.6，各 3/3）；box5 和 hcube 的优势保持到训练结束（+20.3 / +4.6），torus 在训练结束时被 none 反超（−12.2）。」
+**不得写**：torus「最终更好」；任何一个「没有先验学不会」（none 的 lr 没扫到 6.4e-2 以上，torus / hcube 的 none 终值 92–98）；几何特异（没有打乱对照）。
+
+**审查状态**：探索档；读数器过一次全新代码审查（无阻断，6 处已改），终读由审查员的独立重算复现（0 处不一致）。七项：i ✓（独立重算）；ii ✓（check.json、split 断言）；iii 部分（筛选的金丝雀和 byte-identity；没有打乱对照）；iv ✓（2 个复现 seed）；v ✓；vi 部分（twin、Tier L、窗口后回落）；vii 继承筛选。
+
+**与前文的关系**：替补 F102 里 NOT SHOWN 的 S4 和带 FLOOR 的人物；Part R（F103）没有给出替补。按登记的挑选规则，pt6v2 的组合选了 box5 和 torus（11-19 写入 COMPOSITION.json）。
