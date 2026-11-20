@@ -1,0 +1,82 @@
+{
+ "design": "pt6v2",
+ "domains_arg": "numbers,dim,cities,countries,torus,box5",
+ "none_lrs": [
+  "2e-3",
+  "4e-3",
+  "8e-3",
+  "1.6e-2",
+  "3.2e-2"
+ ],
+ "extra_none": null,
+ "cells": [
+  [
+   "all6",
+   "1e-3"
+  ],
+  [
+   "all6",
+   "2e-3"
+  ],
+  [
+   "none",
+   "2e-3"
+  ],
+  [
+   "none",
+   "4e-3"
+  ],
+  [
+   "none",
+   "8e-3"
+  ],
+  [
+   "none",
+   "1.6e-2"
+  ],
+  [
+   "none",
+   "3.2e-2"
+  ],
+  [
+   "only-numbers",
+   "2e-3"
+  ],
+  [
+   "only-dim",
+   "2e-3"
+  ],
+  [
+   "only-cities",
+   "2e-3"
+  ],
+  [
+   "only-countries",
+   "2e-3"
+  ],
+  [
+   "only-torus",
+   "2e-3"
+  ],
+  [
+   "only-box5",
+   "2e-3"
+  ]
+ ],
+ "n_runs": 104,
+ "seeds": [
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23
+ ],
+ "canary": [
+  "all6",
+  "2e-3",
+  16
+ ]
+}

@@ -757,3 +757,18 @@ This is because the n = 8 bootstrap half-width of shuffled - none (countries ~1.
   - R2 = 15 cells x seeds 8-15. Submitted with `submit_ptdom2.sh --part R2 --picks runs/ptdom2/picks_R_after2.json --go`:
     120 jobs, /scratch 94.98%.
   - The Part S results audit was restarted (the first audit agent stopped on an API limit; its scratch scripts are reused).
+
+## Part R stopped (2026-11-11 ~20:30 EST, the user)
+用户 2026-11-11：「没问题，你直接帮我做就行」（取消冗余作业的建议：集群拥堵、fair-share 低，只保留六流形组合和 731M）. The R2 jobs still queued were cancelled (list: runs/cancel_redundant_20261111.txt). R2 had 6 of 120 runs finished, so
+Part R gives no verdict; R1 / R1x, the picks files and the 6 finished runs are kept. Part S (F101) is unaffected.
+The six-manifold combination does not depend on Part R (the user chose S4 + dims).
+
+## Part R2 resumed (2026-11-17, the user)
+用户 2026-11-17：「可以的 没问题」 to "把 Part R 的确认阶段在 B200 上跑完：剩 114 个 run" (goal: a "perfect six" where every prior HELPS; replace S4, which is NOT SHOWN in F102, and people, FLOOR). The 114 R2 cells cancelled on 11-11 are re-submitted through ptdom's A2 re-run path, unchanged: `make_jobs_ptdom2.py --part R2 --picks runs/ptdom2/picks_R_after2.json --rerun --submit` (names <name>-r1; code 11f61b9, trainer d87a1502cee8; same picks file e4284d1ea1c4; B200 slot chains; log tests/submit_R2_rerun_20261117.log). The 6 R2 runs finished on 11-11 are kept. Part R's registered read-out applies unchanged.
+- 2026-11-17 ~00:45: the first --rerun --submit call was killed by my 1500 s shell timeout after 40 of 114 submissions (its stdout was buffered, so the log is empty for those 40; their SUBMITTED_<name>-r1 flags hold the job ids). A dry --rerun --print then rendered exactly the other 74 (no -r2), and they were submitted by a second call (python -u, log appended).
+
+## Part R final (coordinator, 2026-11-19)
+- expwatch ptdom2-R2 DONE: 114/114 COMPLETED (plus the 6 R2 runs of 11-11 = 120). Strict read-out `readout_ptdom2.py --part R --json tests/partR_final.json` (readout a56f20d56b5c) -> tests/partR_final.txt df378c0e93cc / .json e268012f31cb; rendered tests/partR_final_render.md (render_findings_partR.py; 5 MISSING = the shuffled-none boot90 not stored in JSON, copied from the txt).
+- Verdicts: GEOMETRY-SPECIFIC 5/5 (landmarks, compass, prefixes, ranks, scalar_adj), PASS 0/5 (NOT SHOWN); stars NOT FINAL (none area argmax at the outermost lr 1.6e-2).
+- Fresh results audit (exp-auditor): tests/audit_partR_final.md; 120 runs recomputed independently, 0 mismatches, no blocker; 4 wording fixes + the lr-confounded label taken into F103. Same-lr post-hoc check: /scratch/yh6210/tmp_audit/ptdom2_partR_final/samelr.out (descriptive only).
+- FINDINGS F103 (manifolds main 37208f60); Notion experiment-log row PTDOM2 updated.

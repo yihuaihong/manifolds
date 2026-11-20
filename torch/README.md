@@ -1,7 +1,7 @@
 # torch/ — code run on the NYU Torch cluster
 
 - `dl.sbatch`, `full_ft.sbatch`, `full_ft_fsdp.sbatch`: early Torch jobs (model download, full fine-tuning).
-- `llmadd_torch/`: a **snapshot** (2026-11-10) of our own code and written records from the Torch working
+- `llmadd_torch/`: a **snapshot** (2026-11-10; `pt6v2`, `ptdom3`, `ptdom2`, `pt6comb`, `ptdom` refreshed 2026-11-20) of our own code and written records from the Torch working
   directory `/scratch/yh6210/llmadd_torch`. The jobs ran from that directory, not from this copy. Paths inside the
   scripts (`/scratch/yh6210/llmadd_torch/...`) refer to that directory and the snapshot is not kept in sync.
 
@@ -17,11 +17,11 @@
 
 Left out: run outputs (`out/`, logs, `*.json`, checkpoints, `*.pt` / `*.npz`), data, models, caches, the generated
 `job_*.sbatch` files, the trainer snapshots `runs/<batch>/code*` (each is a `git archive` of this repository at the
-commit named in the batch's AUDIT.md), `superseded_*` / `wip_*` copies, and any file over 1 MB.
+commit named in the batch's AUDIT.md), `superseded_*` / `wip_*` copies, and any file over 1 MB. Exceptions (2026-11-20): `runs/pt6v2/{COMPOSITION,CELLS,ALLOC,PICK}.json` (the batch's inputs: composition, cell set, GPU type per seed, the pick record) and the read scripts in `runs/pt6v2/tests/posthoc_speed_20261120/`; `runs/pt6v2/probe_v5_lib/` (a patched trainer copy for the V5 probe) is left out like the trainer snapshots.
 
 The trainers themselves live in `tools/` of this repository (main) or on these branches:
 `ptdom` (pretrain_range Rev E–G: ptdom, ptdom2), `downstream` (downstream benchmarks), `fig1-export` (pt2b state export),
-`ft999` (manifold_train --add3), `arith-dose` (ptshare read-out), `ladder-1b` (ptlr_1b read-out), `ladder-tpp` (pttpp),
+`ptdom3` (pretrain_range Rev H, commit ef7b8854: toy3 domains; ptdom3, pt6v2), `ft999` (manifold_train --add3), `arith-dose` (ptshare read-out), `ladder-1b` (ptlr_1b read-out), `ladder-tpp` (pttpp),
 `scale-ladder` (rb6_190m / rb6_505m / rb6_190m_dim read-outs).
 
 ## Batches and their FINDINGS entries
@@ -57,7 +57,9 @@ F numbers are the entries of `report/FINDINGS.md` that report the batch ("—": 
 | `rb6` | six manifold priors pretrained together (rainbow6), 53M | F88 |
 | `rb6_190m`, `rb6_190m_ext`, `rb6_190m_dim` | rainbow6 at 190M and its follow-ups | F88 addenda |
 | `rb6_505m` | rainbow6 at 505M | F88 addendum |
-| `pt6comb` | six priors trained together at 53M: does each help, does none interfere? (built; GPU smoke only) | — |
+| `pt6comb` | six priors trained together at 53M (numbers, S4, dim, cities, countries, people): does each help, does none interfere? | F102 |
+| `ptdom3` | screen of six new toy-structure domains (cyc12, torus, hcube, d6, box5, caesar), B200 | F104 |
+| `pt6v2` | second six-manifold composition (numbers, dim, cities, countries, torus, box5), seeds 16-23: the paper's Table 2; Amendments V3 (none@6.4e-2), V4 (priors on to the end; all4 without torus/box5), V5 (checkpoint reruns + probe) | F105, F106 |
 | `ptdom` | single-prior screen over 24 candidate domains (B200) | F100 |
 | `ptdom2` | fresh-seed replication with shuffled-target controls | F101 |
 | `toystruct` | toy structure priors: S4 and the dimension lattice | F84 |

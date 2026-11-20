@@ -3,12 +3,14 @@
 # through make_jobs_pt6comb.py --part X --submit (B200 singleton slot chains llmadd_pt6comb-b200-slot0..7, ptdom's protocol).
 #   bash runs/pt6comb/submit_pt6comb.sh --part smoke [--go]                 (the one GPU smoke; not part of any result)
 #   bash runs/pt6comb/submit_pt6comb.sh --part L1 [--go]                    (24 runs, seeds 0-3)
-#   bash runs/pt6comb/submit_pt6comb.sh --part L1x|C --picks runs/pt6comb/picks_after_<L1|L1x>.json [--go]
+#   bash runs/pt6comb/submit_pt6comb.sh --part L1x|C --picks runs/pt6comb/picks_after_<L1|L1x|L1y>.json [--go]
+#   bash runs/pt6comb/submit_pt6comb.sh --part L1y [--go]                   (AUDIT A4: none@3.2e-2, seeds 0-3, from picks_after_L1x.json)
 # Refuses unless: no runs/pt6comb/HOLD and no HOLD_<part>; /scratch quota use < 97%; the snapshot (runs/pt6comb/code = 11f61b9) and the
 # frozen shas verify (the generator asserts make_jobs_ptdom.py / make_jobs_ptdom2.py, the read-out readout_ptdom.py); the read-out
 # self-test passes (dated log in tests/); L1 / L1x / C: the GPU smoke passed (smoke/smoke_check.out 'SMOKE PASS'); --check renders
 # every job of the part (bash -n, every render assertion); NO job of the part was submitted before (a re-run is a new name:
-# make_jobs_pt6comb.py --part X --rerun); L1x / C: the picks file is read-only and equals its re-derivation (select_pt6comb.py --verify).
+# make_jobs_pt6comb.py --part X --rerun); L1x / L1y / C: the picks file is read-only and equals its re-derivation (select_pt6comb.py
+# --verify; C uses picks_after_L1y.json when it exists (A4), else picks_after_L1x.json, else picks_after_L1.json).
 # Composition B only (A is a parameter, not submittable). Kill switch: touch runs/pt6comb/HOLD (every part) or runs/pt6comb/HOLD_<part>.
 set -euo pipefail
 B=/scratch/yh6210/llmadd_torch
@@ -22,10 +24,12 @@ while [ $# -gt 0 ]; do
     *) echo "## unknown argument $1"; exit 64 ;;
   esac
 done
-case "$PART" in smoke|L1|L1x|C) ;; *) echo "## --part smoke | L1 | L1x | C"; exit 64 ;; esac
+case "$PART" in smoke|L1|L1x|L1y|C) ;; *) echo "## --part smoke | L1 | L1x | L1y | C"; exit 64 ;; esac
 if [ "$PART" = L1x ] && [ -z "$PICKS" ]; then PICKS=$R/picks_after_L1.json; fi
+if [ "$PART" = L1y ] && [ -z "$PICKS" ]; then PICKS=$R/picks_after_L1x.json; fi
 if [ "$PART" = C ] && [ -z "$PICKS" ]; then
-  if [ -e "$R/picks_after_L1x.json" ]; then PICKS=$R/picks_after_L1x.json; else PICKS=$R/picks_after_L1.json; fi
+  if [ -e "$R/picks_after_L1y.json" ]; then PICKS=$R/picks_after_L1y.json
+  elif [ -e "$R/picks_after_L1x.json" ]; then PICKS=$R/picks_after_L1x.json; else PICKS=$R/picks_after_L1.json; fi
 fi
 fail() { echo "## REFUSED: $1"; exit 3; }
 for h in "$R/HOLD" "$R/HOLD_$PART"; do [ ! -e "$h" ] || fail "$h exists (the user decides)"; done
@@ -44,7 +48,7 @@ if [ "$PART" != smoke ]; then
   grep -q '^SMOKE PASS' "$R/smoke/smoke_check.out" 2>/dev/null || { [ "$GO" = 0 ] && echo "## NOTE: the GPU smoke has not passed yet (runs/pt6comb/smoke/smoke_check.out); --go refuses" || fail "the GPU smoke has not passed (runs/pt6comb/smoke/smoke_check.out)"; }
 fi
 PK=()
-if [ "$PART" = L1x ] || [ "$PART" = C ]; then
+if [ "$PART" = L1x ] || [ "$PART" = L1y ] || [ "$PART" = C ]; then
   [ -e "$PICKS" ] || fail "no picks file $PICKS (select_pt6comb.py first)"
   [ ! -w "$PICKS" ] || fail "$PICKS is writable (a decision file is chmod 444)"
   PYTHONPATH=$B/pylib "$PY" "$R/select_pt6comb.py" --verify "$PICKS" || fail "$PICKS differs from its re-derivation"
@@ -70,6 +74,8 @@ Order (each after every job of the previous step has finished with check.json; A
   python runs/pt6comb/select_pt6comb.py --after L1           # -> picks_after_L1.json (once, chmod 444): L1x asked, or final (C); GATE: rc 2
   bash runs/pt6comb/submit_pt6comb.sh --part L1x --go        # only if picks_after_L1.json asks for extensions
   python runs/pt6comb/select_pt6comb.py --after L1x          # -> picks_after_L1x.json (final; NOT FINAL: rc 2, the coordinator decides)
+  bash runs/pt6comb/submit_pt6comb.sh --part L1y --go        # AUDIT A4 only (L1x NOT FINAL with none at its top lr 1.6e-2): none@3.2e-2 x4
+  python runs/pt6comb/select_pt6comb.py --after L1y          # -> picks_after_L1y.json (final, flagged when none is still at 3.2e-2)
   bash runs/pt6comb/submit_pt6comb.sh --part C --go          # 64-80 runs (A2: + none@2e-3 / all6@2e-3 unless merged), seeds 8-15
   PYTHONPATH=$B/pylib python runs/pt6comb/readout_pt6comb.py --json runs/pt6comb/readout.json > runs/pt6comb/readout.txt
                                                              # refuses while a needed run is missing (--allow_partial: PROVISIONAL)

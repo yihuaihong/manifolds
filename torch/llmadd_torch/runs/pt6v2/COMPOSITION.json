@@ -1,0 +1,12 @@
+{
+ "design": "pt6v2",
+ "domains": [
+  "dim",
+  "cities",
+  "countries",
+  "torus",
+  "box5"
+ ],
+ "domains_arg": "numbers,dim,cities,countries,torus,box5",
+ "by": "auto-pick 2026-11-19"
+}

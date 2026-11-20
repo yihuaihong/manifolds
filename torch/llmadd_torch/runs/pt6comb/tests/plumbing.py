@@ -1,7 +1,8 @@
 """pt6comb test: select -> picks file -> generator (the CLI chain), on PLANTED records (readout_pt6comb.load is replaced in this process
 by a planted world; the loader itself is tested by loader_test.py): select_pt6comb.main --after L1 / --after L1x / --verify writes and
 checks the picks files in a temp dir; make_jobs_pt6comb.cells renders exactly the asked cells; tampered / GATE / NOT FINAL files are
-refused by the generator; nothing is written in runs/pt6comb. -> plumbing.out"""
+refused by the generator; (AUDIT A4) --after L1y and part L1y / C from the L1y file (P17-P24); nothing is written in runs/pt6comb.
+-> plumbing.out"""
 import io
 import json
 import os
@@ -121,5 +122,74 @@ with tempfile.TemporaryDirectory() as tmp:
     WORLD["only-s4", "2e-3", 1] = RP.fake_rec("only-s4", "2e-3", 1, {m: 50 for m in RP.MANI}, data="other")
     code, out = select(["--after", "L1", "--picks_dir", tmp])
     ok("P15 data differing between arms at a selection seed -> refused (rc 1), nothing written", code == 1 and not (Path(tmp) / "picks_after_L1.json").exists(), out[-120:])
+
+
+# ---- AUDIT A4 (coordinator 2026-11-13): L1x NOT FINAL with none at its top lr 1.6e-2 -> part L1y = none@3.2e-2, then final
+def a4_world(tmp):
+    WORLD.clear()
+    RP.plant_sel(WORLD, "none", {"2e-3": 40, "4e-3": 45, "8e-3": 50})
+    RP.plant_sel(WORLD, "all6", {"1e-3": 60, "2e-3": 55, "4e-3": 52})
+    select(["--after", "L1", "--picks_dir", tmp])
+    RP.plant_sel(WORLD, "none", {"1e-3": 38, "1.6e-2": 55})
+    return select(["--after", "L1x", "--picks_dir", tmp])[0], Path(tmp) / "picks_after_L1.json", Path(tmp) / "picks_after_L1x.json"
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    cx, f1, fx = a4_world(tmp)
+    Y = M6.cells("L1y", "B", str(fx))
+    ok("P17 (A4) L1x NOT FINAL with none at 1.6e-2 (rc 2) -> part L1y renders exactly none@3.2e-2 x seeds 0-3 (4 unique names); L1y from "
+       "picks_after_L1.json (stage L1x) and C from the NOT FINAL file are refused", cx == 2 and Y == [("none", "3.2e-2", s) for s in M6.SEL]
+       and len({M6.render6(P, "L1y", "B", a, lr, s, RF[s], M6.COMMIT, 0, i % 8)[0] for i, (a, lr, s) in enumerate(Y)}) == 4
+       and refused(lambda: M6.cells("L1y", "B", str(f1))) and refused(lambda: M6.cells("C", "B", str(fx))), (cx, Y[:1]))
+    ok("P18 --after L1y refused before none@3.2e-2 exists (rc 1, nothing written)", select(["--after", "L1y", "--picks_dir", tmp])[0] == 1
+       and not (Path(tmp) / "picks_after_L1y.json").exists())
+    RP.plant_sel(WORLD, "none", {"3.2e-2": 52})
+    code, out = select(["--after", "L1y", "--picks_dir", tmp])
+    fy = Path(tmp) / "picks_after_L1y.json"
+    pky = json.loads(fy.read_text())
+    Cy = M6.cells("C", "B", str(fy))
+    ok("P19 none@3.2e-2 worse -> --after L1y rc 0: plain final (stage C, flags [], none@1.6e-2), chmod 444, --verify IDENTICAL; part C = "
+       "c_cells(1e-3, 1.6e-2) x seeds 8-15 (80)", code == 0 and pky["stage_written"] == "C" and pky["flags"] == [] and pky["pick_none"] == "1.6e-2"
+       and not (fy.stat().st_mode & 0o222) and select(["--verify", str(fy)])[0] == 0
+       and Cy == [(a, lr, s) for s in M6.CONF for a, lr in M6.c_cells("1e-3", "1.6e-2")] and len(Cy) == 80, (code, pky.get("flags"), len(Cy)))
+    ok("P20 a second --after L1y is refused (written once); --verify of the L1 / L1x files still agrees", select(["--after", "L1y", "--picks_dir", tmp])[0] != 0
+       and select(["--verify", str(f1)])[0] == 0 and select(["--verify", str(fx)])[0] == 0)
+with tempfile.TemporaryDirectory() as tmp:
+    cx, f1, fx = a4_world(tmp)
+    RP.plant_sel(WORLD, "none", {"3.2e-2": 60})
+    code, out = select(["--after", "L1y", "--picks_dir", tmp])
+    fy = Path(tmp) / "picks_after_L1y.json"
+    pky = json.loads(fy.read_text())
+    Cy = M6.cells("C", "B", str(fy))
+    nmY = [M6.render6(P, "C", "B", a, lr, s, RF[s], M6.COMMIT, 0, i % 8)[0] for i, (a, lr, s) in enumerate(Cy)]
+    ok("P21 none@3.2e-2 best -> FLAGGED final (rc 0, stage C, flags ['none at its top lr 3.2e-2 (lr-confounded)'], printed); part C renders "
+       "with N = 3.2e-2: 80 unique names, none@3.2e-2 x8 first per seed", code == 0 and pky["stage_written"] == "C" and pky["flags"] == [M6.A4_FLAG]
+       and "flags ['none at its top lr 3.2e-2 (lr-confounded)']" in out and pky["pick_none"] == "3.2e-2" and len(set(nmY)) == 80
+       and Cy[0] == ("none", "3.2e-2", 8) and sum((a, lr) == ("none", "3.2e-2") for a, lr, _ in Cy) == 8, (code, pky.get("flags"), len(set(nmY))))
+    os.chmod(fy, 0o644)
+    w_ref = refused(lambda: M6.cells("C", "B", str(fy)))
+    j = json.loads(fy.read_text()); j["flags"] = []; fy.write_text(json.dumps(j)); os.chmod(fy, 0o444)
+    t1 = select(["--verify", str(fy)])[0] == 1 and refused(lambda: M6.cells("C", "B", str(fy)))
+    os.chmod(fy, 0o644); j["flags"] = [M6.A4_FLAG]; j["pick_none"] = "1.6e-2"; fy.write_text(json.dumps(j)); os.chmod(fy, 0o444)
+    t2 = select(["--verify", str(fy)])[0] == 1 and refused(lambda: M6.cells("C", "B", str(fy)))
+    ok("P22 picks_after_L1y.json writable -> the generator refuses; tampered (flag dropped / pick changed) -> --verify DIFFERENT (rc 1) and the "
+       "generator refuses", w_ref and t1 and t2, (w_ref, t1, t2))
+with tempfile.TemporaryDirectory() as tmp:
+    WORLD.clear()
+    RP.plant_sel(WORLD, "none", {"2e-3": 40, "4e-3": 45, "8e-3": 50})
+    RP.plant_sel(WORLD, "all6", {"1e-3": 50, "2e-3": 55, "4e-3": 60})
+    select(["--after", "L1", "--picks_dir", tmp])
+    RP.plant_sel(WORLD, "all6", {"8e-3": 70})
+    RP.plant_sel(WORLD, "none", {"1.6e-2": 70, "3.2e-2": 60})
+    cx = select(["--after", "L1x", "--picks_dir", tmp])[0]
+    fx = Path(tmp) / "picks_after_L1x.json"
+    cy, oy = select(["--after", "L1y", "--picks_dir", tmp])
+    ok("P23 L1x NOT FINAL with all6 ALSO at its top lr (8e-3) is not the A4 case: --after L1y refused ('not the A4 case', rc 1), part L1y refused",
+       cx == 2 and cy == 1 and "not the A4 case" in oy and refused(lambda: M6.cells("L1y", "B", str(fx))), (cx, cy, oy[-120:]))
+st = (HERE / "submit_pt6comb.sh").read_text()
+ok("P24 submit_pt6comb.sh: part L1y accepted, its default picks = picks_after_L1x.json (verified, read-only); part C prefers picks_after_L1y.json",
+   "smoke|L1|L1x|L1y|C)" in st and 'if [ "$PART" = L1y ] && [ -z "$PICKS" ]; then PICKS=$R/picks_after_L1x.json; fi' in st
+   and 'if [ -e "$R/picks_after_L1y.json" ]; then PICKS=$R/picks_after_L1y.json' in st
+   and 'if [ "$PART" = L1x ] || [ "$PART" = L1y ] || [ "$PART" = C ]; then' in st)
 ok("P16 nothing was written in runs/pt6comb", sorted(p.name for p in HERE.iterdir()) == before)
 print(f"PLUMBING {'PASS' if all(res) else 'FAIL'} {sum(res)}/{len(res)}")

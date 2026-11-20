@@ -451,8 +451,10 @@ def select_unit(R_, arm, lrs, excluded=(), seeds=SEL):
 
 def decide(R_, after, prev=None):
     """The pre-registered selection (select_pt6comb.py; the read-out re-derives it). after 'L1': the L1 cells; 'L1x': the L1 decision
-    (prev, which must be re-derived exactly) + its asked cells. -> the decision dict (status decided / GATE / NOT FINAL / missing)."""
-    assert after in ("L1", "L1x")
+    (prev, which must be re-derived exactly) + its asked cells; 'L1y' (AUDIT.md A4): the NOT FINAL L1x decision whose only open edge is
+    none's top lr 1.6e-2 (prev; M6.a4_open empty) + none@3.2e-2, then final: none still at 3.2e-2 -> decided with flags [A4_FLAG].
+    -> the decision dict (status decided / GATE / NOT FINAL / missing)."""
+    assert after in ("L1", "L1x", "L1y")
     lrs = {"all6": list(GRID_L1["all6"]), "none": list(GRID_L1["none"])}
     if after == "L1x":
         assert prev is not None and prev.get("status") == "decided" and prev.get("stage_written") == "L1x", prev
@@ -460,6 +462,9 @@ def decide(R_, after, prev=None):
             if lr not in lrs[a]:
                 lrs[a].append(lr)
         lrs = {a: sorted(v, key=float) for a, v in lrs.items()}
+    if after == "L1y":
+        assert prev is not None and not M6.a4_open(prev), (prev.get("status") if prev else None, M6.a4_open(prev) if prev else None)
+        lrs = {a: sorted(set(prev["lrs"][a]) | ({M6.EXT_Y["none"]} if a == "none" else set()), key=float) for a in ("all6", "none")}
     gate = gate_cells(R_, "all6", lrs["all6"], SEL)
     bad = sorted(lr for lr, g in gate.items() if not g["ok"])
     miss = [f"all6@{lr}: no finished run at seeds 0-3" for lr in lrs["all6"] if lr not in gate]
@@ -470,6 +475,8 @@ def decide(R_, after, prev=None):
     base = {"design": M6.PREFIX, "comp": COMP, "x": None, "after": after, "units": {"all6": ua, "none": un},
             "gate": {lr: {k: g[k] for k in ("ok", "why", "median", "min", "max", "per_run", "frac_b_gt_a", "frac_clip_lt1")} for lr, g in gate.items()},
             "lrs": lrs, "notes": []}
+    if after == "L1y":
+        base["flags"] = []      # A4: [A4_FLAG] when none's pick / argmax is still its top lr 3.2e-2 (final, lr-confounded)
     if ua["pick"] is None:
         return dict(base, status="GATE", stage_written=None, E=[], C=[], pick_all6=None, pick_none=un["pick"],
                     notes=["every all6 cell fails the auxiliary-loss gate: no pick, no confirmation (the coordinator decides)"])
@@ -499,6 +506,12 @@ def decide(R_, after, prev=None):
             nf.append(f"all6's pick {P_} / argmax {ua['argmax']} at its top lr {top_a}")
         for edge in (lo_n, hi_n):
             if edge in (N_, un["argmax"]):
+                if after == "L1y" and edge == hi_n:   # A4: no further step: final, flagged beside every HELPS line
+                    assert hi_n == M6.EXT_Y["none"], hi_n
+                    base["flags"] = [M6.A4_FLAG]
+                    base["notes"].append(f"A4: none's pick {N_} / argmax {un['argmax']} still at its top lr {hi_n} after L1y: final with no "
+                                         f"further step, flagged '{M6.A4_FLAG}'")
+                    continue
                 nf.append(f"none's pick {N_} / argmax {un['argmax']} at an outermost lr it ran ({edge})")
         if not (float(lo_n) <= float(P_) <= float(hi_n)):
             nf.append(f"all6's pick {P_} outside none's range {lo_n}..{hi_n}")
@@ -510,8 +523,8 @@ def decide(R_, after, prev=None):
 
 def strip(dec):
     """The fields a picks file must reproduce exactly (re-derivation check)."""
-    return json.loads(json.dumps({k: dec.get(k) for k in ("design", "comp", "x", "after", "status", "stage_written", "E", "C",
-                                                         "pick_all6", "pick_none", "lrs", "units", "gate", "notes")}))
+    keys = ("design", "comp", "x", "after", "status", "stage_written", "E", "C", "pick_all6", "pick_none", "lrs", "units", "gate", "notes")
+    return json.loads(json.dumps({k: dec.get(k) for k in keys + (("flags",) if "flags" in dec else ())}))   # flags: A4 (after L1y) only
 
 
 # ------------------------------------------------------------------------------------------------------------ verdicts
@@ -574,7 +587,8 @@ def verdict(R_, dec, allow_partial=False):
     miss_pair = [f"{a}@{lr} s{s}" for a, lr in pair for s in seeds if not vok((a, lr), s)]
     pair_ok = not miss_pair
     res = {"picks": {"all6": P_, "none": N_, "only": L2, "same_lr": L2}, "missing": miss, "missing_pair": miss_pair, "pair_ok": pair_ok,
-           "seeds": seeds, "m": {}}
+           "seeds": seeds, "m": {}, "flags": list(dec.get("flags") or [])}   # A4: e.g. 'none at its top lr 3.2e-2 (lr-confounded)'
+    fl = "".join(f" [{x}]" for x in res["flags"])
     if miss and not allow_partial:
         return res
     if len(seeds) < 2:
@@ -656,11 +670,11 @@ def verdict(R_, dec, allow_partial=False):
         why = ("the same-lr pair is incomplete (" + ", ".join(miss_pair[:4]) + ")" if not pair_ok else
                "AUX GATE FAILED at all6@2e-3 (the arm of the interference contrast)")
         res["headline"] = {"k": None, "list": [], "helps": helps_, "text": f"interference words withheld: {why}; HELPS (all6@{P_} vs none@{N_}): "
-                           f"{len(helps_)} of 6: {', '.join(helps_) or 'none'}"}
+                           f"{len(helps_)} of 6: {', '.join(helps_) or 'none'}{fl}"}
     else:
         ok = [m for m in MANI if res["m"][m]["helps"] and res["m"][m]["noint"]]
         res["headline"] = {"k": len(ok), "list": ok, "helps": helps_, "text": f"{len(ok)} of 6 manifolds HELPS (judged at all6@{P_} vs none@{N_}) "
-                           f"with no interference detected (judged at the same lr {L2}): {', '.join(ok) or 'none'}"}
+                           f"with no interference detected (judged at the same lr {L2}): {', '.join(ok) or 'none'}{fl}"}
     return res
 
 
@@ -694,7 +708,11 @@ def report(sel_txt, res, dec, prov, problems):
         L.append(f"no complete seed at the confirmation cells (missing {len(res.get('missing', []))} runs)")
         return "\n".join(L)
     P_, N_, L2 = res["picks"]["all6"], res["picks"]["none"], res["picks"]["same_lr"]
-    L.append(f"confirmation seeds {res['seeds']} (fresh). HELPS is judged at all6@{P_} vs none@{N_}; interference at the same lr {L2} (A2). "
+    fl = "".join(f" [{x}]" for x in res.get("flags") or [])    # A4: printed beside every HELPS line
+    if fl:
+        L.append(f"FLAG (AUDIT A4):{fl}: none's lr selection ended at its top lr with no further step; every HELPS contrast all6@{P_} - "
+                 f"none@{N_} is lr-confounded")
+    L.append(f"confirmation seeds {res['seeds']} (fresh). HELPS is judged at all6@{P_} vs none@{N_}{fl}; interference at the same lr {L2} (A2). "
              f"Per manifold (area points): g = all6@{P_} - none@{N_}; h = all6@{L2} - only-m@{L2}; u = only-m@{L2} - none@{L2}. HELPS iff one-sided "
              f"t p < {ALPHA} and g > 0 in >= {MIN_WINS}/8; interference not detected iff (mean u > 0 and mean h >= -{INT_FRAC} x mean u) or the "
              f"one-sided t p (H1 h < 0) >= {ALPHA} (mean u <= 0: the t clause only). 'Interference not detected' never reads 'shown to be absent'.")
@@ -712,7 +730,7 @@ def report(sel_txt, res, dec, prov, problems):
         if res["gate_failed"]:
             word = "all6 GATE"
         else:
-            word = ("HELPS" if v["helps"] else "NOT SHOWN") + " + " + (pair_word or ("interference not detected" if v["noint"] else "INTERFERENCE"))
+            word = ("HELPS" if v["helps"] else "NOT SHOWN") + fl + " + " + (pair_word or ("interference not detected" if v["noint"] else "INTERFERENCE"))
             if prov:
                 word = f"PROVISIONAL ({word} if final)"
         lv = v["levels"]
@@ -796,10 +814,11 @@ def selection_text(R_, dec):
 
 
 def final_decision(R_, picks_dir=HERE):
-    """The final decision from the picks files (picks_after_L1x.json if present, else picks_after_L1.json), each re-derived and
-    compared. -> (decision, problems)."""
+    """The final decision from the picks files (picks_after_L1y.json if present (A4), else picks_after_L1x.json if present, else
+    picks_after_L1.json), each re-derived and compared. -> (decision, problems)."""
     probs = []
     f1_, fx_ = Path(picks_dir) / "picks_after_L1.json", Path(picks_dir) / "picks_after_L1x.json"
+    fy_ = Path(picks_dir) / "picks_after_L1y.json"
     if not f1_.exists():
         return None, ["no picks_after_L1.json"]
     p1 = json.loads(f1_.read_text())
@@ -814,7 +833,17 @@ def final_decision(R_, picks_dir=HERE):
     dx = decide(R_, "L1x", p1)
     if strip(dx) != strip(px):
         probs.append("picks_after_L1x.json differs from its re-derivation")
-    return px, probs
+    if M6.a4_open(px):      # not the A4 case: picks_after_L1x.json is the last decision
+        return px, probs + (["picks_after_L1y.json exists but picks_after_L1x.json is not the A4 case"] if fy_.exists() else [])
+    if not fy_.exists():
+        return px, probs + ["the L1y decision is pending (AUDIT A4; no picks_after_L1y.json)"]
+    py = json.loads(fy_.read_text())
+    dy = decide(R_, "L1y", px)
+    if strip(dy) != strip(py):
+        probs.append("picks_after_L1y.json differs from its re-derivation")
+    if fy_.stat().st_mode & 0o222:
+        probs.append("picks_after_L1y.json is writable (a decision file is chmod 444)")
+    return py, probs
 
 
 def readout(root, allow_partial=False, picks_dir=HERE, guard=True):
@@ -1227,6 +1256,88 @@ def selftest():
         globals()["t_one"] = _t1
     ok("A3-9 boundary: a one-sided p of exactly 0.05 -> not HELPS ('<'), interference not detected by p ('>=')", (not vb3["helps"]) and vb3["noint"]
        and vb3["noint_by"] == "p", (vb3["helps"], vb3["noint_by"]))
+    # ---- A4 (coordinator 2026-11-13): part L1y = none@3.2e-2 after a NOT FINAL L1x with none at its top lr 1.6e-2; then final
+    def _a4_world():
+        W = {}
+        plant_sel(W, "none", {"2e-3": 40, "4e-3": 45, "8e-3": 50})
+        plant_sel(W, "all6", {"1e-3": 60, "2e-3": 55, "4e-3": 52})
+        w1 = decide(W, "L1")
+        plant_sel(W, "none", {"1e-3": 38, "1.6e-2": 55})
+        return W, w1, decide(W, "L1x", w1)
+    W, w1, wx = _a4_world()
+    ok("Y0 the A4 world = the real shape: L1 asks none@1.6e-2 + fixB none@1e-3; L1x NOT FINAL with none's pick at 1.6e-2 only; "
+       "a4_open empty; no 'flags' key in the L1 / L1x decisions (their files unchanged)",
+       w1["E"] == [["none", "1.6e-2"], ["none", "1e-3"]] and wx["status"] == "NOT FINAL" and M6.a4_open(strip(wx)) == []
+       and "flags" not in strip(w1) and "flags" not in strip(wx), (w1["E"], wx["status"], M6.a4_open(strip(wx))))
+    plant_sel(W, "none", {"3.2e-2": 52})
+    dy = decide(W, "L1y", strip(wx))
+    ok("Y1 after L1y none@3.2e-2 worse (52 < 55): none's pick 1.6e-2 interior -> plain FINAL (stage C, flags []), lrs none 1e-3..3.2e-2, "
+       "C = c_cells(1e-3, 1.6e-2)", dy["status"] == "decided" and dy["stage_written"] == "C" and dy["flags"] == [] and dy["pick_none"] == "1.6e-2"
+       and dy["lrs"]["none"] == ["1e-3", "2e-3", "4e-3", "8e-3", "1.6e-2", "3.2e-2"] and dy["lrs"]["all6"] == ["1e-3", "2e-3", "4e-3"]
+       and dy["C"] == [list(c) for c in c_cells("1e-3", "1.6e-2")] and not any("A4" in n for n in dy["notes"]), (dy["status"], dy["pick_none"], dy.get("flags")))
+    plant_sel(W, "none", {"3.2e-2": 60})
+    dy2 = decide(W, "L1y", strip(wx))
+    ok("Y2 none@3.2e-2 best -> FLAGGED FINAL: decided, stage C, flags ['none at its top lr 3.2e-2 (lr-confounded)'], C starts none@3.2e-2, "
+       "the PRIOR AT ITS LOWEST LR note kept", dy2["status"] == "decided" and dy2["stage_written"] == "C" and dy2["flags"] == [M6.A4_FLAG]
+       and M6.A4_FLAG == "none at its top lr 3.2e-2 (lr-confounded)" and dy2["C"][0] == ["none", "3.2e-2"] and dy2["pick_all6"] == "1e-3"
+       and any(n.startswith("PRIOR AT ITS LOWEST LR") for n in dy2["notes"]) and any(n.startswith("A4:") for n in dy2["notes"]), dy2.get("flags"))
+    plant_sel(W, "none", {"3.2e-2": 56}, bpb={"3.2e-2": 1.3})
+    dy3 = decide(W, "L1y", strip(wx))
+    ok("Y3 argmax 3.2e-2 (56) but the pick 1.6e-2 by the bpb tie-break -> flagged final at none@1.6e-2 (pick OR argmax)",
+       dy3["units"]["none"]["argmax"] == "3.2e-2" and dy3["pick_none"] == "1.6e-2" and dy3["status"] == "decided" and dy3["flags"] == [M6.A4_FLAG],
+       (dy3["units"]["none"]["argmax"], dy3["pick_none"], dy3.get("flags")))
+    bad = []
+    for lab, pv in (("decided L1x", dict(strip(wx), status="decided", stage_written="C")), ("the L1 file", strip(w1)),
+                    ("none at 8e-3", dict(strip(wx), pick_none="8e-3", units=dict(wx["units"], none=dict(wx["units"]["none"], argmax="8e-3")))),
+                    ("all6 at its top", dict(strip(wx), pick_all6="4e-3")), ("none also at its lowest", dict(strip(wx), units=dict(wx["units"], none=dict(wx["units"]["none"], argmax="1e-3")))),
+                    ("3.2e-2 already ran", dict(strip(wx), lrs=dict(wx["lrs"], none=wx["lrs"]["none"] + ["3.2e-2"])))):
+        try:
+            decide(W, "L1y", pv)
+            bad.append(lab)
+        except AssertionError:
+            pass
+    ok("Y4 decide --after L1y refuses every prev that is not the A4 case (decided, the L1 file, none not at 1.6e-2, all6 at its top, none "
+       "also at its lowest, 3.2e-2 already ran)", bad == [], bad)
+    W6, _, wx6 = _a4_world()
+    plant_sel(W6, "none", {"3.2e-2": 50, "1e-3": 70})
+    ok("Y5 any other open edge after L1y stays NOT FINAL (none's pick moved to its lowest lr 1e-3): no C", decide(W6, "L1y", strip(wx6))["status"]
+       == "NOT FINAL" and decide(W6, "L1y", strip(wx6))["C"] == [])
+    W7, _, wx7 = _a4_world()
+    plant_sel(W7, "none", {"3.2e-2": 60})
+    plant_sel(W7, "all6", {"1e-3": 60, "2e-3": 55, "4e-3": 52}, share=0.3)
+    ok("Y6 GATE unchanged after L1y: every all6 cell fails the gate -> GATE, no C", decide(W7, "L1y", strip(wx7))["status"] == "GATE"
+       and decide(W7, "L1y", strip(wx7))["C"] == [])
+    gY = {m: [5.0 + 0.1 * x for x in pos] for m in MANI}
+    hY = {m: [0.1 * x for x in pos] for m in MANI}
+    RY = {}
+    plant_conf(RY, "1e-3", "3.2e-2", gY, hY)
+    rY = verdict(RY, dy2)
+    tY = report("(selection)", rY, dy2, [], [])
+    rowsY = [l for l in tY.split("HEADLINE")[0].splitlines() if l.startswith(tuple(f"  {m:10s}" for m in MANI))]
+    ok("Y7 the flagged final: every verdict row's HELPS / NOT SHOWN word carries '[none at its top lr 3.2e-2 (lr-confounded)]', so do the "
+       "judged-at line and the headline", len(rowsY) == 6 and all(("HELPS [" + M6.A4_FLAG + "]") in l or ("NOT SHOWN [" + M6.A4_FLAG + "]") in l for l in rowsY)
+       and f"none@3.2e-2 [{M6.A4_FLAG}]; interference" in tY and M6.A4_FLAG in rY["headline"]["text"] and rY["flags"] == [M6.A4_FLAG]
+       and all(rY["m"][m]["helps"] for m in MANI), rowsY[:1])
+    tY1 = report("(selection)", verdict(RY, dict(dy2, flags=[])), dict(dy2, flags=[]), [], [])
+    ok("Y8 a plain final (flags []) prints no A4 flag anywhere", M6.A4_FLAG not in tY1 and "FLAG (AUDIT A4)" not in tY1)
+    import tempfile
+    plant_sel(W, "none", {"3.2e-2": 60})     # back to Y2's world (Y3 re-planted none@3.2e-2)
+    with tempfile.TemporaryDirectory() as td:
+        for nm, d_ in (("L1", w1), ("L1x", wx), ("L1y", dy2)):
+            Path(td, f"picks_after_{nm}.json").write_text(json.dumps(strip(d_), indent=1))
+            Path(td, f"picks_after_{nm}.json").chmod(0o444)
+        fd, fp = final_decision(W, td)
+        fy = Path(td, "picks_after_L1y.json")
+        fy.chmod(0o644)
+        fd2, fp2 = final_decision(W, td)
+        fy.write_text(json.dumps(dict(strip(dy2), flags=[]), indent=1))
+        fd3, fp3 = final_decision(W, td)
+        fy.unlink()
+        fd4, fp4 = final_decision(W, td)
+    ok("Y9 final_decision reads picks_after_L1y.json (re-derived, no problems); writable -> a problem; tampered (flags dropped) -> 'differs'; "
+       "absent -> the L1x file + 'L1y decision is pending'", fd["after"] == "L1y" and fd["flags"] == [M6.A4_FLAG] and fp == []
+       and fp2 == ["picks_after_L1y.json is writable (a decision file is chmod 444)"] and "picks_after_L1y.json differs from its re-derivation" in fp3
+       and fd4["after"] == "L1x" and any("L1y decision is pending" in x for x in fp4), (fp, fp2, fp3, fp4))
     print(f"SELFTEST {'PASS' if all(ok_all) else 'FAIL'} {sum(ok_all)}/{len(ok_all)}")
     return all(ok_all)
 

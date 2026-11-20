@@ -412,3 +412,60 @@ A3 applies the A2 audit's own findings (I1, m1-m5) to the read-out and selection
 mutations (self-test 65/65, mutations 40/40). The L1 job files are unchanged. A3 is therefore not sent to another fresh audit.
 The GPU smoke 22595628 passed (SMOKE PASS 21/21). The misalign session was told about the B200 use on 2026-11-10.
 L1 (24 runs, seeds 0-3) is submitted with `submit_pt6comb.sh --part L1 --go`.
+
+## L1 selection and L1x submission (coordinator, 2026-11-13 09:1x EST)
+All 24 L1 runs finished with check.json. select_pt6comb.py --after L1 (tests/select_after_L1.out): picks all6@1e-3 (mean6 76.36, its lowest lr: conservative for HELPS), none@4e-3 (mean6 50.49; argmax none@8e-3 51.41 at its top lr) -> stage L1x, E = none@1.6e-2, none@1e-3 (fixB); gates ok (median LM share 0.70-0.76). picks_after_L1.json 96355fb32d2e. L1x submitted with submit_pt6comb.sh --part L1x --go (tests/submit_go_L1x_20261113.log): 8 jobs 23001495-23001506 on B200. Next: select_pt6comb.py --after L1x, then part C. misalign was told on 11-12 that pt6comb uses B200 (their L3 also runs on b200_tandon_prem).
+
+## Amendment A4 (coordinator, 2026-11-13 ~11:50 EST; Pending 6 decision after L1x; no seed 8-15 run exists, nothing of C read)
+select_pt6comb.py --after L1x (tests/select_after_L1x.out, rc 2): picks all6@1e-3 (76.36, its lowest lr) and none@1.6e-2 (55.38,
+its top lr; 8e-3 51.41) -> NOT FINAL (picks_after_L1x.json 80f8d06b40db, kept read-only as the record). Decision (Pending 6 offered
+"one more lr step" or "C labelled"): **one more upward step for none only, once: part L1y = none@3.2e-2 at seeds 0-3 (4 runs, same
+body as L1x's none@1.6e-2 except --lr).** Reason: none's mean6 rose +4.0 over the last step (s4 3.2 -> 25.3, dim 23.6 -> 35.0), so
+the pick sets the main comparison's magnitude; cost 4 x ~20 min B200. Then `select_pt6comb.py --after L1y` re-selects over all
+lrs (none 1e-3 .. 3.2e-2, all6 1e-3 .. 4e-3). **No further step after L1y**: if none's pick / argmax is still 3.2e-2, the picks are
+final with the flag "none at its top lr 3.2e-2" and C runs with N = 3.2e-2, every HELPS line labelled so (Pending 6's "C
+labelled" option). all6's lower edge: unchanged (no lower extension; conservative for HELPS). C's composition rule (A2) unchanged.
+Build delegated to an exp-builder (code + tests + L1y submission; C is submitted by the coordinator after select).
+
+## A4 build (exp-builder, 2026-11-13 ~12:10 EST; part L1y submitted, nothing selected, C not submitted)
+Files (sha256[:12] before -> after; pre-A4 copies read-only in tests/pre_a4_20261113/):
+- make_jobs_pt6comb.py 08e197092b2c -> 01d1ad3d2867: PARTS += L1y; EXT_Y = {none: 3.2e-2} (= step_up(1.6e-2), asserted); A4_FLAG =
+  "none at its top lr 3.2e-2 (lr-confounded)"; a4_open(pk) = [] iff pk is the NOT FINAL L1x decision whose ONLY open edge is none's
+  pick / argmax at its top lr 1.6e-2 (all6 not at its top, none not at its lowest, P inside none's range, 3.2e-2 not yet run);
+  read_picks_a4 (read-only + a4_open) -> cells("L1y") = none@3.2e-2 x seeds 0-3; part C accepts N = 3.2e-2 only from an after-L1y
+  file whose flags = [A4_FLAG] iff none's pick / argmax is 3.2e-2 (else []); a non-L1y file must carry no flags; plan line L1y.
+- readout_pt6comb.py 0015aa97e8c7 -> 05ea474d9c9b: decide(after "L1y", prev = the A4 L1x file): lrs = L1x's + none 3.2e-2, same
+  objective / gate / F87 rule; none's top edge 3.2e-2 -> decided (stage C) with flags [A4_FLAG] + an "A4:" note; none interior ->
+  flags []; any other open edge stays NOT FINAL; GATE unchanged. strip() adds "flags" only when the decision has it (L1 / L1x files
+  unchanged: --verify of both real files IDENTICAL). final_decision reads picks_after_L1y.json when L1x is the A4 case (re-derived;
+  writable / differing -> problem). verdict / report: the flag beside every HELPS / NOT SHOWN word, the judged-at line, the headline,
+  plus a "FLAG (AUDIT A4)" line. Self-test Y0-Y9 added.
+- select_pt6comb.py 75b4f0c00915 -> c093e553bedf: --after L1y (re-derives L1 and L1x, refuses unless L1x is the A4 case), --verify of
+  an L1y file; next hint = part C.
+- submit_pt6comb.sh 3b23f4a63174 -> 342f78198732: part L1y (default picks picks_after_L1x.json: read-only + select --verify); part C
+  prefers picks_after_L1y.json when it exists.
+- tests/plumbing.py 93fedf6689dd -> 6858dcf8e9ed (P17-P24 added); tests/render_diff.py 8850467b22b7 -> bca62c667f86 (L1y + C-from-L1y
+  bodies in T1, new T4); tests/a4_oldnew.py new.
+Tests (logs in tests/): read-out self-test 75/75 (65 old + Y0-Y9; selftest_readout_A4_20261113.out); plumbing 24/24 (P17-P24: L1y
+renders exactly none@3.2e-2 x s0-3; --after L1y refused before the runs exist; interior -> plain final, C = 80 at N 1.6e-2; top ->
+flagged final, C renders 80 with none@3.2e-2 x8; picks_after_L1y writable / tampered (flag dropped, pick changed) refused; non-A4
+NOT FINAL refused; submit script defaults); render_diff 6/6 (T4: the 4 L1y bodies = their L1x none@1.6e-2 twins with only lr
+1.6e-2 -> 3.2e-2 (ARGS --lr, CHECK intent "lr":0.032), L1x -> L1y (comment, HOLD_L1y) and the slot number changed, in memory and vs
+the submitted L1x files on disk); real_known 21/21; a4_oldnew PASS (pre-A4 vs A4 generator: 486 L1 / smoke / L1x / C bodies byte-
+identical; the 32 submitted L1 / L1x job files = the A4 render); select --verify picks_after_L1.json / picks_after_L1x.json
+IDENTICAL; picks files untouched (96355fb32d2e / 80f8d06b40db, r--r--r--). mutation_readout.py not re-run (no A4 mutations added).
+Submission (tests/submit_go_L1y_20261113.log): 23018136 (none@3.2e-2 s0, slot0), 23018137 (s1, slot1), 23018138 (s2, slot2), 23018140
+(s3, slot3), all PENDING at submit. Next (coordinator): after all four finish with check.json, select_pt6comb.py --after L1y ->
+picks_after_L1y.json, then submit_pt6comb.sh --part C --go.
+
+## L1y selection and C submission (coordinator, 2026-11-13 ~13:00 EST)
+All 4 L1y runs finished with check.json (jobs 23018136/37/38/40, ~20 min each). select_pt6comb.py --after L1y (tests/select_after_L1y.out, rc 0): status decided, stage C, no flags; picks all6@1e-3 (76.36) and none@1.6e-2 (55.38; none@3.2e-2 52.08, so none is closed at an interior lr). picks_after_L1y.json 8463c2c41727. Dry run (tests/submit_dry_C_20261113.log): verify IDENTICAL, 80 jobs = 10 cells x seeds 8-15 (all6@1e-3, all6@2e-3, none@1.6e-2, none@2e-3, six only-<m>@2e-3). [An earlier dry run printed "81 jobs" only because the coordinator redirected the script output into the same file the script writes (tests/submit_check_C.out); the re-run to a separate log counts 80.] Submitted with --go (tests/submit_go_C_20261113.log): 80 jobs 23023295-23023583 on B200. misalign told (L3 finished on H200; their B200 judges carry nice 5000).
+
+## Provisional look at C (coordinator, 2026-11-13 ~20:10 EST)
+36 of 80 C runs finished (all COMPLETED, last end 15:47; the other 44 queued on B200 since then behind other users' jobs). Ran `readout_pt6comb.py --allow_partial` (complete seeds 8-10) because the user asked for status; output saved as tests/readout_PROVISIONAL_20261113T2010.txt. Nothing was changed: no job, pick, rule or threshold. The final read-out stays the strict one after all 80. To check at the final read-out: the same-lr LM cost all6@2e-3 - none@2e-3 is val loss +0.030 on seeds 8-10 vs +0.0026 on seeds 0-3.
+
+## Provisional look 2 (coordinator, 2026-11-15 ~21:10 EST)
+78 of 80 C runs finished; missing only-countries@2e-3 s15 and only-people@2e-3 s15 (queued on B200). `--allow_partial` over complete seeds 8-14 -> tests/readout_PROVISIONAL_20261115T2110.txt: PROVISIONAL HELPS (7/7, Holm too) for numbers +51.7, dim +40.6, cities +7.5, countries +6.6, people +3.4 [FLOOR]; s4 +6.2 (3/7) NOT SHOWN; interference not detected for all six; mean gain +19.3 [+15.3, +23.4]; LM share 0.75-0.76; same-lr LM cost +0.018 val loss. Asked by the user for status; nothing changed. The final read-out stays the strict one after all 80.
+
+## Final read-out of C (coordinator, 2026-11-16 ~09:20 EST)
+All 80 C runs COMPLETED with check.json (sacct: 84 pt6comb jobs since 11-13 12:00, all COMPLETED). Strict read-out: readout_pt6comb.py 05ea474d9c9b -> readout.txt f746a6ac927f / readout.json 4fdc6d0c7abb (seeds 8-15). HEADLINE: 5 of 6 HELPS with interference not detected (numbers +52.6, dim +41.4, cities +7.1, countries +6.4, people +3.0 [FLOOR]; all 8/8, Holm too); s4 +9.3 (4/8, p .107) NOT SHOWN + interference not detected; mean gain +20.0 [+16.3, +23.7]; all6 LM share 0.757-0.766 per half; same-lr LM cost all6@2e-3 - none@2e-3 val loss +0.0179 (bpb +5.30e-3). Results audit (exp-auditor, fresh) launched; report -> tests/audit_results_C.md. FINDINGS waits for it.

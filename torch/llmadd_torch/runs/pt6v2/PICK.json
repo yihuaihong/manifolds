@@ -1,0 +1,1194 @@
+{
+ "composition": [
+  "dim",
+  "cities",
+  "countries",
+  "torus",
+  "box5"
+ ],
+ "picks": [
+  "box5",
+  "torus"
+ ],
+ "fallbacks_used": [],
+ "extra_none_6.4e-2": false,
+ "table": [
+  {
+   "cand": "landmarks",
+   "src": "ptdom2",
+   "batch": "A",
+   "metric": "area",
+   "p": "2e-3",
+   "n": "8e-3",
+   "seeds": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "g": {
+    "8": -1.8715801228364342,
+    "9": 1.3322203672787936,
+    "10": -6.814207650273232,
+    "11": 2.5361842105263293,
+    "12": -0.4868788386376366,
+    "13": -3.138103161397666,
+    "14": 1.232621784345909,
+    "15": -2.2482611021936805
+   },
+   "mean_g": -1.1822505641484522,
+   "wins": 3,
+   "k": 8,
+   "sd": 3.0147334694910763,
+   "d": -0.3921575741646012,
+   "E": {
+    "E1": true,
+    "E2": true,
+    "E3": true,
+    "E4": false,
+    "E5": false
+   },
+   "why": {
+    "E1": "no tag (line 70.1; means p 76.6 / n 77.8; lines chance 50.0, answer-frequency line 64.0, shorter-option line 50.3, shortcut baseline (every held-out question) 65.1)",
+    "E2": "8 paired seeds (>= 3)",
+    "E3": "n 8e-3 below the batch's top none lr 1.6e-2 [literal reading would fail: n = the highest lr at the evidence seeds (2e-3, 4e-3, 8e-3)]",
+    "E4": "mean g -1.18, wins 3/8 (need > 0 and >= 2/3)",
+    "E5": "d -0.39 (need >= 0.5)"
+   },
+   "eligible": false,
+   "prior_means": {
+    "2e-3": [
+     76.6188,
+     8
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     73.62,
+     8
+    ],
+    "4e-3": [
+     75.6202,
+     8
+    ],
+    "8e-3": [
+     77.8011,
+     8
+    ]
+   },
+   "present_prior": [
+    "2e-3"
+   ],
+   "present_none": [
+    "2e-3",
+    "4e-3",
+    "8e-3"
+   ],
+   "note": "descriptive: n 8e-3 vs the R1 none grid (seeds 0-3, picks_R_after2.json) ['1e-3', '2e-3', '4e-3', '8e-3', '1.6e-2']: not at its top",
+   "pn_means_paired": [
+    76.61880785488069,
+    77.80105841902915
+   ],
+   "reason": "OUT: E4 (mean g -1.18, wins 3/8 (need > 0 and >= 2/3)); E5 (d -0.39 (need >= 0.5))",
+   "floor": {
+    "line": 70.1486974683418,
+    "tags": [],
+    "lines": {
+     "chance": 50.0,
+     "answer-frequency line": 63.98082115188234,
+     "shorter-option line": 50.319792032754364,
+     "shortcut baseline (every held-out question)": 65.1486974683418
+    }
+   }
+  },
+  {
+   "cand": "compass",
+   "src": "ptdom2",
+   "batch": "B2",
+   "metric": "area",
+   "p": "1e-3",
+   "n": "2e-3",
+   "seeds": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "g": {
+    "8": 5.518518518518505,
+    "9": -4.458333333333329,
+    "10": -6.672222222222231,
+    "11": -3.9464285714285694,
+    "12": 10.36904761904762,
+    "13": 12.459770114942543,
+    "14": -2.617283950617292,
+    "15": 11.41379310344827
+   },
+   "mean_g": 2.7583576597944397,
+   "wins": 4,
+   "k": 8,
+   "sd": 8.01287537919395,
+   "d": 0.3442406788150891,
+   "E": {
+    "E1": false,
+    "E2": true,
+    "E3": true,
+    "E4": false,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= 89.7) (line 89.7; means p 81.8 / n 79.0; lines chance 50.0, answer-frequency line 50.0, shorter-option line 50.0, shortcut baseline (every held-out question) 84.7)",
+    "E2": "8 paired seeds (>= 3)",
+    "E3": "n 2e-3 below the batch's top none lr 1.6e-2",
+    "E4": "mean g +2.76, wins 4/8 (need > 0 and >= 2/3)",
+    "E5": "d 0.34 (need >= 0.5)"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     81.761,
+     8
+    ]
+   },
+   "none_means": {
+    "1e-3": [
+     76.3424,
+     8
+    ],
+    "2e-3": [
+     79.0026,
+     8
+    ],
+    "4e-3": [
+     76.2654,
+     8
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "1e-3",
+    "2e-3",
+    "4e-3"
+   ],
+   "note": "descriptive: n 2e-3 vs the R1 none grid (seeds 0-3, picks_R_after2.json) ['5e-4', '1e-3', '2e-3', '4e-3', '8e-3', '1.6e-2']: not at its top",
+   "pn_means_paired": [
+    81.76098054643313,
+    79.00262288663869
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= 89.7) (line 89.7; means p 81.8 / n 79.0; lines chance 50.0, answer-frequency line 50.0, shorter-option line 50.0, shortcut baseline (every held-out question) 84.7)); E4 (mean g +2.76, wins 4/8 (need > 0 and >= 2/3)); E5 (d 0.34 (need >= 0.5))",
+   "floor": {
+    "line": 89.70440498996533,
+    "tags": [
+     "FLOOR (both <= 89.7)"
+    ],
+    "lines": {
+     "chance": 50.0,
+     "answer-frequency line": 50.0,
+     "shorter-option line": 50.0,
+     "shortcut baseline (every held-out question)": 84.70440498996533
+    }
+   }
+  },
+  {
+   "cand": "prefixes",
+   "src": "ptdom2",
+   "batch": "B2",
+   "metric": "area",
+   "p": "1e-3",
+   "n": "4e-3",
+   "seeds": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "g": {
+    "8": -0.190476190476204,
+    "9": 0.7111111111110944,
+    "10": 0.914285714285711,
+    "11": -16.025396825396825,
+    "12": 13.142857142857125,
+    "13": -16.558730158730143,
+    "14": -8.546031746031744,
+    "15": 2.1841269841269906
+   },
+   "mean_g": -3.0460317460317494,
+   "wins": 4,
+   "k": 8,
+   "sd": 10.06192295184295,
+   "d": -0.3027285898143193,
+   "E": {
+    "E1": false,
+    "E2": true,
+    "E3": true,
+    "E4": false,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= 89.5) (line 89.5; means p 83.4 / n 86.4; lines chance 50.0, answer-frequency line 83.0, shorter-option line 41.7, shortcut baseline (every held-out question) 84.5)",
+    "E2": "8 paired seeds (>= 3)",
+    "E3": "n 4e-3 below the batch's top none lr 1.6e-2 [literal reading would fail: n = the highest lr at the evidence seeds (1e-3, 2e-3, 4e-3)]",
+    "E4": "mean g -3.05, wins 4/8 (need > 0 and >= 2/3)",
+    "E5": "d -0.30 (need >= 0.5)"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     83.3548,
+     8
+    ]
+   },
+   "none_means": {
+    "1e-3": [
+     84.3024,
+     8
+    ],
+    "2e-3": [
+     84.5087,
+     8
+    ],
+    "4e-3": [
+     86.4008,
+     8
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "1e-3",
+    "2e-3",
+    "4e-3"
+   ],
+   "note": "descriptive: n 4e-3 vs the R1 none grid (seeds 0-3, picks_R_after2.json) ['5e-4', '1e-3', '2e-3', '4e-3', '8e-3', '1.6e-2']: not at its top",
+   "pn_means_paired": [
+    83.3547619047619,
+    86.40079365079364
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= 89.5) (line 89.5; means p 83.4 / n 86.4; lines chance 50.0, answer-frequency line 83.0, shorter-option line 41.7, shortcut baseline (every held-out question) 84.5)); E4 (mean g -3.05, wins 4/8 (need > 0 and >= 2/3)); E5 (d -0.30 (need >= 0.5))",
+   "floor": {
+    "line": 89.52380952380952,
+    "tags": [
+     "FLOOR (both <= 89.5)"
+    ],
+    "lines": {
+     "chance": 50.0,
+     "answer-frequency line": 83.03571428571429,
+     "shorter-option line": 41.66666666666667,
+     "shortcut baseline (every held-out question)": 84.52380952380952
+    }
+   }
+  },
+  {
+   "cand": "ranks",
+   "src": "ptdom2",
+   "batch": "B2",
+   "metric": "area",
+   "p": "1e-3",
+   "n": "4e-3",
+   "seeds": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "g": {
+    "8": 0.8437500000000142,
+    "9": 6.208333333333343,
+    "10": 9.677083333333329,
+    "11": 2.447916666666657,
+    "12": 3.385416666666657,
+    "13": -11.635416666666657,
+    "14": 3.437499999999986,
+    "15": 15.447916666666657
+   },
+   "mean_g": 3.7265624999999982,
+   "wins": 7,
+   "k": 8,
+   "sd": 7.792798074049949,
+   "d": 0.4782059620419869,
+   "E": {
+    "E1": false,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= 98.0) (line 98.0; means p 93.9 / n 90.1; lines chance 50.0, answer-frequency line 90.6, shorter-option line 47.7, shortcut baseline (every held-out question) 93.0)",
+    "E2": "8 paired seeds (>= 3)",
+    "E3": "n 4e-3 below the batch's top none lr 1.6e-2 [literal reading would fail: n = the highest lr at the evidence seeds (1e-3, 2e-3, 4e-3)]",
+    "E4": "mean g +3.73, wins 7/8 (need > 0 and >= 2/3)",
+    "E5": "d 0.48 (need >= 0.5)"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     93.8555,
+     8
+    ]
+   },
+   "none_means": {
+    "1e-3": [
+     85.5482,
+     8
+    ],
+    "2e-3": [
+     88.1693,
+     8
+    ],
+    "4e-3": [
+     90.1289,
+     8
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "1e-3",
+    "2e-3",
+    "4e-3"
+   ],
+   "note": "descriptive: n 4e-3 vs the R1 none grid (seeds 0-3, picks_R_after2.json) ['5e-4', '1e-3', '2e-3', '4e-3', '8e-3', '1.6e-2']: not at its top",
+   "pn_means_paired": [
+    93.85546875,
+    90.12890625
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= 98.0) (line 98.0; means p 93.9 / n 90.1; lines chance 50.0, answer-frequency line 90.6, shorter-option line 47.7, shortcut baseline (every held-out question) 93.0)); E5 (d 0.48 (need >= 0.5))",
+   "floor": {
+    "line": 97.96875,
+    "tags": [
+     "FLOOR (both <= 98.0)"
+    ],
+    "lines": {
+     "chance": 50.0,
+     "answer-frequency line": 90.625,
+     "shorter-option line": 47.65625,
+     "shortcut baseline (every held-out question)": 92.96875
+    }
+   }
+  },
+  {
+   "cand": "scalar_adj",
+   "src": "ptdom2",
+   "batch": "B3",
+   "metric": "area",
+   "p": "1e-3",
+   "n": "4e-3",
+   "seeds": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ],
+   "g": {
+    "8": 5.515151515151516,
+    "9": 9.733333333333334,
+    "10": -9.806060606060626,
+    "11": 2.939393939393966,
+    "12": 1.799999999999983,
+    "13": 3.0060606060606005,
+    "14": -0.7757575757575665,
+    "15": 10.090909090909108
+   },
+   "mean_g": 2.8128787878787893,
+   "wins": 6,
+   "k": 8,
+   "sd": 6.339895055641075,
+   "d": 0.44367907720743144,
+   "E": {
+    "E1": false,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= 92.2) (line 92.2; means p 88.3 / n 85.5; lines chance 50.0, answer-frequency line 84.4, shorter-option line 46.0, shortcut baseline (every held-out question) 87.2)",
+    "E2": "8 paired seeds (>= 3)",
+    "E3": "n 4e-3 below the batch's top none lr 8e-3 [literal reading would fail: n = the highest lr at the evidence seeds (4e-3)]",
+    "E4": "mean g +2.81, wins 6/8 (need > 0 and >= 2/3)",
+    "E5": "d 0.44 (need >= 0.5)"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     88.2879,
+     8
+    ]
+   },
+   "none_means": {
+    "4e-3": [
+     85.475,
+     8
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "4e-3"
+   ],
+   "note": "descriptive: n 4e-3 vs the R1 none grid (seeds 0-3, picks_R_after2.json) ['1e-3', '2e-3', '4e-3', '8e-3']: not at its top",
+   "pn_means_paired": [
+    88.28787878787878,
+    85.475
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= 92.2) (line 92.2; means p 88.3 / n 85.5; lines chance 50.0, answer-frequency line 84.4, shorter-option line 46.0, shortcut baseline (every held-out question) 87.2)); E5 (d 0.44 (need >= 0.5))",
+   "floor": {
+    "line": 92.2159090909091,
+    "tags": [
+     "FLOOR (both <= 92.2)"
+    ],
+    "lines": {
+     "chance": 50.0,
+     "answer-frequency line": 84.37499999999999,
+     "shorter-option line": 46.02272727272727,
+     "shortcut baseline (every held-out question)": 87.2159090909091
+    }
+   }
+  },
+  {
+   "cand": "cyc12",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "area (full set)",
+   "p": "2e-3",
+   "n": "3.2e-2",
+   "seeds": [
+    0
+   ],
+   "g": {
+    "0": -2.990583804143128
+   },
+   "mean_g": -2.990583804143128,
+   "wins": 0,
+   "k": 1,
+   "sd": null,
+   "d": null,
+   "E": {
+    "E1": false,
+    "E2": false,
+    "E3": true,
+    "E4": false,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= chance 8.3 + 5) (line 13.3; means p 2.8 / n 5.8)",
+    "E2": "1 paired seeds (< 3)",
+    "E3": "n 3.2e-2 = the batch's top, >= 3.2e-2",
+    "E4": "mean g -2.99, wins 0/1 (need > 0 and >= 2/3)",
+    "E5": "n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     2.6591,
+     1
+    ],
+    "2e-3": [
+     2.8023,
+     1
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     0.4595,
+     1
+    ],
+    "4e-3": [
+     0.3842,
+     1
+    ],
+    "8e-3": [
+     1.1827,
+     1
+    ],
+    "1.6e-2": [
+     2.9067,
+     3
+    ],
+    "3.2e-2": [
+     6.0218,
+     3
+    ]
+   },
+   "present_prior": [
+    "1e-3",
+    "2e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 3.2e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: at its top",
+   "pn_means_paired": [
+    2.802259887005648,
+    5.792843691148776
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= chance 8.3 + 5) (line 13.3; means p 2.8 / n 5.8)); E2 (1 paired seeds (< 3)); E4 (mean g -2.99, wins 0/1 (need > 0 and >= 2/3)); E5 (n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0)",
+   "floor": {
+    "line": 13.333333333333332,
+    "tags": [
+     "FLOOR (both <= chance 8.3 + 5)"
+    ]
+   }
+  },
+  {
+   "cand": "torus",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "area (full set)",
+   "p": "1e-3",
+   "n": "1.6e-2",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "g": {
+    "0": 8.460804362644865,
+    "1": 14.433129667345483,
+    "2": 14.918395573997245
+   },
+   "mean_g": 12.604109867995865,
+   "wins": 3,
+   "k": 3,
+   "sd": 3.5964018314203385,
+   "d": 3.504644491580098,
+   "E": {
+    "E1": true,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": true
+   },
+   "why": {
+    "E1": "no tag (line 7.8; means p 81.5 / n 68.9)",
+    "E2": "3 paired seeds (>= 3)",
+    "E3": "n 1.6e-2 below the batch's top none lr 3.2e-2",
+    "E4": "mean g +12.60, wins 3/3 (need > 0 and >= 2/3)",
+    "E5": "d 3.50 (need >= 0.5)"
+   },
+   "eligible": true,
+   "prior_means": {
+    "1e-3": [
+     81.5013,
+     3
+    ],
+    "2e-3": [
+     79.2611,
+     1
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     15.6701,
+     1
+    ],
+    "4e-3": [
+     18.075,
+     1
+    ],
+    "8e-3": [
+     46.1077,
+     1
+    ],
+    "1.6e-2": [
+     68.8972,
+     3
+    ],
+    "3.2e-2": [
+     65.1144,
+     3
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 1.6e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: not at its top",
+   "pn_means_paired": [
+    81.50126629319884,
+    68.89715642520298
+   ],
+   "reason": "IN (eligible)",
+   "floor": {
+    "line": 7.777777777777778,
+    "tags": []
+   }
+  },
+  {
+   "cand": "hcube",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "twin-free area",
+   "p": "2e-3",
+   "n": "1.6e-2",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "g": {
+    "0": 14.787878787878782,
+    "1": 21.171717171717134,
+    "2": 26.814814814814817
+   },
+   "mean_g": 20.924803591470244,
+   "wins": 3,
+   "k": 3,
+   "sd": 6.0172686732508245,
+   "d": 3.4774587487657644,
+   "E": {
+    "E1": true,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": true
+   },
+   "why": {
+    "E1": "no tag (line 8.1; means p 90.1 / n 69.1)",
+    "E2": "3 paired seeds (>= 3)",
+    "E3": "n 1.6e-2 below the batch's top none lr 3.2e-2",
+    "E4": "mean g +20.92, wins 3/3 (need > 0 and >= 2/3)",
+    "E5": "d 3.48 (need >= 0.5)"
+   },
+   "eligible": true,
+   "prior_means": {
+    "1e-3": [
+     89.0707,
+     1
+    ],
+    "2e-3": [
+     90.0718,
+     3
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     55.4949,
+     1
+    ],
+    "4e-3": [
+     62.9495,
+     1
+    ],
+    "8e-3": [
+     54.5859,
+     1
+    ],
+    "1.6e-2": [
+     69.147,
+     3
+    ],
+    "3.2e-2": [
+     67.1128,
+     3
+    ]
+   },
+   "present_prior": [
+    "2e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 1.6e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: not at its top",
+   "pn_means_paired": [
+    90.0718294051627,
+    69.14702581369247
+   ],
+   "reason": "IN (eligible)",
+   "floor": {
+    "line": 8.125,
+    "tags": []
+   }
+  },
+  {
+   "cand": "d6",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "twin-free area",
+   "p": "1e-3",
+   "n": "3.2e-2",
+   "seeds": [
+    0
+   ],
+   "g": {
+    "0": -4.126984126984128
+   },
+   "mean_g": -4.126984126984128,
+   "wins": 0,
+   "k": 1,
+   "sd": null,
+   "d": null,
+   "E": {
+    "E1": false,
+    "E2": false,
+    "E3": true,
+    "E4": false,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= chance 8.3 + 5) (line 13.3; means p 1.1 / n 5.2)",
+    "E2": "1 paired seeds (< 3)",
+    "E3": "n 3.2e-2 = the batch's top, >= 3.2e-2",
+    "E4": "mean g -4.13, wins 0/1 (need > 0 and >= 2/3)",
+    "E5": "n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     1.1111,
+     1
+    ],
+    "2e-3": [
+     0.873,
+     1
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     1.1746,
+     1
+    ],
+    "4e-3": [
+     1.3333,
+     1
+    ],
+    "8e-3": [
+     4.4603,
+     1
+    ],
+    "1.6e-2": [
+     4.4172,
+     3
+    ],
+    "3.2e-2": [
+     5.2021,
+     3
+    ]
+   },
+   "present_prior": [
+    "1e-3",
+    "2e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 3.2e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: at its top",
+   "pn_means_paired": [
+    1.1111111111111107,
+    5.238095238095239
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= chance 8.3 + 5) (line 13.3; means p 1.1 / n 5.2)); E2 (1 paired seeds (< 3)); E4 (mean g -4.13, wins 0/1 (need > 0 and >= 2/3)); E5 (n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0)",
+   "floor": {
+    "line": 13.333333333333334,
+    "tags": [
+     "FLOOR (both <= chance 8.3 + 5)"
+    ]
+   }
+  },
+  {
+   "cand": "box5",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "area (full set)",
+   "p": "1e-3",
+   "n": "1.6e-2",
+   "seeds": [
+    0,
+    1,
+    2
+   ],
+   "g": {
+    "0": 33.360000000000014,
+    "1": 31.398692810457508,
+    "2": 38.7329650092081
+   },
+   "mean_g": 34.49721927322187,
+   "wins": 3,
+   "k": 3,
+   "sd": 3.7970828181489416,
+   "d": 9.085190111823552,
+   "E": {
+    "E1": true,
+    "E2": true,
+    "E3": true,
+    "E4": true,
+    "E5": true
+   },
+   "why": {
+    "E1": "no tag (line 9.0; means p 54.7 / n 20.2)",
+    "E2": "3 paired seeds (>= 3)",
+    "E3": "n 1.6e-2 below the batch's top none lr 3.2e-2",
+    "E4": "mean g +34.50, wins 3/3 (need > 0 and >= 2/3)",
+    "E5": "d 9.09 (need >= 0.5)"
+   },
+   "eligible": true,
+   "prior_means": {
+    "1e-3": [
+     54.6645,
+     3
+    ],
+    "2e-3": [
+     45.4044,
+     1
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     11.6711,
+     1
+    ],
+    "4e-3": [
+     8.7467,
+     1
+    ],
+    "8e-3": [
+     11.1911,
+     1
+    ],
+    "1.6e-2": [
+     20.1672,
+     3
+    ],
+    "3.2e-2": [
+     17.4559,
+     3
+    ]
+   },
+   "present_prior": [
+    "1e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 1.6e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: not at its top",
+   "pn_means_paired": [
+    54.6644557589764,
+    20.167236485754525
+   ],
+   "reason": "IN (eligible)",
+   "floor": {
+    "line": 9.0,
+    "tags": []
+   }
+  },
+  {
+   "cand": "caesar",
+   "src": "ptdom3",
+   "batch": "T3",
+   "metric": "area (full set)",
+   "p": "1e-3",
+   "n": "3.2e-2",
+   "seeds": [
+    0
+   ],
+   "g": {
+    "0": 0.5892473118279575
+   },
+   "mean_g": 0.5892473118279575,
+   "wins": 1,
+   "k": 1,
+   "sd": null,
+   "d": null,
+   "E": {
+    "E1": false,
+    "E2": false,
+    "E3": true,
+    "E4": true,
+    "E5": false
+   },
+   "why": {
+    "E1": "FLOOR (both <= chance 3.8 + 5) (line 8.8; means p 4.1 / n 3.5)",
+    "E2": "1 paired seeds (< 3)",
+    "E3": "n 3.2e-2 = the batch's top, >= 3.2e-2",
+    "E4": "mean g +0.59, wins 1/1 (need > 0 and >= 2/3)",
+    "E5": "n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0"
+   },
+   "eligible": false,
+   "prior_means": {
+    "1e-3": [
+     4.0645,
+     1
+    ],
+    "2e-3": [
+     1.6645,
+     1
+    ]
+   },
+   "none_means": {
+    "2e-3": [
+     0.3527,
+     1
+    ],
+    "4e-3": [
+     0.2194,
+     1
+    ],
+    "8e-3": [
+     0.5161,
+     1
+    ],
+    "1.6e-2": [
+     1.8488,
+     3
+    ],
+    "3.2e-2": [
+     2.9839,
+     3
+    ]
+   },
+   "present_prior": [
+    "1e-3",
+    "2e-3"
+   ],
+   "present_none": [
+    "1.6e-2",
+    "3.2e-2"
+   ],
+   "note": "descriptive: n 3.2e-2 vs the ptdom3 none grid (screen + valid 3.2e-2 runs) ['2e-3', '4e-3', '8e-3', '1.6e-2', '3.2e-2']: at its top",
+   "pn_means_paired": [
+    4.064516129032257,
+    3.4752688172042996
+   ],
+   "reason": "OUT: E1 (FLOOR (both <= chance 3.8 + 5) (line 8.8; means p 4.1 / n 3.5)); E2 (1 paired seeds (< 3)); E5 (n/a: d needs >= 2 paired seeds and sd > 0 or mean != 0)",
+   "floor": {
+    "line": 8.846153846153847,
+    "tags": [
+     "FLOOR (both <= chance 3.8 + 5)"
+    ]
+   }
+  }
+ ],
+ "inputs": {
+  "readout_ptdom2.py": "3f78507d5d47",
+  "readout_ptdom.py": "1e2f17522e47",
+  "readout_ptdom3.py": "9abd89ad75a7",
+  "picks_R_after2.json": "e4284d1ea1c4",
+  "make_jobs_pt6v2.py": "bb15d248afd8",
+  "pick_pt6v2.py": "7a2e73faa8c8",
+  "utc": "2026-11-19T16:42Z",
+  "n_ptdom2_records": 632,
+  "n_ptdom3_runs": 33,
+  "sub_problems": 0
+ },
+ "complete": true,
+ "mode": "strict",
+ "problems": [],
+ "excused": [],
+ "v2_by": [],
+ "ranking": [
+  [
+   "box5",
+   9.085190111823552,
+   34.49721927322187
+  ],
+  [
+   "torus",
+   3.504644491580098,
+   12.604109867995865
+  ],
+  [
+   "hcube",
+   3.4774587487657644,
+   20.924803591470244
+  ]
+ ],
+ "ties": [],
+ "comp_order_src": "make_jobs_pt6v2.comp_doms (sha bb15d248afd8)",
+ "toy3_replication": {
+  "qualification": {
+   "cyc12": {
+    "p0": "2e-3",
+    "p0_val": 2.802259887005648,
+    "n0": "1.6e-2",
+    "n0_val": 5.84557438794727,
+    "chance": 8.333333333333332,
+    "unfinished_s0": [],
+    "floor": true,
+    "qualifies": false,
+    "status": "FLOOR"
+   },
+   "torus": {
+    "p0": "1e-3",
+    "p0_val": 82.9011588275392,
+    "n0": "1.6e-2",
+    "n0_val": 74.44035446489434,
+    "chance": 2.7777777777777777,
+    "unfinished_s0": [],
+    "floor": false,
+    "qualifies": true,
+    "status": "QUALIFIES"
+   },
+   "hcube": {
+    "p0": "2e-3",
+    "p0_val": 90.4646464646464,
+    "n0": "1.6e-2",
+    "n0_val": 75.67676767676762,
+    "chance": 3.125,
+    "unfinished_s0": [],
+    "floor": false,
+    "qualifies": true,
+    "status": "QUALIFIES"
+   },
+   "d6": {
+    "p0": "1e-3",
+    "p0_val": 1.1111111111111107,
+    "n0": "1.6e-2",
+    "n0_val": 4.793650793650796,
+    "chance": 8.333333333333334,
+    "unfinished_s0": [],
+    "floor": true,
+    "qualifies": false,
+    "status": "FLOOR"
+   },
+   "box5": {
+    "p0": "1e-3",
+    "p0_val": 53.35111111111112,
+    "n0": "1.6e-2",
+    "n0_val": 19.991111111111113,
+    "chance": 4.0,
+    "unfinished_s0": [],
+    "floor": false,
+    "qualifies": true,
+    "status": "QUALIFIES"
+   },
+   "caesar": {
+    "p0": "1e-3",
+    "p0_val": 4.064516129032257,
+    "n0": "1.6e-2",
+    "n0_val": 2.2623655913978493,
+    "chance": 3.8461538461538463,
+    "unfinished_s0": [],
+    "floor": true,
+    "qualifies": false,
+    "status": "FLOOR"
+   }
+  },
+  "required": [
+   [
+    [
+     "none",
+     "1.6e-2",
+     1
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "none",
+     "1.6e-2",
+     2
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "none",
+     "3.2e-2",
+     0
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "none",
+     "3.2e-2",
+     1
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "none",
+     "3.2e-2",
+     2
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-box5",
+     "1e-3",
+     1
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-box5",
+     "1e-3",
+     2
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-hcube",
+     "2e-3",
+     1
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-hcube",
+     "2e-3",
+     2
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-torus",
+     "1e-3",
+     1
+    ],
+    "VALID"
+   ],
+   [
+    [
+     "only-torus",
+     "1e-3",
+     2
+    ],
+    "VALID"
+   ]
+  ]
+ },
+ "out_by_rule": {
+  "stars": "NOT FINAL in picks_R_after2.json: out by the rule"
+ },
+ "toy3_marks": []
+}

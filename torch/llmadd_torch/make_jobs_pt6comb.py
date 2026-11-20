@@ -16,6 +16,9 @@ Parts (AUDIT.md "Design"):
   L1x   the conditional extensions decided by select_pt6comb.py --after L1 (ptdom2 A1: all6 x2 above where its pick or
         area argmax is 4e-3; none x2 above / x1/2 below where its pick or argmax is at that edge; fixB: none at all6's pick
         when it lies outside none's range), once, seeds 0-3                                                  0-12 runs
+  L1y   (AUDIT.md Amendment A4, coordinator 2026-11-13) one more step up for none only: none@3.2e-2, seeds 0-3, rendered from the
+        NOT FINAL picks_after_L1x.json whose only open edge is none's pick / argmax at its top lr 1.6e-2 (refused otherwise);
+        then select_pt6comb.py --after L1y writes the final picks_after_L1y.json (no further step)             4 runs
   C     confirmation, fresh seeds 8-15 (never read by a selection): none@N, all6@P, only-<m>@2e-3 for the six m, and (AUDIT A2)
         the same-lr pair none@2e-3 / all6@2e-3 (merged with none@N / all6@P when N / P = 2e-3)                  64-80 runs
   smoke ONE B200 job (llmadd_pt6comb-smoke, <= 1 h; not part of any result): all6@2e-3 and none@2e-3, seed 0, --stop_after
@@ -28,7 +31,8 @@ pt300x's B200 protocol); logs llmadd_torch/logs/llmadd_<run>_<jobid>.out.
     python make_jobs_pt6comb.py --plan
     python make_jobs_pt6comb.py --snapshot
     python make_jobs_pt6comb.py --part L1 [--comp B] [--check] [--print] [--test-only N] [--submit] [--no-write]
-    python make_jobs_pt6comb.py --part L1x|C --picks runs/pt6comb/picks_after_<L1|L1x>.json [--check] [--print] [--test-only N] [--submit]
+    python make_jobs_pt6comb.py --part L1x|C --picks runs/pt6comb/picks_after_<L1|L1x|L1y>.json [--check] [--print] [--test-only N] [--submit]
+    python make_jobs_pt6comb.py --part L1y --picks runs/pt6comb/picks_after_L1x.json [--check] [--print] [--test-only N] [--submit]
     python make_jobs_pt6comb.py --smoke [--check] [--print] [--test-only] [--submit]
     python make_jobs_pt6comb.py --part X [--picks f] --rerun [--print] [--submit]      (ptdom's A2 re-run path: <name>-r<k>)
 Never submits without --submit; --submit refuses while runs/pt6comb/HOLD or HOLD_<part> exists, for composition A, and never
@@ -120,9 +124,15 @@ assert EXT_UP == {"all6": "8e-3", "none": "1.6e-2"} and EXT_DOWN == {"none": "1e
 FIXB_LR = tuple(lr for lr in GRID_L1["all6"] + (EXT_UP["all6"],)
                 if float(lr) < float(GRID_L1["none"][0]) or float(lr) > float(EXT_UP["none"]))
 assert FIXB_LR == ("1e-3",), FIXB_LR
+# AUDIT.md Amendment A4 (coordinator 2026-11-13): when the L1x decision is NOT FINAL only because none's pick / area argmax is its
+# top lr EXT_UP["none"], one more step up for none alone (part L1y, seeds 0-3); after it no further step (none still at its top lr ->
+# final with the flag A4_FLAG beside every HELPS line)
+EXT_Y = {"none": step_up(EXT_UP["none"])}
+assert EXT_Y == {"none": "3.2e-2"}
+A4_FLAG = f"none at its top lr {EXT_Y['none']} (lr-confounded)"
 SEL = (0, 1, 2, 3)                              # selection seeds
 CONF = tuple(range(8, 16))                      # confirmation seeds (fresh: never read by any selection)
-PARTS = ("L1", "L1x", "C", "smoke")
+PARTS = ("L1", "L1x", "L1y", "C", "smoke")
 N_SLOTS = 8                                     # singleton B200 chains llmadd_pt6comb-b200-slot0..7, shared by every part
 SMOKE_STOP = 8000                               # evals 0..8000 every 250 (33); on-window 1000..7250 (26); 7500..8000 off (3)
 SMOKE = (("all6", "2e-3", 0), ("none", "2e-3", 0))
@@ -467,12 +477,52 @@ def read_picks(path, stage):
     return pk
 
 
+def a4_open(pk):
+    """AUDIT.md A4: [] iff pk is the NOT FINAL L1x decision whose ONLY open edge is none's pick / area argmax at its top lr
+    EXT_UP['none'] (all6 not at its top lr, none not at its lowest, all6's pick inside none's range, none@EXT_Y not yet run); else the
+    reasons it is not."""
+    why = []
+    if not (pk.get("design") == PREFIX and pk.get("after") == "L1x" and pk.get("status") == "NOT FINAL" and pk.get("stage_written") is None
+            and pk.get("E") == [] and pk.get("C") == []):
+        return [f"not a NOT FINAL L1x decision: design {pk.get('design')}, after {pk.get('after')}, status {pk.get('status')}, "
+                f"stage {pk.get('stage_written')}, E {pk.get('E')}, C {pk.get('C')}"]
+    lrs, u = pk.get("lrs") or {}, pk.get("units") or {}
+    ln, la = sorted(lrs.get("none", []), key=float), sorted(lrs.get("all6", []), key=float)
+    if not ln or not la or "none" not in u or "all6" not in u:
+        return ["no lrs / units"]
+    N_, an, P_, aa = pk.get("pick_none"), u["none"].get("argmax"), pk.get("pick_all6"), u["all6"].get("argmax")
+    if ln[-1] != EXT_UP["none"] or EXT_Y["none"] in ln:
+        why.append(f"none's lrs {ln}: the top is not {EXT_UP['none']} or {EXT_Y['none']} already ran")
+    if EXT_UP["none"] not in (N_, an):
+        why.append(f"none's pick {N_} / argmax {an} not at its top lr {EXT_UP['none']}")
+    if ln[0] in (N_, an):
+        why.append(f"none's pick {N_} / argmax {an} at its lowest lr {ln[0]}")
+    if P_ is None or la[-1] in (P_, aa):
+        why.append(f"all6's pick {P_} / argmax {aa} at its top lr {la[-1]} (or no pick)")
+    elif not float(ln[0]) <= float(P_) <= float(ln[-1]):
+        why.append(f"all6's pick {P_} outside none's range")
+    return why
+
+
+def read_picks_a4(path, comp="B", x=None):
+    """The input of part L1y: the read-only NOT FINAL picks_after_L1x.json that A4 extends (refused unless a4_open is empty)."""
+    pk = json.loads(Path(path).read_text())
+    assert not (Path(path).stat().st_mode & 0o222), f"{path} is writable: a decision file is chmod 444"
+    why = a4_open(pk)
+    assert not why, f"{path} is not the A4 case (L1y is only none@{EXT_Y['none']} after a NOT FINAL L1x with none at its top lr): {why}"
+    assert pk.get("comp") == comp and pk.get("x") == x, (pk.get("comp"), comp)
+    return pk
+
+
 def cells(part, comp="B", picks=None, x=None):
     """[(arm, lr, seed)] of a part in submission order (seed-major, so a partial part stays paired)."""
     if part == "L1":
         return [(a, lr, s) for s in SEL for a in ("none", "all6") for lr in GRID_L1[a]]
     if part == "smoke":
         return list(SMOKE)
+    if part == "L1y":
+        read_picks_a4(picks, comp, x)
+        return [("none", EXT_Y["none"], s) for s in SEL]
     pk = read_picks(picks, part)
     assert pk.get("comp") == comp and pk.get("x") == x, (pk.get("comp"), comp)
     if part == "L1x":
@@ -483,7 +533,15 @@ def cells(part, comp="B", picks=None, x=None):
         return [(a, lr, s) for s in SEL for a, lr in E]
     assert part == "C"
     P_, N_ = pk["pick_all6"], pk["pick_none"]
-    assert P_ in GRID_L1["all6"] + (EXT_UP["all6"],) and N_ in GRID_L1["none"] + (EXT_UP["none"], EXT_DOWN["none"]) + FIXB_LR, (P_, N_)
+    a4 = pk.get("after") == "L1y"    # A4: the final decision after L1y may pick none@3.2e-2 (flagged when it does)
+    assert P_ in GRID_L1["all6"] + (EXT_UP["all6"],) and N_ in GRID_L1["none"] + (EXT_UP["none"], EXT_DOWN["none"]) + FIXB_LR + \
+        ((EXT_Y["none"],) if a4 else ()), (P_, N_)
+    if a4:
+        assert EXT_Y["none"] in pk["lrs"]["none"] and isinstance(pk.get("flags"), list), (pk["lrs"], pk.get("flags"))
+        top = EXT_Y["none"] in (N_, pk["units"]["none"]["argmax"])
+        assert pk["flags"] == ([A4_FLAG] if top else []), (pk["flags"], N_, pk["units"]["none"]["argmax"])
+    else:
+        assert "flags" not in pk, pk.get("flags")
     C = c_cells(P_, N_, comp, x)   # A2: + the same-lr pair none@2e-3 / all6@2e-3, merged with none@N / all6@P when equal
     assert [tuple(v) for v in pk["C"]] == C and len(set(C)) == len(C), (pk["C"], C)
     return [(a, lr, s) for s in CONF for a, lr in C]
@@ -507,6 +565,7 @@ def hold_paths(part):
 def plan():
     n1 = len(cells("L1"))
     nx = 4 * 3                       # max: all6 8e-3, none 1.6e-2, none 1e-3 (= fixB's lr) at seeds 0-3
+    ny = len(SEL)                    # A4: none@3.2e-2 at seeds 0-3 (only in the A4 case)
     nC_lo, nC_hi = 8 * 8, 8 * 10   # A2: + none@2e-3 / all6@2e-3 unless N / P = 2e-3 (8-10 cells x 8 seeds)
     h = PLAN_H
     print(f"pt6comb plan (composition B: --domains {domains_arg('B')}; 53M, 3e8 tokens, B200, {N_SLOTS} singleton slot chains; ptdom's "
@@ -514,10 +573,12 @@ def plan():
     print(f"  L1     {n1:3d} runs = {n1 * h:5.1f} B200-h (seeds 0-3: none {' / '.join(GRID_L1['none'])}, all6 {' / '.join(GRID_L1['all6'])})")
     print(f"  L1x    0-{nx} runs = 0-{nx * h:.1f} B200-h (once: all6 {EXT_UP['all6']}, none {EXT_UP['none']} / {EXT_DOWN['none']}; fixB "
           f"none@{FIXB_LR[0]} = none's down step)")
+    print(f"  L1y    0 or {ny} runs = {ny * h:.1f} B200-h (AUDIT A4, only when L1x is NOT FINAL with none at its top lr {EXT_UP['none']}: "
+          f"none@{EXT_Y['none']}; then final, no further step)")
     print(f"  C      {nC_lo}-{nC_hi} runs = {nC_lo * h:.1f}-{nC_hi * h:.1f} B200-h (seeds 8-15: none@N, all6@P, A2: none@{SINGLE_LR} / all6@{SINGLE_LR} "
           f"(merged when N / P = {SINGLE_LR}), six only-<m>@{SINGLE_LR}; 72 when one of P / N is {SINGLE_LR})")
     print(f"  smoke  1 job (2 bodies x {SMOKE_STOP} steps) <= 1 B200-h (not part of any result)")
-    print(f"  total: min {n1 + nC_lo} runs ({(n1 + nC_lo) * h:.1f} B200-h), max {n1 + nx + nC_hi} runs ({(n1 + nx + nC_hi) * h:.1f} B200-h) + the smoke")
+    print(f"  total: min {n1 + nC_lo} runs ({(n1 + nC_lo) * h:.1f} B200-h), max {n1 + nx + ny + nC_hi} runs ({(n1 + nx + ny + nC_hi) * h:.1f} B200-h) + the smoke")
     print(f"  wall clock with {N_SLOTS} chains always running: L1 ~{n1 * h / N_SLOTS:.1f} h, L1x <= {nx * h / N_SLOTS:.1f} h, C "
           f"~{nC_lo * h / N_SLOTS:.1f}-{nC_hi * h / N_SLOTS:.1f} h (+ queue waits)")
     print("  disk: no saved models; run dirs ~1-2 MB each (~0.2 GB in all)")
@@ -533,7 +594,7 @@ def main():
         return
     smoke = "--smoke" in sys.argv
     part = "smoke" if smoke else (opt("--part") or opt("--stage"))
-    assert part in PARTS, "--part L1 | L1x | C (or --smoke); --plan for the cost"
+    assert part in PARTS, "--part L1 | L1x | L1y | C (or --smoke); --plan for the cost"
     comp, x = opt("--comp", "B"), opt("--x")
     comp_doms(comp, x)
     if "--submit" in sys.argv:

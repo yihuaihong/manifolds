@@ -3,7 +3,8 @@ the same decision = a consistency check).
 
   python select_pt6comb.py --after L1  [--root runs/pt6comb/out] [--out runs/pt6comb/picks_after_L1.json]
   python select_pt6comb.py --after L1x [--root ...] [--out runs/pt6comb/picks_after_L1x.json]
-  python select_pt6comb.py --verify runs/pt6comb/picks_after_<L1|L1x>.json      (re-derive and compare; submit_pt6comb.sh runs it)
+  python select_pt6comb.py --after L1y [--root ...] [--out runs/pt6comb/picks_after_L1y.json]      (AUDIT.md A4 only)
+  python select_pt6comb.py --verify runs/pt6comb/picks_after_<L1|L1x|L1y>.json      (re-derive and compare; submit_pt6comb.sh runs it)
 
 --after L1 (every L1 run at seeds 0-3 finished and valid): the A2.1 gate per all6 cell (seeds 0-3; a failing cell cannot be picked;
   every cell failing -> GATE); F87 rule 1 on mean6 (the mean of the six manifolds' areas) for all6 over 1e-3 / 2e-3 / 4e-3 and for
@@ -13,6 +14,12 @@ the same decision = a consistency check).
 --after L1x (every asked cell finished and valid): picks_after_L1.json must equal its re-derivation; both units re-selected over all
   their lrs; NOT FINAL when a pick or argmax is still at an outermost lr (all6: the top; none: either edge) or all6's pick lies outside
   none's range -> picks_after_L1x.json.
+--after L1y (AUDIT.md Amendment A4, coordinator 2026-11-13; every none@3.2e-2 run at seeds 0-3 finished and valid): picks_after_L1.json
+  and picks_after_L1x.json must equal their re-derivations and picks_after_L1x.json must be the A4 case (NOT FINAL only because none's
+  pick / argmax is its top lr 1.6e-2); both units re-selected over all their lrs (none 1e-3 .. 3.2e-2) with the same objective and gate;
+  no further step: none's pick / argmax still at 3.2e-2 -> final (stage C) with flags ['none at its top lr 3.2e-2 (lr-confounded)'],
+  printed by the read-out beside every HELPS line; none interior -> plain final (flags []); any other open edge -> NOT FINAL
+  -> picks_after_L1y.json.
 GATE / NOT FINAL: the file is written with that status (no stage) and the script exits 2: no confirmation renders from it (the
 coordinator decides; AUDIT.md Pending). Refuses (exit 1) while a needed cell lacks a valid run or the data / metrics of seeds 0-3 fail
 the integrity checks; an existing picks file is never overwritten.
@@ -33,7 +40,7 @@ def derive(root, after, picks_dir):
     R_ = RP.load(root)
     probs = RP.integrity(R_, seeds=RP.SEL)
     prev = None
-    if after == "L1x":
+    if after in ("L1x", "L1y"):
         f1 = Path(picks_dir) / "picks_after_L1.json"
         if not f1.exists():
             raise SystemExit("REFUSED: no picks_after_L1.json")
@@ -42,12 +49,23 @@ def derive(root, after, picks_dir):
             raise SystemExit("REFUSED: picks_after_L1.json differs from its re-derivation")
         if prev.get("stage_written") != "L1x":
             raise SystemExit(f"REFUSED: picks_after_L1.json asks for stage {prev.get('stage_written')}, not L1x")
+    if after == "L1y":     # A4: the L1x decision, re-derived, must be the A4 case
+        fx = Path(picks_dir) / "picks_after_L1x.json"
+        if not fx.exists():
+            raise SystemExit("REFUSED: no picks_after_L1x.json")
+        px = json.loads(fx.read_text())
+        if RP.strip(RP.decide(R_, "L1x", prev)) != RP.strip(px):
+            raise SystemExit("REFUSED: picks_after_L1x.json differs from its re-derivation")
+        why = RP.M6.a4_open(px)
+        if why:
+            raise SystemExit(f"REFUSED: picks_after_L1x.json is not the A4 case (no L1y): {why}")
+        prev = px
     return R_, RP.decide(R_, after, prev), probs
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--after", choices=("L1", "L1x"))
+    ap.add_argument("--after", choices=("L1", "L1x", "L1y"))
     ap.add_argument("--verify")
     ap.add_argument("--root", default=str(HERE / "out"))
     ap.add_argument("--out")
@@ -57,9 +75,10 @@ def main():
         pk = json.loads(Path(a.verify).read_text())
         _, dec, probs = derive(a.root, pk.get("after"), Path(a.verify).parent)
         same = RP.strip(dec) == RP.strip(pk)
-        print(f"verify {a.verify}: the re-derivation is {'IDENTICAL' if same else 'DIFFERENT'}" + (f"; problems {probs[:5]}" if probs else ""))
+        print(f"verify {a.verify}: the re-derivation is {'IDENTICAL' if same else 'DIFFERENT'}" + (f"; problems {probs[:5]}" if probs else "")
+              + (f"; flags {pk['flags']}" if pk.get("flags") else ""))
         sys.exit(0 if same and not probs else 1)
-    assert a.after, "--after L1 | L1x (or --verify FILE)"
+    assert a.after, "--after L1 | L1x | L1y (or --verify FILE)"
     out = Path(a.out) if a.out else Path(a.picks_dir) / f"picks_after_{a.after}.json"
     if out.exists():
         raise SystemExit(f"REFUSED: {out} exists (a decision is written once)")
@@ -72,7 +91,7 @@ def main():
     out.write_text(json.dumps(RP.strip(dec), indent=1))
     out.chmod(0o444)
     print(f"written {out} ({RP.sha(out)}): status {dec['status']}, stage {dec['stage_written']}, E {dec['E']}, picks all6@{dec['pick_all6']} "
-          f"none@{dec['pick_none']}")
+          f"none@{dec['pick_none']}" + (f", flags {dec['flags']}" if "flags" in dec else ""))
     if dec["status"] != "decided":
         print(f"## {dec['status']}: no confirmation is rendered from this file; the coordinator decides (AUDIT.md Pending). " + "; ".join(dec["notes"]))
         sys.exit(2)
