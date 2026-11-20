@@ -1,3 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="media/logo.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Manifold Pretraining Engineering: Right Geometry, Right Time, Right Place">
+<meta property="og:description" content="A manifold prior, an auxiliary loss that pulls a model's representations of a concept towards a target manifold such as a helix for numbers, makes models learn faster in pretraining and fine-tuning.">
+<meta property="og:url" content="https://yihuaihong.github.io/manifolds/">
+<meta property="og:image" content="https://yihuaihong.github.io/manifolds/media/fig1_manifold.png">
+<meta name="twitter:card" content="summary_large_image">
 <title>Manifold Pretraining Engineering</title>
 <meta name="description" content="Project page of the paper Manifold Pretraining Engineering: Right Geometry, Right Time, Right Place. An auxiliary loss pulls a model's representations of a concept towards a target manifold, such as a helix for numbers, each item towards its own point on it.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -254,8 +266,34 @@ section.sec,#top{scroll-margin-top:24px}
 @media (max-width:560px){ .lockup{flex-direction:column} .hero h1{text-align:center} }
 @media (max-width:420px){ .stats,.design{grid-template-columns:1fr} }
 @media (max-width:960px){ .points.four{grid-template-columns:minmax(0,1fr)} }
+/* ---------- summary box (2026-11-20): linked finding cards, three numbered conditions ---------- */
+.tldr .kicker{font-size:.76rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:24px 0 10px}
+.finds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.find{display:flex;flex-direction:column;gap:3px;padding:14px 16px 12px;border-radius:12px;background:var(--surface-2);border:1px solid transparent;color:inherit;text-decoration:none;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+.find:hover{border-color:var(--accent-line);background:var(--accent-wash);transform:translateY(-1px)}
+.find .v{font-family:var(--font-display);font-size:1.6rem;font-weight:700;line-height:1.1;color:var(--accent-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.find .t{font-weight:600;font-size:.95rem;color:var(--ink);margin-top:4px}
+.find .l{font-size:.83rem;color:var(--ink-2);line-height:1.45}
+.find .go{margin-top:auto;padding-top:10px;font-size:.8rem;font-weight:500;color:var(--accent-ink)}
+.principles{margin-top:0}
+a.principle{display:block;color:inherit;text-decoration:none;border-top:3px solid var(--accent);padding-top:10px;position:relative;padding-left:34px}
+a.principle .num{position:absolute;left:0;top:12px;width:24px;height:24px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font:600 .8rem/24px var(--font-body);text-align:center}
+a.principle h3{font-family:var(--font-body);font-size:.98rem;font-weight:600;color:var(--accent-ink)}
+a.principle:hover h3{text-decoration:underline;text-underline-offset:3px}
+table.dom.concepts td{white-space:normal;vertical-align:top}
+table.dom.concepts td.n{white-space:nowrap}
+/* six priors kept on until the end */
+.endgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:4px 0 0}
+.endgrid div{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:1px;box-shadow:var(--shadow)}
+.endgrid .m{font-size:.8rem;color:var(--muted)}
+.endgrid .e{font-family:var(--font-display);font-size:1.4rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.endgrid .d{font-family:var(--font-mono);font-size:.78rem;color:var(--accent-ink)}
+@media (max-width:960px){ .finds{grid-template-columns:repeat(2,minmax(0,1fr))} .endgrid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:560px){ .finds{grid-template-columns:minmax(0,1fr)} .endgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
 </style>
 
+</head>
+<body>
 <nav class="toc" aria-label="Contents">
   <a class="toc-logo" href="#top"><img src="media/logo.svg" alt="" width="34" height="19">Manifold Pretraining Engineering</a>
   <p class="toc-title">Contents</p>
@@ -299,26 +337,24 @@ section.sec,#top{scroll-margin-top:24px}
     <a class="btn" href="https://github.com/yihuaihong/manifolds" target="_blank" rel="noopener"><!-- GitHub mark: Octicons mark-github-16, MIT --><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.450 7.590c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.020-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Code</a>
     <a class="btn ghost" href="#bibtex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-4-7 4V6a2 2 0 0 1 2-2z"/></svg>BibTeX</a>
   </nav>
-  <div class="news" aria-label="Latest results">
-    <span class="tag">Latest</span>
-    <a href="#combo">Six priors together: all six gain, and learn 2–5× sooner</a>
-    <a href="#scale">Six model sizes at a fixed 300M tokens</a>
-    <a href="#time-window">The benefit window across OLMo-2 1B–32B</a>
-  </div>
 
   <div class="tldr">
-    <p class="eyebrow">In one paragraph</p>
-    <p class="lead">Interpretability has found the manifolds on which language models represent concepts, such as a <b>helix for numbers</b>. We turn them into a training technique: a <b>manifold prior</b>, an auxiliary loss that pulls a model's representations of a concept towards a target manifold, each item towards its own point on it. With the right geometry, at the right time and in the right place, models learn addition faster, in fine-tuning and in pretraining from scratch; with scarce arithmetic data, the prior decides whether addition is learned within the budget at all.</p>
-    <div class="stats">
-      <div class="stat"><span class="v">18% → 70%</span><span class="l">held-out accuracy averaged over training with 2% arithmetic tokens, each model at its own best learning rate (8 of 8 paired seeds)</span></div>
-      <div class="stat"><span class="v">+36.1 points</span><span class="l">at 1.07B parameters, the largest model we pretrained (53% → 89%, 8 of 8 seeds)</span></div>
-      <div class="stat"><span class="v">6 of 6</span><span class="l">concepts gain when six priors are trained together, and the model reaches the final accuracy without priors after 8–30% of training</span></div>
-      <div class="stat"><span class="v">+43.5 points</span><span class="l">at 190M from a prior only on numbers in ordinary web text, never on the problems (8 of 8 seeds)</span></div>
+    <p class="eyebrow">At a glance</p>
+    <p class="lead">Interpretability has found the manifolds on which language models represent concepts, such as a <b>helix for numbers</b>. We turn them into a training technique: a <b>manifold prior</b>, an auxiliary loss that pulls a model's representations of a concept towards a target manifold, each item towards its own point on it.</p>
+    <p class="kicker">What we find</p>
+    <div class="finds">
+      <a class="find" href="#pretraining"><span class="v">18% → 70%</span><span class="t">Scarce data, learned</span><span class="l">held-out addition accuracy averaged over training with 2% arithmetic tokens, each model at its own best learning rate (8 of 8 seeds)</span><span class="go">Pretraining from scratch <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#animations"><span class="v">≈ 5× sooner</span><span class="t">Fine-tuning a 7B model</span><span class="l">an early OLMo-2-7B checkpoint reaches 90% on two-digit addition about five times sooner (30-epoch runs)</span><span class="go">The prior at work <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#scale"><span class="v">+36.1 points</span><span class="t">Holds up to 1.07B</span><span class="l">at 1.07B parameters, the largest model we pretrained (53% → 89%, 8 of 8 seeds); the advantage holds at every size from 53M</span><span class="go">Model size <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#combo"><span class="v">6 of 6</span><span class="t">Six priors at once</span><span class="l">six priors trained together all gain; kept on until the end of training, all six end above the best model without priors (8 of 8 seeds)</span><span class="go">Six priors together <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#place"><span class="v">+43.5 points</span><span class="t">Even in plain web text</span><span class="l">at 190M, from a prior only on numbers in ordinary web text, never on the problems (8 of 8 seeds)</span><span class="go">Right place <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#geometry"><span class="v">−23.6 points</span><span class="t">The wrong geometry hurts</span><span class="l">a shuffled helix of the same strength lowers curve-average accuracy (8 of 8 seeds)</span><span class="go">Right geometry <span aria-hidden="true">→</span></span></a>
     </div>
+    <p class="kicker">It helps with the right geometry, at the right time, in the right place</p>
     <div class="principles">
-      <div class="principle"><h3><a href="#geometry">Right geometry</a></h3><p>A complete, regular manifold that matches the computation; a shuffled one of the same strength hurts.</p></div>
-      <div class="principle"><h3><a href="#time">Right time</a></h3><p>A window while the task is being learned, from about 5% to 40% of pretraining.</p></div>
-      <div class="principle"><h3><a href="#place">Right place</a></h3><p>The concept's own tokens, even in ordinary text, within the operations the geometry matches.</p></div>
+      <a class="principle" href="#geometry"><span class="num">1</span><h3>Right geometry</h3><p>A complete, regular manifold that matches the computation; a shuffled one of the same strength hurts.</p></a>
+      <a class="principle" href="#time"><span class="num">2</span><h3>Right time</h3><p>A window while the task is being learned, from about 5% to 40% of pretraining.</p></a>
+      <a class="principle" href="#place"><span class="num">3</span><h3>Right place</h3><p>The concept's own tokens, even in ordinary text, within the operations the geometry matches.</p></a>
     </div>
     <p class="scope">Scope: whole-number tokenizers (as in OLMo-2), pretraining from scratch at 53M–1.07B parameters, and LoRA fine-tuning of OLMo-2 and Pythia checkpoints (160M–32B).</p>
   </div>
@@ -378,7 +414,7 @@ section.sec,#top{scroll-margin-top:24px}
     <div><b>Multiple priors</b>one per concept: one weight divided among them (λ / <i>K</i>) or a weight for each</div>
   </div>
   <div class="tblwrap">
-    <table class="dom" aria-label="Concepts for which a manifold prior helped">
+    <table class="dom concepts" aria-label="Concepts for which a manifold prior helped">
       <thead><tr><th>Concept</th><th>Target</th><th>Setting</th><th>Effect of the prior</th><th>Note</th></tr></thead>
       <tbody>
         <tr><td>Numbers</td><td>helix</td><td>pretraining 53M, 2% arithmetic</td><td class="n up">18.4% → 69.9%</td><td class="read">8 seeds</td></tr>
@@ -474,10 +510,21 @@ section.sec,#top{scroll-margin-top:24px}
     </table>
   </div>
   <p class="tnote">53M, 8 fresh seeds; no priors at the best of six learning rates for each manifold. End: the gain at the end of training. Faster: how many times sooner the six get 90% of the way from chance to the final accuracy without priors. Six − one: the six priors minus that manifold's prior alone. Except for numbers, the targets encode the answers.</p>
-  <h3 class="subhead" id="combo-transfer">Trained together, the priors help each other</h3>
-  <p class="subtake">At 2×10⁻³, joint training costs at most 0.5 points on any manifold relative to its prior alone and lifts dimensions by <b>13.5 points</b> (8 of 8 seeds). Interference is thus not detected for any of the six. The lift grows after the priors switch off: at the end of training the six lead the prior alone by <b>25.0 points</b> on dimensions and 11.7 on the torus (8 of 8 seeds each; post hoc).</p>
-  <p class="tnote">Training a single prior also raises the CKA of structurally similar domains to their own targets, although their tokens do not overlap: the grid prior alone raises the CKA of dimensions by 0.16 and the dimensions prior that of the grid by 0.18, and the city and country priors raise each other's by 0.22 and 0.24 (8 of 8 seeds each; post hoc). CKA measures how close a domain's representations are to its target geometry (1 = identical).</p>
   <p class="tnote">With the six priors at 10⁻³, the language-modelling loss carries 71% of the gradient norm during the window, and the final validation loss, 1.213 bits per byte, lies within 0.4% of the best model without priors.</p>
+  <h3 class="subhead" id="combo-end">Kept on until the end, the six priors lead on all six</h3>
+  <p class="subtake">Kept on until the end of training, the six priors give the highest end-of-training accuracy of all our runs on all six manifolds, above the model without priors even at its best rate in each seed (8 of 8 seeds each); the torus ends at 99.8%. Their final validation loss, 1.2112 bits per byte, is 0.1% above that of the model without priors at its best rate for this loss and below that of the window run.</p>
+  <div class="endgrid" aria-label="End-of-training accuracy with the six priors kept on until the end">
+    <div><span class="m">Numbers</span><span class="e">98.3%</span><span class="d">+31.4</span></div>
+    <div><span class="m">Dimensions</span><span class="e">96.5%</span><span class="d">+35.2</span></div>
+    <div><span class="m">Cities</span><span class="e">96.9%</span><span class="d">+2.5</span></div>
+    <div><span class="m">Countries</span><span class="e">98.4%</span><span class="d">+2.1</span></div>
+    <div><span class="m">Torus</span><span class="e">99.8%</span><span class="d">+4.1</span></div>
+    <div><span class="m">Grid</span><span class="e">91.4%</span><span class="d">+33.2</span></div>
+  </div>
+  <p class="tnote">End-of-training held-out accuracy with the priors on from 5% of training to the end, and its lead in points over the model without priors at its best learning rate in each seed. Post hoc, 8 seeds.</p>
+  <h3 class="subhead" id="combo-transfer">Trained together, the priors help each other</h3>
+  <p class="subtake">At 2×10⁻³, joint training costs at most 0.5 points on any manifold relative to its prior alone and lifts dimensions by <b>13.5 points</b> (8 of 8 seeds). Interference is thus not detected for any of the six. The lift grows after the priors switch off: at the end of training the six lead the prior alone by <b>25.0 points</b> on dimensions and 11.7 on the torus (8 of 8 seeds each; post hoc). This lift needs the torus and grid priors, which are structurally similar to dimensions. Without them, joint training lifts dimensions by only 1.5 points over its prior alone (12.0 points less than with them, 7 of 8 seeds).</p>
+  <p class="tnote">Training a single prior also raises the CKA of structurally similar domains to their own targets, although their tokens do not overlap: the grid prior alone raises the CKA of dimensions by 0.16 and the dimensions prior that of the grid by 0.18, and the city and country priors raise each other's by 0.22 and 0.24 (8 of 8 seeds each; post hoc). CKA measures how close a domain's representations are to its target geometry (1 = identical).</p>
   <p class="tnote" hidden>An earlier combination, with S4 and people in place of the torus and the grid, was tested on seeds 8–15 against one model without priors whose learning rate (1.6×10⁻²) was chosen for the mean over all six manifolds on separate seeds. It raised numbers, dimensions, cities and countries by 52.6, 41.4, 7.1 and 6.4 points and people by 3.0 (8 of 8 seeds each; on people both arms stay below a training-frequency shortcut), and interference between its priors was not detected; on S4 a gain was not shown (9.3 points, 4 of 8 seeds), because the model without priors learns S4 on some seeds by itself at that rate. Against the same rate, the six priors of Table 2 gain 54.1, 43.5, 6.7 and 6.1 points on the four manifolds the two sets share.</p>
   <p class="tnote" hidden>Where the domain priors come from. We chose the city, country and people priors with a pre-registered screen of 24 concept domains in 53M pretraining, one prior at a time (two stages, 8 seeds; Appendix J). Four domains pass (countries, cities, people and months), and all four replicate on 8 fresh seeds under a separate replication rule: the curve average rises by 4.8, 4.1, 1.2 and 4.3 points over the model without a prior at the learning rate chosen for it in the screen. The four tests share their comparison runs. Countries is the clearest case: the gain holds at the same learning rate, lasts to the end of training and is largest on the hard problems. For cities the prior mainly speeds up learning, and on months both arms end below chance, the prior lifting accuracy above chance only while it is on. We left months out of the combination because month accuracy dropped when the number prior was also on in earlier runs. A shuffled target of the same strength does worse than the true one (by 14.8, 16.7 and 1.9 points on countries, cities and people) but also worse than no prior (by 10.0, 13.3 and 0.7 points): for these domains a shuffled target mostly teaches wrong facts, so this contrast does not isolate the geometry. We also screened six small algebraic structures, five written with made-up names and one with the capital letters, as candidates to replace S4 and people. On three seeds, with priors for three of them the model learns faster than the best model without a prior: the grid by 34.5 points of curve average, the hypercube of ℤ₂⁵ by 20.9 and the torus by 12.6 (3 of 3 seeds each); the grid and the hypercube stay ahead at the end of training (20.3 and 4.6 points), while the torus ends 12.2 points behind. A rule fixed before the combination ran picked the grid and then the torus, just ahead of the hypercube, by the ratio of mean gain to its spread across seeds.</p>
 </section>
@@ -1157,3 +1204,5 @@ load().then(() => {
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
+</body>
+</html>
