@@ -1,0 +1,1163 @@
+<title>Manifold Pretraining Engineering</title>
+<meta name="description" content="Project page of the paper Manifold Pretraining Engineering: Right Geometry, Right Time, Right Place. An auxiliary loss pulls a model's representations of a concept towards a target manifold, such as a helix for numbers, each item towards its own point on it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<script>
+  window.__RM = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.__still = function (v) { if (window.__RM && v) { v.removeAttribute("autoplay"); v.autoplay = false; try { v.pause(); } catch (e) {} } };
+</script>
+<style>
+/* Design tokens follow the earlier Number Manifolds Lab page; series colours follow the paper's figures:
+   helix / main recipe blue, no prior grey, shuffled orange, in-context navy, prior from step 0 light blue. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#eef1f4; --chart:#ffffff;
+  --ink:#0f141b; --ink-2:#434c5b; --muted:#6c7584; --rule:#e0e4ea; --rule-2:#c9cfd8;
+  --accent:#2a78d6; --accent-ink:#1c5cab; --accent-wash:rgba(42,120,214,.08); --accent-line:rgba(42,120,214,.4);
+  --s-helix:#2a78d6; --s-none:#8a8984; --s-shuf:#eb6834; --s-ctx:#0d366b; --s-step0:#6da7ec; --s-ability:#1baf7a; --s-prefix:#1baf7a;
+  --good:#0ca30c; --good-ink:#0a6b0a; --good-wash:rgba(12,163,12,.10);
+  --warn:#eda100; --warn-ink:#8a5a00; --warn-wash:rgba(237,161,0,.14);
+  --gain:#dce9fa; --loss:#fbe2d8;
+  --grid:#eceae4; --axis:#bdbcb3; --band:.13;
+  --shadow:0 1px 2px rgba(15,20,27,.05),0 8px 24px rgba(15,20,27,.05);
+  --font-display:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --measure:68ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0e1116; --surface:#151a21; --surface-2:#1c222b; --chart:#151a21;
+    --ink:#eef1f5; --ink-2:#c2c8d2; --muted:#8d96a5; --rule:#273039; --rule-2:#38414d;
+    --accent:#3987e5; --accent-ink:#8dbcf1; --accent-wash:rgba(57,135,229,.13); --accent-line:rgba(57,135,229,.5);
+    --s-helix:#3987e5; --s-none:#8f8e89; --s-shuf:#e2733f; --s-ctx:#a9c9f2; --s-step0:#5d8fcf; --s-ability:#2bbf87; --s-prefix:#2bbf87;
+    --good:#0ca30c; --good-ink:#3fc43f; --good-wash:rgba(12,163,12,.16);
+    --warn:#c98500; --warn-ink:#f2b63d; --warn-wash:rgba(201,133,0,.18);
+    --gain:rgba(57,135,229,.22); --loss:rgba(226,115,63,.22);
+    --grid:#232a33; --axis:#3d444e; --band:.2;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0e1116; --surface:#151a21; --surface-2:#1c222b; --chart:#151a21;
+  --ink:#eef1f5; --ink-2:#c2c8d2; --muted:#8d96a5; --rule:#273039; --rule-2:#38414d;
+  --accent:#3987e5; --accent-ink:#8dbcf1; --accent-wash:rgba(57,135,229,.13); --accent-line:rgba(57,135,229,.5);
+  --s-helix:#3987e5; --s-none:#8f8e89; --s-shuf:#e2733f; --s-ctx:#a9c9f2; --s-step0:#5d8fcf; --s-ability:#2bbf87; --s-prefix:#2bbf87;
+  --good:#0ca30c; --good-ink:#3fc43f; --good-wash:rgba(12,163,12,.16);
+  --warn:#c98500; --warn-ink:#f2b63d; --warn-wash:rgba(201,133,0,.18);
+  --gain:rgba(57,135,229,.22); --loss:rgba(226,115,63,.22);
+  --grid:#232a33; --axis:#3d444e; --band:.2;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16.5px;line-height:1.62;margin:0}
+a{color:var(--accent-ink);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:24px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.18;margin:0;font-weight:600}
+p{margin:0}
+.mono{font-family:var(--font-mono)}
+.eyebrow{font-family:var(--font-body);font-size:.84rem;font-weight:600;letter-spacing:.01em;color:var(--accent-ink)}   /* sentence case keeps names such as OLMo-2-7B intact */
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:.7rem;letter-spacing:.02em;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--rule);border-radius:999px;padding:1px 8px;max-width:100%}
+.chip.prelim{color:var(--warn-ink);background:var(--warn-wash);border-color:transparent}
+.chip.real{color:var(--good-ink);background:var(--good-wash);border-color:transparent}
+
+/* ---------- hero ---------- */
+.hero{text-align:center;padding-block:52px 8px}
+.lockup{display:flex;align-items:center;justify-content:center;gap:clamp(8px,.9vw,13px);margin:0 auto}
+.logo{height:clamp(30px,1rem + 2.2vw,48px);width:auto;aspect-ratio:62/35;display:block;flex:none;margin:0}
+.hero h1{font-size:clamp(2rem,1.3rem + 3vw,3.3rem);letter-spacing:-.02em;font-weight:700;margin:0;text-align:left}
+.hero .sub{display:block;font-family:var(--font-display);font-weight:400;font-size:clamp(1.2rem,1rem + 1vw,1.6rem);color:var(--ink-2);margin-top:10px;letter-spacing:-.005em}
+.byline{margin-top:22px;font-size:1.06rem;display:flex;flex-direction:column;gap:3px;align-items:center}
+.byline .names{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px}
+.byline .name{font-weight:600}
+.byline sup{font-size:.7em;margin-left:1px;color:var(--ink-2)}
+.byline .aff{color:var(--ink-2);font-size:.95rem;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 16px}
+.byline .mail{font-family:var(--font-mono);font-size:.86rem;color:var(--muted);user-select:all}
+.links{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;font:500 .92rem/1.2 var(--font-body);background:var(--ink);color:var(--bg);border:1px solid var(--ink);text-decoration:none}
+.btn:hover{opacity:.88}
+.btn svg{width:18px;height:18px;flex:none}
+.btn .soon{font-family:var(--font-body);font-size:.76rem;font-weight:400;opacity:.8}
+.btn[aria-disabled="true"]{background:var(--surface-2);color:var(--muted);border-color:var(--rule);cursor:not-allowed}
+.btn[aria-disabled="true"]:hover{opacity:1}
+.btn.ghost{background:var(--surface);color:var(--accent-ink);border-color:var(--accent-line)}
+
+/* ---------- tldr ---------- */
+.tldr{max-width:940px;margin:40px auto 0;background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:26px 28px;box-shadow:var(--shadow);text-align:left}
+.tldr .lead{font-family:var(--font-display);font-size:clamp(1.12rem,1rem + .5vw,1.34rem);line-height:1.48;margin-top:8px}
+.tldr .lead b{font-weight:600;color:var(--accent-ink)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+.stat{background:var(--surface-2);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.stat .v{font-family:var(--font-display);font-size:1.5rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .l{font-size:.84rem;color:var(--ink-2);line-height:1.4}
+.stat .chip{align-self:flex-start;margin-top:auto}
+.scope{margin-top:16px;font-size:.88rem;color:var(--muted)}
+.principles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.principle{border-top:3px solid var(--accent);padding-top:10px}
+.principle h3{font-family:var(--font-body);font-size:.98rem;font-weight:600}
+.principle p{font-size:.88rem;color:var(--ink-2);margin-top:4px}
+.principle a{text-decoration:none}
+
+/* ---------- sections ---------- */
+section.sec{padding-block:64px 0}
+.subhead{font-family:var(--font-display);font-size:clamp(1.12rem,1.02rem + .4vw,1.3rem);font-weight:600;margin:34px 0 4px;scroll-margin-top:24px}
+.subhead + .subtake{font-size:.96rem;color:var(--ink-2);max-width:var(--measure);margin:0 0 14px}
+.sec-head{display:flex;flex-direction:column;gap:6px;margin-bottom:24px}
+.sec-head h2{font-size:clamp(1.45rem,1.15rem + 1.1vw,1.95rem)}
+.sec-head .take{font-size:1.06rem;line-height:1.6;color:var(--ink-2);max-width:var(--measure);margin-top:4px}
+.sec-head .take b{color:var(--ink);font-weight:600}
+figure{margin:0;background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.fig-body{padding:16px 18px 6px;position:relative}
+.fig-title{font-weight:600;font-size:.98rem;margin-bottom:2px}
+.fig-sub{font-size:.84rem;color:var(--muted);margin-bottom:6px}
+figcaption{padding:10px 18px 16px;font-size:.86rem;color:var(--ink-2);line-height:1.5;border-top:1px solid var(--rule);margin-top:auto}
+figcaption .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.chart{width:100%;position:relative}
+.chart svg{display:block;width:100%;height:auto}
+.chart svg text{font-family:var(--font-body);fill:var(--muted);font-size:11.5px}
+.chart svg text.lab{fill:var(--ink-2)}
+.chart svg text.strong{fill:var(--ink);font-weight:600}
+.chart .fade{transition:opacity .35s ease}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--ink-2);margin:8px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2.5px solid currentColor}
+.legend i.dash{border-top-style:dashed}
+.legend i.dot{width:8px;height:8px;border-radius:50%;border:0}
+.legend b{font-family:var(--font-mono);font-weight:500;color:var(--ink)}
+.media video,.media img.still{display:block;width:100%;height:auto;background:#fcfcfb;aspect-ratio:16/9}
+.canvas3d{position:relative;aspect-ratio:1/1;max-height:420px;width:100%}
+.canvas3d canvas{width:100%;height:100%;display:block}
+.overlay{position:absolute;left:4px;top:2px;pointer-events:none}
+.overlay b{display:block;font-family:var(--font-display);font-size:1.2rem;color:var(--ink);font-weight:700;line-height:1.2}
+.overlay span{font-size:.82rem;color:var(--ink-2)}
+.ticks3d{display:flex;gap:3px;margin:6px 2px 10px}
+.ticks3d span{flex:1;height:4px;border-radius:2px;background:var(--rule)}
+.ticks3d span.on{background:var(--accent)}
+.key{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted);margin:0 0 10px}
+.key .ramp{height:7px;flex:1;max-width:180px;border-radius:4px}
+.tnote{font-size:.82rem;color:var(--muted);margin-top:12px;max-width:var(--measure)}
+.points{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.points li{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;font-size:.9rem;color:var(--ink-2)}
+.points li b{display:block;color:var(--ink);font-weight:600;margin-bottom:4px}
+.points .chip{margin-top:8px}
+.points.four{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ---------- method ---------- */
+.eq{font-family:var(--font-display);font-size:clamp(1.02rem,.95rem + .4vw,1.22rem);background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 18px;margin:4px 0 16px;overflow-x:auto;white-space:nowrap}
+.eq i{font-style:italic}
+.eq sub,.eq sup{font-size:.68em}
+.design{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.design div{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px 14px;font-size:.88rem;color:var(--ink-2)}
+.design b{display:block;color:var(--ink);font-family:var(--font-body);font-size:.92rem;font-weight:600;margin-bottom:3px}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:14px;box-shadow:var(--shadow);margin-top:18px}
+table.dom{border-collapse:collapse;width:100%;font-size:.86rem;font-variant-numeric:tabular-nums}
+table.dom th,table.dom td{padding:7px 12px;text-align:left;border-top:1px solid var(--rule);white-space:nowrap}
+table.dom thead th{border-top:0;background:var(--surface-2);font-family:var(--font-body);font-size:.8rem;font-weight:600;color:var(--ink-2)}
+table.dom td.n{text-align:right;font-family:var(--font-mono);font-size:.82rem}
+table.dom td.up{background:var(--gain);font-weight:600}
+table.dom td.dn{background:var(--loss);font-weight:600}
+table.dom tr.grp td{background:var(--surface-2);font-family:var(--font-body);font-size:.8rem;font-weight:600;color:var(--accent-ink);padding-block:5px}
+table.dom .band{color:var(--muted);font-size:.72rem;margin-left:2px}
+table.dom .read{color:var(--ink-2)}
+details.all{margin-top:14px}
+/* paper figures: the PNG sits on a white plate inside the card, in both themes, like a printed page */
+figure.paper .plate{background:#fff;padding:14px 16px 10px;border-bottom:1px solid var(--rule)}
+figure.paper .plate img{display:block;width:100%;height:auto;margin:0 auto}
+figure.paper.narrow .plate img{max-width:560px}
+figure.paper figcaption{border-top:0}
+/* the cost table wraps its text; each group of causes gets a label row */
+table.costs td{white-space:normal;vertical-align:top}
+table.costs td:first-child{font-weight:600;color:var(--ink);min-width:9.5rem}
+table.costs td:nth-child(2){min-width:12rem}
+table.costs td b{color:var(--ink);font-weight:600}
+table.dom tr.grp td{font-style:italic}
+/* hero: the latest results, one row of links */
+.news{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:18px;font-size:.84rem}
+.news .tag{font-weight:600;color:var(--accent-ink);margin-right:2px}
+.news a{color:var(--ink-2);text-decoration:none;border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:3px 12px}
+.news a:hover{border-color:var(--accent-line);color:var(--accent-ink)}
+/* two small result tables side by side */
+.tpair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:16px}
+.tpair .tblwrap{margin-top:0}
+table.dom caption{caption-side:top;text-align:left;padding:10px 12px 8px;font-weight:600;font-size:.86rem;color:var(--ink)}
+table.dom td.mono{font-family:var(--font-mono);font-size:.8rem}
+@media (max-width:720px){ .tpair{grid-template-columns:minmax(0,1fr)} }
+details.all summary{cursor:pointer;font-weight:500;color:var(--accent-ink)}
+
+/* ---------- claims table ---------- */
+.ctable{background:var(--surface);border:1px solid var(--rule);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.crow{display:grid;grid-template-columns:132px minmax(0,1fr) 128px 150px;gap:14px;padding:12px 18px;border-top:1px solid var(--rule);align-items:baseline;font-size:.92rem}
+.crow:first-child{border-top:0}
+.crow.head{background:var(--surface-2);font-family:var(--font-body);font-size:.8rem;font-weight:600;color:var(--ink-2);padding-block:9px}
+.crow .f{font-family:var(--font-mono);font-size:.78rem;color:var(--ink-2)}
+.crow .s{font-size:.82rem;color:var(--ink-2)}
+.crow.head span{font-size:.8rem;color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill svg{width:12px;height:12px}
+.pill.holds{background:var(--good-wash);color:var(--good-ink)}
+.pill.preliminary{background:var(--warn-wash);color:var(--warn-ink)}
+.prereg{display:block;font-size:.72rem;color:var(--accent-ink);margin-top:4px}
+
+/* ---------- bibtex ---------- */
+.bib{position:relative}
+.code{font-family:var(--font-mono);font-size:.8rem;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px 16px;white-space:pre;overflow-x:auto;color:var(--ink);user-select:all;margin:0}
+.copy{position:absolute;top:10px;right:10px;font:500 .78rem var(--font-body);background:var(--surface-2);color:var(--ink-2);border:1px solid var(--rule);border-radius:999px;padding:4px 12px;cursor:pointer}
+footer{margin-top:72px;padding-block:28px 56px;border-top:1px solid var(--rule);color:var(--muted);font-size:.84rem}
+footer p + p{margin-top:8px}
+.error-banner{max-width:920px;margin:18px auto 0;background:var(--warn-wash);color:var(--warn-ink);border-radius:10px;padding:10px 14px;font-size:.9rem}
+
+
+/* ---------- table of contents (left rail, wide screens only) ---------- */
+.toc{display:none}
+section.sec,#top{scroll-margin-top:24px}
+@media (min-width:1200px){
+  .page{margin-left:220px}
+  /* vertically centred rail; max-height keeps it scrollable on short windows */
+  .toc{display:block;position:fixed;top:50%;transform:translateY(-50%);left:28px;width:172px;font-size:.86rem;max-height:calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);overflow-y:auto}
+  .toc .toc-title{font-family:var(--font-body);font-size:.84rem;font-weight:600;color:var(--accent-ink);margin:0 0 8px 14px}
+  .toc ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--rule)}
+  .toc li a{display:block;padding:5px 0 5px 13px;margin-left:-1px;border-left:2px solid transparent;color:var(--ink-2);text-decoration:none;line-height:1.35}
+  .toc li a:hover{color:var(--ink)}
+  .toc li a[aria-current="true"]{color:var(--accent-ink);border-left-color:var(--accent);font-weight:600}
+  .toc li.sub a{padding:3px 0 3px 25px;font-size:.8rem;color:var(--muted)}
+  .toc li.sub a[aria-current="true"]{color:var(--accent-ink)}
+  .toc .toc-logo{display:flex;align-items:center;gap:8px;margin:0 0 18px 14px;color:var(--ink);text-decoration:none;font-family:var(--font-display);font-weight:600;font-size:.95rem;line-height:1.2}
+  .toc .toc-logo img{width:34px;height:auto;flex:none}
+}
+@media (max-width:960px){
+  .stats,.design{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .points{grid-template-columns:minmax(0,1fr)}
+  .crow{grid-template-columns:110px minmax(0,1fr);row-gap:6px}
+  .crow .st,.crow .s{grid-column:2}
+  .crow.head .st,.crow.head .s{display:none}
+  .crow:not(.head) .s::before{content:"Seeds: ";color:var(--muted)}
+}
+@media (max-width:720px){
+  body{font-size:16px}
+  .wrap{padding-inline:16px}
+  .grid2,.principles{grid-template-columns:minmax(0,1fr)}
+  .tldr{padding:20px 18px;margin-top:30px}
+  .hero{padding-block:40px 4px}
+  section.sec{padding-block:48px 0}
+  .fig-body{padding:14px 14px 4px}
+  figcaption{padding:10px 14px 14px}
+  .crow{grid-template-columns:1fr;gap:4px;padding:12px 14px}
+  .crow .st,.crow .s{grid-column:1}
+  .crow.head{display:none}
+}
+@media (max-width:560px){ .lockup{flex-direction:column} .hero h1{text-align:center} }
+@media (max-width:420px){ .stats,.design{grid-template-columns:1fr} }
+@media (max-width:960px){ .points.four{grid-template-columns:minmax(0,1fr)} }
+</style>
+
+<nav class="toc" aria-label="Contents">
+  <a class="toc-logo" href="#top"><img src="media/logo.svg" alt="" width="34" height="19">Manifold Pretraining Engineering</a>
+  <p class="toc-title">Contents</p>
+  <ol>
+    <li><a href="#animations">The prior at work</a></li>
+    <li><a href="#method">Method</a></li>
+    <li><a href="#pretraining">Pretraining from scratch</a></li>
+    <li><a href="#scale">Model size, several priors</a></li>
+    <li><a href="#time">Right time</a></li>
+    <li class="sub"><a href="#time-geometry">Representations first</a></li>
+    <li class="sub"><a href="#time-window">When the prior helps</a></li>
+    <li><a href="#geometry">Right geometry</a></li>
+    <li class="sub"><a href="#geometry-control">Shuffled control</a></li>
+    <li class="sub"><a href="#geometry-parts">Parts of the helix</a></li>
+    <li><a href="#place">Right place</a></li>
+    <li><a href="#limits">What a prior does not do</a></li>
+    <li class="sub"><a href="#costs">What it costs</a></li>
+    <li><a href="#claims">Claims and evidence</a></li>
+    <li><a href="#bibtex">BibTeX</a></li>
+  </ol>
+</nav>
+<div class="page">
+<header class="hero wrap" id="top">
+  <div class="lockup">
+    <img class="logo" src="media/logo.svg" alt="" width="85" height="48">
+    <h1>Manifold Pretraining Engineering</h1>
+  </div>
+  <span class="sub">Right Geometry, Right Time, Right Place</span>
+  <div class="byline">
+    <span class="names">
+      <span class="name">Yihuai Hong<sup>1,2</sup></span>
+      <span class="name">Hanxi Ma<sup>2,3</sup></span>
+      <span class="name">Chen Zhao<sup>2</sup></span>
+    </span>
+    <span class="aff"><span><sup>1</sup>New York University</span><span><sup>2</sup>NYU Shanghai</span><span><sup>3</sup>Peking University</span></span>
+    <span class="mail">yihuaihong@nyu.edu</span>
+  </div>
+  <nav class="links" aria-label="Project links">
+    <span class="btn" aria-disabled="true" title="Coming soon"><!-- arXiv logo: Simple Icons, CC0 --><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.8423 0a1.0037 1.0037 0 0 0-.922.6078c-.1536.3687-.0438.6275.2938 1.1113l6.9185 8.3597-1.0223 1.1058a1.0393 1.0393 0 0 0 .003 1.4229l1.2292 1.3135-5.4391 6.4444c-.2803.299-.4538.823-.2971 1.1986a1.0253 1.0253 0 0 0 .9585.635.9133.9133 0 0 0 .6891-.3405l5.783-6.126 7.4902 8.0051a.8527.8527 0 0 0 .6835.2597.9575.9575 0 0 0 .8777-.6138c.1577-.377-.017-.7502-.306-1.1407l-7.0518-8.3418 1.0632-1.13a.9626.9626 0 0 0 .0089-1.3165L4.6336.4639s-.3733-.4535-.768-.463zm0 .272h.0166c.2179.0052.4874.2715.5644.3639l.005.006.0052.0055 10.169 10.9905a.6915.6915 0 0 1-.0072.945l-1.0666 1.133-1.4982-1.7724-8.5994-10.39c-.3286-.472-.352-.6183-.2592-.841a.7307.7307 0 0 1 .6704-.4401Zm14.341 1.5701a.877.877 0 0 0-.6554.2418l-5.6962 6.1584 1.6944 1.8319 5.3089-6.5138c.3251-.4335.479-.6603.3247-1.0292a1.1205 1.1205 0 0 0-.9763-.689zm-7.6557 12.2823 1.3186 1.4135-5.7864 6.1295a.6494.6494 0 0 1-.4959.26.7516.7516 0 0 1-.706-.4669c-.1119-.2682.0359-.6864.2442-.9083l.0051-.0055.0047-.0055z"/></svg>Paper <span class="soon">arXiv soon</span></span>
+    <a class="btn" href="https://github.com/yihuaihong/manifolds" target="_blank" rel="noopener"><!-- GitHub mark: Octicons mark-github-16, MIT --><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.450 7.590c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.020-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></svg>Code</a>
+    <a class="btn ghost" href="#bibtex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-4-7 4V6a2 2 0 0 1 2-2z"/></svg>BibTeX</a>
+  </nav>
+  <div class="news" aria-label="Latest results">
+    <span class="tag">Latest</span>
+    <a href="#combo">Six priors together: all six gain, and learn 2–5× sooner</a>
+    <a href="#scale">Six model sizes at a fixed 300M tokens</a>
+    <a href="#time-window">The benefit window across OLMo-2 1B–32B</a>
+    <a href="#geometry-parts">Which parts of the helix matter</a>
+    <a href="#costs">What a prior costs</a>
+  </div>
+
+  <div class="tldr">
+    <p class="eyebrow">In one paragraph</p>
+    <p class="lead">Interpretability has found the manifolds on which language models represent concepts, such as a <b>helix for numbers</b>. We turn them into a training technique: a <b>manifold prior</b>, an auxiliary loss that pulls a model's representations of a concept towards a target manifold, each item towards its own point on it. With the right geometry, at the right time and in the right place, models learn addition faster, in fine-tuning and in pretraining from scratch; with scarce arithmetic data, the prior decides whether addition is learned within the budget at all.</p>
+    <div class="stats">
+      <div class="stat"><span class="v">18% → 70%</span><span class="l">held-out accuracy averaged over training with 2% arithmetic tokens, each model at its own best learning rate, higher with the prior in 8 of 8 paired seeds (29% → 78% at 190M, 24% → 77% at 505M)</span><span class="chip">F86 · 8 seeds</span></div>
+      <div class="stat"><span class="v">+36.1 points</span><span class="l">at 1.07B parameters, the largest model we pretrained (53% → 89%, 8 of 8 seeds; 33.5 on four held-back seeds; other GPUs, learning rates chosen on two seeds): from 53M to 1.07B the prior keeps its advantage at every size, and with the amount of data fixed it is larger for larger models</span><span class="chip">F87 · F99 · 8 seeds</span></div>
+      <div class="stat"><span class="v">≈ 5×</span><span class="l">fewer fine-tuning steps to 90% for an early OLMo-2-7B checkpoint (30-epoch runs), ending at 100% held-out accuracy against about 95% without the prior</span><span class="chip">F54 · 3 seeds</span></div>
+      <div class="stat"><span class="v">+43.5 points</span><span class="l">of curve-average accuracy at 190M with 2% arithmetic, from a prior only on numbers in ordinary web text, never on the problems (at the operand prior's learning rate, against the model without a prior at its own best; mean of 8 seeds, 8 of 8 positive; +13.0 at 53M after 1.2B tokens)</span><span class="chip">F86 · 8 seeds</span></div>
+    </div>
+    <div class="principles">
+      <div class="principle"><h3><a href="#geometry">Right geometry</a></h3><p>A complete, regular manifold that matches the computation; a shuffled one of the same strength hurts.</p></div>
+      <div class="principle"><h3><a href="#time">Right time</a></h3><p>A window while the task is being learned, from about 5% to 40% of pretraining.</p></div>
+      <div class="principle"><h3><a href="#place">Right place</a></h3><p>The concept's own tokens, even in ordinary text, within the operations the geometry matches.</p></div>
+    </div>
+    <p class="scope">Scope: whole-number tokenizers (as in OLMo-2), pretraining from scratch at 53M–1.07B parameters (main comparisons with each model at its own best learning rate; only the learning rate was tuned), and LoRA fine-tuning of OLMo-2 and Pythia checkpoints (160M–32B). We did not search for the best target: for most of 36 concepts our hand-designed targets did not help, and we invite finer ones.</p>
+  </div>
+  <div class="error-banner" id="load-error" hidden>The data files in <span class="mono">data/</span> could not be loaded, so the animated charts are empty. Open the page through a web server, not as a local file.</div>
+</header>
+
+<main>
+<!-- ======================================================= faster: animations -->
+<section class="sec wrap" id="animations">
+  <div class="sec-head">
+    <p class="eyebrow">Faster learning · fine-tuning OLMo-2-7B</p>
+    <h2>The prior at work</h2>
+    <p class="take">With the helix prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition <b>about 5× sooner</b> (in 30-epoch runs), and its numbers settle into a clean helix.</p>
+  </div>
+  <figure class="media">
+    <video muted loop playsinline autoplay preload="metadata" poster="media/race_9B.png" aria-label="Animated learning curves: helix prior, no prior and shuffled helix">
+      <source src="media/race_9B.mp4" type="video/mp4"><img class="still" src="media/race_9B.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix">
+    </video><script>__still(document.currentScript.previousElementSibling)</script>
+    <figcaption><b>The race.</b> Held-out accuracy on 1,000 unseen two-digit sums while fine-tuning OLMo-2-7B (checkpoint after 9B pretraining tokens; LoRA; 7,000 training sums). The helix prior reaches 50% after 900 steps, no prior after 4,150; a shuffled helix stays near chance. In 30-epoch runs, the model without the prior first reaches 90% after 6,300–7,100 steps, the prior after 1,400.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F64 · F48 · F54</span><span class="chip">mean of 3 seeds</span></span></figcaption>
+  </figure>
+  <div class="grid2" style="margin-top:18px">
+    <figure class="media">
+      <video muted loop playsinline autoplay preload="metadata" poster="media/helix3d_9B.png" aria-label="Animated 3D view of number representations with and without the prior">
+        <source src="media/helix3d_9B.mp4" type="video/mp4"><img class="still" src="media/helix3d_9B.png" alt="Final frame: rough coil without the prior, clean helix with it">
+      </video><script>__still(document.currentScript.previousElementSibling)</script>
+      <figcaption><b>From a rough coil to a clean helix.</b> Layer-16 states of the numbers 10 → 99, joined in order, without (left) and with (right) the prior. Strip: similarity to an ideal helix (CKA); the model's own number geometry is about 0.70 helix-like, and the prior makes it regular.
+        <span class="chips"><span class="chip real">real data</span><span class="chip">F41 setup · F58</span><span class="chip">1 seed</span></span></figcaption>
+    </figure>
+    <figure class="media">
+      <video muted loop playsinline autoplay preload="metadata" poster="media/shape_9B.png" aria-label="Animated 2D view of last-digit clusters with and without the prior">
+        <source src="media/shape_9B.mp4" type="video/mp4"><img class="still" src="media/shape_9B.png" alt="Final frame: last-digit clusters without and with the prior">
+      </video><script>__still(document.currentScript.previousElementSibling)</script>
+      <figcaption><b>Numbers that share a last digit snap together.</b> Same run: the mean state of each last digit (big dots) and the 90 numbers (small dots), PCA of layer 16, without (left) and with (right) the prior.
+        <span class="chips"><span class="chip real">real data</span><span class="chip">F41 setup</span><span class="chip">1 seed</span></span></figcaption>
+    </figure>
+  </div>
+  <figure class="paper" style="margin-top:18px">
+    <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
+    <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b> Top: pretraining from scratch with 2% arithmetic tokens, each arm at its own best learning rate. Bottom: fine-tuning OLMo-2-7B at its 9B-token checkpoint on 7,000 addition pairs. (b, c, f, g) Representations, in axes computed with the help of the number labels (seed 0; CKA of the whole representation with the target: 0.62 in b, 0.94 in c). (d, h) Held-out accuracy (8 and 3 seeds; mean and min–max).
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F86 · F92 · F64</span></span></figcaption>
+  </figure>
+</section>
+
+<!-- ======================================================= method -->
+<section class="sec wrap" id="method">
+  <div class="sec-head">
+    <p class="eyebrow">Method</p>
+    <h2>A manifold prior pulls a concept's representations towards a target manifold</h2>
+    <p class="take">Collect the hidden states <i>H</i> of a concept's items (for example the numbers 0–999), pick a target geometry <i>F</i>, and add one minus their linear CKA to the training loss. CKA ignores global rotation and scale, so the loss is low only if the representation itself has the target's shape, with each item at its own target point.</p>
+  </div>
+  <div class="eq" role="math" aria-label="L equals L task plus the sum over k of lambda k t times L geo k, with L geo equal to one minus the CKA between H and F"><i>L</i> = <i>L</i><sub>task</sub> + Σ<sub><i>k</i></sub> λ<sub><i>k</i>,<i>t</i></sub> · <i>L</i><sub>geo</sub><sup>(<i>k</i>)</sup>,&nbsp;&nbsp;&nbsp; <i>L</i><sub>geo</sub> = 1 − CKA(<i>H<sub>L</sub></i>, <i>F<sub>G</sub></i>)</div>
+  <div class="design">
+    <div><b>Target</b>a helix for numbers (periods 2, 5, 10, 100, 1000), a circle for cycles, a line for orders, or a geometry read out of a trained model</div>
+    <div><b>Schedule</b>λ<sub>t</sub> on throughout, in a window [w<sub>0</sub>, w<sub>1</sub>) of training (main recipe: 5%–40%), or self-timed by training accuracy</div>
+    <div><b>Site</b>separate prompts of the items, the items where they occur in the training data, or numbers in ordinary web text</div>
+    <div><b>Multiple priors</b>one per concept: one weight divided among them (λ / <i>K</i>) or a weight for each</div>
+  </div>
+  <div class="tblwrap">
+    <table class="dom" aria-label="Concepts for which a manifold prior helped">
+      <thead><tr><th>Concept</th><th>Target</th><th>Setting</th><th>Effect of the prior</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Numbers</td><td>helix</td><td>pretraining 53M, 2% arithmetic</td><td class="n up">18.4% → 69.9%</td><td class="read">curve average, 8 seeds (F86)</td></tr>
+        <tr><td></td><td></td><td>fine-tuning OLMo-2-7B, 9B tokens</td><td class="n up">90% ≈ 5× sooner</td><td class="read">30-epoch runs (F54)</td></tr>
+        <tr><td>Months</td><td>circle</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+21.6 points</td><td class="read">step task (F81)</td></tr>
+        <tr><td>Weekdays</td><td>circle on answer states</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+32.6 points</td><td class="read">transfer across equivalent shifts (F43)</td></tr>
+        <tr><td>S4 group</td><td>matrix representation</td><td>pretraining 53M, six priors</td><td class="n up">+26.3 points</td><td class="read">cells table filling cannot reach; target encodes the table; not shown in a later combination (F88, F102)</td></tr>
+        <tr><td>Dimensions</td><td>lattice</td><td>pretraining 53M, six priors together</td><td class="n up">+33.9 points</td><td class="read">curve average, 8 fresh seeds; target carries the answers (F105)</td></tr>
+        <tr><td>Cities</td><td>sphere</td><td>pretraining 53M, six priors together</td><td class="n up">+6.3 points</td><td class="read">curve average, 8 fresh seeds; target carries the answers (F105)</td></tr>
+        <tr><td>Countries</td><td>sphere</td><td>pretraining 53M, six priors together</td><td class="n up">+5.8 points</td><td class="read">curve average, 8 fresh seeds; target carries the answers (F105)</td></tr>
+        <tr><td>ℤ₆² group</td><td>torus</td><td>pretraining 53M, six priors together</td><td class="n up">+22.0 points</td><td class="read">curve average, 8 fresh seeds; target carries the answers; gains mainly while its prior is on (F105)</td></tr>
+        <tr><td>Grid sums</td><td>grid</td><td>pretraining 53M, six priors together</td><td class="n up">+19.7 points</td><td class="read">curve average, 8 fresh seeds; target carries the answers; gains mainly while its prior is on (F105)</td></tr>
+        <tr><td>Exponent vectors</td><td>coordinates</td><td>one-layer toy, 6.7% of the table</td><td class="n up">0/5 → 5/5 reach 95%</td><td class="read">28 settings without a prior, 4× budget (low weight decays added after the pre-registered test); prior only at lr 10⁻³; target encodes the whole table (F95)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <details class="all">
+    <summary>All 36 concept domains (fine-tuning screen)</summary>
+    <div class="tblwrap"><table class="dom" id="dom36" aria-label="All 36 concept domains"></table></div>
+  </details>
+  <p class="tnote">The settings in the table above differ, so its rows are not comparable. In the screen of all 36 domains, among targets that do not encode the answer the geometry helped only numbers (42B) and months (210B); a hand-designed target that does not help shows that this target does not, not that no target would. 42B / 210B: gain of the prior in held-out accuracy (points) when fine-tuning OLMo-2-7B at that checkpoint (3 seeds); shaded: robust gain or loss. Task <i>step</i>: “k steps after x”, where the target carries no answer; <i>order</i>: which of two items is larger or earlier; <i>anchor</i>: which of two items is closer to a third, where the target coordinates imply the answers. <sup>f</sup>/<sup>c</sup>: accuracy without the prior at floor / ceiling. Decodable: number of eight final models in which the target coordinates can be read out linearly. Source: F81, F74.</p>
+</section>
+
+<!-- ======================================================= faster: pretraining -->
+<section class="sec wrap" id="pretraining">
+  <div class="sec-head">
+    <p class="eyebrow">Faster learning · pretraining from scratch</p>
+    <h2>In pretraining, the prior decides whether scarce arithmetic is learned within the budget</h2>
+    <p class="take">With 2% arithmetic tokens and every model at its own best learning rate, the prior lifts accuracy on unseen problems, averaged over training, from <b>18%</b> to <b>70%</b> (8 seeds); at one shared learning rate, a model without the prior ends at 17% and one with the prior on numbers in web text at 96%. With 7% arithmetic every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
+  </div>
+  <div class="grid2" data-group="g-pt">
+    <figure>
+      <div class="fig-body"><div class="fig-title">Scarce data: 2% arithmetic</div><div class="fig-sub">operands 0–999 · 8 seeds per curve</div>
+        <div class="chart" id="c-scarce"></div><div class="legend" id="l-scarce"></div></div>
+      <figcaption>“From step 0”: a self-timed prior run from the first step, which with 2% arithmetic stays on for 68–100% of training on the operands and throughout on web text. The model without a prior fits a pool of recurring problems (77%) but not unseen ones. A shuffled helix in the same window gives no gain (−1.8 points on the operands, −0.9 in web text). With each model at its own best learning rate, the prior on the operands still lifts the curve average from 18% to 70% (53M), from 29% to 78% (190M) and from 24% to 77% (505M), means over 8 seeds.<span class="chips"><span class="chip real">real data</span><span class="chip">F82 · F86</span><span class="chip">curves: learning rate 10⁻³</span></span></figcaption>
+    </figure>
+    <figure>
+      <div class="fig-body"><div class="fig-title">More data: 7% arithmetic</div><div class="fig-sub">prior on the operands in context, throughout · 8 seeds per curve</div>
+        <div class="chart" id="c-pc"></div><div class="legend" id="l-pc"></div></div>
+      <figcaption>◆ on the 90% line: median tokens to 90%. The shuffled helix has the same dose (on for 96% vs 100% of steps, same gradient size, same language-modelling cost) and lowers the curve average by 23.6 points.<span class="chips"><span class="chip real">real data</span><span class="chip">F82</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+    </figure>
+  </div>
+  <p class="tnote">Setup: a 53M-parameter OLMo-2-style model pretrained on 300M tokens of FineWeb-Edu with addition problems (operands 0–999) after each text chunk. Accuracy: held-out problems whose two orders were never trained, averaged over the six operand-length combinations, evaluated where training puts arithmetic. Each seed draws its own held-out split, initialisation and data order, so the held-back seeds evaluate the chosen learning rates in independent runs; their held-out problems are drawn independently and can overlap with those of the selection seeds, mostly among the small sums. With each model at its own best learning rate and 7% arithmetic, the prior reaches 90% 3.7× sooner at 53M and 3.9× sooner at 190M over 8 seeds, and 4.2× sooner (first crossing) at 505M (F87); at 1.07B it first reaches 50% 4.7× sooner on the held-back seeds (5.7× on seeds 0–3, two of which chose the learning rates). Lines: mean over seeds; bands: range across seeds.</p>
+</section>
+
+<!-- ======================================================= model size, several priors -->
+<section class="sec wrap" id="scale">
+  <div class="sec-head">
+    <p class="eyebrow">Model size · several priors at once</p>
+    <h2>We pretrain models from scratch at 53M to 1.07B parameters: the advantage holds at every size, and several priors can share one run</h2>
+    <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested: at 505M, it raises the curve average from 24% to 77% with 2% arithmetic and from 57.5% to 89.7% with 7% arithmetic, by <b>32.2 points</b>. At 1.07B, on other GPUs and with the learning rates chosen on two seeds, it raises the curve average from 53% to 89% over all 8 seeds, by <b>36.1 points</b> (8 of 8; 33.5 on the four held-back seeds). How the gain changes with model size depends on what is held fixed: <b>with the number of tokens fixed, larger models gain more</b>; with the ratio of tokens to parameters fixed, so that larger models also see more data, there is no consistent trend. Six priors trained together lift numbers, a group table (S4) and physical dimensions above both models without priors at the learning rates chosen on numbers; at higher learning rates the models without priors do better on S4 and dimensions.</p>
+  </div>
+  <figure data-group="g-size" style="margin-bottom:18px">
+    <div class="fig-body"><div class="fig-title">Six sizes, one recipe: 300M tokens, 7% arithmetic</div><div class="fig-sub">each arm at its own learning rate · means over 8 seeds · the number is the gain</div>
+      <div class="chart" id="c-size"></div><div class="legend" id="l-size"></div></div>
+    <figcaption>Curve-average held-out accuracy without and with the helix prior. With the number of tokens fixed, larger models gain more, though not monotonically (93M lies above 190M): the model without a prior falls from 66% to 53%, while the prior stays near 90%. Four of the six sizes had been seen before the size test was registered, so the two new ones (93M and 294M) are consistent with the trend rather than an independent confirmation; 294M and 1.07B ran on B200 GPUs (†), and with the L40S sizes alone the interval from the spread of sizes includes zero.<span class="chips"><span class="chip real">real data</span><span class="chip">F87 · F99</span><span class="chip">pre-registered size test</span></span></figcaption>
+  </figure>
+  <figure class="paper">
+    <div class="plate"><img src="media/fig2_scaling.png" alt="Paper Figure 2: curve-average accuracy of every seed at several model sizes, without and with the prior, and six priors at once at 53M, 190M and 505M"></div>
+    <figcaption><b>Paper Figure 2. The gain at several model sizes, each arm at its own best learning rate.</b> Dots: seeds; bars: means. (a, b) Curve-average held-out accuracy, 8 seeds; †on B200 GPUs, with the learning rates chosen on 2 seeds. (c) The first set of six priors (§4.4), 4 seeds, descriptive (S4 and dimensions: final accuracy on held-out cells). The learning rates were chosen on numbers, so the models without priors are not tuned for S4 or dimensions; dark grey: their highest learning rate tried, at 190M.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F86 · F87 · F88</span></span></figcaption>
+  </figure>
+  <figure class="paper narrow" style="margin-top:18px">
+    <div class="plate"><img src="media/fig3_size.png" alt="Paper Figure 3: gain of the helix prior against model size with 300M tokens, 0.745 tokens per parameter or 0.318 tokens per parameter (7% arithmetic), and with 2% arithmetic in its own panel, every seed shown as a dot"></div>
+    <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior in curve-average held-out accuracy (mean of 8 paired seeds with 95% interval; dots: seeds), each arm at its own learning rate. Tokens per parameter count non-embedding parameters. Hollow markers are at the floor and excluded from the trend tests (pre-registered rule). †On B200 GPUs.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F97 · F98 · F99</span><span class="chip">pre-registered</span></span></figcaption>
+  </figure>
+  <p class="tnote">How the gain changes with model size depends on what is held fixed. We also pretrain models from 93M to 1.07B parameters with 7% arithmetic at two fixed ratios of tokens to non-embedding parameters, 0.318 and 0.745, each arm at its own learning rate. With the number of tokens fixed, larger models gain more. With 7% arithmetic and 300M tokens, the gain is 22.8, 28.9, 23.5, 29.1, 32.2 and 36.1 points at 53M, 93M, 190M, 294M, 505M and 1.07B, and a pre-registered test over these six sizes finds it larger at larger sizes (p = 0.038 from the spread of the six sizes). We had seen the results at four of the six sizes before registering the test, so the two new sizes are consistent with the trend but do not confirm it independently. The gain is not monotonic (93M lies above 190M), the 294M and 1.07B models ran on B200 GPUs, and with the L40S sizes alone the interval for the slope from the spread of sizes includes zero. The larger gain comes from the model without a prior, whose curve average falls from 66% to 53% while the model with the prior stays near 90%. With the ratio of tokens to non-embedding parameters fixed, so that larger models also see more data, there is no consistent trend. At 0.745 the gain falls from 64.4 points at 190M to 13.0 at 1.07B, a fall that the pre-registered test finds only by excluding the 93M model, which is at the floor. At 0.318 it rises from 33.1 to 63.0 and falls back to 36.1. The two results fit together because the gain varies mainly with the number of training tokens: within one size it first rises and then falls (at 190M: 33.1, 64.4 and 23.5 points at 36M, 84M and 300M tokens), peaking roughly between 70M and 130M tokens with 7% arithmetic, and with more tokens the model without a prior catches up (at 1.07B and 703M tokens, 79.3% against 92.3%). At a fixed ratio the larger models train on more tokens and lie further down the falling side. The number of tokens varies together with the amount of arithmetic seen, the timing of the window and the prior's share of the gradient, and this design does not separate these factors. With 2% arithmetic and 300M tokens (a setting we do not compare with 7%), the gain is 48.0, 49.9 and 53.0 points at 53M, 190M and 505M. The pre-registered test finds it larger at larger sizes (1.44 points per e-fold of non-embedding parameters, 90% interval [0.22, 2.64]), but the evidence is marginal (p = 0.11 across seeds), and the increase comes mainly from the model with the prior. A bridge run at 505M on the B200 GPUs used at 1.07B matches the results on the other GPUs. (F97, F98, F99)</p>
+  <p class="tnote">The first set of six priors in larger models. At 190M and 505M (4 seeds, descriptive; learning rates chosen on numbers, at 505M on two seeds), the first six priors again lift numbers and dimensions above both models without priors at these learning rates, in every seed (Paper Figure 2c). The models without priors were not tuned for S4 or dimensions and do better at higher learning rates: at 190M and 1.92×10⁻², the highest rate we tried, their final accuracy on fresh held-out S4 cells is 60.5% against 44.5% with the six priors (not significant), and at 505M their accuracy on both rises up to the highest rate we tried (two seeds). On fresh held-out S4 cells, where the Latin-square filler scores 32.5%, the six priors are not significantly above it at 190M (+12.0, 95% CI [−9.9, +33.8]), and at 505M they reach 29.6% from about 1% without priors, the filler's level. At 190M, the six priors are 34 points below the number prior alone on the clock at the same learning rate (62.2% against 96.4%), a gap that closes when the clock prior is left out, but these runs cannot separate the clock prior's own effect from redundancy with the other priors. At 505M and the same learning rate, the six priors cost 0.013 bits per byte and the number prior alone 0.005. (F88)</p>
+</section>
+
+<!-- ======================================================= six priors together (paper Section 4.4 and App. J, F105 / F105 addendum 2 / F102 / F100 / F101 / F104) -->
+<section class="sec wrap" id="combo">
+  <div class="sec-head">
+    <p class="eyebrow">Several priors at once · pre-registered, 8 fresh seeds</p>
+    <h2>Trained together, six priors lift all six of their concepts, and the model reaches the final accuracy without priors after 8–30% of training</h2>
+    <p class="take">With the six priors together, each of the six manifolds is above the model without priors at every one of the six learning rates we tried, from 2×10⁻³ to 6.4×10⁻², in 8 of 8 seeds, except the grid at the highest rate (7 of 8). For every manifold the best of these rates lies strictly inside this range, and against it the curve average rises by 46.9 points on numbers, 33.9 on dimensions, 6.3 on cities, 5.8 on countries, 22.0 on the torus and 19.7 on the grid (Holm p ≤ 0.0023). With the six priors the model also learns faster. It reaches the end-of-training accuracy of the model without priors at its best rate (the one with the highest curve average) after 30, 8, 14, 10, 27 and 10% of training on numbers, dimensions, cities, countries, the torus and the grid, in every seed, and gets 90% of the way there from chance 2.1 to 5.0 times sooner (table below); at no other rate does the model without priors get there sooner.</p>
+  </div>
+  <figure data-group="g-combo" style="margin-bottom:18px">
+    <div class="fig-body"><div class="fig-title">Six priors in one 53M pretraining run</div><div class="fig-sub">curve-average held-out accuracy · no priors at the best of six learning rates for each manifold · means over 8 fresh seeds · the number is the gain</div>
+      <div class="chart" id="c-combo"></div><div class="legend" id="l-combo"></div></div>
+    <figcaption>The torus and the grid gain mainly while their priors are on (18.5 of 22.0 and 14.5 of 19.7 points come inside the window). Their mean curves peak near the close of the window at 98.2% and 83.3%, above the peak of the model without priors at any rate (94.6% and 58.5%). At the end of training the torus is below the model without priors at its two best rates (by 3.0 and 1.1 points) and above it at the other four, and the grid is 1.6 points below at its best rate (ahead in 5 of 8 seeds); the other four manifolds still lead (by 33.9, 30.7, 3.7 and 3.7 points).
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F105</span><span class="chip">pre-registered</span><span class="chip">peaks: F105 add. 2, post hoc</span></span></figcaption>
+  </figure>
+  <div class="tblwrap">
+    <table class="dom" aria-label="Six priors pretrained together">
+      <thead><tr><th>Manifold</th><th>No priors</th><th>Six priors</th><th>Gain (seeds won)</th><th>End</th><th>Faster</th><th>Six − one at 2×10⁻³ [95% interval]</th></tr></thead>
+      <tbody>
+        <tr><td>Numbers</td><td class="n">23.6%</td><td class="n">70.5%</td><td class="n up">+46.9 (8/8)</td><td class="n">+33.9</td><td class="n up">3.9×</td><td class="n">−0.5 [−1.1, +0.1]</td></tr>
+        <tr><td>Dimensions</td><td class="n">47.3%</td><td class="n">81.2%</td><td class="n up">+33.9 (8/8)</td><td class="n">+30.7</td><td class="n up">4.4×</td><td class="n">+13.5 [+7.4, +19.6]</td></tr>
+        <tr><td>Cities</td><td class="n">86.3%</td><td class="n">92.6%</td><td class="n up">+6.3 (8/8)</td><td class="n">+3.7</td><td class="n up">2.6×</td><td class="n">+1.7 [−0.3, +3.7]</td></tr>
+        <tr><td>Countries</td><td class="n">89.3%</td><td class="n">95.1%</td><td class="n up">+5.8 (8/8)</td><td class="n">+3.7</td><td class="n up">2.1×</td><td class="n">+1.2 [+0.0, +2.4]</td></tr>
+        <tr><td>Torus</td><td class="n">63.0%</td><td class="n">85.0%</td><td class="n up">+22.0 (8/8)</td><td class="n">−3.0</td><td class="n up">4.1×</td><td class="n">+4.4 [+0.6, +8.2]</td></tr>
+        <tr><td>Grid</td><td class="n">41.0%</td><td class="n">60.6%</td><td class="n up">+19.7 (8/8)</td><td class="n">−1.6</td><td class="n up">5.0×</td><td class="n">+7.4 [−2.0, +16.7]</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tnote">Paper Table 2. Six priors pretrained together (53M, 8 fresh seeds): curve-average held-out accuracy (%) without priors, at the best of six learning rates for that manifold, and with the six (at 10⁻³); the paired gain (seeds won), the gain at the end of training (End) and how many times sooner the six get 90% of the way from chance to the final accuracy without priors (Faster). Six − one: the six priors minus that manifold's prior alone, both at 2×10⁻³ (95% interval). Dimensions: the strict held-out set. Except for numbers, the targets encode the answers. (F105; Faster: F105 addendum 2)</p>
+  <h3 class="subhead" id="combo-transfer">Trained together, the priors help each other</h3>
+  <p class="subtake">At 2×10⁻³, joint training costs at most 0.5 points on any manifold relative to its prior alone and lifts dimensions by 13.5 points (8 of 8 seeds; a direction we did not pre-register, Holm p = 0.0037). Interference is thus not detected for any of the six: every 95% interval excludes a loss larger than half of that prior's gain over the model without priors at this rate. The lift grows after the priors switch off. From the close of the window to the end of training, the dimensions prior alone loses 32.9 points and the six together 12.4, and on the torus 21.9 and 9.8 (the prior alone loses more in 8 of 8 seeds on both), so at the end of training the six lead the prior alone by 25.0 points on dimensions and 11.7 on the torus (8 of 8 seeds each; post hoc). (F105; F105 addendum 2)</p>
+  <p class="tnote">Training a single prior also raises the CKA of structurally similar domains to their own targets, although their tokens do not overlap. Against the model without priors at the same rate, at the close of the window, the grid prior alone raises the CKA of dimensions by 0.16 and the dimensions prior that of the grid by 0.18, and the city and country priors raise each other's by 0.22 and 0.24 (8 of 8 seeds each; mean over the two layers the priors act on, about three times larger at the upper one). The torus prior raises dimensions and the grid by 0.08 and 0.09 (7 of 8 seeds, upper layer only), no prior raises the torus by more than 0.05, and between families the rise is at most 0.06 (0.11 at the upper layer). In the model without priors, the prior gradients of these two pairs are already aligned (cosine 0.12 and 0.13, against at most 0.03 for the other pairs). Dimensions and the grid are both sums and differences on a small lattice, so similar structure and a similar task cannot be separated here. After the window, each domain's CKA to its own target is retained equally with and without the other priors (95% intervals of the paired difference within −0.010 and +0.012). CKA measures how close a domain's representations are to its target geometry (1 = identical). (F105 addendum 2, post hoc)</p>
+  <p class="tnote">Numbers is the only manifold with a negative mean, −0.5 points (lower in 7 of 8 seeds), 1% of its prior's gain and far inside this bound. The torus, countries and cities are above their priors alone in 6 of 8 seeds (p = 0.014–0.043 uncorrected, not significant after Holm correction). For the five domains other than numbers the target encodes the answers, so these gains show that the model uses structure it is given; this run has no shuffled target, and the six tests share the same runs. With the six priors at 10⁻³, the language-modelling loss carries 71% of the gradient norm during the window (median clipping coefficient 1.00), and the final validation loss, 1.213 bits per byte, lies between those of the two best models without priors (1.210 at 2×10⁻³ and 1.215 at 4×10⁻³), within 0.4% of the best. (F105)</p>
+  <p class="tnote">An earlier combination, with S4 and people in place of the torus and the grid, was tested on seeds 8–15 against one model without priors whose learning rate (1.6×10⁻²) was chosen for the mean over all six manifolds on separate seeds. It raised numbers, dimensions, cities and countries by 52.6, 41.4, 7.1 and 6.4 points and people by 3.0 (8 of 8 seeds each; on people both arms stay below a training-frequency shortcut), and interference between its priors was not detected; on S4 a gain was not shown (9.3 points, 4 of 8 seeds), because the model without priors learns S4 on some seeds by itself at that rate. Against the same rate, the six priors of Table 2 gain 54.1, 43.5, 6.7 and 6.1 points on the four manifolds the two sets share. (F102, F105)</p>
+  <p class="tnote">Where the domain priors come from. We chose the city, country and people priors with a pre-registered screen of 24 concept domains in 53M pretraining, one prior at a time (two stages, 8 seeds; Appendix J). Four domains pass (countries, cities, people and months), and all four replicate on 8 fresh seeds under a separate replication rule: the curve average rises by 4.8, 4.1, 1.2 and 4.3 points over the model without a prior at the learning rate chosen for it in the screen. The four tests share their comparison runs. Countries is the clearest case: the gain holds at the same learning rate, lasts to the end of training and is largest on the hard problems. For cities the prior mainly speeds up learning, and on months both arms end below chance, the prior lifting accuracy above chance only while it is on. We left months out of the combination because month accuracy dropped when the number prior was also on in earlier runs. A shuffled target of the same strength does worse than the true one (by 14.8, 16.7 and 1.9 points on countries, cities and people) but also worse than no prior (by 10.0, 13.3 and 0.7 points): for these domains a shuffled target mostly teaches wrong facts, so this contrast does not isolate the geometry. We also screened six small algebraic structures, five written with made-up names and one with the capital letters, as candidates to replace S4 and people. On three seeds, with priors for three of them the model learns faster than the best model without a prior: the grid by 34.5 points of curve average, the hypercube of ℤ₂⁵ by 20.9 and the torus by 12.6 (3 of 3 seeds each); the grid and the hypercube stay ahead at the end of training (20.3 and 4.6 points), while the torus ends 12.2 points behind. A rule fixed before the combination ran picked the grid and then the torus, just ahead of the hypercube, by the ratio of mean gain to its spread across seeds. (F100, F101, F104)</p>
+</section>
+
+<!-- ======================================================= right time -->
+<section class="sec wrap" id="time">
+  <div class="sec-head">
+    <p class="eyebrow">Right time</p>
+    <h2>Representations come first, abilities later, and the prior acts in between</h2>
+    <p class="take">The geometry of numbers forms long before the ability to add, and the prior helps <b>while the model is learning the task</b>; once it has learned it, the prior stops helping.</p>
+  </div>
+  <h3 class="subhead" id="time-geometry">Representations come before abilities</h3>
+  <p class="subtake">In OLMo-2-7B the helix of numbers reaches half its final strength between <b>9B and 21B</b> pretraining tokens; few-shot addition only between <b>84B and 210B</b>.</p>
+  <div class="grid2" data-group="g1">
+    <figure>
+      <div class="fig-body"><div class="fig-title">Geometry vs ability across 11 checkpoints</div><div class="fig-sub">random init → 3.9T tokens, then “main” (shown apart: it adds mid-training)</div>
+        <div class="chart" id="c-gva"></div>
+        <div class="legend"><span style="color:var(--s-helix)"><i></i><span style="color:var(--ink-2)">number geometry (helix R² above null)</span></span><span style="color:var(--s-ability)"><i></i><span style="color:var(--ink-2)">3-shot addition (0 = chance, 1 = perfect)</span></span></div>
+      </div>
+      <figcaption id="cap-gva"></figcaption>
+    </figure>
+    <figure>
+      <div class="fig-body"><div class="fig-title">The number manifold at each checkpoint</div><div class="fig-sub">layer 16 · “The number x” · x = 10…99</div>
+        <div class="canvas3d"><canvas id="c-3d" aria-label="Rotating 3D view of the numbers 10 to 99 at each pretraining checkpoint"></canvas><div class="overlay" id="o-3d"></div></div>
+        <div class="ticks3d" id="t-3d" aria-hidden="true"></div>
+        <div class="key"><span>last digit</span><span class="ramp" id="ramp-3d"></span><span class="mono">0 → 9</span></div>
+      </div>
+      <figcaption id="cap-3d"></figcaption>
+    </figure>
+  </div>
+  <h3 class="subhead" id="time-window">When the prior helps</h3>
+  <p class="subtake">In fine-tuning, the gain is largest while the model is learning the task. In pretraining, starting the prior at 5% of training is faster than starting at the first step or at 20%, and costs far less language-modelling quality than starting at the first step.</p>
+  <div class="grid2">
+    <figure data-group="g2">
+      <div class="fig-body"><div class="fig-title">In fine-tuning: gain vs the model's own accuracy</div><div class="fig-sub">OLMo-2-7B · addition, subtraction, number words, Roman numerals, weekdays, months, letters</div>
+        <div class="chart" id="c-u"></div>
+        <div class="legend"><span style="color:var(--s-none)"><i class="dot" style="background:var(--s-none)"></i><span style="color:var(--ink-2)">one domain × checkpoint (3 seeds)</span></span><span style="color:var(--s-helix)"><i></i><span style="color:var(--ink-2)">mean gain per accuracy bin</span></span></div>
+      </div>
+      <figcaption>x: held-out accuracy without the prior; y: gain with the domain's geometry (points). The gain is an inverted U: small while the model cannot do the task, largest while it learns, negative once it has learned. For weekdays and months the tests measure transfer across equivalent shifts.<span class="chips"><span class="chip real">real data</span><span class="chip">F25 (5-seed checks: F27, F34)</span></span></figcaption>
+    </figure>
+    <figure data-group="g3">
+      <div class="fig-body"><div class="fig-title">In pretraining: when to switch it on</div><div class="fig-sub">7% arithmetic · prior on numbers in web text until 40% of training · 4 seeds</div>
+        <div class="chart" id="c-when"></div><div class="legend" id="l-when"></div></div>
+      <figcaption>◆: median tokens to 90%. Starting at 10% also gives 86M. Starting at the first step costs 0.064 bits per byte of validation loss, starting at 5% 0.008. A self-timed prior that also starts at 5% gives no benefit over the fixed window (1.6–2.0 points lower on three-digit sums in four settings).<span class="chips"><span class="chip real">real data</span><span class="chip">F83 · F85</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+    </figure>
+  </div>
+  <figure class="paper" style="margin-top:18px">
+    <div class="plate"><img src="media/fig5_window.png" alt="Paper Figure 5: held-out accuracy of OLMo-2 1B, 7B, 13B and 32B on two-digit addition at each pretraining checkpoint without and with the helix prior, the gap shaded blue where the prior helps and orange where it hurts; and the mean gain per bin of capability across seven domains of OLMo-2-7B" loading="lazy"></div>
+    <figcaption><b>Paper Figure 5. The benefit window.</b> (a)–(d) Held-out accuracy of OLMo-2 1B–32B on two-digit addition at each pretraining checkpoint, without and with the helix prior; the shaded gap is the gain, and the number marks the largest gain. (e) OLMo-2-7B on seven domains at six checkpoints: mean gain per bin of capability (the accuracy without the prior), with the individual domain–checkpoint points; for weekdays and months the tests measure transfer across equivalent shifts. 5-seed means where available, otherwise 3 seeds.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">F26 · F27 · F32 · F34 · F25</span></span></figcaption>
+  </figure>
+  <p class="tnote">For every OLMo-2 size, the prior helps while task-only accuracy is rising and stops helping once it saturates: the largest gains are +6.9 to +28.1 points, and for all four sizes the gain is negative once capability exceeds about 80%. Pythia shows the same pattern, and so do subtraction and a new operator a # b = (a + b) mod 100. Across seven domains of OLMo-2-7B, the mean gain peaks at +11.7 points between 50 and 75% capability and is −1.3 above 90%. The gain is thus an inverted-U function of the model's own capability: the prior speeds up a computation the model is forming but does not create one it is not forming. (F34, F27, F32, F26, F30, F33, F23, F46, F14, F25)</p>
+  <details class="all">
+    <summary>The same window in Pythia 160M–12B</summary>
+    <figure class="paper" style="margin-top:12px">
+      <div class="plate"><img src="media/figA_pythia.png" alt="Paper appendix figure: the benefit window for Pythia 160M, 410M, 1.4B, 6.9B and 12B on two-digit addition, without and with the helix prior" loading="lazy"></div>
+      <figcaption><b>Paper appendix figure.</b> The benefit window for Pythia 160M–12B on two-digit addition, drawn as in Figure 5a–d (3 seeds).
+        <span class="chips"><span class="chip real">real data</span><span class="chip">F30 · F33</span></span></figcaption>
+    </figure>
+  </details>
+</section>
+
+<!-- ======================================================= right geometry -->
+<section class="sec wrap" id="geometry">
+  <div class="sec-head">
+    <p class="eyebrow">Right geometry</p>
+    <h2>The gain needs the correct geometry</h2>
+    <p class="take">The same loss with the helix coordinates handed to the wrong numbers <b>does not help</b>: it slows fine-tuning and lowers pretraining accuracy. Within the helix, every part matters.</p>
+  </div>
+  <h3 class="subhead" id="geometry-control">A shuffled helix does not help</h3>
+  <p class="subtake">Same dimensionality, loss scale and gradient, but the coordinates go to the wrong numbers.</p>
+  <figure data-group="g4">
+    <div class="fig-body"><div class="fig-title">Fine-tuning OLMo-2-7B (21B-token checkpoint)</div><div class="fig-sub">7,000 training sums · LoRA · 10 epochs · 3 seeds per curve</div>
+      <div class="chart" id="c-ft"></div><div class="legend" id="l-ft"></div></div>
+    <figcaption>◆ on the 90% line: first step at which the seed-mean curve reaches 90%.<span class="chips"><span class="chip real">real data</span><span class="chip">F64</span></span></figcaption>
+  </figure>
+  <h3 class="subhead" id="geometry-parts">Which parts of the helix matter</h3>
+  <ul class="points" style="margin-top:12px">
+    <li><b>The whole helix, not its parts</b>Fourier spikes without separability give no gain; separability alone gives 25–40% of the helix's gain, about as much as a digit code.<span class="chip">F38 · 3 seeds</span></li>
+    <li><b>The more regular, the better</b>Adding noise to the helix lowers the gain monotonically; targets less regular than the model's own geometry (CKA ≈ 0.70) hurt.<span class="chip">F58 · 3 seeds</span></li>
+    <li><b>Matched to the computation</b>The helix helps addition and subtraction and hurts multiplication; with digit tokens, which already give place value, the prior adds little.<span class="chip">F52 · F72 · F73</span></li>
+  </ul>
+  <div class="tpair">
+    <div class="tblwrap">
+      <table class="dom" aria-label="Targets that isolate parts of the helix">
+        <caption>(a) Components of the helix</caption>
+        <thead><tr><th>Target</th><th>Tests</th><th class="n">1B · 42B</th><th class="n">7B · 42B</th><th class="n">7B · 84B</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">helix</td><td class="read">the full manifold</td><td class="n up">+29.5</td><td class="n up">+10.8</td><td class="n">+9.9</td></tr>
+          <tr><td class="mono">sep_ce</td><td class="read">separability only</td><td class="n">+7.3</td><td class="n">+4.1</td><td class="n up">+4.2</td></tr>
+          <tr><td class="mono">digit</td><td class="read">a place-value code</td><td class="n up">+10.0</td><td class="n">+3.6</td><td class="n">+2.8</td></tr>
+          <tr><td class="mono">helix_coarse</td><td class="read">neither (control)</td><td class="n">−1.5</td><td class="n">−3.5</td><td class="n">−3.7</td></tr>
+          <tr><td class="mono">helix_nonsep</td><td class="read">Fourier spikes without separability</td><td class="n">−2.4</td><td class="n dn">−5.4</td><td class="n">−7.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tblwrap">
+      <table class="dom" aria-label="One 7B model trained on three operations">
+        <caption>(b) One 7B model trained on three operations</caption>
+        <thead><tr><th>Tokens</th><th class="n">a + b</th><th class="n">a − b</th><th class="n">a × b</th></tr></thead>
+        <tbody>
+          <tr><td>42B</td><td class="n up">+13.0</td><td class="n up">+18.9</td><td class="n dn">−11.8</td></tr>
+          <tr><td>84B</td><td class="n up">+12.3</td><td class="n up">+20.5</td><td class="n dn">−11.2</td></tr>
+          <tr><td>210B</td><td class="n">−3.5</td><td class="n">−1.5</td><td class="n dn">−8.8</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="tnote">Paper Table 3. Gain over none in accuracy points (3 seeds); blue: significant gain, orange: significant loss (p&lt;0.05, paired t-test). (a) Targets that isolate parts of the helix, OLMo-2 1B and 7B at the given checkpoints (training tokens). (b) helix on OLMo-2-7B fine-tuned on a mixture of addition, subtraction and multiplication; each column is that operation's own test set. (F38, F52)</p>
+</section>
+
+<!-- ======================================================= right place -->
+<section class="sec wrap" id="place">
+  <div class="sec-head">
+    <p class="eyebrow">Right place</p>
+    <h2>Shape the numbers themselves, wherever they occur, even in ordinary text</h2>
+    <p class="take">With operands up to 999, the prior works about equally well on separate prompts of the numbers and on the operands of the problems, and it <b>still works on numbers in web text</b>, which needs no knowledge of the task data. A shuffled helix on the prompts, matched in dose, hurts.</p>
+  </div>
+  <figure data-group="g5">
+    <div class="fig-body"><div class="fig-title">Where the prior acts</div><div class="fig-sub">7% arithmetic · window 5%–40% · λ = 5 · 4 seeds</div>
+      <div class="chart" id="c-sites"></div></div>
+    <figcaption>Accuracy averaged over the training curve. The web-text prior is the strongest of the three at λ = 5 (largest gradient); at λ = 1 its gap to the operands shrinks to 2.5 points, so the site difference cannot be separated from the strength of the prior. With several operations, the prior belongs within the operations whose computation the geometry matches (F72).<span class="chips"><span class="chip real">real data</span><span class="chip">F83 · F82</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+  </figure>
+</section>
+
+<!-- ======================================================= what a prior does not do -->
+<section class="sec wrap" id="limits">
+  <div class="sec-head">
+    <p class="eyebrow">Limits</p>
+    <h2>What a prior does not do</h2>
+    <p class="take">It speeds up a computation the model is learning. Only once, in a one-layer toy, did it make learnable a task that no setting we ran without it learned, and there the target gave the whole table.</p>
+  </div>
+  <ul class="points four">
+    <li><b>It supplies values; it does not teach them</b>We hold 54 three-digit numbers per seed, six in each hundred, out of every arithmetic problem, so that they appear only in web text. On the held-out numbers from 700 to 999, every configuration we tested without a prior ends at or below 11%; while a helix prior keeps their coordinates in place, accuracy on them is 99%. The answers follow the coordinates the prior assigns, and once it stops maintaining them they are overwritten.<span class="chip">F91 · F90</span></li>
+    <li><b>Given the structure, a model learns to use it</b>Only one case, a toy, meets our criteria: with a target that encodes the whole table, a prior lets a one-layer network learn from a small sample of the table (sums and differences of the 125 vectors of {−2,…,2}³, 6.7% of the problems trained), on which none of the settings we ran without a prior learns within four times the budget. In each of the 28 settings of learning rate and weight decay we ran without a prior, 0 of 5 seeds learn it with four times the budget; a prior towards the vectors' coordinates makes all 5 reach 95% at some evaluation (one of them only intermittently, ending at 90.1%, so 4 of 5 end at or above 95%), a random or shuffled target none. The settings with weight decay below 0.1 were added after the pre-registered test; the prior works only at the lowest of its three learning rates; the wall belongs to this small sample of a large table (from 22% of it, the model learns without a prior); and it is one cell of a screen.<span class="chip">F95</span></li>
+    <li><b>It does not fix a geometry the computation does not use</b>No target we tried, whether the logarithm, prime exponents or per-place codes, helps multiplication in the training format; in pretraining, the calendar priors do not help their own tasks.<span class="chip">F53 · F57 · F88</span></li>
+    <li><b>It does not act at inference</b>Snapping representations onto the ideal manifold at inference never helps (at three OLMo-2 sizes), and in OLMo-2-7B it costs more the more capable the checkpoint, whereas replacing the same coordinates with those of a wrong number collapses accuracy wherever the model can add, so this subspace is where the model reads its operands; the prior acts on learning.<span class="chip">F8 · F28</span></li>
+  </ul>
+  <h3 class="subhead" id="costs">What it costs</h3>
+  <p class="subtake">In pretraining, against models without a prior at the same learning rate and seeds, no comparison on five zero-shot benchmarks shows a decline that is both significant and larger than one point. One comparison shows a small cost (LAMBADA at 505M, −0.63 points, 95% CI [−0.92, −0.34]), and in two of the three comparisons the language-modelling loss is higher in 4 of 4 seeds. The larger costs in the table come from using a prior outside the conditions above: from the first step, with a wrong geometry, on a computation the geometry does not match, on a model that has already learned the task, or alongside other priors.</p>
+  <div class="tblwrap">
+    <table class="dom costs" aria-label="What a manifold prior costs">
+      <thead><tr><th>Cost</th><th>Setting</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="3">Of the prior itself</td></tr>
+        <tr><td>General ability</td><td class="read">pretraining 505M (window, two learning rates) and 190M (first set of six priors), same learning rate and seeds without the prior, 4 seeds</td><td class="read">On five zero-shot benchmarks (BLiMP, LAMBADA, HellaSwag, ARC-Easy, PIQA), <b>no significant decline larger than 1 point</b> in 15 comparisons; in 9 the interval excludes a loss above 1 point and 6 are undetermined; one small cost: LAMBADA at 505M, −0.63 [−0.92, −0.34].</td></tr>
+        <tr><td>Language modelling</td><td class="read">pretraining, window from 5%, each arm at its best learning rate</td><td class="read"><b>0.6–0.9% higher bits per byte</b> after 300M tokens, not detectable after 1.2B; at the same learning rate, validation loss higher in 4 of 4 seeds in two of the three comparisons above</td></tr>
+        <tr class="grp"><td colspan="3">At the wrong time</td></tr>
+        <tr><td>Prior from the first step</td><td class="read">pretraining 53M and 505M, 7%</td><td class="read"><b>About eight times</b> the language-modelling cost of the window (0.064 against 0.008 bits per byte); at 505M a self-timed prior on web text from the first step (λ = 5, learning rate not tuned for it) is 1.1–3.3 points lower on all five benchmarks (this configuration also has the largest language-modelling cost we measured)</td></tr>
+        <tr><td>Model that has learned the task</td><td class="read">fine-tuning OLMo-2, addition and seven domains</td><td class="read"><b>Gain negative once capability exceeds about 80%</b> (all four OLMo-2 sizes); −1.3 points above 90% across seven domains; on three-digit sums (not in the fine-tuning data), about 10 points lower at 630B tokens</td></tr>
+        <tr class="grp"><td colspan="3">With the wrong geometry</td></tr>
+        <tr><td>Wrong geometry</td><td class="read">pretraining 53M</td><td class="read">Shuffled helix, at the same learning rate as the model without a prior: <b>−23.6 points</b> of curve-average accuracy (7%, same dose, lower in 8 of 8 seeds), −41.4 with four times the tokens (2%, lower in 4 of 4 seeds)</td></tr>
+        <tr><td>Geometry the computation does not use</td><td class="read">fine-tuning OLMo-2-7B, three operations</td><td class="read">One shared helix lowers multiplication by <b>11–12 points</b> at 42B and 84B tokens and still by 8.8 at 210B (−1.0 to −1.5 when applied only to addition and subtraction problems)</td></tr>
+        <tr class="grp"><td colspan="3">With several priors</td></tr>
+        <tr><td>Multiple priors</td><td class="read">pretraining 190M, first set of six priors</td><td class="read"><b>Clock accuracy 34 points below the number prior alone</b> at the same learning rate (lower in 4 of 4 seeds); without the clock prior the other five match the number prior alone (96.5 against 96.4%). These runs cannot separate the clock prior's own effect from redundancy with the other priors.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tnote">Source: F96 (general ability, pre-registered, 94 models), F86, F83, F82, F25–F34, F52, F72, F88. The full table with every comparison and its confidence interval is in the paper's appendix.</p>
+</section>
+
+<!-- ======================================================= claims -->
+<section class="sec wrap" id="claims">
+  <div class="sec-head">
+    <p class="eyebrow">Claims and evidence</p>
+    <h2>What the page claims, and where it comes from</h2>
+  </div>
+  <div class="ctable" id="ctable" role="table" aria-label="Claims"></div>
+  <p class="tnote">F-numbers refer to entries of the project's findings log (<span class="mono">report/FINDINGS.md</span> in the code repository). Pre-registered: the decision rule was written before the runs.</p>
+</section>
+
+<!-- ======================================================= bibtex -->
+<section class="sec wrap" id="bibtex">
+  <div class="sec-head">
+    <p class="eyebrow">Cite</p>
+    <h2>BibTeX</h2>
+  </div>
+  <div class="bib">
+    <pre class="code" id="bibcode">@article{hong2026manifold,
+  title   = {Manifold Pretraining Engineering: Right Geometry, Right Time, Right Place},
+  author  = {Hong, Yihuai and Ma, Hanxi and Zhao, Chen},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</pre>
+    <button class="copy" type="button" id="copybib">Copy</button>
+  </div>
+</section>
+</main>
+
+<footer class="wrap">
+  <p><b>Provenance.</b> Every number on this page maps to an entry (F-number) of the findings log or to a result file. The pretraining charts are drawn from the runs behind F82 and F83 (operands 0–999), checked against the logged curve averages before the page was built; the other charts and the animations come from the runs behind F25, F64 and F74; the paper figures are drawn by the paper's own scripts (Figure 1: F86, F92, F64; Figure 2: F86, F87, F88; Figure 3: F97, F98, F99; the six-size chart: F87, F99; the six-prior chart: F105; Figure 5 and the Pythia figure: F14, F23–F27, F30–F34), and Table 2 copies the paper.</p>
+  <p>All charts and animations show real data; nothing on the page is schematic. Contact: <span class="mono" style="user-select:all">yihuaihong@nyu.edu</span></p>
+  <p id="built"></p>
+</footer>
+</div>
+
+<script>
+(() => {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const RM = !!window.__RM;
+const D = {};
+
+/* ---------------------------------------------------------------- page content (every number from FINDINGS; F-number given) */
+const CLAIMS = [
+  { f: "F86", status: "holds", seeds: "8 (confirm 4 of 4)", claim: "With 2% arithmetic tokens and each model at its own best learning rate, the windowed helix prior on the operands raises held-out accuracy averaged over training from 18.4% to 69.9% at 53M, from 29.1% to 78.5% at 190M and from 24.4% to 77.4% at 505M (means over 8 seeds; higher in all eight paired comparisons at each size; at 505M the best learning rates of the grids we tried); after 1.2B tokens it keeps a 16.5-point lead (68.7% vs 85.1%)." },
+  { f: "F82", status: "holds", seeds: "8 per arm", claim: "At learning rate 10⁻³, the windowed prior on numbers in web text ends at 95.5% vs 17.2%; a shuffled helix in the same window gives no gain (−1.8 and −0.9 points on the operands and in web text)." },
+  { f: "F87", status: "holds", seeds: "8 (confirm 4 of 4)", claim: "With 7% arithmetic and each model at its own best learning rate, the prior raises the curve average by 22.8 points at 53M and 23.5 at 190M (8 paired seeds, all positive) and reaches 90% 3.7× and 3.9× sooner over 8 seeds; at 505M it leads by 27.4 points on the selection seeds, confirmed on four held-back seeds, and first reaches 90% 4.2× sooner. At 1.07B (B200, learning rates chosen on two seeds) it raises the curve average from 53.3% to 89.4% over all 8 seeds, by 36.1 points (8 of 8; 33.5 on four held-back seeds). Only the learning rate was tuned; at this fixed number of tokens, the pre-registered test of a size trend in the speed-up gives different answers on the two sets of seeds (for how the gain itself depends on size, see F97)." },
+  { f: "F82", status: "holds", seeds: "4 per setting", claim: "With 7% arithmetic, the prior helps in all 16 learning-rate, batch, strength and layer settings tested at one shared learning rate." },
+  { f: "F86 · F82", status: "holds", seeds: "8", claim: "How much faster depends on the definition: after 1.2B tokens with 2% arithmetic, 2.1× by first reaching 90%, 1.1–1.2× by staying above it, 3.6× to 50%. With 7% arithmetic over 8 seeds, 3.7× (53M) and 3.9× (190M) to first reach 90%, 3.2× and 3.9× to stay above it." },
+  { f: "F82 · F83", status: "holds", seeds: "8 · 4", claim: "Shuffled helices of the same dose hurt: −23.6 points of curve-average accuracy on the operands, −30.1 on separate prompts." },
+  { f: "F83", status: "holds", seeds: "4", claim: "Starting the web-text prior at 5% or 10% of training reaches 90% after 86M tokens, at 20% after 112M, at the first step after 126M; the first-step start costs about 8× more language-modelling quality (0.064 vs 0.008 bits per byte)." },
+  { f: "F85", status: "holds", prereg: true, seeds: "4 settings × 4", claim: "A self-timed prior starting at 5% gives no benefit over the fixed 5%–40% window: 1.6–2.0 points lower on three-digit sums in each setting (14 of 16 seed pairs), language-modelling cost indistinguishable (±0.003 bits per byte)." },
+  { f: "F83 · F82", status: "preliminary", seeds: "4", claim: "With operands up to 999, the prior on separate prompts is as fast as on the operands; the web-text site is slower at λ = 5, a gap that shrinks to 2.5 points at λ = 1." },
+  { f: "F48 · F54 · F64", status: "holds", seeds: "3", claim: "Fine-tuning OLMo-2-7B at 9B tokens, the helix prior reaches 90% after 1,400 steps; without it, after 6,300–7,100 steps in 30-epoch runs (≈5×); in 10 epochs the model without the prior does not reach 90%." },
+  { f: "F25 · F27 · F34", status: "holds", seeds: "3 (5 in F27, F34)", claim: "In fine-tuning, the gain peaks (+11.7 points) when the model alone solves 50–75% and turns negative (−1.3) once it solves ≥ 90%." },
+  { f: "F38 · F58", status: "holds", seeds: "3", claim: "The full, regular helix is needed: Fourier spikes alone do not help, separability alone gives 25–40% of the gain, and noisier helices help less." },
+  { f: "F72", status: "holds", seeds: "5", claim: "With addition, subtraction and multiplication trained together, the helix within addition and subtraction problems helps them (+18.8 and +11.7 points at 42B) and almost removes the harm to multiplication." },
+  { f: "F81", status: "holds", seeds: "3", claim: "Across 36 domains in fine-tuning, among targets that do not encode the answer, the geometry helped only numbers (42B) and months (210B); gains on anchor comparisons come from facts the target coordinates carry." },
+  { f: "F88", status: "holds", seeds: "4 (confirm 4 of 4 at 53M)", claim: "Six priors in one 53M pretraining run: numbers keep their gain, and S4 gains 26.3 points of curve-average accuracy on the cells table filling cannot reach (pre-registered, 7 of 8 fresh seed pairs); at 190M the six priors again lift numbers, S4 and dimensions above both models without priors at the learning rates chosen on numbers; at 1.92×10⁻² the model without priors ends higher on S4 (60.5% against 44.5%, not significant, learned later) and reaches 40.1% on dimensions (descriptive)." },
+  { f: "F105", status: "holds", prereg: true, seeds: "8 fresh", claim: "Six priors trained together at 53M (numbers, dimensions, cities, countries, a torus for ℤ₆ × ℤ₆ and a grid on {−2, …, 2}²): against the model without priors at the best of six learning rates for each manifold, the curve average rises on all six (+46.9, +33.9, +6.3, +5.8, +22.0, +19.7; 8 of 8 seeds each, Holm p ≤ 0.0023), and at every rate tried in at least 7 of 8 seeds; at a shared learning rate interference is not detected. The torus gains mainly while its prior is on and ends below the model without priors at its two best rates (by 3.0 and 1.1 points). Except for numbers the targets carry the answers; the highest no-prior rate (6.4×10⁻²) was added post hoc." },
+  { f: "F105 add. 2", status: "holds", seeds: "8 fresh", claim: "Post hoc, from the same runs: with the six priors the model reaches the final accuracy of the model without priors at its best rate after 8–30% of training (every seed) and gets 90% of the way there 2.1–5.0× sooner; the torus and the grid peak at 98.2% and 83.3%, above the model without priors at any rate (94.6% and 58.5%). Joint training lifts dimensions and the torus over their priors alone mostly after the window (+25.0 and +11.7 points at the end, 8 of 8 seeds). Training a single prior raises the CKA of structurally similar domains to their own targets across disjoint tokens (dimensions ↔ grid +0.16 / +0.18, cities ↔ countries +0.22 / +0.24, 8 of 8 seeds)." },
+  { f: "F104", status: "holds", seeds: "3", claim: "A screen of six small algebraic structures at 53M: priors for the grid, the hypercube of ℤ₂⁵ and the torus learn faster than the best model without a prior (+34.5, +20.9, +12.6 points of curve average, 3 of 3 seeds each); the torus ends 12.2 points behind. The grid and the torus were picked by a rule fixed before the combination ran." },
+  { f: "F102", status: "holds", prereg: true, seeds: "8 fresh", claim: "An earlier set of six priors trained together at 53M (numbers, S4, dimensions, cities, countries, people): against the model without priors at its selected learning rate, the curve average rises on five of the six (numbers +52.6, dimensions +41.4, cities +7.1, countries +6.4, people +3.0, 8 of 8 each), and interference is not detected at a shared learning rate. On S4 a gain is not shown (+9.3, 4 of 8); at the shared rate S4 rises from 1.0% to 39.8%. Except for numbers the targets carry the answers, and on people both arms stay below a training-frequency shortcut." },
+  { f: "F100 · F101", status: "holds", prereg: true, seeds: "8 · 8 fresh", claim: "A screen of 24 concept domains in 53M pretraining passes four (countries, cities, people, months), and all four replicate on fresh seeds (+4.8, +4.1, +1.2, +4.3 points). A shuffled target is worse than no prior on the comparison domains, so that contrast does not isolate the geometry." },
+  { f: "F91 · F89", status: "holds", seeds: "8 · 5", claim: "Numbers never seen in arithmetic do not meet our criteria for making an unlearnable task learnable; they show that the prior supplies values while it keeps their coordinates in place (99% vs at most 11% without a prior), not that the model learns them." },
+  { f: "F95", status: "holds", seeds: "5 (fresh)", claim: "In one toy cell (sums and differences of the vectors of {−2,…,2}³ from 6.7% of the table, one-layer network), a prior whose target encodes the whole table makes 5 of 5 seeds learn a task that no seed learned in any of the 28 settings we ran without a prior with four times the budget; the low weight decays were added after the pre-registered test, and the prior works only at learning rate 10⁻³. Given the structure, the model learns to use it." },
+  { f: "F96", status: "holds", prereg: true, seeds: "4", claim: "On five zero-shot benchmarks after pretraining (505M with the window at two learning rates, 190M with the first set of six priors), against the model without a prior at the same learning rate, no comparison shows a decline that is both significant and larger than one point, and in 9 of 15 the 95% interval excludes a loss of more than one point (6 cannot tell); one small cost (LAMBADA at 505M, −0.63 [−0.92, −0.34]). We do not claim that general ability is unaffected." },
+  { f: "F97", status: "holds", prereg: true, seeds: "8 per cell", claim: "How the gain changes with model size depends on what is held fixed. With the number of tokens fixed, larger models gain more (descriptive regression: +3.5 points per e-fold of non-embedding parameters, [2.5, 4.6]); no size effect is detected on the speed-up. With the ratio of tokens to non-embedding parameters fixed there is no consistent trend (at 0.745 the gain falls with size, where the number of tokens grows with size and the verdict depends on excluding the 93M cell; at 0.318 no trend). The gain varies strongly with the number of training tokens, although the design does not separate arithmetic tokens from total training, window timing or the prior's share of the gradient." },
+  { f: "F99", status: "holds", prereg: true, seeds: "8 per size", claim: "At a fixed 300M tokens with 7% arithmetic, over six sizes from 53M to 1.07B, the gain is larger at larger sizes (p = 0.038 from the spread of the six sizes; the slope is positive with means, medians and trimmed means). Four of the six sizes were seen before registration, the gain is not monotonic, two sizes ran on B200 (with L40S sizes alone the size-spread interval includes zero), and the rise comes from the model without a prior while the prior stays near 90%." },
+  { f: "F74", status: "holds", seeds: "one model per checkpoint", claim: "Number geometry reaches half its final value in (9, 21]B tokens, few-shot addition in (84, 210]B; target coordinates are decodable in all eight final models for 27 of 34 domains." },
+];
+// F81 screen (gains at 42B / 210B, robust marks, floor / ceiling bands) and F74 per-domain decodability (x / 8)
+const DOMAINS = [
+  ["Numbers", [["Numbers","The number x","helix","step",8,"+41.6","up","","−1.1","","c"],["Number words","The number x","helix","step",8,"−6.9","","","−18.5","dn","c"],["Ordinals","It came x","helix","step",8,"+2.0","","","−10.1","",""],["Years‡","In the year x","helix","step",8,"−14.0","dn","","−2.4","dn","c"]]],
+  ["Cycles", [["Weekdays","The day was x","circle","step",8,"0.0","","f","−1.0","","f"],["Months","The month of x","circle","step",8,"+1.2","","f","+21.6","up",""],["Hours","The time was x","circle","step",8,"−2.0","","","+4.1","",""],["Zodiac signs","The zodiac sign x","circle","step",6,"+1.2","","f","+1.2","","f"],["Chinese zodiac","The Year of the x","circle","step",3,"+0.6","","f","+0.6","","f"],["Musical keys","A piece in the key of x","chromatic","step",2,"+0.6","","f","−0.3","","f"],["Pitch‡","The note x","chromatic","step",2,"+0.3","","f","−0.6","","f"],["Compass","The wind blew from the x","circle","anchor",8,"+3.2","","","−0.6","","c"],["Colours","The colour x","hue circle","anchor",8,"+4.0","up","","+0.8","","c"]]],
+  ["Magnitudes and scales", [["Animal weight","The weight of a x","log line","order",8,"−0.1","","c","−0.1","","c"],["Country population","The population of x","log line","order",8,"0.0","","c","0.0","","c"],["Kinship","My x","generation","order",8,"0.0","","c","+0.2","","c"],["Scalar adjectives","It was x","within scale","order",3,"−2.3","","","+3.8","",""],["Units","One x","within scale","order",8,"+0.5","","c","−2.5","","c"]]],
+  ["Orders", [["Letters","The letter x","line","step",8,"−13.8","dn","","−10.2","",""],["Greek letters","The Greek letter x","line","step",8,"0.0","","f","−1.0","","f"],["Planets","The planet x","line","step",8,"0.0","","f","+15.1","","f"],["Chemical elements","The element x","line","step",7,"0.0","","f","0.0","","f"],["Geologic periods","The geologic period x","line","step",8,"0.0","","f","−8.8","","f"],["US presidents","President x","line","order",8,"+0.5","","c","−0.2","","c"],["Historical figures","The historical figure x","rank","order",8,"−0.7","","c","+0.3","","c"],["Military ranks","The military rank of x","line","order",8,"+6.2","","","0.0","","c"],["Life stages","The life stage x","line","order",6,"0.0","","c","0.0","","c"],["Metric prefixes","The metric prefix x","line","order",8,"0.0","","","+1.6","",""]]],
+  ["Places", [["Countries","The country of x","sphere","anchor",8,"+2.4","up","c","+1.5","","c"],["Cities","The city of x","sphere","anchor",8,"+3.7","up","","+1.7","",""],["US cities","The American city of x","plane","anchor",8,"+0.2","","c","−0.1","","c"],["Landmarks","The famous landmark x","sphere","anchor",8,"+11.9","up","","+14.1","up",""],["Stars","In the night sky, the star x","sphere","anchor",1,"+18.7","up","f","+42.2","up","f"],["Emotions","I feel x","plane","order",8,"+0.1","","c","+0.5","","c"]]],
+  ["Taxonomies", [["Animals","The animal x","tree","anchor",8,"+0.8","","c","+0.8","","c"],["Languages","The language x","tree","anchor",8,"+4.3","up","c","−0.9","","c"]]],
+];
+const SIX = { Numbers: "geometry", Months: "geometry", Hours: "not robust", Letters: "constraint cost", Countries: "facts injected", Languages: "facts injected" };
+
+/* ---------------------------------------------------------------- helpers */
+const $ = (s, r = document) => r.querySelector(s);
+function svg(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function h(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k];
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else e.setAttribute(k, attrs[k]);
+  }
+  for (const c of kids) if (c != null) e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  return e;
+}
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+function isDark() { const t = document.documentElement.getAttribute("data-theme"); return t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches); }
+function txt(parent, x, y, s, cls, anchor) { const t = svg("text", { x, y, "text-anchor": anchor || "start" }, parent); if (cls) t.setAttribute("class", cls); t.textContent = s; return t; }
+function fmtTok(b) { return b >= 1000 ? (b / 1000).toFixed(1).replace(/\.0$/, "") + "T" : b + "B"; }
+function partial(xs, ys, xc) {
+  const out = [];
+  for (let i = 0; i < xs.length; i++) {
+    if (xs[i] <= xc) { out.push([xs[i], ys[i]]); continue; }
+    if (i > 0) { const f = (xc - xs[i - 1]) / (xs[i] - xs[i - 1]); out.push([xc, ys[i - 1] + f * (ys[i] - ys[i - 1])]); }
+    break;
+  }
+  return out;
+}
+const pathOf = pts => pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("");
+
+/* ---------------------------------------------------------------- animated line chart (draws itself left to right) */
+function lineChart(box, cfg) {
+  const st = {};
+  function build() {
+    box.replaceChildren();
+    const W = Math.max(260, box.clientWidth || 600), H = cfg.height(W);
+    const m = Object.assign({ l: 40, r: 16, t: 16, b: 36 }, cfg.margin || {});
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": cfg.aria }, box);
+    const x = lin(cfg.x0, cfg.x1, m.l, W - m.r), y = lin(cfg.y0, cfg.y1, H - m.b, m.t);
+    for (const t of cfg.yTicks) { svg("line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: css("--grid") }, s); txt(s, m.l - 7, y(t) + 4, cfg.yFmt(t), null, "end"); }
+    svg("line", { x1: m.l, x2: W - m.r, y1: H - m.b, y2: H - m.b, stroke: css("--axis") }, s);
+    for (const [v, l] of cfg.xTicks) { svg("line", { x1: x(v), x2: x(v), y1: H - m.b, y2: H - m.b + 4, stroke: css("--axis") }, s); txt(s, x(v), H - m.b + 16, l, null, "middle"); }
+    if (cfg.xLabel) txt(s, (m.l + W - m.r) / 2, H - 3, typeof cfg.xLabel === "function" ? cfg.xLabel(W) : cfg.xLabel, null, "middle");
+    if (cfg.zero) svg("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: css("--axis"), "stroke-width": 1.4 }, s);
+    if (cfg.thr != null) svg("line", { x1: m.l, x2: W - m.r, y1: y(cfg.thr), y2: y(cfg.thr), stroke: css("--ink-2"), "stroke-dasharray": "3 4", opacity: .5 }, s);
+    if (cfg.decor) cfg.decor(s, x, y, W, H, m);
+    const cursor = svg("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-2"), "stroke-width": 1, opacity: 0 }, s);
+    const cursorLab = txt(s, 0, m.t - 4, "", "strong", "start");
+    const series = cfg.series.map(se => {
+      const col = css(se.color);
+      const band = se.lo ? svg("path", { fill: col, opacity: css("--band") }, s) : null;
+      const line = se.noLine ? null : svg("path", { fill: "none", stroke: col, "stroke-width": se.width || 2.2, "stroke-linejoin": "round", "stroke-linecap": "round", "stroke-dasharray": se.dash || "none" }, s);
+      const head = se.noLine ? null : svg("circle", { r: 4, fill: col, stroke: css("--chart"), "stroke-width": 2 }, s);
+      const dots = se.dots ? se.x.map(() => svg("circle", { r: se.dotR || 3.6, fill: col, stroke: css("--chart"), "stroke-width": 1.5, opacity: 0, class: "fade" }, s)) : [];
+      return { se, band, line, head, dots, X: se.x.map(x), Y: se.y.map(y), LO: se.lo ? se.lo.map(y) : null, HI: se.hi ? se.hi.map(y) : null };
+    });
+    const marks = (cfg.marks || []).map(mk => {
+      const g = svg("g", { opacity: 0, class: "fade" }, s), cx = x(mk.x), cy = y(mk.y);
+      svg("path", { d: `M${cx} ${cy - 6}L${cx + 6} ${cy}L${cx} ${cy + 6}L${cx - 6} ${cy}Z`, fill: css(mk.color), stroke: css("--chart"), "stroke-width": 1.5 }, g);
+      const dx = mk.anchor === "end" ? -8 : mk.anchor === "start" ? 8 : 0;
+      txt(g, cx + dx, cy + (mk.below ? 19 : -10), mk.label, "strong", mk.anchor || "middle");
+      return { mk, g };
+    });
+    Object.assign(st, { s, x, W, m, series, marks, cursor, cursorLab });
+  }
+  function update(p) {
+    if (!st.s) return;
+    const { x, series, marks, cursor, cursorLab, W, m } = st;
+    const xc = cfg.x0 + p * (cfg.x1 - cfg.x0), px = x(xc);
+    for (const S of series) {
+      if (S.line) {
+        const pts = partial(S.X, S.Y, px), last = pts[pts.length - 1];
+        S.line.setAttribute("d", pts.length > 1 ? pathOf(pts) : "");
+        const show = last && (p < 1 || S.se.endDot !== false);
+        if (show) { S.head.setAttribute("cx", last[0]); S.head.setAttribute("cy", last[1]); }
+        S.head.setAttribute("opacity", show ? 1 : 0);
+      }
+      if (S.band) {
+        const lo = partial(S.X, S.LO, px), hi = partial(S.X, S.HI, px);
+        S.band.setAttribute("d", hi.length > 1 ? pathOf(hi) + pathOf(lo.reverse()).replace(/^M/, "L") + "Z" : "");
+      }
+      S.dots.forEach((d, i) => { d.setAttribute("cx", S.X[i]); d.setAttribute("cy", S.Y[i]); d.setAttribute("opacity", S.se.x[i] <= xc + 1e-9 ? 1 : 0); });
+    }
+    for (const M of marks) M.g.setAttribute("opacity", xc >= M.mk.x - 1e-9 ? 1 : 0);
+    const showCur = p > 0 && p < 1 && cfg.cursor !== false;
+    cursor.setAttribute("x1", px); cursor.setAttribute("x2", px); cursor.setAttribute("opacity", showCur ? .3 : 0);
+    if (cfg.cursorText && showCur) { cursorLab.textContent = cfg.cursorText(xc); cursorLab.setAttribute("x", clamp(px + 6, m.l, W - m.r - 84)); cursorLab.setAttribute("opacity", 1); }
+    else cursorLab.setAttribute("opacity", 0);
+  }
+  return { build, update };
+}
+
+/* ---------------------------------------------------------------- clocks: one per figure group, running while visible */
+const groups = [];
+function group(el, dur, hold, figs) {
+  const g = { el, dur, hold, figs, t0: null, visible: false, p: RM ? 1 : 0 };
+  groups.push(g);
+  if (!RM && "IntersectionObserver" in window) {
+    new IntersectionObserver(es => { for (const e of es) { g.visible = e.isIntersecting; if (g.visible && g.t0 === null) g.t0 = performance.now(); } kick(); }, { threshold: .2 }).observe(el);
+  } else if (!RM) { g.visible = true; g.t0 = 0; }
+  return g;
+}
+let raf = 0;
+function kick() { if (!raf && !RM) raf = requestAnimationFrame(tick); }
+function tick(now) {
+  raf = 0; let any = false;
+  for (const g of groups) {
+    if (!g.visible || g.t0 === null) continue;
+    any = true;
+    g.p = clamp(((now - g.t0) % (g.dur + g.hold)) / g.dur, 0, 1);
+    g.figs.forEach(f => f.update(g.p, now));
+  }
+  if (any) raf = requestAnimationFrame(tick);
+}
+function rebuildAll() { for (const g of groups) g.figs.forEach(f => { f.build(); f.update(g.p, performance.now()); }); }
+
+/* ---------------------------------------------------------------- geometry vs ability + 3D (F74) */
+const MAINX = Math.log10(3896) + 0.85;
+function gvaX(cp) { return cp.tag === "rand" ? -0.55 : cp.tag === "main" ? MAINX : Math.log10(cp.tokens_B); }
+function cpName(cp) { return cp.tag === "rand" ? "random init" : cp.tag === "main" ? "main (adds mid-training)" : fmtTok(cp.tokens_B) + " tokens"; }
+function ivl(a) { return "(" + a[0].replace("B", "") + ", " + a[1] + "]"; }
+function figGVA() {
+  const G = D.gva, cps = G.checkpoints, tok = cps.filter(c => c.tag !== "main"), last = cps[cps.length - 2], mn = cps[cps.length - 1];
+  const hg = cps.find(c => c.tag === G.half_point.geometry[1]), ha = cps.find(c => c.tag === G.half_point.ability[1]);
+  const ser = (key, color) => [
+    { color, x: tok.map(gvaX), y: tok.map(c => Math.max(-0.05, c[key])), dots: true, endDot: false },
+    { color, dash: "3 4", x: [gvaX(last), gvaX(mn)], y: [last[key], mn[key]].map(v => Math.max(-0.05, v)), dots: true, endDot: false },
+  ];
+  const ch = lineChart($("#c-gva"), {
+    aria: "Number geometry and few-shot addition ability across pretraining checkpoints",
+    height: W => W < 440 ? 250 : 290, x0: -0.8, x1: MAINX + 0.3, y0: -0.06, y1: 1.08, margin: { t: 22 },
+    yTicks: [0, .25, .5, .75, 1], yFmt: v => String(v),
+    xTicks: [[-0.55, "init"], [0, "1B"], [1, "10B"], [2, "100B"], [3, "1T"], [MAINX, "main"]], xLabel: W => W < 480 ? "tokens (log); “main” is not a token count" : "pretraining tokens (log scale); “main” is not a token count",
+    cursorText: xc => { let best = cps[0]; for (const c of cps) if (gvaX(c) <= xc + 1e-9) best = c; return cpName(best); },
+    decor: (g, x, y, W, H, m) => {
+      const bx = x((Math.log10(3896) + MAINX) / 2), by = H - m.b;
+      svg("rect", { x: bx - 5, y: by - 4, width: 10, height: 8, fill: css("--chart") }, g);
+      for (const d of [-3, 3]) svg("line", { x1: bx + d - 3, x2: bx + d + 3, y1: by + 5, y2: by - 5, stroke: css("--axis"), "stroke-width": 1.4 }, g);
+    },
+    series: [...ser("geometry", "--s-helix"), ...ser("ability", "--s-ability")],
+    marks: [
+      { x: gvaX(hg), y: hg.geometry, color: "--s-helix", label: "½ geometry · " + ivl(G.half_point.geometry), anchor: "end" },
+      { x: gvaX(ha), y: ha.ability, color: "--s-ability", label: "½ ability · " + ivl(G.half_point.ability), below: true, anchor: "start" },
+    ],
+  });
+  $("#cap-gva").replaceChildren(
+    `Geometry: ${G.geometry_metric}. Ability: ${G.ability_metric}; ${cps[0].n_questions} test rows per checkpoint. Dashed: from 3.9T tokens to “main”, which adds mid-training, so it is not placed on the token axis.`,
+    h("span", { class: "chips" }, h("span", { class: "chip real", text: "real data" }), h("span", { class: "chip", text: "F74 (atlas v2)" }), h("span", { class: "chip", text: "one model per checkpoint" })));
+  return ch;
+}
+function digitColor(d) { const dk = isDark(); return `hsl(${(d * 36 + 210) % 360}, ${dk ? 70 : 66}%, ${dk ? 62 : 46}%)`; }
+function fig3D() {
+  const M = D.m3d, F = M.frames, N = F.length, cv = $("#c-3d"), ov = $("#o-3d"), tk = $("#t-3d");
+  tk.replaceChildren(...F.map(() => h("span")));
+  const R = Math.max(...M.target.map(p => Math.hypot(p[0], p[1], p[2])));
+  let W = 0, H = 0;
+  function build() {
+    const box = cv.parentElement, dpr = window.devicePixelRatio || 1;
+    W = box.clientWidth; H = box.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    $("#ramp-3d").style.background = "linear-gradient(90deg," + Array.from({ length: 10 }, (_, d) => `${digitColor(d)} ${d * 10}%,${digitColor(d)} ${(d + 1) * 10}%`).join(",") + ")";
+  }
+  function proj(p, yaw, pitch) {
+    const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const x1 = p[0] * cy + p[2] * sy, z1 = -p[0] * sy + p[2] * cy, y2 = p[1] * cp - z1 * sp, z2 = p[1] * sp + z1 * cp;
+    const sc = Math.min(W, H) * 0.34 / R, per = 1 / (1 + z2 * 0.1);
+    return [W / 2 + x1 * sc * per, H / 2 + 24 - y2 * sc * per, z2];
+  }
+  function update(p, now) {
+    if (!W) return;
+    const g = cv.getContext("2d"); g.clearRect(0, 0, W, H);
+    const c = p * (N - 1), i = Math.min(N - 2, Math.floor(c)), f = ease(clamp((c - i) / 0.55, 0, 1));
+    const A = F[i].xyz, B = F[i + 1].xyz, P = A.map((a, k) => a.map((v, j) => v + (B[k][j] - v) * f));
+    const yaw = RM ? -0.5 : -0.5 + (now || 0) / 1000 * 0.3, pitch = 0.55;
+    g.strokeStyle = css("--grid"); g.lineWidth = 1; g.font = "11px " + css("--font-body"); g.fillStyle = css("--muted");
+    for (const a of [[R * .9, 0, 0, "cos(2πx/10)"], [0, R * .9, 0, "size"], [0, 0, R * .9, "sin(2πx/10)"]]) {
+      const p0 = proj([-a[0], -a[1], -a[2]], yaw, pitch), p1 = proj(a, yaw, pitch);
+      g.beginPath(); g.moveTo(p0[0], p0[1]); g.lineTo(p1[0], p1[1]); g.stroke(); g.fillText(a[3], p1[0] + 4, p1[1] - 4);
+    }
+    const Q = P.map(q => proj(q, yaw, pitch));
+    g.strokeStyle = css("--muted"); g.globalAlpha = .35; g.beginPath(); Q.forEach((q, k) => k ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke(); g.globalAlpha = 1;
+    const order = Q.map((_, k) => k).sort((a, b) => Q[a][2] - Q[b][2]), ring = css("--chart");
+    for (const k of order) { const q = Q[k], dep = clamp(0.8 - q[2] * 0.12, 0.6, 1); g.beginPath(); g.arc(q[0], q[1], 4.6 * dep + .6, 0, 6.2832); g.fillStyle = digitColor(M.numbers[k] % 10); g.fill(); g.lineWidth = 1.4; g.strokeStyle = ring; g.stroke(); }
+    const k = Math.round(c), cp = D.gva.checkpoints[k];
+    if (ov.dataset.k !== String(k)) { ov.dataset.k = k; ov.replaceChildren(h("b", { text: cpName(cp) }), h("span", { text: `helix R² above null ${F[k].geometry.toFixed(2)}` })); [...tk.children].forEach((e, j) => e.classList.toggle("on", j <= k)); }
+  }
+  $("#cap-3d").replaceChildren(
+    "Each dot is one number, placed where a linear read-out fitted on the other 89 numbers puts it on three helix axes (the period-10 circle and size); without structure the dots collapse to the centre. The view morphs through the 11 checkpoints and rotates; colour: last digit.",
+    h("span", { class: "chips" }, h("span", { class: "chip real", text: "real data" }), h("span", { class: "chip", text: "F74 states (atlas v2)" })));
+  return { build, update };
+}
+
+/* ---------------------------------------------------------------- inverted U (F25) */
+function figU() {
+  const G = D.gain, pts = D.gain.points.slice().sort((a, b) => a.none_acc - b.none_acc);
+  return lineChart($("#c-u"), {
+    aria: "Gain from the prior versus the model's own accuracy",
+    height: W => W < 520 ? 260 : 290, x0: 0, x1: 100, y0: -8, y1: 27, cursor: false, zero: true,
+    yTicks: [-5, 0, 5, 10, 15, 20, 25], yFmt: v => (v > 0 ? "+" : "") + v,
+    xTicks: [[0, "0%"], [25, "25%"], [50, "50%"], [75, "75%"], [100, "100%"]], xLabel: "held-out accuracy without the prior",
+    series: [
+      { color: "--s-none", x: pts.map(p => p.none_acc), y: pts.map(p => p.gain), dots: true, noLine: true },
+      { color: "--s-helix", x: G.bins.map(b => b.mean_x), y: G.bins.map(b => b.mean_gain), dots: true, dotR: 5, width: 2.6, endDot: false },
+    ],
+    marks: G.bins.map(b => ({ x: b.mean_x, y: b.mean_gain, color: "--s-helix", label: (b.mean_gain > 0 ? "+" : "") + b.mean_gain, below: b.mean_gain < 4, anchor: b.mean_x > 85 ? "end" : b.mean_x < 15 ? "start" : "middle" })),
+  });
+}
+
+/* ---------------------------------------------------------------- pretraining small multiples (F82, F83) */
+function ptChart(boxId, legId, set, conds, aria) {
+  const P = D.pt[set];
+  $("#" + legId).replaceChildren(...conds.map(c => {
+    const d = P[c.id], val = c.show === "final" || d.t90_median == null ? `final ${d.final_mean}%` : `90% at ${Math.round(d.t90_median)}M`;
+    return h("span", { style: `color:var(${c.color})` }, h("i", { class: c.dash ? "dash" : "" }), h("span", { style: "color:var(--ink-2)", text: c.name + " · " }), h("b", { text: val }));
+  }));
+  return lineChart($("#" + boxId), {
+    aria, height: W => W < 330 ? 220 : 250, x0: 0, x1: 300, y0: 0, y1: 100, thr: 90,
+    yTicks: [0, 25, 50, 75, 100], yFmt: v => v + "%", xTicks: [[0, "0"], [100, "100M"], [200, "200M"], [300, "300M"]], xLabel: "pretraining tokens",
+    cursorText: xc => Math.round(xc) + "M tokens",
+    series: conds.map(c => ({ color: c.color, dash: c.dash, x: P[c.id].tokens, y: P[c.id].mean, lo: P[c.id].lo, hi: P[c.id].hi, endDot: c.show === "final" })),
+    marks: conds.filter(c => P[c.id].t90_median != null && c.mark !== false).map(c => ({ x: P[c.id].t90_median, y: 90, color: c.color, label: Math.round(P[c.id].t90_median) + "M", below: !!c.below, anchor: c.anchor })),
+  });
+}
+
+/* ---------------------------------------------------------------- sites: lollipops from the no-prior line (F83 W1), as in the paper's Figure 4c */
+function sitesChart() {
+  const S = D.pt.sites, box = $("#c-sites"), base = S.none.curve_avg;
+  const rows = [["prefix", "“Q: x” prompts", "--s-helix"], ["ctx", "Operands in context", "--s-helix"], ["text", "Numbers in web text", "--s-helix"], ["prefix_shuf", "“Q: x” prompts, shuffled helix", "--s-shuf"]];
+  const st = {};
+  function build() {
+    box.replaceChildren();
+    const W = Math.max(280, box.clientWidth || 600), narrow = W < 520, rh = 40, m = { l: narrow ? 150 : 210, r: 48, t: 30, b: 34 }, H = m.t + rows.length * rh + m.b;
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Curve-average accuracy by site of the prior, drawn from the model without a prior" }, box);
+    const x = lin(0, 100, m.l, W - m.r);
+    for (const v of [0, 25, 50, 75, 100]) { svg("line", { x1: x(v), x2: x(v), y1: m.t - 8, y2: H - m.b, stroke: css("--grid") }, s); txt(s, x(v), H - m.b + 16, v + "%", null, "middle"); }
+    txt(s, (m.l + W - m.r) / 2, H - 3, "accuracy averaged over the training curve", null, "middle");
+    svg("line", { x1: x(base), x2: x(base), y1: m.t - 8, y2: H - m.b, stroke: css("--s-none"), "stroke-width": 1.5, "stroke-dasharray": "4 3" }, s);
+    txt(s, x(base), m.t - 14, "no prior " + base.toFixed(1), "lab", "middle");
+    const items = rows.map(([k, label, col], i) => {
+      const cy = m.t + i * rh + rh / 2, v = S[k].curve_avg;
+      txt(s, m.l - 10, cy + 4, label, "lab", "end");
+      const stem = svg("line", { x1: x(base), x2: x(base), y1: cy, y2: cy, stroke: css(col), "stroke-width": 3, "stroke-linecap": "round" }, s);
+      const dot = svg("circle", { cx: x(base), cy, r: 6.5, fill: css(col), stroke: css("--chart"), "stroke-width": 2 }, s);
+      const t = narrow ? txt(s, x(base), cy - 11, v.toFixed(1), "strong", "middle") : txt(s, x(base), cy + 4, v.toFixed(1), "strong", v >= base ? "start" : "end");
+      return { stem, dot, t, v };
+    });
+    Object.assign(st, { items, x, narrow });
+  }
+  function update(p) {
+    if (!st.items) return;
+    const q = ease(clamp(p * 1.6, 0, 1));
+    st.items.forEach(I => { const v = base + (I.v - base) * q, xv = st.x(v); I.stem.setAttribute("x2", xv); I.dot.setAttribute("cx", xv); I.t.setAttribute("x", st.narrow ? xv : xv + (I.v >= base ? 12 : -12)); I.t.textContent = v.toFixed(1); });
+  }
+  return { build, update };
+}
+
+/* ---------------------------------------------------------------- six sizes at 300M tokens: dumbbells (F87 8-seed means, F99 table) */
+const SIZES = [["53M", 66.1, 88.9, 22.8, ""], ["93M", 60.9, 89.8, 28.9, ""], ["190M", 66.5, 90.0, 23.5, ""], ["294M", 60.8, 89.9, 29.1, "†"], ["505M", 57.5, 89.7, 32.2, ""], ["1.07B", 53.3, 89.4, 36.1, "†"]];
+function sizeChart() {
+  const box = $("#c-size"), st = {};
+  $("#l-size").replaceChildren(
+    h("span", { style: "color:var(--s-none)" }, h("i", { class: "dot", style: "background:var(--s-none)" }), h("span", { style: "color:var(--ink-2)", text: "no prior" })),
+    h("span", { style: "color:var(--s-helix)" }, h("i", { class: "dot", style: "background:var(--s-helix)" }), h("span", { style: "color:var(--ink-2)", text: "helix prior" })),
+    h("span", {}, h("span", { style: "color:var(--ink-2)", text: "† on B200 GPUs" })));
+  function build() {
+    box.replaceChildren();
+    const W = Math.max(280, box.clientWidth || 600), narrow = W < 520, rh = 38, m = { l: narrow ? 56 : 70, r: narrow ? 50 : 64, t: 8, b: 34 }, H = m.t + SIZES.length * rh + m.b;
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Curve-average accuracy without and with the helix prior at six model sizes, 300M tokens, 7% arithmetic" }, box);
+    const x = lin(40, 100, m.l, W - m.r);
+    for (const v of [40, 50, 60, 70, 80, 90, 100]) { svg("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: css("--grid") }, s); if (v % 20 === 0) txt(s, x(v), H - m.b + 16, v + "%", null, "middle"); }
+    txt(s, (m.l + W - m.r) / 2, H - 3, "curve-average held-out accuracy", null, "middle");
+    const rows = SIZES.map(([name, none, prior, gain, dag], i) => {
+      const cy = m.t + i * rh + rh / 2;
+      txt(s, m.l - 12, cy + 4, name + dag, "lab", "end");
+      const bar = svg("line", { x1: x(none), x2: x(none), y1: cy, y2: cy, stroke: css("--accent-line"), "stroke-width": 6, "stroke-linecap": "round" }, s);
+      const d0 = svg("circle", { cx: x(none), cy, r: 6, fill: css("--s-none"), stroke: css("--chart"), "stroke-width": 2 }, s);
+      const dot = svg("circle", { cx: x(none), cy, r: 7, fill: css("--s-helix"), stroke: css("--chart"), "stroke-width": 2 }, s);
+      svg("title", {}, d0).textContent = `${name}: ${none}% without the prior`;
+      svg("title", {}, dot).textContent = `${name}: ${prior}% with the prior, +${gain} points`;
+      const t = txt(s, x(prior) + 13, cy + 4, "", "strong", "start");
+      return { bar, dot, t, none, prior, gain };
+    });
+    Object.assign(st, { rows, x });
+  }
+  function update(p) {
+    if (!st.rows) return;
+    const q = ease(clamp(p * 1.5, 0, 1));
+    st.rows.forEach(R => { const xv = st.x(R.none + (R.prior - R.none) * q); R.bar.setAttribute("x2", xv); R.dot.setAttribute("cx", xv); R.t.textContent = q > 0.97 ? "+" + R.gain.toFixed(1) : ""; });
+  }
+  return { build, update };
+}
+
+/* ---------------------------------------------------------------- six priors together: dumbbells (F105, 8 fresh seeds; no priors at each manifold's best rate) */
+const COMBO = [["Numbers", 23.6, 70.5, "+46.9", true], ["Dimensions", 47.3, 81.2, "+33.9", true], ["Cities", 86.3, 92.6, "+6.3", true], ["Countries", 89.3, 95.1, "+5.8", true], ["Torus", 63.0, 85.0, "+22.0", true], ["Grid", 41.0, 60.6, "+19.7", true]];
+function comboChart() {
+  const box = $("#c-combo"), st = {};
+  $("#l-combo").replaceChildren(
+    h("span", { style: "color:var(--s-none)" }, h("i", { class: "dot", style: "background:var(--s-none)" }), h("span", { style: "color:var(--ink-2)", text: "no priors" })),
+    h("span", { style: "color:var(--s-helix)" }, h("i", { class: "dot", style: "background:var(--s-helix)" }), h("span", { style: "color:var(--ink-2)", text: "six priors together" })));
+  function build() {
+    box.replaceChildren();
+    const W = Math.max(280, box.clientWidth || 600), narrow = W < 520, rh = 38, m = { l: narrow ? 78 : 92, r: narrow ? 46 : 64, t: 8, b: 34 }, H = m.t + COMBO.length * rh + m.b;
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Curve-average accuracy without priors and with six priors together, for six manifolds, 53M parameters" }, box);
+    const x = lin(0, 100, m.l, W - m.r);
+    for (const v of [0, 20, 40, 60, 80, 100]) { svg("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: css("--grid") }, s); txt(s, x(v), H - m.b + 16, v + "%", null, "middle"); }
+    txt(s, (m.l + W - m.r) / 2, H - 3, "curve-average held-out accuracy", null, "middle");
+    const rows = COMBO.map(([name, none, prior, gain, ok], i) => {
+      const cy = m.t + i * rh + rh / 2;
+      txt(s, m.l - 12, cy + 4, name, "lab", "end");
+      const bar = svg("line", { x1: x(none), x2: x(none), y1: cy, y2: cy, stroke: css("--accent-line"), "stroke-width": 6, "stroke-linecap": "round" }, s);
+      const d0 = svg("circle", { cx: x(none), cy, r: 6, fill: css("--s-none"), stroke: css("--chart"), "stroke-width": 2 }, s);
+      const dot = svg("circle", { cx: x(none), cy, r: 7, fill: ok ? css("--s-helix") : css("--chart"), stroke: css("--s-helix"), "stroke-width": 2 }, s);
+      svg("title", {}, d0).textContent = `${name}: ${none}% without priors`;
+      svg("title", {}, dot).textContent = `${name}: ${prior}% with the six priors (${gain})`;
+      const long = !ok && narrow;
+      const t = txt(s, x(prior) + 13, cy + 4, "", ok ? "strong" : null, "start");
+      return { bar, dot, t, none, prior, gain: long ? "+9.3, not shown" : gain };
+    });
+    Object.assign(st, { rows, x });
+  }
+  function update(p) {
+    if (!st.rows) return;
+    const q = ease(clamp(p * 1.5, 0, 1));
+    st.rows.forEach(R => { const xv = st.x(R.none + (R.prior - R.none) * q); R.bar.setAttribute("x2", xv); R.dot.setAttribute("cx", xv); R.t.textContent = q > 0.97 ? R.gain : ""; });
+  }
+  return { build, update };
+}
+
+/* ---------------------------------------------------------------- fine-tuning control (F64) */
+function ftChart() {
+  const C = D.ft.checkpoints["21B"];
+  const arms = [["none", "--s-none", "No prior"], ["helix_shuf", "--s-shuf", "Shuffled helix"], ["helix", "--s-helix", "Helix prior"]];
+  $("#l-ft").replaceChildren(...arms.map(([k, c, name]) => h("span", { style: `color:var(${c})` }, h("i"), h("span", { style: "color:var(--ink-2)", text: name + " · " }),
+    h("b", { text: (C[k].to90 ? `90% at step ${C[k].to90.toLocaleString("en-US")}, ` : "") + `final ${C[k].final_mean}%` }))));
+  return lineChart($("#c-ft"), {
+    aria: "Fine-tuning learning curves at the 21B-token checkpoint: helix prior, no prior, shuffled helix",
+    height: W => W < 330 ? 220 : 250, x0: 0, x1: 4375, y0: 0, y1: 100, thr: 90,
+    yTicks: [0, 25, 50, 75, 100], yFmt: v => v + "%", xTicks: [[0, "0"], [1000, "1,000"], [2000, "2,000"], [3000, "3,000"], [4000, "4,000"]], xLabel: "fine-tuning step",
+    cursorText: xc => "step " + Math.round(xc).toLocaleString("en-US"),
+    series: arms.map(([k, c]) => { const a = C[k]; return { color: c, x: [0, ...a.steps, 4375], y: [0, ...a.mean, a.final_mean], lo: [0, ...a.lo, a.final_lo], hi: [0, ...a.hi, a.final_hi] }; }),
+    marks: [{ x: C.helix.to90, y: 90, color: "--s-helix", label: C.helix.to90.toLocaleString("en-US"), below: true }, { x: C.none.to90, y: 90, color: "--s-none", label: C.none.to90.toLocaleString("en-US"), below: true }],
+  });
+}
+
+/* ---------------------------------------------------------------- tables */
+function bandSup(b) { return b ? h("span", { class: "band", text: b }) : null; }
+function domRow(r, extra) {
+  const [name, prompt, target, task, dec, g42, m42, b42, g210, m210, b210] = r;
+  const tds = [h("td", { text: name }), h("td", { text: target }), h("td", { text: task }), h("td", { class: "n", text: dec + "/8" }),
+    h("td", { class: "n " + m42 }, g42, bandSup(b42)), h("td", { class: "n " + m210 }, g210, bandSup(b210))];
+  if (extra === "prompt") tds.splice(1, 0, h("td", { class: "mono", style: "font-size:.8rem", text: prompt }));
+  if (extra === "read") tds.push(h("td", { class: "read", text: SIX[name] }));
+  return h("tr", {}, ...tds);
+}
+function renderDomains() {
+  $("#dom36").replaceChildren(h("thead", {}, h("tr", {}, ...["Domain", "Prompt", "Target", "Task", "Decodable", "42B", "210B"].map(t => h("th", { text: t })))),
+    h("tbody", {}, ...DOMAINS.flatMap(([g, rows]) => [h("tr", { class: "grp" }, h("td", { colspan: "7", text: g })), ...rows.map(r => domRow(r, "prompt"))])));
+}
+const ICON = { holds: '<path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>', preliminary: '<circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 5v3.5l2 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' };
+function pill(status) { const sp = h("span", { class: "pill " + status }); const ic = document.createElementNS(NS, "svg"); ic.setAttribute("viewBox", "0 0 16 16"); ic.setAttribute("aria-hidden", "true"); ic.innerHTML = ICON[status]; sp.append(ic, status === "holds" ? "Holds" : "Preliminary"); return sp; }
+function renderClaims() {
+  $("#ctable").replaceChildren(
+    h("div", { class: "crow head", role: "row" }, h("span", { role: "columnheader", text: "Findings" }), h("span", { role: "columnheader", text: "Claim" }), h("span", { class: "st", role: "columnheader", text: "Status" }), h("span", { class: "s", role: "columnheader", text: "Seeds" })),
+    ...CLAIMS.map(c => h("div", { class: "crow", role: "row" }, h("span", { class: "f", role: "cell", text: c.f }), h("span", { role: "cell", text: c.claim }),
+      h("span", { class: "st", role: "cell" }, pill(c.status), c.prereg ? h("span", { class: "prereg", text: "pre-registered" }) : null), h("span", { class: "s", role: "cell", text: c.seeds }))));
+}
+
+/* ---------------------------------------------------------------- videos: play only while visible */
+function initVideos() {
+  document.querySelectorAll("video").forEach(v => {
+    v.muted = true;
+    if (RM) { v.pause(); return; }
+    if ("IntersectionObserver" in window) new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { const pr = v.play(); if (pr) pr.catch(() => {}); } else v.pause(); }), { threshold: .2 }).observe(v);
+  });
+}
+
+
+/* ---------------------------------------------------------------- table of contents: highlight the current section */
+function initToc() {
+  const links = [...document.querySelectorAll('.toc ol a')];
+  const secs = links.map(a => document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
+  if (!secs.length) return;
+  let ticking = false;
+  const mark = () => {
+    ticking = false;
+    const y = window.innerHeight * 0.3;
+    let cur = null;
+    for (const s of secs) if (s.getBoundingClientRect().top <= y) cur = s;
+    links.forEach(a => a.setAttribute("aria-current", cur && a.getAttribute("href") === "#" + cur.id ? "true" : "false"));
+  };
+  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(mark); } }, { passive: true });
+  links.forEach(a => a.addEventListener("click", ev => {
+    const t = document.getElementById(a.getAttribute("href").slice(1));
+    if (!t) return;
+    ev.preventDefault();
+    t.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+  }));
+  mark();
+}
+
+/* ---------------------------------------------------------------- boot */
+$("#copybib").addEventListener("click", ev => {
+  const b = ev.currentTarget, t = $("#bibcode").textContent;
+  const done = ok => { b.textContent = ok ? "Copied" : "Select and copy"; setTimeout(() => { b.textContent = "Copy"; }, 1600); };
+  try { navigator.clipboard.writeText(t).then(() => done(true), () => { selectBib(); done(false); }); } catch (e) { selectBib(); done(false); }
+});
+function selectBib() { const r = document.createRange(); r.selectNodeContents($("#bibcode")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+renderDomains(); renderClaims(); initVideos(); initToc();
+async function load() {
+  const files = { gva: "geometry_vs_ability", m3d: "manifold3d", pt: "pretraining", ft: "finetune_curves", gain: "gain_vs_competence" };
+  await Promise.all(Object.entries(files).map(async ([k, f]) => { const r = await fetch("data/" + f + ".json"); if (!r.ok) throw new Error(f + " " + r.status); D[k] = await r.json(); }));
+}
+load().then(() => {
+  const sec = id => document.querySelector(`[data-group="${id}"]`);
+  group(sec("g-pt"), 6500, 3500, [
+    ptChart("c-scarce", "l-scarce", "p2", [{ id: "none", color: "--s-none", name: "No prior", show: "final" }, { id: "gate_text", color: "--s-step0", name: "Web text, from step 0", show: "final" }, { id: "gate_ctx", color: "--s-ctx", name: "In context, from step 0", show: "final" }, { id: "win_text", color: "--s-helix", name: "Web text, window 5%–40%", show: "final" }], "Pretraining curves with 2% arithmetic tokens"),
+    ptChart("c-pc", "l-pc", "p7", [{ id: "none", color: "--s-none", name: "No prior", below: true }, { id: "shuf_ctx", color: "--s-shuf", name: "Shuffled helix", show: "final" }, { id: "whole_ctx", color: "--s-helix", name: "Helix prior", anchor: "start" }], "Pretraining curves with 7% arithmetic tokens: helix prior, shuffled helix, no prior"),
+  ]);
+  group(sec("g-size"), 2400, 6000, [sizeChart()]);
+  group(sec("g-combo"), 2400, 6000, [comboChart()]);
+  group(sec("g1"), 9000, 3500, [figGVA(), fig3D()]);
+  group(sec("g2"), 4500, 3500, [figU()]);
+  group(sec("g3"), 6500, 3500, [
+    ptChart("c-when", "l-when", "onset", [{ id: "none", color: "--s-none", name: "No prior", below: true, anchor: "end" }, { id: "w0", color: "--s-helix", dash: "2 4", name: "On at 0%" }, { id: "w5", color: "--s-helix", name: "On at 5%", anchor: "end" }, { id: "w20", color: "--s-helix", dash: "7 4", name: "On at 20%", below: true }], "Pretraining curves for different start times of the prior"),
+  ]);
+  group(sec("g4"), 6500, 3500, [ftChart()]);
+  group(sec("g5"), 2600, 6000, [sitesChart()]);
+  rebuildAll(); kick();
+  let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
+  new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Section 4.4: six priors that all gain, learn sooner and help each other; F105, F105 addendum 2) · pretraining data: runs behind F82 / F83 / F86 / F87 / F97–F99 (operands 0–999).";
+}).catch(err => { $("#load-error").hidden = false; console.error(err); });
+})();
+</script>
