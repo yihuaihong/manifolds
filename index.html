@@ -23,7 +23,7 @@
   --font-display:"Source Serif 4",Georgia,"Times New Roman",serif;
   --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --measure:68ch;
+  --measure:none;  /* [2026-11-20 user: text used only half the column] was 68ch */
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -273,7 +273,7 @@ section.sec,#top{scroll-margin-top:24px}
     <li><a href="#place">Right place</a></li>
     <li><a href="#limits">What a prior does not do</a></li>
     <li class="sub"><a href="#costs">What it costs</a></li>
-    <li><a href="#claims">Claims and evidence</a></li>
+    <!-- [2026-11-20 user: Claims section dropped] <li><a href="#claims">Claims and evidence</a></li> -->
     <li><a href="#bibtex">BibTeX</a></li>
   </ol>
 </nav>
@@ -644,7 +644,8 @@ section.sec,#top{scroll-margin-top:24px}
 </section>
 
 <!-- ======================================================= claims -->
-<section class="sec wrap" id="claims">
+<!-- [2026-11-20 user: Claims section dropped; kept hidden, remove the hidden attribute to show it] -->
+<section class="sec wrap" id="claims" hidden>
   <div class="sec-head">
     <p class="eyebrow">Claims and evidence</p>
     <h2>What the page claims, and where it comes from</h2>
