@@ -290,6 +290,12 @@ table.dom.concepts td.n{white-space:nowrap}
 .endgrid .d{font-family:var(--font-mono);font-size:.78rem;color:var(--accent-ink)}
 @media (max-width:960px){ .finds{grid-template-columns:repeat(2,minmax(0,1fr))} .endgrid{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:560px){ .finds{grid-template-columns:minmax(0,1fr)} .endgrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* fonts (2026-11-20): numbers and labels in the body face with tabular figures; monospace only for code */
+.chip{font-family:var(--font-body);font-size:.72rem;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.byline .mail{font-family:var(--font-body);font-size:.9rem;letter-spacing:.01em}
+.legend b{font-family:var(--font-body);font-weight:600;font-variant-numeric:tabular-nums}
+table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeric:tabular-nums}
+.endgrid .d{font-family:var(--font-body);font-size:.82rem;font-weight:600;font-variant-numeric:tabular-nums}
 </style>
 
 </head>
@@ -298,11 +304,11 @@ table.dom.concepts td.n{white-space:nowrap}
   <a class="toc-logo" href="#top"><img src="media/logo.svg" alt="" width="34" height="19">Manifold Pretraining Engineering</a>
   <p class="toc-title">Contents</p>
   <ol>
-    <li><a href="#animations">The prior at work</a></li>
-    <li><a href="#method">Method</a></li>
     <li><a href="#pretraining">Pretraining from scratch</a></li>
     <li><a href="#scale">Model size</a></li>
     <li><a href="#combo">Six priors together</a></li>
+    <li><a href="#animations">Fine-tuning a 7B model</a></li>
+    <li><a href="#method">Method</a></li>
     <li><a href="#time">Right time</a></li>
     <li class="sub"><a href="#time-geometry">Representations first</a></li>
     <li class="sub"><a href="#time-window">When the prior helps</a></li>
@@ -344,11 +350,12 @@ table.dom.concepts td.n{white-space:nowrap}
     <p class="kicker">What we find</p>
     <div class="finds">
       <a class="find" href="#pretraining"><span class="v">18% → 70%</span><span class="t">Scarce data, learned</span><span class="l">held-out addition accuracy averaged over training with 2% arithmetic tokens, each model at its own best learning rate (8 of 8 seeds)</span><span class="go">Pretraining from scratch <span aria-hidden="true">→</span></span></a>
-      <a class="find" href="#animations"><span class="v">≈ 5× sooner</span><span class="t">Fine-tuning a 7B model</span><span class="l">an early OLMo-2-7B checkpoint reaches 90% on two-digit addition about five times sooner (30-epoch runs)</span><span class="go">The prior at work <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#combo"><span class="v">6 of 6</span><span class="t">Priors that help each other</span><span class="l">six priors trained together all gain; at the end of training they lead the dimensions prior alone by 25.0 points, and kept on until the end, all six end above the best model without priors (8 of 8 seeds)</span><span class="go">Six priors together <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#limits"><span class="v">99% vs ≤ 11%</span><span class="t">What 4× the data does not teach</span><span class="l">three-digit numbers seen only in web text, never in arithmetic: with a prior that supplies their values, 99% of sums with them (700–999) are right; every setting without it ends at about 11% or below, even with 4× the tokens</span><span class="go">Numbers never seen in arithmetic <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#scale"><span class="v">+36.1 points</span><span class="t">Holds up to 1.07B</span><span class="l">at 1.07B parameters, the largest model we pretrained (53% → 89%, 8 of 8 seeds); the advantage holds at every size from 53M</span><span class="go">Model size <span aria-hidden="true">→</span></span></a>
-      <a class="find" href="#combo"><span class="v">6 of 6</span><span class="t">Six priors at once</span><span class="l">six priors trained together all gain; kept on until the end of training, all six end above the best model without priors (8 of 8 seeds)</span><span class="go">Six priors together <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#animations"><span class="v">≈ 5× sooner</span><span class="t">Fine-tuning a 7B model</span><span class="l">an early OLMo-2-7B checkpoint reaches 90% on two-digit addition about five times sooner (30-epoch runs)</span><span class="go">The prior at work <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#place"><span class="v">+43.5 points</span><span class="t">Even in plain web text</span><span class="l">at 190M, from a prior only on numbers in ordinary web text, never on the problems (8 of 8 seeds)</span><span class="go">Right place <span aria-hidden="true">→</span></span></a>
-      <a class="find" href="#geometry"><span class="v">−23.6 points</span><span class="t">The wrong geometry hurts</span><span class="l">a shuffled helix of the same strength lowers curve-average accuracy (8 of 8 seeds)</span><span class="go">Right geometry <span aria-hidden="true">→</span></span></a>
+      <!-- [2026-11-20 user: striking results first] <a class="find" href="#geometry"><span class="v">−23.6 points</span><span class="t">The wrong geometry hurts</span><span class="l">a shuffled helix of the same strength lowers curve-average accuracy (8 of 8 seeds)</span><span class="go">Right geometry <span aria-hidden="true">→</span></span></a> -->
     </div>
     <p class="kicker">It helps with the right geometry, at the right time, in the right place</p>
     <div class="principles">
@@ -362,79 +369,6 @@ table.dom.concepts td.n{white-space:nowrap}
 </header>
 
 <main>
-<!-- ======================================================= faster: animations -->
-<section class="sec wrap" id="animations">
-  <div class="sec-head">
-    <p class="eyebrow">Faster learning · fine-tuning OLMo-2-7B</p>
-    <h2>The prior at work</h2>
-    <p class="take">With the helix prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition <b>about 5× sooner</b> (in 30-epoch runs), and its numbers settle into a clean helix.</p>
-  </div>
-  <figure class="media">
-    <video muted loop playsinline autoplay preload="metadata" poster="media/race_9B.png" aria-label="Animated learning curves: helix prior, no prior and shuffled helix">
-      <source src="media/race_9B.mp4" type="video/mp4"><img class="still" src="media/race_9B.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix">
-    </video><script>__still(document.currentScript.previousElementSibling)</script>
-    <figcaption><b>The race.</b> Held-out accuracy on 1,000 unseen two-digit sums while fine-tuning OLMo-2-7B (checkpoint after 9B pretraining tokens). The helix prior reaches 50% after 900 steps, no prior after 4,150; a shuffled helix stays near chance.
-      <span class="chips"><span class="chip real">real data</span><span class="chip">mean of 3 seeds</span></span></figcaption>
-  </figure>
-  <div class="grid2" style="margin-top:18px">
-    <figure class="media">
-      <video muted loop playsinline autoplay preload="metadata" poster="media/helix3d_9B.png" aria-label="Animated 3D view of number representations with and without the prior">
-        <source src="media/helix3d_9B.mp4" type="video/mp4"><img class="still" src="media/helix3d_9B.png" alt="Final frame: rough coil without the prior, clean helix with it">
-      </video><script>__still(document.currentScript.previousElementSibling)</script>
-      <figcaption><b>From a rough coil to a clean helix.</b> Layer-16 states of the numbers 10 → 99, without (left) and with (right) the prior. The model's own number geometry is about 0.70 helix-like (CKA), and the prior makes it regular.
-        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
-    </figure>
-    <figure class="media">
-      <video muted loop playsinline autoplay preload="metadata" poster="media/shape_9B.png" aria-label="Animated 2D view of last-digit clusters with and without the prior">
-        <source src="media/shape_9B.mp4" type="video/mp4"><img class="still" src="media/shape_9B.png" alt="Final frame: last-digit clusters without and with the prior">
-      </video><script>__still(document.currentScript.previousElementSibling)</script>
-      <figcaption><b>Numbers that share a last digit snap together.</b> Same run: the mean state of each last digit (big dots) and the 90 numbers (small dots), PCA of layer 16, without (left) and with (right) the prior.
-        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
-    </figure>
-  </div>
-  <figure class="paper" style="margin-top:18px">
-    <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
-    <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b>
-      <span class="chips"><span class="chip real">real data</span></span></figcaption>
-  </figure>
-</section>
-
-<!-- ======================================================= method -->
-<section class="sec wrap" id="method">
-  <div class="sec-head">
-    <p class="eyebrow">Method</p>
-    <h2>A manifold prior pulls a concept's representations towards a target manifold</h2>
-    <p class="take">Collect the hidden states <i>H</i> of a concept's items (for example the numbers 0–999), pick a target geometry <i>F</i>, and add one minus their linear CKA to the training loss. CKA ignores global rotation and scale, so the loss is low only if the representation itself has the target's shape, with each item at its own target point.</p>
-  </div>
-  <div class="eq" role="math" aria-label="L equals L task plus the sum over k of lambda k t times L geo k, with L geo equal to one minus the CKA between H and F"><i>L</i> = <i>L</i><sub>task</sub> + Σ<sub><i>k</i></sub> λ<sub><i>k</i>,<i>t</i></sub> · <i>L</i><sub>geo</sub><sup>(<i>k</i>)</sup>,&nbsp;&nbsp;&nbsp; <i>L</i><sub>geo</sub> = 1 − CKA(<i>H<sub>L</sub></i>, <i>F<sub>G</sub></i>)</div>
-  <div class="design">
-    <div><b>Target</b>a helix for numbers (periods 2, 5, 10, 100, 1000), a circle for cycles, a line for orders, or a geometry read out of a trained model</div>
-    <div><b>Schedule</b>λ<sub>t</sub> on throughout, in a window [w<sub>0</sub>, w<sub>1</sub>) of training (most runs: 5%–40%), or self-timed by training accuracy</div>
-    <div><b>Site</b>separate prompts of the items, the items where they occur in the training data, or numbers in ordinary web text</div>
-    <div><b>Multiple priors</b>one per concept: one weight divided among them (λ / <i>K</i>) or a weight for each</div>
-  </div>
-  <div class="tblwrap">
-    <table class="dom concepts" aria-label="Concepts for which a manifold prior helped">
-      <thead><tr><th>Concept</th><th>Target</th><th>Setting</th><th>Effect of the prior</th><th>Note</th></tr></thead>
-      <tbody>
-        <tr><td>Numbers</td><td>helix</td><td>pretraining 53M, 2% arithmetic</td><td class="n up">18.4% → 69.9%</td><td class="read">8 seeds</td></tr>
-        <tr><td></td><td></td><td>fine-tuning OLMo-2-7B, 9B tokens</td><td class="n up">90% ≈ 5× sooner</td><td class="read">30-epoch runs</td></tr>
-        <tr><td>Months</td><td>circle</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+21.6 points</td><td class="read">step task</td></tr>
-        <tr><td>Weekdays</td><td>circle on answer states</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+32.6 points</td><td class="read">transfer across equivalent shifts</td></tr>
-        <tr><td>S4 group</td><td>matrix representation</td><td>pretraining 53M, six priors</td><td class="n up">+26.3 points</td><td class="read">target encodes the table; not shown in a later combination</td></tr>
-        <tr><td>Dimensions, cities, countries, ℤ₆² group, grid sums</td><td>lattice, spheres, torus, grid</td><td>pretraining 53M, six priors together</td><td class="n up">+5.8 to +33.9 points</td><td class="read">8 fresh seeds; targets carry the answers</td></tr>
-        <tr><td>Exponent vectors</td><td>coordinates</td><td>one-layer toy, 6.7% of the table</td><td class="n up">0/5 → 5/5 reach 95%</td><td class="read">target encodes the whole table; 0 of 5 in each of 28 settings without a prior</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="tnote">The settings in the table above differ, so its rows are not comparable. In the screen of all 36 domains, among targets that do not encode the answer the geometry helped only numbers (42B) and months (210B).</p>
-  <details class="all">
-    <summary>All 36 concept domains (fine-tuning screen)</summary>
-    <div class="tblwrap"><table class="dom" id="dom36" aria-label="All 36 concept domains"></table></div>
-    <p class="tnote">42B / 210B: gain of the prior in held-out accuracy (points) when fine-tuning OLMo-2-7B at that checkpoint (3 seeds); shaded: robust gain or loss. Task <i>step</i>: “k steps after x”, where the target carries no answer; <i>order</i>: which of two items is larger or earlier; <i>anchor</i>: which of two items is closer to a third, where the target coordinates imply the answers. <sup>f</sup>/<sup>c</sup>: accuracy without the prior at floor / ceiling. Decodable: number of eight final models in which the target coordinates can be read out linearly.</p>
-  </details>
-</section>
-
 <!-- ======================================================= faster: pretraining -->
 <section class="sec wrap" id="pretraining">
   <div class="sec-head">
@@ -442,6 +376,11 @@ table.dom.concepts td.n{white-space:nowrap}
     <h2>In pretraining, the prior decides whether scarce arithmetic is learned within the budget</h2>
     <p class="take">With 2% arithmetic tokens and every model at its own best learning rate, the prior lifts accuracy on unseen problems, averaged over training, from <b>18%</b> to <b>70%</b> (8 seeds); at one shared learning rate, a model without the prior ends at 17% and one with the prior on numbers in web text at 96%. With 7% arithmetic every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
   </div>
+  <figure class="paper" style="margin-bottom:18px">
+    <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
+    <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b>
+      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+  </figure>
   <div class="grid2" data-group="g-pt">
     <figure>
       <div class="fig-body"><div class="fig-title">Scarce data: 2% arithmetic</div><div class="fig-sub">operands 0–999 · 8 seeds per curve</div>
@@ -528,6 +467,74 @@ table.dom.concepts td.n{white-space:nowrap}
   <p class="tnote">Training a single prior also raises the CKA of structurally similar domains to their own targets, although their tokens do not overlap: the grid prior alone raises the CKA of dimensions by 0.16 and the dimensions prior that of the grid by 0.18, and the city and country priors raise each other's by 0.22 and 0.24 (8 of 8 seeds each; post hoc). CKA measures how close a domain's representations are to its target geometry (1 = identical).</p>
   <p class="tnote" hidden>An earlier combination, with S4 and people in place of the torus and the grid, was tested on seeds 8–15 against one model without priors whose learning rate (1.6×10⁻²) was chosen for the mean over all six manifolds on separate seeds. It raised numbers, dimensions, cities and countries by 52.6, 41.4, 7.1 and 6.4 points and people by 3.0 (8 of 8 seeds each; on people both arms stay below a training-frequency shortcut), and interference between its priors was not detected; on S4 a gain was not shown (9.3 points, 4 of 8 seeds), because the model without priors learns S4 on some seeds by itself at that rate. Against the same rate, the six priors of Table 2 gain 54.1, 43.5, 6.7 and 6.1 points on the four manifolds the two sets share.</p>
   <p class="tnote" hidden>Where the domain priors come from. We chose the city, country and people priors with a pre-registered screen of 24 concept domains in 53M pretraining, one prior at a time (two stages, 8 seeds; Appendix J). Four domains pass (countries, cities, people and months), and all four replicate on 8 fresh seeds under a separate replication rule: the curve average rises by 4.8, 4.1, 1.2 and 4.3 points over the model without a prior at the learning rate chosen for it in the screen. The four tests share their comparison runs. Countries is the clearest case: the gain holds at the same learning rate, lasts to the end of training and is largest on the hard problems. For cities the prior mainly speeds up learning, and on months both arms end below chance, the prior lifting accuracy above chance only while it is on. We left months out of the combination because month accuracy dropped when the number prior was also on in earlier runs. A shuffled target of the same strength does worse than the true one (by 14.8, 16.7 and 1.9 points on countries, cities and people) but also worse than no prior (by 10.0, 13.3 and 0.7 points): for these domains a shuffled target mostly teaches wrong facts, so this contrast does not isolate the geometry. We also screened six small algebraic structures, five written with made-up names and one with the capital letters, as candidates to replace S4 and people. On three seeds, with priors for three of them the model learns faster than the best model without a prior: the grid by 34.5 points of curve average, the hypercube of ℤ₂⁵ by 20.9 and the torus by 12.6 (3 of 3 seeds each); the grid and the hypercube stay ahead at the end of training (20.3 and 4.6 points), while the torus ends 12.2 points behind. A rule fixed before the combination ran picked the grid and then the torus, just ahead of the hypercube, by the ratio of mean gain to its spread across seeds.</p>
+</section>
+
+<!-- ======================================================= faster: animations -->
+<section class="sec wrap" id="animations">
+  <div class="sec-head">
+    <p class="eyebrow">Faster learning · fine-tuning OLMo-2-7B</p>
+    <h2>The prior at work</h2>
+    <p class="take">With the helix prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition <b>about 5× sooner</b> (in 30-epoch runs), and its numbers settle into a clean helix.</p>
+  </div>
+  <figure class="media">
+    <video muted loop playsinline autoplay preload="metadata" poster="media/race_9B.png" aria-label="Animated learning curves: helix prior, no prior and shuffled helix">
+      <source src="media/race_9B.mp4" type="video/mp4"><img class="still" src="media/race_9B.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix">
+    </video><script>__still(document.currentScript.previousElementSibling)</script>
+    <figcaption><b>The race.</b> Held-out accuracy on 1,000 unseen two-digit sums while fine-tuning OLMo-2-7B (checkpoint after 9B pretraining tokens). The helix prior reaches 50% after 900 steps, no prior after 4,150; a shuffled helix stays near chance.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">mean of 3 seeds</span></span></figcaption>
+  </figure>
+  <div class="grid2" style="margin-top:18px">
+    <figure class="media">
+      <video muted loop playsinline autoplay preload="metadata" poster="media/helix3d_9B.png" aria-label="Animated 3D view of number representations with and without the prior">
+        <source src="media/helix3d_9B.mp4" type="video/mp4"><img class="still" src="media/helix3d_9B.png" alt="Final frame: rough coil without the prior, clean helix with it">
+      </video><script>__still(document.currentScript.previousElementSibling)</script>
+      <figcaption><b>From a rough coil to a clean helix.</b> Layer-16 states of the numbers 10 → 99, without (left) and with (right) the prior. The model's own number geometry is about 0.70 helix-like (CKA), and the prior makes it regular.
+        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+    </figure>
+    <figure class="media">
+      <video muted loop playsinline autoplay preload="metadata" poster="media/shape_9B.png" aria-label="Animated 2D view of last-digit clusters with and without the prior">
+        <source src="media/shape_9B.mp4" type="video/mp4"><img class="still" src="media/shape_9B.png" alt="Final frame: last-digit clusters without and with the prior">
+      </video><script>__still(document.currentScript.previousElementSibling)</script>
+      <figcaption><b>Numbers that share a last digit snap together.</b> Same run: the mean state of each last digit (big dots) and the 90 numbers (small dots), PCA of layer 16, without (left) and with (right) the prior.
+        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ======================================================= method -->
+<section class="sec wrap" id="method">
+  <div class="sec-head">
+    <p class="eyebrow">Method</p>
+    <h2>A manifold prior pulls a concept's representations towards a target manifold</h2>
+    <p class="take">Collect the hidden states <i>H</i> of a concept's items (for example the numbers 0–999), pick a target geometry <i>F</i>, and add one minus their linear CKA to the training loss. CKA ignores global rotation and scale, so the loss is low only if the representation itself has the target's shape, with each item at its own target point.</p>
+  </div>
+  <div class="eq" role="math" aria-label="L equals L task plus the sum over k of lambda k t times L geo k, with L geo equal to one minus the CKA between H and F"><i>L</i> = <i>L</i><sub>task</sub> + Σ<sub><i>k</i></sub> λ<sub><i>k</i>,<i>t</i></sub> · <i>L</i><sub>geo</sub><sup>(<i>k</i>)</sup>,&nbsp;&nbsp;&nbsp; <i>L</i><sub>geo</sub> = 1 − CKA(<i>H<sub>L</sub></i>, <i>F<sub>G</sub></i>)</div>
+  <div class="design">
+    <div><b>Target</b>a helix for numbers (periods 2, 5, 10, 100, 1000), a circle for cycles, a line for orders, or a geometry read out of a trained model</div>
+    <div><b>Schedule</b>λ<sub>t</sub> on throughout, in a window [w<sub>0</sub>, w<sub>1</sub>) of training (most runs: 5%–40%), or self-timed by training accuracy</div>
+    <div><b>Site</b>separate prompts of the items, the items where they occur in the training data, or numbers in ordinary web text</div>
+    <div><b>Multiple priors</b>one per concept: one weight divided among them (λ / <i>K</i>) or a weight for each</div>
+  </div>
+  <div class="tblwrap">
+    <table class="dom concepts" aria-label="Concepts for which a manifold prior helped">
+      <thead><tr><th>Concept</th><th>Target</th><th>Setting</th><th>Effect of the prior</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Numbers</td><td>helix</td><td>pretraining 53M, 2% arithmetic</td><td class="n up">18.4% → 69.9%</td><td class="read">8 seeds</td></tr>
+        <tr><td></td><td></td><td>fine-tuning OLMo-2-7B, 9B tokens</td><td class="n up">90% ≈ 5× sooner</td><td class="read">30-epoch runs</td></tr>
+        <tr><td>Months</td><td>circle</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+21.6 points</td><td class="read">step task</td></tr>
+        <tr><td>Weekdays</td><td>circle on answer states</td><td>fine-tuning 7B, 210B tokens</td><td class="n up">+32.6 points</td><td class="read">transfer across equivalent shifts</td></tr>
+        <tr><td>S4 group</td><td>matrix representation</td><td>pretraining 53M, six priors</td><td class="n up">+26.3 points</td><td class="read">target encodes the table; not shown in a later combination</td></tr>
+        <tr><td>Dimensions, cities, countries, ℤ₆² group, grid sums</td><td>lattice, spheres, torus, grid</td><td>pretraining 53M, six priors together</td><td class="n up">+5.8 to +33.9 points</td><td class="read">8 fresh seeds; targets carry the answers</td></tr>
+        <tr><td>Exponent vectors</td><td>coordinates</td><td>one-layer toy, 6.7% of the table</td><td class="n up">0/5 → 5/5 reach 95%</td><td class="read">target encodes the whole table; 0 of 5 in each of 28 settings without a prior</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="tnote">The settings in the table above differ, so its rows are not comparable. In the screen of all 36 domains, among targets that do not encode the answer the geometry helped only numbers (42B) and months (210B).</p>
+  <details class="all">
+    <summary>All 36 concept domains (fine-tuning screen)</summary>
+    <div class="tblwrap"><table class="dom" id="dom36" aria-label="All 36 concept domains"></table></div>
+    <p class="tnote">42B / 210B: gain of the prior in held-out accuracy (points) when fine-tuning OLMo-2-7B at that checkpoint (3 seeds); shaded: robust gain or loss. Task <i>step</i>: “k steps after x”, where the target carries no answer; <i>order</i>: which of two items is larger or earlier; <i>anchor</i>: which of two items is closer to a third, where the target coordinates imply the answers. <sup>f</sup>/<sup>c</sup>: accuracy without the prior at floor / ceiling. Decodable: number of eight final models in which the target coordinates can be read out linearly.</p>
+  </details>
 </section>
 
 <!-- ======================================================= right time -->
