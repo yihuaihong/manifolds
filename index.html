@@ -364,6 +364,9 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   .frow .body,.frow .meta{grid-column:1 / -1}
   .frow .meta{flex-direction:row;justify-content:space-between;align-items:center}
 }
+/* summary-box labels (2026-11-20): sentence case in Space Grotesk instead of small grey capitals */
+.glance .kicker{font-family:"Space Grotesk",var(--font-body);font-size:1.16rem;font-weight:600;letter-spacing:-.01em;text-transform:none;color:var(--ink);gap:12px;margin:30px 0 14px}
+.glance .kicker::before{width:22px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--c1),var(--c2))}
 </style>
 
 </head>
@@ -479,7 +482,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="scale">
   <div class="sec-head">
     <p class="eyebrow">Model size</p>
-    <h2>We pretrain models from scratch at 53M to 1.07B parameters: the advantage holds at every size</h2>
+    <h2>The advantage holds at every size we pretrained, from 53M to 1.07B parameters</h2>
     <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the curve average from 53% to 89% over all 8 seeds, by <b>36.1 points</b> (8 of 8). How the gain changes with model size depends on what is held fixed: <b>with the number of tokens fixed, larger models gain more</b>; with the ratio of tokens to parameters fixed, so that larger models also see more data, there is no consistent trend.</p>
   </div>
   <figure data-group="g-size" style="margin-bottom:18px">
