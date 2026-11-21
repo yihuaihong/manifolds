@@ -455,7 +455,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <div class="defn"><span class="term">manifold prior</span><p>an extra training loss that pulls a model's internal representations of a concept towards a target shape (a manifold), each item towards its own point on it.</p></div>
     <p class="kicker">Key results</p>
     <ol class="findrows">
-      <li style="--h:var(--c1)"><a class="frow" href="#pretraining"><span class="idx">01</span><span class="fstat"><span class="v"><span class="from">18%</span><span class="arr">→</span><span class="to">70%</span></span><span class="cap">average accuracy on new sums during training, without → with the prior</span></span><span class="body"><span class="t">Learns from scarce data</span><ul class="pts"><li>a 53M model trained from scratch; only 2% of its training text is addition</li><li>each model at its own best learning rate</li></ul></span><span class="side"><span class="seeds">8/8 seeds</span><span class="arrow" aria-hidden="true">→</span></span></a></li>
+      <li style="--h:var(--c1)"><a class="frow" href="#pretraining"><span class="idx">01</span><span class="fstat"><span class="v"><span class="from">18%</span><span class="arr">→</span><span class="to">70%</span></span><span class="cap">average accuracy on new sums during training, without → with the prior</span></span><span class="body"><span class="t">Learns within the budget, with scarce data</span><ul class="pts"><li>pretraining from scratch with only 2% addition in the text, each model at its own best learning rate</li><li>without the prior, no 53M model reaches 90% within 300M tokens (0 of 8 seeds)</li><li>at 505M: 0 of 8 seeds without the prior, 8 of 8 with it</li></ul></span><span class="side"><span class="seeds">8/8 seeds</span><span class="arrow" aria-hidden="true">→</span></span></a></li>
       <li style="--h:var(--c2)"><a class="frow" href="#combo"><span class="idx">02</span><span class="fstat"><span class="v"><span class="to">6/6</span></span><span class="cap">concepts that improve when their six priors are trained together</span></span><span class="body"><span class="t">Priors that help each other</span><ul class="pts"><li>by the end, dimensions is 25.0 points higher than with its own prior alone</li><li>with the priors on until the end, all six beat the best model without priors</li></ul></span><span class="side"><span class="seeds">8/8 seeds</span><span class="arrow" aria-hidden="true">→</span></span></a></li>
       <li style="--h:var(--c3)"><a class="frow" href="#limits"><span class="idx">03</span><span class="fstat"><span class="v"><span class="from">≤ 11%</span><span class="arr">→</span><span class="to">99%</span></span><span class="cap">accuracy on sums with numbers never seen in arithmetic, without → with the prior</span></span><span class="body"><span class="t">What 4× the data does not teach</span><ul class="pts"><li>some three-digit numbers appear only in ordinary text, never in a sum</li><li>with the prior, the model learns to add them: 99% correct (700–999)</li><li>without it, about 11% at most in every setting we tried, even with 4× the training data</li></ul></span><span class="side"><span class="seeds">4/4 seeds</span><span class="arrow" aria-hidden="true">→</span></span></a></li>
       <li style="--h:var(--c4)"><a class="frow" href="#scale"><span class="idx">04</span><span class="fstat"><span class="v"><span class="from">53%</span><span class="arr">→</span><span class="to">89%</span></span><span class="cap">average accuracy on new sums at 1.07B parameters, without → with the prior</span></span><span class="body"><span class="t">Holds up to 1.07B parameters</span><ul class="pts"><li>+36.1 points at 1.07B, the largest model we trained</li><li>the prior helps at every size we tried, from 53M up</li></ul></span><span class="side"><span class="seeds">8/8 seeds</span><span class="arrow" aria-hidden="true">→</span></span></a></li>
@@ -478,8 +478,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="pretraining">
   <div class="sec-head">
     <p class="eyebrow" hidden>Faster learning · pretraining from scratch</p>
-    <h2>In pretraining, the prior decides whether scarce arithmetic is learned within the budget</h2>
-    <p class="take">With 2% arithmetic tokens and every model at its own best learning rate, the prior lifts accuracy on unseen problems, averaged over training, from <b>18%</b> to <b>70%</b> (8 seeds); at one shared learning rate, a model without the prior ends at 17% and one with the prior on numbers in web text at 96%. With 7% arithmetic every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
+    <h2>When pretraining data contain little arithmetic, the prior decides whether a model learns to add within its training budget</h2>
+    <p class="take">With only 2% of the pretraining text being addition, and every model at its own best learning rate, the prior lifts the average accuracy on new problems over training from <b>18%</b> to <b>70%</b> (8 seeds). At one shared learning rate, a model without the prior ends at 17%, and one with the prior on numbers in web text ends at 96%. With 7% addition every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
   </div>
   <figure class="media">
     <video muted loop playsinline autoplay preload="metadata" poster="media/race_pt.png" aria-label="Animated learning curves in pretraining: helix prior, no prior and shuffled helix">
@@ -514,8 +514,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="scale">
   <div class="sec-head">
     <p class="eyebrow" hidden>Model size</p>
-    <h2>The advantage holds at every size we pretrained, from 53M to 1.07B parameters</h2>
-    <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the curve average from 53% to 89% over all 8 seeds, by <b>36.1 points</b> (8 of 8). How the gain changes with model size depends on what is held fixed: <b>with the number of tokens fixed, larger models gain more</b>; with the ratio of tokens to parameters fixed, so that larger models also see more data, there is no consistent trend.</p>
+    <h2>The prior helps at every model size we pretrained, from 53M to 1.07B parameters</h2>
+    <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the average accuracy over training from 53% to 89%, by <b>36.1 points</b> (8 of 8 seeds). How the gain changes with size depends on what is held fixed: <b>with the same amount of training data, larger models gain more</b>; when larger models also get proportionally more data, there is no consistent trend.</p>
   </div>
   <figure data-group="g-size" style="margin-bottom:18px">
     <div class="fig-body"><div class="fig-title">Six sizes, one recipe: 300M tokens, 7% arithmetic</div><div class="fig-sub">each arm at its own learning rate · means over 8 seeds · the number is the gain</div>
@@ -540,8 +540,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="combo">
   <div class="sec-head">
     <p class="eyebrow" hidden>Several priors at once · pre-registered, 8 fresh seeds</p>
-    <h2>Trained together, six priors lift all six of their concepts, and the model reaches the final accuracy without priors after 8–30% of training</h2>
-    <p class="take">With the six priors together, each of the six manifolds is above the model without priors at every one of the six learning rates we tried, and against the best of these rates the curve average rises by 5.8 to 46.9 points (Holm p ≤ 0.0023; table below). With the six priors the model also learns faster: it reaches the end-of-training accuracy of the model without priors at its best rate after <b>8–30% of training</b>, in every seed, and gets 90% of the way there from chance <b>2.1 to 5.0 times sooner</b>.</p>
+    <h2>Six priors trained together improve all six concepts, and the model reaches the final accuracy of a model without priors after only 8–30% of training</h2>
+    <p class="take">With the six priors together, all six concepts beat the model without priors at every one of the six learning rates we tried; against the best of these rates, the average accuracy over training rises by 5.8 to 46.9 points (table below). The model also learns faster: it reaches the final accuracy of the best model without priors after only <b>8–30% of training</b>, in every seed, and gets 90% of the way there from chance <b>2.1 to 5.0 times sooner</b>.</p>
   </div>
   <figure data-group="g-combo" style="margin-bottom:18px">
     <div class="fig-body"><div class="fig-title">Six priors in one 53M pretraining run</div><div class="fig-sub">curve-average held-out accuracy · means over 8 fresh seeds · the number is the gain</div>
@@ -587,7 +587,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="animations">
   <div class="sec-head">
     <p class="eyebrow" hidden>Faster learning · fine-tuning OLMo-2-7B</p>
-    <h2>Fine-tuned with the prior, an early OLMo-2-7B checkpoint reaches 90% about five times sooner</h2>
+    <h2>With the prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition about five times sooner</h2>
     <p class="take">With the helix prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition <b>about 5× sooner</b> (in 30-epoch runs), and its numbers settle into a clean helix.</p>
   </div>
   <figure class="media">
@@ -624,8 +624,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="method">
   <div class="sec-head">
     <p class="eyebrow" hidden>Method</p>
-    <h2>A manifold prior pulls a concept's representations towards a target manifold</h2>
-    <p class="take">Collect the hidden states <i>H</i> of a concept's items (for example the numbers 0–999), pick a target geometry <i>F</i>, and add one minus their linear CKA to the training loss. CKA ignores global rotation and scale, so the loss is low only if the representation itself has the target's shape, with each item at its own target point.</p>
+    <h2>How it works: an extra loss pulls a concept's representations towards a target shape</h2>
+    <p class="take">Take the hidden states <i>H</i> of a concept's items (for example, the numbers 0–999), choose a target shape <i>F</i>, and add one minus their linear CKA, a similarity score between 0 and 1, to the training loss. CKA ignores rotation and overall scale, so the loss is low only when the representation itself has the target's shape, with each item at its own target point.</p>
   </div>
   <div class="eq" role="math" aria-label="L equals L task plus the sum over k of lambda k t times L geo k, with L geo equal to one minus the CKA between H and F"><i>L</i> = <i>L</i><sub>task</sub> + Σ<sub><i>k</i></sub> λ<sub><i>k</i>,<i>t</i></sub> · <i>L</i><sub>geo</sub><sup>(<i>k</i>)</sup>,&nbsp;&nbsp;&nbsp; <i>L</i><sub>geo</sub> = 1 − CKA(<i>H<sub>L</sub></i>, <i>F<sub>G</sub></i>)</div>
   <div class="design">
@@ -660,8 +660,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="time">
   <div class="sec-head">
     <p class="eyebrow" hidden>Right time</p>
-    <h2>Representations come first, abilities later, and the prior acts in between</h2>
-    <p class="take">The geometry of numbers forms long before the ability to add, and the prior helps <b>while the model is learning the task</b>; once it has learned it, the prior stops helping.</p>
+    <h2>A model's number representations form long before it can add, and the prior helps while it is still learning</h2>
+    <p class="take">Number representations form long before the ability to add, and the prior helps <b>while the model is still learning the task</b>; once the model has learned it, the prior stops helping.</p>
   </div>
   <h3 class="subhead" id="time-geometry">Representations come before abilities</h3>
   <p class="subtake">In OLMo-2-7B the helix of numbers reaches half its final strength between <b>9B and 21B</b> pretraining tokens; few-shot addition only between <b>84B and 210B</b>.</p>
@@ -718,8 +718,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="geometry">
   <div class="sec-head">
     <p class="eyebrow" hidden>Right geometry</p>
-    <h2>A shuffled helix does not help, and every part of the helix matters</h2>
-    <p class="take">The same loss with the helix coordinates handed to the wrong numbers <b>does not help</b>: it slows fine-tuning and lowers pretraining accuracy. Within the helix, every part matters.</p>
+    <h2>A helix with its numbers shuffled does not help, and each part of the helix contributes</h2>
+    <p class="take">The same loss with the helix positions assigned to the wrong numbers <b>does not help</b>: it slows fine-tuning and lowers pretraining accuracy. Within the helix, every part contributes.</p>
   </div>
   <h3 class="subhead" id="geometry-control">A shuffled helix does not help</h3>
   <p class="subtake">Same dimensionality, loss scale and gradient, but the coordinates go to the wrong numbers.</p>
@@ -767,8 +767,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="place">
   <div class="sec-head">
     <p class="eyebrow" hidden>Right place</p>
-    <h2>Shape the numbers themselves, wherever they occur, even in ordinary text</h2>
-    <p class="take">With operands up to 999, the prior works about equally well on separate prompts of the numbers and on the operands of the problems, and it <b>still works on numbers in web text</b>, which needs no knowledge of the task data. A shuffled helix on the prompts, matched in dose, hurts.</p>
+    <h2>Apply the prior to the numbers themselves, wherever they appear, even in ordinary web text</h2>
+    <p class="take">For numbers up to 999, the prior works about as well on numbers shown on their own as on the numbers inside the addition problems, and it <b>still works on numbers in ordinary web text</b>, which needs no knowledge of the task data. A shuffled helix of the same strength, on numbers shown on their own, hurts.</p>
   </div>
   <figure data-group="g5">
     <div class="fig-body"><div class="fig-title">Where the prior acts</div><div class="fig-sub">7% arithmetic · window 5%–40% · λ = 5 · 4 seeds</div>
@@ -781,8 +781,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <section class="sec wrap" id="limits">
   <div class="sec-head">
     <p class="eyebrow" hidden>Limits</p>
-    <h2>What a prior does not do</h2>
-    <p class="take">It speeds up a computation the model is learning. Only once, in a one-layer toy, did it make learnable a task that no setting we ran without it learned, and there the target gave the whole table.</p>
+    <h2>What the prior does not do</h2>
+    <p class="take">It speeds up learning that is already happening. Only once, in a one-layer toy model, did it make a task learnable that no setting without it learned, and there the target gave away the whole answer table.</p>
   </div>
   <ul class="points">
     <li><b>It supplies values; it does not teach them</b>We hold three-digit numbers out of every arithmetic problem, so that they appear only in web text. On the held-out numbers from 700 to 999, every configuration we tested without a prior ends at or below 11%; while a helix prior keeps their coordinates in place, accuracy on them is 99%. Once the prior stops maintaining their coordinates, they are overwritten.</li>
