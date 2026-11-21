@@ -375,18 +375,18 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   <a class="toc-logo" href="#top"><img src="media/logo.svg" alt="" width="34" height="19">Manifold Pretraining Engineering</a>
   <p class="toc-title">Contents</p>
   <ol>
-    <li><a href="#pretraining">Pretraining from scratch</a></li>
-    <li><a href="#scale">Model size</a></li>
-    <li><a href="#combo">Six priors together</a></li>
-    <li><a href="#animations">Fine-tuning a 7B model</a></li>
-    <li><a href="#method">Method</a></li>
-    <li><a href="#time">Right time</a></li>
+    <li><a href="#pretraining">Scarce data, learned</a></li>
+    <li><a href="#scale">Every size, 53M–1.07B</a></li>
+    <li><a href="#combo">Six priors lift all six</a></li>
+    <li><a href="#animations">A 7B model, 5× sooner</a></li>
+    <li><a href="#method">How the prior works</a></li>
+    <li><a href="#time">Right time: while learning</a></li>
     <li class="sub"><a href="#time-geometry">Representations first</a></li>
     <li class="sub"><a href="#time-window">When the prior helps</a></li>
-    <li><a href="#geometry">Right geometry</a></li>
+    <li><a href="#geometry">Right geometry: the whole helix</a></li>
     <li class="sub"><a href="#geometry-control">Shuffled control</a></li>
     <li class="sub"><a href="#geometry-parts">Parts of the helix</a></li>
-    <li><a href="#place">Right place</a></li>
+    <li><a href="#place">Right place: the numbers themselves</a></li>
     <li><a href="#limits">What a prior does not do</a></li>
     <li class="sub"><a href="#costs">What it costs</a></li>
     <!-- [2026-11-20 user: Claims section dropped] <li><a href="#claims">Claims and evidence</a></li> -->
@@ -445,7 +445,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= faster: pretraining -->
 <section class="sec wrap" id="pretraining">
   <div class="sec-head">
-    <p class="eyebrow">Faster learning · pretraining from scratch</p>
+    <p class="eyebrow" hidden>Faster learning · pretraining from scratch</p>
     <h2>In pretraining, the prior decides whether scarce arithmetic is learned within the budget</h2>
     <p class="take">With 2% arithmetic tokens and every model at its own best learning rate, the prior lifts accuracy on unseen problems, averaged over training, from <b>18%</b> to <b>70%</b> (8 seeds); at one shared learning rate, a model without the prior ends at 17% and one with the prior on numbers in web text at 96%. With 7% arithmetic every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
   </div>
@@ -481,7 +481,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= model size, several priors -->
 <section class="sec wrap" id="scale">
   <div class="sec-head">
-    <p class="eyebrow">Model size</p>
+    <p class="eyebrow" hidden>Model size</p>
     <h2>The advantage holds at every size we pretrained, from 53M to 1.07B parameters</h2>
     <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the curve average from 53% to 89% over all 8 seeds, by <b>36.1 points</b> (8 of 8). How the gain changes with model size depends on what is held fixed: <b>with the number of tokens fixed, larger models gain more</b>; with the ratio of tokens to parameters fixed, so that larger models also see more data, there is no consistent trend.</p>
   </div>
@@ -507,9 +507,9 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= six priors together (paper Section 4.4 and App. J, F105 / F105 addendum 2 / F102 / F100 / F101 / F104) -->
 <section class="sec wrap" id="combo">
   <div class="sec-head">
-    <p class="eyebrow">Several priors at once · pre-registered, 8 fresh seeds</p>
+    <p class="eyebrow" hidden>Several priors at once · pre-registered, 8 fresh seeds</p>
     <h2>Trained together, six priors lift all six of their concepts, and the model reaches the final accuracy without priors after 8–30% of training</h2>
-    <p class="take">With the six priors together, each of the six manifolds is above the model without priors at every one of the six learning rates we tried, and against the best of these rates the curve average rises by 5.8 to 46.9 points (Holm p ≤ 0.0023; table below). With the six priors the model also learns faster: it reaches the end-of-training accuracy of the model without priors at its best rate after <b>8–30% of training</b>, in every seed, and gets 90% of the way there from chance <b>2.1 to 5.0 times sooner</b>.</p>
+    <p class="take"><b>Pre-registered, on 8 fresh seeds.</b> With the six priors together, each of the six manifolds is above the model without priors at every one of the six learning rates we tried, and against the best of these rates the curve average rises by 5.8 to 46.9 points (Holm p ≤ 0.0023; table below). With the six priors the model also learns faster: it reaches the end-of-training accuracy of the model without priors at its best rate after <b>8–30% of training</b>, in every seed, and gets 90% of the way there from chance <b>2.1 to 5.0 times sooner</b>.</p>
   </div>
   <figure data-group="g-combo" style="margin-bottom:18px">
     <div class="fig-body"><div class="fig-title">Six priors in one 53M pretraining run</div><div class="fig-sub">curve-average held-out accuracy · means over 8 fresh seeds · the number is the gain</div>
@@ -554,8 +554,8 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= faster: animations -->
 <section class="sec wrap" id="animations">
   <div class="sec-head">
-    <p class="eyebrow">Faster learning · fine-tuning OLMo-2-7B</p>
-    <h2>The prior at work</h2>
+    <p class="eyebrow" hidden>Faster learning · fine-tuning OLMo-2-7B</p>
+    <h2>Fine-tuned with the prior, an early OLMo-2-7B checkpoint reaches 90% about five times sooner</h2>
     <p class="take">With the helix prior, an early OLMo-2-7B checkpoint reaches 90% on two-digit addition <b>about 5× sooner</b> (in 30-epoch runs), and its numbers settle into a clean helix.</p>
   </div>
   <figure class="media">
@@ -591,7 +591,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= method -->
 <section class="sec wrap" id="method">
   <div class="sec-head">
-    <p class="eyebrow">Method</p>
+    <p class="eyebrow" hidden>Method</p>
     <h2>A manifold prior pulls a concept's representations towards a target manifold</h2>
     <p class="take">Collect the hidden states <i>H</i> of a concept's items (for example the numbers 0–999), pick a target geometry <i>F</i>, and add one minus their linear CKA to the training loss. CKA ignores global rotation and scale, so the loss is low only if the representation itself has the target's shape, with each item at its own target point.</p>
   </div>
@@ -627,7 +627,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= right time -->
 <section class="sec wrap" id="time">
   <div class="sec-head">
-    <p class="eyebrow">Right time</p>
+    <p class="eyebrow" hidden>Right time</p>
     <h2>Representations come first, abilities later, and the prior acts in between</h2>
     <p class="take">The geometry of numbers forms long before the ability to add, and the prior helps <b>while the model is learning the task</b>; once it has learned it, the prior stops helping.</p>
   </div>
@@ -685,7 +685,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= right geometry -->
 <section class="sec wrap" id="geometry">
   <div class="sec-head">
-    <p class="eyebrow">Right geometry</p>
+    <p class="eyebrow" hidden>Right geometry</p>
     <h2>A shuffled helix does not help, and every part of the helix matters</h2>
     <p class="take">The same loss with the helix coordinates handed to the wrong numbers <b>does not help</b>: it slows fine-tuning and lowers pretraining accuracy. Within the helix, every part matters.</p>
   </div>
@@ -734,7 +734,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= right place -->
 <section class="sec wrap" id="place">
   <div class="sec-head">
-    <p class="eyebrow">Right place</p>
+    <p class="eyebrow" hidden>Right place</p>
     <h2>Shape the numbers themselves, wherever they occur, even in ordinary text</h2>
     <p class="take">With operands up to 999, the prior works about equally well on separate prompts of the numbers and on the operands of the problems, and it <b>still works on numbers in web text</b>, which needs no knowledge of the task data. A shuffled helix on the prompts, matched in dose, hurts.</p>
   </div>
@@ -748,7 +748,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= what a prior does not do -->
 <section class="sec wrap" id="limits">
   <div class="sec-head">
-    <p class="eyebrow">Limits</p>
+    <p class="eyebrow" hidden>Limits</p>
     <h2>What a prior does not do</h2>
     <p class="take">It speeds up a computation the model is learning. Only once, in a one-layer toy, did it make learnable a task that no setting we ran without it learned, and there the target gave the whole table.</p>
   </div>
@@ -785,7 +785,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- [2026-11-20 user: Claims section dropped; kept hidden, remove the hidden attribute to show it] -->
 <section class="sec wrap" id="claims" hidden>
   <div class="sec-head">
-    <p class="eyebrow">Claims and evidence</p>
+    <p class="eyebrow" hidden>Claims and evidence</p>
     <h2>What the page claims, and where it comes from</h2>
   </div>
   <div class="ctable" id="ctable" role="table" aria-label="Claims"></div>
@@ -795,7 +795,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 <!-- ======================================================= bibtex -->
 <section class="sec wrap" id="bibtex">
   <div class="sec-head">
-    <p class="eyebrow">Cite</p>
+    <p class="eyebrow" hidden>Cite</p>
     <h2>BibTeX</h2>
   </div>
   <div class="bib">
