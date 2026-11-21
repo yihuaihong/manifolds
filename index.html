@@ -351,7 +351,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <div class="finds">
       <a class="find" href="#pretraining"><span class="v">18% → 70%</span><span class="t">Scarce data, learned</span><span class="l">held-out addition accuracy averaged over training with 2% arithmetic tokens, each model at its own best learning rate (8 of 8 seeds)</span><span class="go">Pretraining from scratch <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#combo"><span class="v">6 of 6</span><span class="t">Priors that help each other</span><span class="l">six priors trained together all gain; at the end of training they lead the dimensions prior alone by 25.0 points, and kept on until the end, all six end above the best model without priors (8 of 8 seeds)</span><span class="go">Six priors together <span aria-hidden="true">→</span></span></a>
-      <a class="find" href="#limits"><span class="v">99% vs ≤ 11%</span><span class="t">What 4× the data does not teach</span><span class="l">three-digit numbers seen only in web text, never in arithmetic: with a prior that supplies their values, 99% of sums with them (700–999) are right; every setting without it ends at about 11% or below, even with 4× the tokens</span><span class="go">Numbers never seen in arithmetic <span aria-hidden="true">→</span></span></a>
+      <a class="find" href="#limits"><span class="v">99% vs ≤ 11%</span><span class="t">What 4× the data does not teach</span><span class="l">three-digit numbers seen only in web text, never in arithmetic: with the prior, the model learns to add them (99% right on 700–999); without it, every setting ends at about 11% or below, even with 4× the tokens</span><span class="go">Numbers never seen in arithmetic <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#scale"><span class="v">+36.1 points</span><span class="t">Holds up to 1.07B</span><span class="l">at 1.07B parameters, the largest model we pretrained (53% → 89%, 8 of 8 seeds); the advantage holds at every size from 53M</span><span class="go">Model size <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#animations"><span class="v">≈ 5× sooner</span><span class="t">Fine-tuning a 7B model</span><span class="l">an early OLMo-2-7B checkpoint reaches 90% on two-digit addition about five times sooner (30-epoch runs)</span><span class="go">The prior at work <span aria-hidden="true">→</span></span></a>
       <a class="find" href="#place"><span class="v">+43.5 points</span><span class="t">Even in plain web text</span><span class="l">at 190M, from a prior only on numbers in ordinary web text, never on the problems (8 of 8 seeds)</span><span class="go">Right place <span aria-hidden="true">→</span></span></a>
@@ -376,12 +376,21 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <h2>In pretraining, the prior decides whether scarce arithmetic is learned within the budget</h2>
     <p class="take">With 2% arithmetic tokens and every model at its own best learning rate, the prior lifts accuracy on unseen problems, averaged over training, from <b>18%</b> to <b>70%</b> (8 seeds); at one shared learning rate, a model without the prior ends at 17% and one with the prior on numbers in web text at 96%. With 7% arithmetic every model learns, and the prior makes it happen sooner, unless the helix is shuffled.</p>
   </div>
-  <figure class="paper" style="margin-bottom:18px">
-    <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
-    <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b>
-      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+  <figure class="media">
+    <video muted loop playsinline autoplay preload="metadata" poster="media/race_pt.png" aria-label="Animated learning curves in pretraining: helix prior, no prior and shuffled helix">
+      <source src="media/race_pt.mp4" type="video/mp4"><img class="still" src="media/race_pt.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix over 300M pretraining tokens">
+    </video><script>__still(document.currentScript.previousElementSibling)</script>
+    <figcaption><b>The race in pretraining.</b> Held-out accuracy on unseen sums while a 53M model is pretrained from scratch on 300M tokens with 2% arithmetic, each model at its own best learning rate. The prior acts on the operands from 5% to 40% of training (shaded). Averaged over training, accuracy is 70% with the prior and 18% without; a shuffled helix of the same strength stays low.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">mean of 8 seeds</span></span></figcaption>
   </figure>
-  <div class="grid2" data-group="g-pt">
+  <figure class="media" style="margin-top:18px">
+    <video muted loop playsinline autoplay preload="metadata" poster="media/helix3d_pt.png" aria-label="Animated 3D view of the numbers 0 to 999 in a 53M model during pretraining, without and with the prior">
+      <source src="media/helix3d_pt.mp4" type="video/mp4"><img class="still" src="media/helix3d_pt.png" alt="Final frame: the numbers 0 to 999 without the prior (two clouds) and with it (stacked rings of a helix)">
+    </video><script>__still(document.currentScript.previousElementSibling)</script>
+    <figcaption><b>The helix forms while the prior is on.</b> Layer-4 states of the numbers 0–999 as operands, at six points of pretraining from 0 to 300M tokens, without (left) and with (right) the prior. With the prior, their CKA to the helix reaches 0.96 by 60M tokens; without it, 0.62 at the end.
+      <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+  </figure>
+  <div class="grid2" data-group="g-pt" style="margin-top:18px">
     <figure>
       <div class="fig-body"><div class="fig-title">Scarce data: 2% arithmetic</div><div class="fig-sub">operands 0–999 · 8 seeds per curve</div>
         <div class="chart" id="c-scarce"></div><div class="legend" id="l-scarce"></div></div>
@@ -499,6 +508,11 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
         <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
     </figure>
   </div>
+  <figure class="paper" style="margin-top:18px">
+    <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
+    <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b>
+      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+  </figure>
 </section>
 
 <!-- ======================================================= method -->
@@ -1208,7 +1222,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Overleaf 051d2e2).";
+  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Overleaf 9cbd4af).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
