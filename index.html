@@ -331,6 +331,39 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
 .glance a.principle:hover{background:var(--accent-wash)}
 @media (min-width:761px){ .glance .lead{max-width:calc(100% - 230px)} }
 @media (max-width:760px){ .glance{padding:22px 18px 20px} .glance-helix{width:150px;opacity:.35;top:10px;right:8px} }
+/* ---------- findings as numbered rows (2026-11-20); one hue per finding ---------- */
+:root{--c1:#1c6fd1;--c2:#6741d9;--c3:#c2255c;--c4:#d9480f;--c5:#0b7285;--c6:#2b8a3e}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--c1:#4dabf7;--c2:#9775fa;--c3:#f06595;--c4:#ff922b;--c5:#3bc9db;--c6:#51cf66} }
+:root[data-theme="dark"]{--c1:#4dabf7;--c2:#9775fa;--c3:#f06595;--c4:#ff922b;--c5:#3bc9db;--c6:#51cf66}
+.chips:empty{display:none}
+.findrows{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.findrows > li{min-width:0}
+.frow{display:grid;grid-template-columns:44px 228px minmax(0,1fr) auto;align-items:center;column-gap:18px;padding:14px 18px 14px 14px;
+  border-radius:14px;background:var(--surface);border:1px solid var(--rule);box-shadow:var(--shadow);color:inherit;text-decoration:none;
+  position:relative;overflow:hidden;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+.frow::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--h)}
+.frow:hover{border-color:var(--h);background:color-mix(in srgb,var(--h) 6%,var(--surface));transform:translateX(2px)}
+.frow .idx{font-family:"Space Grotesk",var(--font-body);font-weight:700;font-size:.95rem;color:var(--h);width:36px;height:36px;border-radius:10px;
+  display:grid;place-items:center;background:color-mix(in srgb,var(--h) 12%,transparent);font-variant-numeric:tabular-nums}
+.frow .v{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-family:"Space Grotesk",var(--font-body);letter-spacing:-.02em}
+.frow .v .to{font-size:2.1rem;font-weight:700;line-height:1;color:var(--h)}
+.frow .v .from{font-size:1.2rem;font-weight:600;color:var(--s-none)}
+.frow .v .arr{font-size:1.05rem;color:var(--muted)}
+.frow .v .unit{font-size:.98rem;font-weight:600;color:var(--ink-2);letter-spacing:0}
+.frow .body{min-width:0;display:grid;gap:3px}
+.frow .t{font-family:"Space Grotesk",var(--font-body);font-size:1.04rem;font-weight:600;letter-spacing:-.005em}
+.frow .pts{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:3px}
+.frow .pts li{position:relative;padding-left:14px;font-size:.84rem;line-height:1.42;color:var(--ink-2)}
+.frow .pts li::before{content:"";position:absolute;left:2px;top:.6em;width:5px;height:5px;border-radius:50%;background:var(--h)}
+.frow .meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;white-space:nowrap}
+.frow .seeds{font-size:.72rem;font-weight:600;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.frow .go{font-size:.8rem;font-weight:500;color:var(--h)}
+@media (max-width:860px){
+  .frow{grid-template-columns:40px minmax(0,1fr);row-gap:8px;padding:14px 14px 12px}
+  .frow .v{grid-column:2}
+  .frow .body,.frow .meta{grid-column:1 / -1}
+  .frow .meta{flex-direction:row;justify-content:space-between;align-items:center}
+}
 </style>
 
 </head>
@@ -386,14 +419,14 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <p class="lead">Interpretability has found the manifolds on which language models represent concepts, such as a <b>helix for numbers</b>. We turn them into a training technique:</p>
     <div class="defn"><span class="term">manifold prior</span><p>an auxiliary loss that pulls a model's representations of a concept towards a target manifold, each item towards its own point on it.</p></div>
     <p class="kicker">What we find</p>
-    <div class="finds">
-      <a class="find" href="#pretraining"><span class="v"><span class="from">18%</span><span class="arr">→</span><span class="to">70%</span></span><span class="t">Scarce data, learned</span><ul class="pts"><li>53M model pretrained from scratch with 2% arithmetic tokens</li><li>held-out addition accuracy, averaged over training</li><li>each model at its own best learning rate</li></ul><span class="foot"><span class="seeds">8/8 seeds</span><span class="go">Pretraining <span aria-hidden="true">→</span></span></span></a>
-      <a class="find" href="#combo"><span class="v"><span class="to">6/6</span><span class="unit">concepts gain</span></span><span class="t">Priors that help each other</span><ul class="pts"><li>six priors trained together all gain</li><li>at the end of training, 25.0 points above the dimensions prior alone</li><li>kept on until the end, all six end above the best model without priors</li></ul><span class="foot"><span class="seeds">8/8 seeds</span><span class="go">Six priors <span aria-hidden="true">→</span></span></span></a>
-      <a class="find" href="#limits"><span class="v"><span class="from">≤ 11%</span><span class="arr">→</span><span class="to">99%</span></span><span class="t">What 4× the data does not teach</span><ul class="pts"><li>three-digit numbers seen only in web text, never in arithmetic</li><li>with the prior, the model learns to add them: 99% on 700–999</li><li>without it, every setting ends at about 11% or below, even with 4× the tokens</li></ul><span class="foot"><span class="seeds">4/4 seeds</span><span class="go">Unseen numbers <span aria-hidden="true">→</span></span></span></a>
-      <a class="find" href="#scale"><span class="v"><span class="from">53%</span><span class="arr">→</span><span class="to">89%</span></span><span class="t">Holds up to 1.07B</span><ul class="pts"><li>+36.1 points at 1.07B parameters, the largest model we pretrained</li><li>the advantage holds at every size from 53M</li></ul><span class="foot"><span class="seeds">8/8 seeds</span><span class="go">Model size <span aria-hidden="true">→</span></span></span></a>
-      <a class="find" href="#animations"><span class="v"><span class="to">≈ 5×</span><span class="unit">sooner</span></span><span class="t">Fine-tuning a 7B model</span><ul class="pts"><li>an early OLMo-2-7B checkpoint, two-digit addition</li><li>reaches 90% about five times sooner</li><li>ends at 100%, against about 95% without the prior</li></ul><span class="foot"><span class="seeds">30-epoch runs</span><span class="go">Fine-tuning <span aria-hidden="true">→</span></span></span></a>
-      <a class="find" href="#place"><span class="v"><span class="to">+43.5</span><span class="unit">points</span></span><span class="t">Even in plain web text</span><ul class="pts"><li>190M model</li><li>the prior acts only on numbers in ordinary web text</li><li>never on the arithmetic problems</li></ul><span class="foot"><span class="seeds">8/8 seeds</span><span class="go">Web text <span aria-hidden="true">→</span></span></span></a>
-    </div>
+    <ol class="findrows">
+      <li style="--h:var(--c1)"><a class="frow" href="#pretraining"><span class="idx">01</span><span class="v"><span class="from">18%</span><span class="arr">→</span><span class="to">70%</span></span><span class="body"><span class="t">Scarce data, learned</span><ul class="pts"><li>53M model pretrained from scratch with 2% arithmetic tokens</li><li>held-out addition accuracy, averaged over training</li><li>each model at its own best learning rate</li></ul></span><span class="meta"><span class="seeds">8/8 seeds</span><span class="go">Pretraining <span aria-hidden="true">→</span></span></span></a></li>
+      <li style="--h:var(--c2)"><a class="frow" href="#combo"><span class="idx">02</span><span class="v"><span class="to">6/6</span><span class="unit">concepts gain</span></span><span class="body"><span class="t">Priors that help each other</span><ul class="pts"><li>six priors trained together all gain</li><li>at the end of training, 25.0 points above the dimensions prior alone</li><li>kept on until the end, all six end above the best model without priors</li></ul></span><span class="meta"><span class="seeds">8/8 seeds</span><span class="go">Six priors <span aria-hidden="true">→</span></span></span></a></li>
+      <li style="--h:var(--c3)"><a class="frow" href="#limits"><span class="idx">03</span><span class="v"><span class="from">≤ 11%</span><span class="arr">→</span><span class="to">99%</span></span><span class="body"><span class="t">What 4× the data does not teach</span><ul class="pts"><li>three-digit numbers seen only in web text, never in arithmetic</li><li>with the prior, the model learns to add them: 99% on 700–999</li><li>without it, every setting ends at about 11% or below, even with 4× the tokens</li></ul></span><span class="meta"><span class="seeds">4/4 seeds</span><span class="go">Unseen numbers <span aria-hidden="true">→</span></span></span></a></li>
+      <li style="--h:var(--c4)"><a class="frow" href="#scale"><span class="idx">04</span><span class="v"><span class="from">53%</span><span class="arr">→</span><span class="to">89%</span></span><span class="body"><span class="t">Holds up to 1.07B</span><ul class="pts"><li>+36.1 points at 1.07B parameters, the largest model we pretrained</li><li>the advantage holds at every size from 53M</li></ul></span><span class="meta"><span class="seeds">8/8 seeds</span><span class="go">Model size <span aria-hidden="true">→</span></span></span></a></li>
+      <li style="--h:var(--c5)"><a class="frow" href="#animations"><span class="idx">05</span><span class="v"><span class="to">≈ 5×</span><span class="unit">sooner</span></span><span class="body"><span class="t">Fine-tuning a 7B model</span><ul class="pts"><li>an early OLMo-2-7B checkpoint, two-digit addition</li><li>reaches 90% about five times sooner</li><li>ends at 100%, against about 95% without the prior</li></ul></span><span class="meta"><span class="seeds">30-epoch runs</span><span class="go">Fine-tuning <span aria-hidden="true">→</span></span></span></a></li>
+      <li style="--h:var(--c6)"><a class="frow" href="#place"><span class="idx">06</span><span class="v"><span class="to">+43.5</span><span class="unit">points</span></span><span class="body"><span class="t">Even in plain web text</span><ul class="pts"><li>190M model</li><li>the prior acts only on numbers in ordinary web text</li><li>never on the arithmetic problems</li></ul></span><span class="meta"><span class="seeds">8/8 seeds</span><span class="go">Web text <span aria-hidden="true">→</span></span></span></a></li>
+    </ol>
     <p class="kicker">It helps with the right geometry, at the right time, in the right place</p>
     <div class="principles">
       <a class="principle" href="#geometry"><span class="ic"><svg viewBox="0 0 48 32" aria-hidden="true"><path d="M3 16 C 9 2, 15 2, 21 16 S 33 30, 39 16 S 45 6, 47 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><g fill="currentColor"><circle cx="3" cy="16" r="2.4"/><circle cx="12" cy="5.5" r="2.4"/><circle cx="21" cy="16" r="2.4"/><circle cx="30" cy="26.5" r="2.4"/><circle cx="39" cy="16" r="2.4"/></g></svg></span><h3><span class="num">1</span>Right geometry</h3><p>A complete, regular manifold that matches the computation; a shuffled one of the same strength hurts.</p></a>
@@ -418,25 +451,25 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
       <source src="media/race_pt.mp4" type="video/mp4"><img class="still" src="media/race_pt.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix over 300M pretraining tokens">
     </video><script>__still(document.currentScript.previousElementSibling)</script>
     <figcaption><b>The race in pretraining.</b> Held-out accuracy on unseen sums while a 53M model is pretrained from scratch on 300M tokens with 2% arithmetic, each model at its own best learning rate. The prior acts on the operands from 5% to 40% of training (shaded). Averaged over training, accuracy is 70% with the prior and 18% without; a shuffled helix of the same strength stays low.
-      <span class="chips"><span class="chip real">real data</span><span class="chip">mean of 8 seeds</span></span></figcaption>
+      <span class="chips"><span class="chip">mean of 8 seeds</span></span></figcaption>
   </figure>
   <figure class="media" style="margin-top:18px">
     <video muted loop playsinline autoplay preload="metadata" poster="media/helix3d_pt.png" aria-label="Animated 3D view of the numbers 0 to 999 in a 53M model during pretraining, without and with the prior">
       <source src="media/helix3d_pt.mp4" type="video/mp4"><img class="still" src="media/helix3d_pt.png" alt="Final frame: the numbers 0 to 999 without the prior (two clouds) and with it (stacked rings of a helix)">
     </video><script>__still(document.currentScript.previousElementSibling)</script>
     <figcaption><b>The helix forms while the prior is on.</b> Layer-4 states of the numbers 0–999 as operands, at six points of pretraining from 0 to 300M tokens, without (left) and with (right) the prior. With the prior, their CKA to the helix reaches 0.96 by 60M tokens; without it, 0.62 at the end.
-      <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+      <span class="chips"><span class="chip">1 seed</span></span></figcaption>
   </figure>
   <div class="grid2" data-group="g-pt" style="margin-top:18px">
     <figure>
       <div class="fig-body"><div class="fig-title">Scarce data: 2% arithmetic</div><div class="fig-sub">operands 0–999 · 8 seeds per curve</div>
         <div class="chart" id="c-scarce"></div><div class="legend" id="l-scarce"></div></div>
-      <figcaption>“From step 0”: a self-timed prior run from the first step. A shuffled helix in the same window gives no gain.<span class="chips"><span class="chip real">real data</span><span class="chip">curves: learning rate 10⁻³</span></span></figcaption>
+      <figcaption>“From step 0”: a self-timed prior run from the first step. A shuffled helix in the same window gives no gain.<span class="chips"><span class="chip">curves: learning rate 10⁻³</span></span></figcaption>
     </figure>
     <figure>
       <div class="fig-body"><div class="fig-title">More data: 7% arithmetic</div><div class="fig-sub">prior on the operands in context, throughout · 8 seeds per curve</div>
         <div class="chart" id="c-pc"></div><div class="legend" id="l-pc"></div></div>
-      <figcaption>◆ on the 90% line: median tokens to 90%. The shuffled helix has the same dose and lowers the curve average by 23.6 points.<span class="chips"><span class="chip real">real data</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+      <figcaption>◆ on the 90% line: median tokens to 90%. The shuffled helix has the same dose and lowers the curve average by 23.6 points.<span class="chips"><span class="chip">learning rate 10⁻³</span></span></figcaption>
     </figure>
   </div>
   <p class="tnote">Setup: a 53M-parameter OLMo-2-style model pretrained on 300M tokens of FineWeb-Edu with addition problems (operands 0–999); accuracy on held-out problems. With each model at its own best learning rate and 7% arithmetic, the prior reaches 90% 3.7× sooner at 53M and 3.9× sooner at 190M over 8 seeds.</p>
@@ -452,17 +485,17 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   <figure data-group="g-size" style="margin-bottom:18px">
     <div class="fig-body"><div class="fig-title">Six sizes, one recipe: 300M tokens, 7% arithmetic</div><div class="fig-sub">each arm at its own learning rate · means over 8 seeds · the number is the gain</div>
       <div class="chart" id="c-size"></div><div class="legend" id="l-size"></div></div>
-    <figcaption>With the number of tokens fixed, larger models gain more, though not monotonically: the model without a prior falls from 66% to 53%, while the prior stays near 90%.<span class="chips"><span class="chip real">real data</span></span></figcaption>
+    <figcaption>With the number of tokens fixed, larger models gain more, though not monotonically: the model without a prior falls from 66% to 53%, while the prior stays near 90%.</figcaption>
   </figure>
   <figure class="paper" hidden>
     <div class="plate"><img src="media/fig2_scaling.png" alt="Paper Figure 2: curve-average accuracy of every seed at several model sizes, without and with the prior, and six priors at once at 53M, 190M and 505M"></div>
     <figcaption><b>Paper Figure 2. The gain at several model sizes, each arm at its own best learning rate.</b> Dots: seeds; bars: means. (a, b) Curve-average held-out accuracy, 8 seeds; †on B200 GPUs, with the learning rates chosen on 2 seeds. (c) The first set of six priors (§4.4), 4 seeds, descriptive (S4 and dimensions: final accuracy on held-out cells). The learning rates were chosen on numbers, so the models without priors are not tuned for S4 or dimensions; dark grey: their highest learning rate tried, at 190M.
-      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+      </figcaption>
   </figure>
   <figure class="paper narrow" style="margin-top:18px">
     <div class="plate"><img src="media/fig3_size.png" alt="Paper Figure 3: gain of the helix prior against model size with 300M tokens, 0.745 tokens per parameter or 0.318 tokens per parameter (7% arithmetic), and with 2% arithmetic in its own panel, every seed shown as a dot"></div>
     <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior (mean of 8 paired seeds with 95% interval; dots: seeds).
-      <span class="chips"><span class="chip real">real data</span><span class="chip">pre-registered</span></span></figcaption>
+      <span class="chips"><span class="chip">pre-registered</span></span></figcaption>
   </figure>
   <p class="tnote">The two results fit together because the gain varies mainly with the number of training tokens: within one size it first rises and then falls, peaking roughly between 70M and 130M tokens with 7% arithmetic, and with more tokens the model without a prior catches up.</p>
   <p class="tnote" hidden>The first set of six priors in larger models. At 190M and 505M (4 seeds, descriptive; learning rates chosen on numbers, at 505M on two seeds), the first six priors again lift numbers and dimensions above both models without priors at these learning rates, in every seed (Paper Figure 2c). The models without priors were not tuned for S4 or dimensions and do better at higher learning rates: at 190M and 1.92×10⁻², the highest rate we tried, their final accuracy on fresh held-out S4 cells is 60.5% against 44.5% with the six priors (not significant), and at 505M their accuracy on both rises up to the highest rate we tried (two seeds). On fresh held-out S4 cells, where the Latin-square filler scores 32.5%, the six priors are not significantly above it at 190M (+12.0, 95% CI [−9.9, +33.8]), and at 505M they reach 29.6% from about 1% without priors, the filler's level. At 190M, the six priors are 34 points below the number prior alone on the clock at the same learning rate (62.2% against 96.4%), a gap that closes when the clock prior is left out, but these runs cannot separate the clock prior's own effect from redundancy with the other priors. At 505M and the same learning rate, the six priors cost 0.013 bits per byte and the number prior alone 0.005.</p>
@@ -479,7 +512,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <div class="fig-body"><div class="fig-title">Six priors in one 53M pretraining run</div><div class="fig-sub">curve-average held-out accuracy · means over 8 fresh seeds · the number is the gain</div>
       <div class="chart" id="c-combo"></div><div class="legend" id="l-combo"></div></div>
     <figcaption>The torus and the grid gain mainly while their priors are on. Their mean curves peak near the close of the window at 98.2% and 83.3%, above the peak of the model without priors at any rate (94.6% and 58.5%).
-      <span class="chips"><span class="chip real">real data</span><span class="chip">pre-registered</span><span class="chip">peaks: post hoc</span></span></figcaption>
+      <span class="chips"><span class="chip">pre-registered</span><span class="chip">peaks: post hoc</span></span></figcaption>
   </figure>
   <div class="tblwrap">
     <table class="dom" aria-label="Six priors pretrained together">
@@ -527,7 +560,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
       <source src="media/race_9B.mp4" type="video/mp4"><img class="still" src="media/race_9B.png" alt="Final frame: learning curves of the helix prior, no prior and the shuffled helix">
     </video><script>__still(document.currentScript.previousElementSibling)</script>
     <figcaption><b>The race.</b> Held-out accuracy on 1,000 unseen two-digit sums while fine-tuning OLMo-2-7B (checkpoint after 9B pretraining tokens). The helix prior reaches 50% after 900 steps, no prior after 4,150; a shuffled helix stays near chance.
-      <span class="chips"><span class="chip real">real data</span><span class="chip">mean of 3 seeds</span></span></figcaption>
+      <span class="chips"><span class="chip">mean of 3 seeds</span></span></figcaption>
   </figure>
   <div class="grid2" style="margin-top:18px">
     <figure class="media">
@@ -535,20 +568,20 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
         <source src="media/helix3d_9B.mp4" type="video/mp4"><img class="still" src="media/helix3d_9B.png" alt="Final frame: rough coil without the prior, clean helix with it">
       </video><script>__still(document.currentScript.previousElementSibling)</script>
       <figcaption><b>From a rough coil to a clean helix.</b> Layer-16 states of the numbers 10 → 99, without (left) and with (right) the prior. The model's own number geometry is about 0.70 helix-like (CKA), and the prior makes it regular.
-        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+        <span class="chips"><span class="chip">1 seed</span></span></figcaption>
     </figure>
     <figure class="media">
       <video muted loop playsinline autoplay preload="metadata" poster="media/shape_9B.png" aria-label="Animated 2D view of last-digit clusters with and without the prior">
         <source src="media/shape_9B.mp4" type="video/mp4"><img class="still" src="media/shape_9B.png" alt="Final frame: last-digit clusters without and with the prior">
       </video><script>__still(document.currentScript.previousElementSibling)</script>
       <figcaption><b>Numbers that share a last digit snap together.</b> Same run: the mean state of each last digit (big dots) and the 90 numbers (small dots), PCA of layer 16, without (left) and with (right) the prior.
-        <span class="chips"><span class="chip real">real data</span><span class="chip">1 seed</span></span></figcaption>
+        <span class="chips"><span class="chip">1 seed</span></span></figcaption>
     </figure>
   </div>
   <figure class="paper" style="margin-top:18px">
     <div class="plate"><img src="media/fig1_manifold.png" alt="Paper Figure 1: target helix, the model's own number manifold, the manifold with the helix prior, and learning curves, for pretraining from scratch (top) and fine-tuning OLMo-2-7B (bottom)"></div>
     <figcaption><b>Paper Figure 1. A helix manifold prior shapes how a model represents numbers, and the model learns addition faster.</b>
-      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+      </figcaption>
   </figure>
 </section>
 
@@ -622,18 +655,18 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
         <div class="chart" id="c-u"></div>
         <div class="legend"><span style="color:var(--s-none)"><i class="dot" style="background:var(--s-none)"></i><span style="color:var(--ink-2)">one domain × checkpoint (3 seeds)</span></span><span style="color:var(--s-helix)"><i></i><span style="color:var(--ink-2)">mean gain per accuracy bin</span></span></div>
       </div>
-      <figcaption>x: held-out accuracy without the prior; y: gain with the domain's geometry (points). The gain is an inverted U: small while the model cannot do the task, largest while it learns, negative once it has learned.<span class="chips"><span class="chip real">real data</span></span></figcaption>
+      <figcaption>x: held-out accuracy without the prior; y: gain with the domain's geometry (points). The gain is an inverted U: small while the model cannot do the task, largest while it learns, negative once it has learned.</figcaption>
     </figure>
     <figure data-group="g3">
       <div class="fig-body"><div class="fig-title">In pretraining: when to switch it on</div><div class="fig-sub">7% arithmetic · prior on numbers in web text until 40% of training · 4 seeds</div>
         <div class="chart" id="c-when"></div><div class="legend" id="l-when"></div></div>
-      <figcaption>◆: median tokens to 90%. Starting at the first step costs 0.064 bits per byte of validation loss, starting at 5% 0.008.<span class="chips"><span class="chip real">real data</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+      <figcaption>◆: median tokens to 90%. Starting at the first step costs 0.064 bits per byte of validation loss, starting at 5% 0.008.<span class="chips"><span class="chip">learning rate 10⁻³</span></span></figcaption>
     </figure>
   </div>
   <figure class="paper" style="margin-top:18px">
     <div class="plate"><img src="media/fig5_window.png" alt="Paper Figure 5: held-out accuracy of OLMo-2 1B, 7B, 13B and 32B on two-digit addition at each pretraining checkpoint without and with the helix prior, the gap shaded blue where the prior helps and orange where it hurts; and the mean gain per bin of capability across seven domains of OLMo-2-7B" loading="lazy"></div>
     <figcaption><b>Paper Figure 5. The benefit window.</b> (a)–(d) OLMo-2 1B–32B on two-digit addition at each pretraining checkpoint; the shaded gap is the gain of the helix prior. (e) OLMo-2-7B, seven domains.
-      <span class="chips"><span class="chip real">real data</span></span></figcaption>
+      </figcaption>
   </figure>
   <p class="tnote" hidden>For every OLMo-2 size the largest gains are +6.9 to +28.1 points, and Pythia shows the same pattern: the prior speeds up a computation the model is forming but does not create one it is not forming.</p>
   <details class="all">
@@ -641,7 +674,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <figure class="paper" style="margin-top:12px">
       <div class="plate"><img src="media/figA_pythia.png" alt="Paper appendix figure: the benefit window for Pythia 160M, 410M, 1.4B, 6.9B and 12B on two-digit addition, without and with the helix prior" loading="lazy"></div>
       <figcaption><b>Paper appendix figure.</b> The benefit window for Pythia 160M–12B on two-digit addition, drawn as in Figure 5a–d (3 seeds).
-        <span class="chips"><span class="chip real">real data</span></span></figcaption>
+        </figcaption>
     </figure>
   </details>
 </section>
@@ -658,7 +691,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   <figure data-group="g4">
     <div class="fig-body"><div class="fig-title">Fine-tuning OLMo-2-7B (21B-token checkpoint)</div><div class="fig-sub">7,000 training sums · LoRA · 10 epochs · 3 seeds per curve</div>
       <div class="chart" id="c-ft"></div><div class="legend" id="l-ft"></div></div>
-    <figcaption>◆ on the 90% line: first step at which the seed-mean curve reaches 90%.<span class="chips"><span class="chip real">real data</span></span></figcaption>
+    <figcaption>◆ on the 90% line: first step at which the seed-mean curve reaches 90%.</figcaption>
   </figure>
   <h3 class="subhead" id="geometry-parts">Which parts of the helix matter</h3>
   <ul class="points" style="margin-top:12px">
@@ -705,7 +738,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   <figure data-group="g5">
     <div class="fig-body"><div class="fig-title">Where the prior acts</div><div class="fig-sub">7% arithmetic · window 5%–40% · λ = 5 · 4 seeds</div>
       <div class="chart" id="c-sites"></div></div>
-    <figcaption>Accuracy averaged over the training curve. With several operations, the prior belongs within the operations whose computation the geometry matches.<span class="chips"><span class="chip real">real data</span><span class="chip">learning rate 10⁻³</span></span></figcaption>
+    <figcaption>Accuracy averaged over the training curve. With several operations, the prior belongs within the operations whose computation the geometry matches.<span class="chips"><span class="chip">learning rate 10⁻³</span></span></figcaption>
   </figure>
 </section>
 
@@ -974,7 +1007,7 @@ function figGVA() {
   });
   $("#cap-gva").replaceChildren(
     `Geometry: ${G.geometry_metric}. Ability: ${G.ability_metric}; ${cps[0].n_questions} test rows per checkpoint. Dashed: from 3.9T tokens to “main”, which adds mid-training, so it is not placed on the token axis.`,
-    h("span", { class: "chips" }, h("span", { class: "chip real", text: "real data" }), h("span", { class: "chip", text: "one model per checkpoint" })));
+    h("span", { class: "chips" }, h("span", { class: "chip", text: "one model per checkpoint" })));
   return ch;
 }
 function digitColor(d) { const dk = isDark(); return `hsl(${(d * 36 + 210) % 360}, ${dk ? 70 : 66}%, ${dk ? 62 : 46}%)`; }
@@ -1016,7 +1049,7 @@ function fig3D() {
   }
   $("#cap-3d").replaceChildren(
     "Each dot is one number, placed by a linear read-out on three helix axes; without structure the dots collapse to the centre. Colour: last digit.",
-    h("span", { class: "chips" }, h("span", { class: "chip real", text: "real data" })));
+    "");
   return { build, update };
 }
 
