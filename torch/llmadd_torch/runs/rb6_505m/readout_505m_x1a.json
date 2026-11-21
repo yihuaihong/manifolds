@@ -1,0 +1,6367 @@
+{
+ "sizes": [
+  "53m",
+  "190m",
+  "505m"
+ ],
+ "design": {
+  "53m": {
+   "none_plr": "1e-3",
+   "none_nlr": "8e-3",
+   "all6": "1e-3",
+   "only_numbers": "1e-3"
+  },
+  "190m": {
+   "none_plr": "6e-4",
+   "none_nlr": "4.8e-3",
+   "all6": "6e-4",
+   "only_numbers": "6e-4"
+  },
+  "505m": {
+   "none_plr": "6e-4",
+   "none_nlr": "4.8e-3",
+   "all6": "6e-4",
+   "only_numbers": "6e-4"
+  }
+ },
+ "roles": {
+  "53m,190m": {
+   "none_plr": "none at the prior arms' lr (the lr-matched baseline)",
+   "none_nlr": "none at the lr selected on the numbers area (pt2 single-prior 2%, seeds 0-3)",
+   "all6": "the six priors, lambda 1 each",
+   "only_numbers": "the numbers prior alone, lambda 1"
+  },
+  "505m": {
+   "none_plr": "none at the prior arms' lr (the lr-matched baseline)",
+   "none_nlr": "none at the lr selected on the numbers area of the rb6_505m sweep (seeds 0-1)",
+   "all6": "the six priors, lambda 1 each",
+   "only_numbers": "the numbers prior alone, lambda 1"
+  }
+ },
+ "labels": {
+  "53m": {
+   "none_plr": "none@1e-3",
+   "none_nlr": "none@8e-3",
+   "all6": "all6-lam1@1e-3",
+   "only_numbers": "only-numbers@1e-3"
+  },
+  "190m": {
+   "none_plr": "none@6e-4",
+   "none_nlr": "none@4.8e-3",
+   "all6": "all6-lam1@6e-4",
+   "only_numbers": "only-numbers@6e-4"
+  },
+  "505m": {
+   "none_plr": "none@6e-4",
+   "none_nlr": "none@4.8e-3",
+   "all6": "all6-lam1@6e-4",
+   "only_numbers": "only-numbers@6e-4"
+  }
+ },
+ "caveats": {
+  "lr_provenance": "190m: the lrs are reused from the pt2 single-prior 2% setting (chosen on the numbers area over seeds 0-3); none's lr is NOT tuned for S4, dim, clock, months or weekdays: a none cell is 'none at the numbers-selected lr' or 'none at the prior's lr', never 'none at its best lr' for a domain",
+  "selection_seeds": "seeds 0-3 share the init and the numbers lines with the lr-selection runs (winner's curse on the numbers rows); every paired line is descriptive, no confirmatory claim",
+  "size_trend": "no size-trend claim (F87): sizes are printed side by side, never tested against each other",
+  "s4_53m": "53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+  "s4_torch": "the Torch sizes has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+  "dim_53m": "53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+  "dim_torch": "the Torch sizes has no none whose lr was tuned on dim",
+  "clock_53m": "53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+  "clock_torch": "the Torch sizes: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+  "se_53m": "53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); descriptive only",
+  "lr_provenance_505m": "505m: the lrs were selected on THIS batch's sweep (tools/rb6scale_select.py over runs/rb6_505m, seeds 0-1, numbers area): none over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2}, all6-lam1 over {3e-4, 6e-4, 1.2e-3}; none at the prior arms' lr and only-numbers reuse all6-lam1's pick; the selection seeds 0-1 are seeds of this read-out (winner's curse on the numbers rows, the numbers-selected none cell in particular); none's lr is NOT tuned for S4, dim, clock, months or weekdays: never 'none at its best lr' for a domain"
+ },
+ "ignored": [
+  "rb6tb-505m-2pct-k2-all6-lam1-lr1.2e-3 s0 (rb6tb-505m-2pct-k2-all6-lam1-lr1.2e-3-s0)",
+  "rb6tb-505m-2pct-k2-all6-lam1-lr1.2e-3 s1 (rb6tb-505m-2pct-k2-all6-lam1-lr1.2e-3-s1)",
+  "rb6tb-505m-2pct-k2-all6-lam1-lr3e-4 s0 (rb6tb-505m-2pct-k2-all6-lam1-lr3e-4-s0)",
+  "rb6tb-505m-2pct-k2-all6-lam1-lr3e-4 s1 (rb6tb-505m-2pct-k2-all6-lam1-lr3e-4-s1)",
+  "rb6tb-505m-2pct-k2-none-lr1.92e-2 s0 (rb6tb-505m-2pct-k2-none-lr1.92e-2-s0)",
+  "rb6tb-505m-2pct-k2-none-lr1.92e-2 s1 (rb6tb-505m-2pct-k2-none-lr1.92e-2-s1)",
+  "rb6tb-505m-2pct-k2-none-lr2.4e-3 s0 (rb6tb-505m-2pct-k2-none-lr2.4e-3-s0)",
+  "rb6tb-505m-2pct-k2-none-lr2.4e-3 s1 (rb6tb-505m-2pct-k2-none-lr2.4e-3-s1)",
+  "rb6tb-505m-2pct-k2-none-lr9.6e-3 s0 (rb6tb-505m-2pct-k2-none-lr9.6e-3-s0)",
+  "rb6tb-505m-2pct-k2-none-lr9.6e-3 s1 (rb6tb-505m-2pct-k2-none-lr9.6e-3-s1)"
+ ],
+ "excluded": [],
+ "warnings": [],
+ "cells": {
+  "53m|none_plr|numbers": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    14.572612612612614,
+    17.3785754985755,
+    7.2669135802469125,
+    23.06790790790791
+   ],
+   "mean": 15.571502399835735,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_plr|months": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    49.666666666666664,
+    51.5,
+    38.833333333333336,
+    19.333333333333336
+   ],
+   "mean": 39.833333333333336,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     22.459098077238053,
+     57.20756858942862
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "53m|none_plr|weekdays": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    37.5,
+    40.625,
+    39.23611111111111,
+    8.333333333333332
+   ],
+   "mean": 31.42361111111111,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     13.247983546217593,
+     49.59923867600463
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "53m|none_plr|clock": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    14.737883283877348,
+    29.2806484295846,
+    1.0101010101010102,
+    62.733529990167156
+   ],
+   "mean": 26.940540678432527,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -4.250084106546726,
+     58.131165463411776
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|none_plr|s4": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.16420361247947454,
+    0.0,
+    0.5154639175257731,
+    0.16666666666666669
+   ],
+   "mean": 0.2115835491679786,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.04385239902903132,
+     0.46701949736498855
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|none_plr|dim": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.7241379310344827,
+    32.78688524590164,
+    8.438818565400846,
+    6.521739130434782
+   ],
+   "mean": 12.367895218192936,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    99.88888888888889,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -3.9909419451388626,
+     28.726732381524734
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "53m|none_plr|s4_hard": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.2085661080074488,
+    0.5614035087719298,
+    0.27838827838827845,
+    0.7446808510638298
+   ],
+   "mean": 0.44825968655787174,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_plr|bpb": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1199.9678726585712,
+    1204.9696981235054,
+    1200.3209438560375,
+    1205.5482194679505
+   ],
+   "mean": 1202.701683526516,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_plr|seen": {
+   "label": "none@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    99.97777777777779,
+    100.0
+   ],
+   "mean": 99.99444444444444,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_nlr|numbers": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    37.22342342342343,
+    26.22153846153847,
+    35.48148148148148,
+    47.717997997998
+   ],
+   "mean": 36.661110341110344,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_nlr|months": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    66.33333333333333,
+    86.33333333333333,
+    65.66666666666666,
+    100.0
+   ],
+   "mean": 79.58333333333333,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     59.99191974021888,
+     99.17474692644777
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "53m|none_nlr|weekdays": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    7.986111111111111,
+    57.291666666666664,
+    19.791666666666664,
+    1.0416666666666665
+   ],
+   "mean": 21.527777777777775,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -7.968602346414656,
+     51.024157901970206
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "53m|none_nlr|clock": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    98.0217606330366,
+    71.02330293819655,
+    98.6868686868687,
+    99.50835791543756
+   ],
+   "mean": 91.81007254338486,
+   "seen_per_seed": [
+    100.0,
+    99.55555555555554,
+    99.33333333333333,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     75.48811035450976,
+     108.13203473225997
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|none_nlr|s4": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    6.896551724137931,
+    1.3961605584642234,
+    1.3745704467353952,
+    2.666666666666667
+   ],
+   "mean": 3.0834873490010537,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.009016086275797974,
+     6.157958611726309
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|none_nlr|dim": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    48.27586206896551,
+    27.322404371584703,
+    29.11392405063291,
+    21.73913043478261
+   ],
+   "mean": 31.612830231491433,
+   "seen_per_seed": [
+    99.77777777777777,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     18.029096618990412,
+     45.19656384399245
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "53m|none_nlr|s4_hard": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    3.1880819366852893,
+    1.4814814814814816,
+    0.9010989010989012,
+    2.3191489361702127
+   ],
+   "mean": 1.9724528138589712,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_nlr|bpb": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1225.555610119709,
+    1229.3441937264536,
+    1225.1496112342707,
+    1231.081012623639
+   ],
+   "mean": 1227.782606926018,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|none_nlr|seen": {
+   "label": "none@8e-3",
+   "lr": "8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    99.95555555555555,
+    99.91111111111111,
+    99.86666666666666,
+    100.0
+   ],
+   "mean": 99.93333333333334,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|all6|numbers": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    68.32124124124125,
+    69.20581196581198,
+    67.87555555555555,
+    69.70014014014015
+   ],
+   "mean": 68.77568722568724,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|all6|months": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    42.166666666666664,
+    43.333333333333336,
+    69.16666666666667,
+    19.499999999999996
+   ],
+   "mean": 43.54166666666667,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     19.652068034385614,
+     67.43126529894772
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "53m|all6|weekdays": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    27.083333333333332,
+    37.84722222222223,
+    32.63888888888889,
+    0.0
+   ],
+   "mean": 24.392361111111114,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     4.571098846632676,
+     44.21362337558955
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "53m|all6|clock": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    84.27299703264094,
+    87.33535967578521,
+    91.11111111111111,
+    91.34709931170107
+   ],
+   "mean": 88.51664178280959,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     84.54680358944576,
+     92.48647997617341
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|all6|s4": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    36.94581280788178,
+    41.53577661431065,
+    52.749140893470795,
+    28.999999999999996
+   ],
+   "mean": 40.0576825789158,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     28.385103661253105,
+     51.7302614965785
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|all6|dim": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    63.2183908045977,
+    83.06010928961749,
+    54.00843881856541,
+    38.40579710144927
+   ],
+   "mean": 59.673184003557466,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     37.72343998063593,
+     81.622928026479
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "53m|all6|s4_hard": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    35.35940409683427,
+    32.943469785575054,
+    47.07692307692308,
+    31.0709219858156
+   ],
+   "mean": 36.612679736287,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|all6|bpb": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1207.156535318777,
+    1211.8689404467577,
+    1221.0326551303467,
+    1211.7372114121824
+   ],
+   "mean": 1212.948835577016,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|all6|seen": {
+   "label": "all6-lam1@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "mean": 100.0,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|only_numbers|numbers": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    69.45201201201202,
+    71.79008547008546,
+    72.58271604938271,
+    69.60552552552554
+   ],
+   "mean": 70.85758476425143,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|only_numbers|months": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    21.333333333333336,
+    31.0,
+    22.499999999999996,
+    7.166666666666667
+   ],
+   "mean": 20.5,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     8.87678623539066,
+     32.12321376460934
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "53m|only_numbers|weekdays": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    13.194444444444445,
+    8.333333333333332,
+    4.513888888888888,
+    0.0
+   ],
+   "mean": 6.510416666666667,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.08918051975129693,
+     13.11001385308463
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "53m|only_numbers|clock": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    91.19683481701286,
+    85.1063829787234,
+    93.43434343434343,
+    88.8888888888889
+   ],
+   "mean": 89.65661252974215,
+   "seen_per_seed": [
+    100.0,
+    99.77777777777777,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     85.47221564469447,
+     93.84100941478982
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|only_numbers|s4": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.0,
+    0.0,
+    0.1718213058419244,
+    0.5
+   ],
+   "mean": 0.1679553264604811,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    99.77777777777777
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.1094077942613052,
+     0.44531844718226743
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "53m|only_numbers|dim": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    4.022988505747127,
+    46.44808743169399,
+    43.459915611814345,
+    5.797101449275362
+   ],
+   "mean": 24.932023249632707,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -2.3233120504701574,
+     52.18735854973557
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "53m|only_numbers|s4_hard": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.24581005586592178,
+    0.34307992202729043,
+    0.2344322344322345,
+    0.3829787234042553
+   ],
+   "mean": 0.30157523393242547,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|only_numbers|bpb": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1201.7272205564404,
+    1221.533775394459,
+    1219.0662199923254,
+    1215.7972881809062
+   ],
+   "mean": 1214.5311260310327,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "53m|only_numbers|seen": {
+   "label": "only-numbers@1e-3",
+   "lr": "1e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    99.95555555555555,
+    100.0,
+    99.95555555555555
+   ],
+   "mean": 99.97777777777776,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_plr|numbers": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    18.154314314314316,
+    18.284330484330486,
+    10.010123456790122,
+    13.73921921921922
+   ],
+   "mean": 15.046996868663538,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_plr|months": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    16.166666666666664,
+    54.50000000000001,
+    9.500000000000002,
+    20.166666666666664
+   ],
+   "mean": 25.083333333333336,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     1.4336787023909956,
+     48.73298796427568
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "190m|none_plr|weekdays": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    46.875,
+    45.83333333333333,
+    36.80555555555556,
+    5.555555555555555
+   ],
+   "mean": 33.76736111111111,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     11.006000290308126,
+     56.52872193191409
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "190m|none_plr|clock": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    19.485657764589515,
+    47.61904761904761,
+    16.060606060606062,
+    26.64700098328417
+   ],
+   "mean": 27.45307810688184,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 190m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     10.804185063940054,
+     44.101971149823626
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|none_plr|s4": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.0,
+    0.0,
+    0.1718213058419244,
+    0.0
+   ],
+   "mean": 0.0429553264604811,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.05813416816159024,
+     0.14404482108255245
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|none_plr|dim": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    36.7816091954023,
+    0.0,
+    20.253164556962027,
+    0.0
+   ],
+   "mean": 14.25869343809108,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 190m has no none whose lr was tuned on dim",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -6.678704774636328,
+     35.19609165081849
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "190m|none_plr|s4_hard": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.5363128491620112,
+    0.31968810916179335,
+    0.2344322344322345,
+    0.3829787234042553
+   ],
+   "mean": 0.3683529790400736,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_plr|bpb": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1128.272688274124,
+    1124.8428484974675,
+    1119.4099173984648,
+    1121.3194707876642
+   ],
+   "mean": 1123.4612312394302,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_plr|seen": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "mean": 100.0,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_nlr|numbers": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    36.37973973973973,
+    25.072592592592603,
+    34.25185185185185,
+    30.720360360360367
+   ],
+   "mean": 31.606136136136136,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_nlr|months": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    53.5,
+    63.33333333333333,
+    38.5,
+    45.33333333333333
+   ],
+   "mean": 50.16666666666666,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     37.567479495331725,
+     62.76585383800159
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "190m|none_nlr|weekdays": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    10.069444444444443,
+    61.111111111111114,
+    35.06944444444444,
+    12.152777777777779
+   ],
+   "mean": 29.600694444444443,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     1.5183763878114434,
+     57.68301250107744
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "190m|none_nlr|clock": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    97.42828882294758,
+    74.67071935157041,
+    93.73737373737373,
+    96.36184857423795
+   ],
+   "mean": 90.54955762153243,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 190m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     77.96035829503988,
+     103.13875694802498
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|none_nlr|s4": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    2.791461412151068,
+    0.6980802792321117,
+    0.0,
+    1.0
+   ],
+   "mean": 1.1223854228457948,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.276592438446293,
+     2.5213632841378826
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|none_nlr|dim": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.0,
+    14.207650273224044,
+    7.172995780590717,
+    29.71014492753623
+   ],
+   "mean": 12.772697745337748,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 190m has no none whose lr was tuned on dim",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -2.1644362660182264,
+     27.709831756693724
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "190m|none_nlr|s4_hard": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.8249534450651768,
+    1.1773879142300194,
+    0.4981684981684982,
+    1.2269503546099287
+   ],
+   "mean": 1.1818650530184058,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_nlr|bpb": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1139.5873510249414,
+    1146.7881326989864,
+    1140.9983524994786,
+    1147.5690529697645
+   ],
+   "mean": 1143.7357222982928,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|none_nlr|seen": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "mean": 100.0,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|all6|numbers": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    77.067987987988,
+    75.86096866096865,
+    76.48716049382716,
+    76.98490490490491
+   ],
+   "mean": 76.60025551192219,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|all6|months": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    15.666666666666664,
+    18.666666666666668,
+    15.333333333333336,
+    6.0
+   ],
+   "mean": 13.916666666666666,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     7.46078423704029,
+     20.372549096293042
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "190m|all6|weekdays": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.0416666666666665,
+    6.597222222222222,
+    9.027777777777777,
+    2.4305555555555554
+   ],
+   "mean": 4.774305555555555,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.4327482027285301,
+     9.115862908382582
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "190m|all6|clock": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    58.160237388724035,
+    51.469098277608914,
+    72.02020202020202,
+    67.15830875122911
+   ],
+   "mean": 62.20196160944103,
+   "seen_per_seed": [
+    100.0,
+    99.66666666666667,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     51.40694920685499,
+     72.99697401202707
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|all6|s4": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    37.76683087027914,
+    65.27050610820245,
+    30.240549828178697,
+    44.66666666666667
+   ],
+   "mean": 44.48613836833174,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     26.769249794431055,
+     62.20302694223242
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|all6|dim": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    95.40229885057471,
+    96.17486338797812,
+    85.65400843881856,
+    80.43478260869566
+   ],
+   "mean": 89.41648832151677,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     80.3952740928388,
+     98.43770255019473
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "190m|all6|s4_hard": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    29.571694599627563,
+    48.21052631578946,
+    25.582417582417584,
+    31.9290780141844
+   ],
+   "mean": 33.82342912800475,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|all6|bpb": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1138.7861116801112,
+    1132.198364165651,
+    1133.715525022752,
+    1127.3314217902678
+   ],
+   "mean": 1133.0078556646954,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|all6|seen": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    99.93333333333334,
+    100.0,
+    100.0
+   ],
+   "mean": 99.98333333333333,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|only_numbers|numbers": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    78.39375375375374,
+    78.0219943019943,
+    77.78592592592594,
+    78.78906906906906
+   ],
+   "mean": 78.24768576268576,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|only_numbers|months": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    15.0,
+    10.0,
+    12.833333333333332,
+    0.5
+   ],
+   "mean": 9.583333333333332,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     2.0616665188706094,
+     17.105000147796055
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false
+  },
+  "190m|only_numbers|weekdays": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    4.166666666666666,
+    7.986111111111112,
+    5.208333333333334,
+    0.6944444444444444
+   ],
+   "mean": 4.513888888888889,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.9677143267503912,
+     8.060063451027387
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false
+  },
+  "190m|only_numbers|clock": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    98.3184965380811,
+    91.59067882472138,
+    97.67676767676768,
+    97.83677482792527
+   ],
+   "mean": 96.35567946687385,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "CEILING",
+    "seed_ci": [
+     92.60400186397234,
+     100.10735706977536
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|only_numbers|s4": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.1494252873563218,
+    0.6980802792321117,
+    0.3436426116838488,
+    0.16666666666666669
+   ],
+   "mean": 0.5894537112347372,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.07901254616183595,
+     1.0998948763076384
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false
+  },
+  "190m|only_numbers|dim": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.0,
+    6.557377049180328,
+    5.063291139240507,
+    0.0
+   ],
+   "mean": 2.9051670471052087,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -1.1068476359349755,
+     6.917181730145392
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false
+  },
+  "190m|only_numbers|s4_hard": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.670391061452514,
+    0.631578947368421,
+    0.1465201465201465,
+    0.3687943262411347
+   ],
+   "mean": 0.454321120395554,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|only_numbers|bpb": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1132.1552297476164,
+    1129.994827889996,
+    1124.6927093807333,
+    1126.293404477118
+   ],
+   "mean": 1128.284042873866,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "190m|only_numbers|seen": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "mean": 100.0,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false
+  },
+  "505m|none_plr|numbers": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    16.464944944944946,
+    13.088091168091168,
+    15.144444444444446,
+    15.827587587587589
+   ],
+   "mean": 15.131267036267037,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|months": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    14.66666666666667,
+    24.666666666666668,
+    28.166666666666668,
+    7.666666666666666
+   ],
+   "mean": 18.791666666666668,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     7.770412760784728,
+     29.812920572548606
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|weekdays": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    23.958333333333336,
+    60.06944444444445,
+    22.222222222222225,
+    15.625
+   ],
+   "mean": 30.468750000000004,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     6.867272122605684,
+     54.07022787739432
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|clock": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    25.91493570722057,
+    23.606889564336374,
+    26.86868686868687,
+    17.404129793510325
+   ],
+   "mean": 23.448660483438534,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 505m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     18.44070891590299,
+     28.456612050974076
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|s4": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.8210180623973727,
+    0.0,
+    0.3436426116838488,
+    0.6666666666666667
+   ],
+   "mean": 0.45783183518697207,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.029154885210850967,
+     0.8865087851630932
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|dim": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    6.321839080459769,
+    5.464480874316941,
+    11.39240506329114,
+    13.043478260869565
+   ],
+   "mean": 9.055550819734353,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 505m has no none whose lr was tuned on dim",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     4.666805827936191,
+     13.444295811532516
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|s4_hard": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.6480446927374302,
+    0.40545808966861596,
+    0.3076923076923077,
+    0.553191489361702
+   ],
+   "mean": 0.47859664486501396,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|bpb": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1091.9365645918879,
+    1091.1783745666432,
+    1090.8540140206644,
+    1091.4135281675767
+   ],
+   "mean": 1091.3456203366932,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_plr|seen": {
+   "label": "none@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "mean": 100.0,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "none at all6-lam1's pick: not a grid point of none, does not close none's bracket; all6-lam1's bracket: closed"
+  },
+  "505m|none_nlr|numbers": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    38.1398998998999,
+    34.84581196581197,
+    37.2358024691358,
+    33.47827827827828
+   ],
+   "mean": 35.924948153281484,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|months": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    82.5,
+    83.66666666666667,
+    47.833333333333336,
+    41.0
+   ],
+   "mean": 63.75000000000001,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for months (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     37.27127195732093,
+     90.22872804267908
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|weekdays": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    29.86111111111111,
+    37.847222222222214,
+    49.65277777777777,
+    18.055555555555554
+   ],
+   "mean": 33.854166666666664,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     18.198237528740115,
+     49.51009580459321
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|clock": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    99.0108803165183,
+    98.58156028368795,
+    97.67676767676767,
+    96.8534906588004
+   ],
+   "mean": 98.03067473394358,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    98.0,
+    98.99999999999999
+   ],
+   "caveat": "none's lr not tuned for clock (chosen on numbers); 505m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+   "gate": {
+    "verdict": "CEILING",
+    "seed_ci": [
+     96.89891927754343,
+     99.16243019034374
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|s4": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.4778325123152711,
+    0.8726003490401396,
+    1.3745704467353952,
+    0.5
+   ],
+   "mean": 1.0562508270227013,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     0.5203755473947834,
+     1.5921261066506194
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|dim": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    5.747126436781609,
+    18.032786885245898,
+    17.29957805907173,
+    6.521739130434782
+   ],
+   "mean": 11.900307627883505,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": "none's lr not tuned for dim (chosen on numbers); 505m has no none whose lr was tuned on dim",
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     4.0493899502309665,
+     19.751225305536042
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|s4_hard": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.4227188081936686,
+    0.9122807017543859,
+    0.879120879120879,
+    0.4326241134751771
+   ],
+   "mean": 0.9116861256360276,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|bpb": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1127.6479636282577,
+    1143.397387083964,
+    1123.969739873758,
+    1119.0609456642692
+   ],
+   "mean": 1128.5190090625624,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|none_nlr|seen": {
+   "label": "none@4.8e-3",
+   "lr": "4.8e-3",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    99.6,
+    99.8
+   ],
+   "mean": 99.85000000000001,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1; none's bracket: closed"
+  },
+  "505m|all6|numbers": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    76.61317317317317,
+    76.44478632478632,
+    77.33975308641975,
+    77.601001001001
+   ],
+   "mean": 76.99967839634506,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|months": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    20.000000000000004,
+    13.666666666666666,
+    9.333333333333334,
+    10.166666666666666
+   ],
+   "mean": 13.291666666666668,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     7.584400919276018,
+     18.998932414057318
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|weekdays": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.736111111111111,
+    23.611111111111114,
+    14.583333333333334,
+    1.3888888888888888
+   ],
+   "mean": 10.32986111111111,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -2.348434386566842,
+     23.008156608789065
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|clock": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    69.13946587537092,
+    82.26950354609929,
+    75.25252525252526,
+    59.09537856440511
+   ],
+   "mean": 71.43921830960014,
+   "seen_per_seed": [
+    100.0,
+    95.11111111111111,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     59.88024172961901,
+     82.99819488958126
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|s4": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    36.94581280788178,
+    24.083769633507853,
+    18.213058419243985,
+    39.166666666666664
+   ],
+   "mean": 29.60232688182507,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "MEASURABLE",
+    "seed_ci": [
+     17.726712847103713,
+     41.47794091654643
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|dim": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    98.27586206896551,
+    88.52459016393442,
+    83.12236286919831,
+    89.85507246376811
+   ],
+   "mean": 89.94447189146659,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     82.56547059501129,
+     97.32347318792189
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|s4_hard": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    30.718808193668533,
+    17.55945419103314,
+    12.505494505494505,
+    28.05673758865248
+   ],
+   "mean": 22.210123619712164,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|bpb": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1097.914251894365,
+    1107.1463617775655,
+    1101.168529292088,
+    1110.649716667092
+   ],
+   "mean": 1104.2197149077776,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|all6|seen": {
+   "label": "all6-lam1@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    99.02222222222221,
+    100.0,
+    100.0
+   ],
+   "mean": 99.75555555555556,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|numbers": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    76.41049049049049,
+    79.05641025641025,
+    76.16345679012346,
+    78.28636636636637
+   ],
+   "mean": 77.47918097584764,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|months": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    16.166666666666664,
+    15.500000000000004,
+    8.166666666666666,
+    10.0
+   ],
+   "mean": 12.458333333333334,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     7.777896464358052,
+     17.138770202308617
+    ],
+    "floor": 13.333333333333332,
+    "chance": 8.333333333333332
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|weekdays": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    0.0,
+    19.791666666666664,
+    10.76388888888889,
+    1.736111111111111
+   ],
+   "mean": 8.072916666666666,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -2.6664668656085215,
+     18.812300198941855
+    ],
+    "floor": 27.32142857142857,
+    "chance": 22.32142857142857
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|clock": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    80.90999010880317,
+    97.16312056737588,
+    97.67676767676768,
+    94.10029498525074
+   ],
+   "mean": 92.46254333454937,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    98.88888888888889,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     83.21161769069137,
+     101.71346897840736
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|s4": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.3136288998357961,
+    2.4432809773123907,
+    0.1718213058419244,
+    0.0
+   ],
+   "mean": 0.9821827957475278,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "FLOOR",
+    "seed_ci": [
+     -0.3535856134459152,
+     2.3179512049409707
+    ],
+    "floor": 9.166666666666666,
+    "chance": 4.166666666666666
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|dim": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    2.2988505747126435,
+    21.311475409836067,
+    2.9535864978902953,
+    5.072463768115942
+   ],
+   "mean": 7.9090940626387365,
+   "seen_per_seed": [
+    100.0,
+    100.0,
+    100.0,
+    100.0
+   ],
+   "caveat": null,
+   "gate": {
+    "verdict": "BORDERLINE",
+    "seed_ci": [
+     -2.6963312373188764,
+     18.51451936259635
+    ],
+    "floor": 11.484781288772735,
+    "chance": 6.484781288772735
+   },
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|s4_hard": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1.2811918063314711,
+    1.2241715399610138,
+    0.2124542124542125,
+    0.3687943262411347
+   ],
+   "mean": 0.7716529712469581,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|bpb": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    1092.9071953798655,
+    1096.5217575222641,
+    1099.707733924761,
+    1096.9575694626046
+   ],
+   "mean": 1096.5235640723738,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  },
+  "505m|only_numbers|seen": {
+   "label": "only-numbers@6e-4",
+   "lr": "6e-4",
+   "seeds": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "values": [
+    100.0,
+    100.0,
+    99.77777777777779,
+    100.0
+   ],
+   "mean": 99.94444444444444,
+   "seen_per_seed": null,
+   "caveat": null,
+   "gate": null,
+   "provisional": false,
+   "x1_note": "at all6-lam1's pick; its bracket: closed"
+  }
+ },
+ "families": {
+  "53m|S1": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     53.74862862862864,
+     51.827236467236474,
+     60.608641975308636,
+     46.63223223223224
+    ],
+    "mean": 53.2041848258515,
+    "wins": 4,
+    "losses": 0,
+    "sd": 5.779531480653683,
+    "t": 18.41124492666798,
+    "p_t": 0.0003496456120295477,
+    "p_sf": 0.125,
+    "ci": [
+     44.00766052241291,
+     62.400709129290085
+    ],
+    "lb90": 48.471487301126466,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": null,
+    "p_bh": 0.0013985824481181908
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     69.53511374876359,
+     58.05471124620061,
+     90.1010101010101,
+     28.613569321533916
+    ],
+    "mean": 61.57610110437706,
+    "wins": 4,
+    "losses": 0,
+    "sd": 25.66414492119251,
+    "t": 4.798609210901843,
+    "p_t": 0.017221686747747267,
+    "p_sf": 0.125,
+    "ci": [
+     20.73871951301973,
+     102.41348269573439
+    ],
+    "lb90": 40.56044688581492,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+    "p_bh": 0.017221686747747267
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     36.781609195402304,
+     41.53577661431065,
+     52.23367697594502,
+     28.83333333333333
+    ],
+    "mean": 39.84609902974783,
+    "wins": 4,
+    "losses": 0,
+    "sd": 9.780579463777801,
+    "t": 8.148003740947484,
+    "p_t": 0.001932969065097434,
+    "p_sf": 0.0625,
+    "ci": [
+     28.337469989133695,
+     null
+    ],
+    "lb90": 31.837054633408236,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+    "p_bh": 0.003865938130194868
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     61.49425287356322,
+     50.27322404371585,
+     45.569620253164565,
+     31.884057971014485
+    ],
+    "mean": 47.305288785364525,
+    "wins": 4,
+    "losses": 0,
+    "sd": 12.260536240000347,
+    "t": 7.716675332850398,
+    "p_t": 0.0045240580058938384,
+    "p_sf": 0.125,
+    "ci": [
+     27.79603965647149,
+     66.81453791425756
+    ],
+    "lb90": 37.265476785190366,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+    "p_bh": 0.006032077341191784
+   }
+  ],
+  "53m|S1b": [
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     31.097817817817827,
+     42.9842735042735,
+     32.39407407407407,
+     21.982142142142152
+    ],
+    "mean": 32.11457688457689,
+    "wins": 4,
+    "losses": 0,
+    "sd": 8.600939020299199,
+    "t": 7.467690866958321,
+    "p_t": 0.004972365596091821,
+    "p_sf": 0.125,
+    "ci": [
+     18.428563581016075,
+     45.800590188137704
+    ],
+    "lb90": 25.07150722608668,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": null,
+    "p_bh": 0.009944731192183642
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -13.748763600395662,
+     16.312056737588662,
+     -7.575757575757592,
+     -8.161258603736485
+    ],
+    "mean": -3.2934307605752693,
+    "wins": 1,
+    "losses": 3,
+    "sd": 13.363173222140192,
+    "t": -0.49291148229953224,
+    "p_t": 0.6558976008453641,
+    "p_sf": 0.75,
+    "ci": [
+     -24.557221384408365,
+     17.970359863257826
+    ],
+    "lb90": -14.236161506587509,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+    "p_bh": 0.6558976008453641
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     30.04926108374385,
+     40.139616055846425,
+     51.3745704467354,
+     26.33333333333333
+    ],
+    "mean": 36.974195229914756,
+    "wins": 4,
+    "losses": 0,
+    "sd": 11.233481950867333,
+    "t": 6.582855679411137,
+    "p_t": 0.003566528568504812,
+    "p_sf": 0.0625,
+    "ci": [
+     23.755962395576052,
+     null
+    ],
+    "lb90": 27.775409411224132,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+    "p_bh": 0.009944731192183642
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     14.942528735632195,
+     55.73770491803278,
+     24.8945147679325,
+     16.666666666666657
+    ],
+    "mean": 28.06035377206603,
+    "wins": 4,
+    "losses": 0,
+    "sd": 18.95566531497004,
+    "t": 2.9606297965079236,
+    "p_t": 0.05951387228112659,
+    "p_sf": 0.125,
+    "ci": [
+     -2.1023397508444077,
+     58.22304729497647
+    ],
+    "lb90": 12.5380868519924,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+    "p_bh": 0.07935182970816879
+   }
+  ],
+  "53m|SE": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -7.5,
+     -8.166666666666664,
+     30.333333333333336,
+     0.16666666666666075
+    ],
+    "mean": 3.708333333333333,
+    "wins": 2,
+    "losses": 2,
+    "sd": 18.148244992183027,
+    "t": 0.4086712885935383,
+    "p_t": 0.7102026777789809,
+    "p_sf": 0.875,
+    "ci": [
+     -25.169574278044852,
+     32.58624094471152
+    ],
+    "lb90": -11.152759549388296,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for months (chosen on numbers); 53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); descriptive only",
+    "p_bh": 0.759507812879076
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -10.416666666666668,
+     -2.7777777777777715,
+     -6.597222222222214,
+     -8.333333333333332
+    ],
+    "mean": -7.0312499999999964,
+    "wins": 0,
+    "losses": 4,
+    "sd": 3.2371218219784748,
+    "t": -4.344136789824372,
+    "p_t": 0.02251898020023768,
+    "p_sf": 0.125,
+    "ci": [
+     -12.182233191054323,
+     -1.880266808945671
+    ],
+    "lb90": -9.682038993086014,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers); 53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); descriptive only",
+    "p_bh": 0.09007592080095073
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -24.166666666666664,
+     -42.99999999999999,
+     3.500000000000014,
+     -80.5
+    ],
+    "mean": -36.04166666666666,
+    "wins": 1,
+    "losses": 3,
+    "sd": 35.25866717717945,
+    "t": -2.044414582409059,
+    "p_t": 0.13347863723686326,
+    "p_sf": 0.25,
+    "ci": [
+     -92.14607421028794,
+     20.06274087695462
+    ],
+    "lb90": -64.9140082108064,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for months (chosen on numbers); 53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); descriptive only",
+    "p_bh": 0.2669572744737265
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     19.09722222222222,
+     -19.444444444444436,
+     12.847222222222229,
+     -1.0416666666666665
+    ],
+    "mean": 2.864583333333337,
+    "wins": 2,
+    "losses": 2,
+    "sd": 17.089013565594172,
+    "t": 0.33525438110725003,
+    "p_t": 0.759507812879076,
+    "p_sf": 1.0,
+    "ci": [
+     -24.327850708050804,
+     30.057017374717475
+    ],
+    "lb90": -11.129134405311552,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers); 53M SE on seeds 0-3 includes the discovery seeds 0, 1 of none / all6-lam1: NOT F88's FE (decided on the fresh seeds 2-7); descriptive only",
+    "p_bh": 0.759507812879076
+   }
+  ],
+  "53m|S2": [
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     54.879399399399404,
+     54.41150997150996,
+     65.3158024691358,
+     46.53761761761763
+    ],
+    "mean": 55.2860823644157,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.704137172313385,
+    "t": 14.352309967454666,
+    "p_t": 0.0007331062645912212,
+    "p_sf": 0.125,
+    "ci": [
+     43.027080924701906,
+     67.54508380412949
+    ],
+    "lb90": 48.97737878738703,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": null,
+    "p_bh": 0.004398637587547327
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -28.33333333333333,
+     -20.5,
+     -16.33333333333334,
+     -12.166666666666668
+    ],
+    "mean": -19.333333333333336,
+    "wins": 0,
+    "losses": 4,
+    "sd": 6.897396180739078,
+    "t": -5.605980235649363,
+    "p_t": 0.011216995894867132,
+    "p_sf": 0.125,
+    "ci": [
+     -30.308629829068842,
+     -8.35803683759783
+    ],
+    "lb90": -24.981419158438946,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.0336509876846014
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -24.305555555555557,
+     -32.29166666666667,
+     -34.72222222222222,
+     -8.333333333333332
+    ],
+    "mean": -24.913194444444446,
+    "wins": 0,
+    "losses": 4,
+    "sd": 11.915254896732812,
+    "t": -4.181730841742327,
+    "p_t": 0.024917921152199485,
+    "p_sf": 0.125,
+    "ci": [
+     -43.8730239057549,
+     -5.953364983133994
+    ],
+    "lb90": -34.670265159432084,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.03737688172829923
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     76.4589515331355,
+     55.8257345491388,
+     92.42424242424242,
+     26.155358898721744
+    ],
+    "mean": 62.716071851309614,
+    "wins": 4,
+    "losses": 0,
+    "sd": 28.610048470649996,
+    "t": 4.384198923371119,
+    "p_t": 0.021973611703145046,
+    "p_sf": 0.125,
+    "ci": [
+     17.19110032660572,
+     108.24104337601351
+    ],
+    "lb90": 39.28809918041867,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 53M clock: the S1 gain comes from the numbers prior and none@1e-3's too-low lr (F88), not the clock prior",
+    "p_bh": 0.03737688172829923
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -0.16420361247947454,
+     0.0,
+     -0.34364261168384874,
+     0.3333333333333333
+    ],
+    "mean": -0.043628222707497485,
+    "wins": 1,
+    "losses": 2,
+    "sd": 0.2878370457746634,
+    "t": -0.3031452924350283,
+    "p_t": 0.6092073843517601,
+    "p_sf": 0.75,
+    "ci": [
+     -0.3823208120612329,
+     null
+    ],
+    "lb90": -0.27932997095852363,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+    "p_bh": 0.6092073843517601
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     2.298850574712644,
+     13.661202185792355,
+     35.0210970464135,
+     -0.72463768115942
+    ],
+    "mean": 12.56412803143977,
+    "wins": 3,
+    "losses": 1,
+    "sd": 16.201710243752878,
+    "t": 1.5509631813449198,
+    "p_t": 0.21870089533610848,
+    "p_sf": 0.25,
+    "ci": [
+     -13.216408420814476,
+     38.34466448369402
+    ],
+    "lb90": -0.7030017045243859,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 53M dim: none@8e-3 reaches a MEASURABLE strict dim (F88 A6: 'dim not learnable without the prior' does not hold)",
+    "p_bh": 0.2624410744033302
+   }
+  ],
+  "53m|S3": [
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -1.1307707707707664,
+     -2.584273504273483,
+     -4.7071604938271605,
+     0.0946146146146134
+    ],
+    "mean": -2.081897538564199,
+    "wins": 1,
+    "losses": 3,
+    "sd": 2.0644801182982775,
+    "t": -2.016873420200606,
+    "p_t": 0.13706954815391126,
+    "p_sf": 0.25,
+    "ci": [
+     -5.3669461009692085,
+     1.2031510238408103
+    ],
+    "lb90": -3.7724428670947425,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.1644834577846935
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     20.83333333333333,
+     12.333333333333336,
+     46.66666666666667,
+     12.333333333333329
+    ],
+    "mean": 23.041666666666668,
+    "wins": 4,
+    "losses": 0,
+    "sd": 16.251709311809503,
+    "t": 2.835599163704357,
+    "p_t": 0.06588489765449079,
+    "p_sf": 0.125,
+    "ci": [
+     -2.8184294602897957,
+     48.901762793623135
+    ],
+    "lb90": 9.733594085002608,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.1225429833795022
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     13.888888888888888,
+     29.513888888888896,
+     28.125000000000004,
+     0.0
+    ],
+    "mean": 17.881944444444446,
+    "wins": 3,
+    "losses": 0,
+    "sd": 13.85557346890642,
+    "t": 2.5811915305524797,
+    "p_t": 0.08169532225300147,
+    "p_sf": 0.25,
+    "ci": [
+     -4.165364852409631,
+     39.929253741298524
+    ],
+    "lb90": 6.536000836482202,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.1225429833795022
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -6.923837784371912,
+     2.2289766970618103,
+     -2.323232323232318,
+     2.458210422812172
+    ],
+    "mean": -1.139970746932562,
+    "wins": 2,
+    "losses": 2,
+    "sd": 4.4403430976831295,
+    "t": -0.513460659167249,
+    "p_t": 0.6430518082885301,
+    "p_sf": 0.75,
+    "ci": [
+     -8.2055474896394,
+     5.9256059957742755
+    ],
+    "lb90": -4.7760441652848025,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.6430518082885301
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "s4",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     36.94581280788178,
+     41.53577661431065,
+     52.57731958762887,
+     28.499999999999996
+    ],
+    "mean": 39.88972725245532,
+    "wins": 4,
+    "losses": 0,
+    "sd": 10.034556906137098,
+    "t": 7.950471082197742,
+    "p_t": 0.004150445843442707,
+    "p_sf": 0.125,
+    "ci": [
+     23.922507976907777,
+     55.856946528002865
+    ],
+    "lb90": 31.672707795020656,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.024902675060656243
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     59.195402298850574,
+     36.612021857923494,
+     10.548523206751064,
+     32.60869565217391
+    ],
+    "mean": 34.74116075392476,
+    "wins": 4,
+    "losses": 0,
+    "sd": 19.927712443622614,
+    "t": 3.486718393012825,
+    "p_t": 0.03986118791517823,
+    "p_sf": 0.125,
+    "ci": [
+     3.0317233344433134,
+     66.4505981734062
+    ],
+    "lb90": 18.422911485612445,
+    "label": "all6-lam1@1e-3 - only-numbers@1e-3",
+    "caveat": null,
+    "p_bh": 0.1195835637455347
+   }
+  ],
+  "53m|SH": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     35.15083798882682,
+     32.38206627680312,
+     46.7985347985348,
+     30.32624113475177
+    ],
+    "mean": 36.16442004972913,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.359852312644214,
+    "t": 9.827485257441571,
+    "p_t": 0.0011198442207183135,
+    "p_sf": 0.0625,
+    "ci": [
+     27.504216390669875,
+     null
+    ],
+    "lb90": 30.137641765193607,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+    "p_bh": 0.0015216793410510743
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     32.17132216014898,
+     31.461988304093573,
+     46.17582417582418,
+     28.751773049645386
+    ],
+    "mean": 34.64022692242803,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.830295533901779,
+    "t": 8.84774444909541,
+    "p_t": 0.0015216793410510743,
+    "p_sf": 0.0625,
+    "ci": [
+     25.426461325839803,
+     null
+    ],
+    "lb90": 28.228215773217887,
+    "label": "all6-lam1@1e-3 - none@8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 53M S4 / s4_hard rows here are all6@1e-3 vs none@1e-3 / none@8e-3 on seeds 0-3: NOT F88's final S4 comparison (A8.3: all6@1e-3 vs the S4-tuned none@1.6e-2 on the fresh seeds 8-15, s4_hard area +26.3); F88 A6: 'S4 not learnable without the prior' NOT ESTABLISHED",
+    "p_bh": 0.0015216793410510743
+   }
+  ],
+  "53m|SL": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     7.188662660205864,
+     6.899242323252338,
+     20.71171127430921,
+     6.18899194423193
+    ],
+    "mean": 10.247152050499835,
+    "wins": 4,
+    "losses": 0,
+    "sd": 6.98900374610138,
+    "t": 2.9323641602613026,
+    "p_t": 0.060884265032489226,
+    "p_sf": 0.125,
+    "ci": [
+     -0.8739125241973191,
+     21.36821662519699
+    ],
+    "lb90": 4.52405133893024,
+    "label": "all6-lam1@1e-3 - none@1e-3",
+    "caveat": null,
+    "p_bh": 0.060884265032489226
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     1.7593478978692474,
+     16.564077270953703,
+     18.745276136287885,
+     10.249068712955705
+    ],
+    "mean": 11.829442504516635,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.619053044873192,
+    "t": 3.105226446080877,
+    "p_t": 0.05307864783666605,
+    "p_sf": 0.125,
+    "ci": [
+     -0.29417110169199034,
+     23.95305611072526
+    ],
+    "lb90": 5.590411952140144,
+    "label": "only-numbers@1e-3 - none@1e-3",
+    "caveat": null,
+    "p_bh": 0.060884265032489226
+   }
+  ],
+  "190m|S1": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     58.913673673673685,
+     57.57663817663817,
+     66.47703703703704,
+     63.245685685685686
+    ],
+    "mean": 61.553258643258644,
+    "wins": 4,
+    "losses": 0,
+    "sd": 4.077941560484526,
+    "t": 30.188396636044537,
+    "p_t": 7.984315637554751e-05,
+    "p_sf": 0.125,
+    "ci": [
+     55.06434361709522,
+     68.04217366942207
+    ],
+    "lb90": 58.21394576056532,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.00031937262550219003
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     38.67457962413452,
+     3.850050658561301,
+     55.95959595959596,
+     40.51130776794494
+    ],
+    "mean": 34.74888350255918,
+    "wins": 4,
+    "losses": 0,
+    "sd": 22.00945870536632,
+    "t": 3.157631813460887,
+    "p_t": 0.05096415190400916,
+    "p_sf": 0.125,
+    "ci": [
+     -0.27307676653448,
+     69.77084377165284
+    ],
+    "lb90": 16.725950141247395,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 190m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "p_bh": 0.05096415190400916
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     37.76683087027914,
+     65.27050610820245,
+     30.068728522336773,
+     44.66666666666667
+    ],
+    "mean": 44.443183041871265,
+    "wins": 4,
+    "losses": 0,
+    "sd": 15.110988850206233,
+    "t": 5.882233582782997,
+    "p_t": 0.0049020477355116165,
+    "p_sf": 0.0625,
+    "ci": [
+     26.662358729984582,
+     null
+    ],
+    "lb90": 32.06921470777545,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.006536063647348822
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     58.62068965517241,
+     96.17486338797812,
+     65.40084388185653,
+     80.43478260869566
+    ],
+    "mean": 75.15779488342568,
+    "wins": 4,
+    "losses": 0,
+    "sd": 16.715638487706084,
+    "t": 8.992512602937936,
+    "p_t": 0.002902843880093764,
+    "p_sf": 0.125,
+    "ci": [
+     48.55948391059652,
+     101.75610585625483
+    ],
+    "lb90": 61.46982360759184,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 190m has no none whose lr was tuned on dim",
+    "p_bh": 0.005805687760187528
+   }
+  ],
+  "190m|S1b": [
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     40.68824824824827,
+     50.78837606837605,
+     42.23530864197531,
+     46.26454454454454
+    ],
+    "mean": 44.99411937578604,
+    "wins": 4,
+    "losses": 0,
+    "sd": 4.521760481677902,
+    "t": 19.90115113708542,
+    "p_t": 0.00027726982269915545,
+    "p_sf": 0.125,
+    "ci": [
+     37.798989406639194,
+     52.18924934493289
+    ],
+    "lb90": 41.29137552696872,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": null,
+    "p_bh": 0.0011090792907966218
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -39.268051434223544,
+     -23.201621073961498,
+     -21.71717171717171,
+     -29.20353982300884
+    ],
+    "mean": -28.347596012091397,
+    "wins": 0,
+    "losses": 4,
+    "sd": 7.967278306271337,
+    "t": -7.116004969922531,
+    "p_t": 0.005711065224464074,
+    "p_sf": 0.125,
+    "ci": [
+     -41.02531371657151,
+     -15.669878307611285
+    ],
+    "lb90": -34.871778542302486,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 190m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "p_bh": 0.005711065224464074
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     34.97536945812808,
+     64.57242582897034,
+     30.240549828178697,
+     43.66666666666667
+    ],
+    "mean": 43.36375294548594,
+    "wins": 4,
+    "losses": 0,
+    "sd": 15.193013743057547,
+    "t": 5.708380664804048,
+    "p_t": 0.005331973600555373,
+    "p_sf": 0.0625,
+    "ci": [
+     25.486411441809352,
+     null
+    ],
+    "lb90": 30.922616708825238,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.005711065224464074
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     95.40229885057471,
+     81.96721311475407,
+     78.48101265822785,
+     50.72463768115942
+    ],
+    "mean": 76.64379057617901,
+    "wins": 4,
+    "losses": 0,
+    "sd": 18.756317442210868,
+    "t": 8.172584070654837,
+    "p_t": 0.0038323578696994876,
+    "p_sf": 0.125,
+    "ci": [
+     46.798304003832875,
+     106.48927714852516
+    ],
+    "lb90": 61.28476408262173,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 190m has no none whose lr was tuned on dim",
+    "p_bh": 0.005711065224464074
+   }
+  ],
+  "190m|SE": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -0.5,
+     -35.83333333333334,
+     5.833333333333334,
+     -14.166666666666664
+    ],
+    "mean": -11.166666666666668,
+    "wins": 1,
+    "losses": 3,
+    "sd": 18.441097420546157,
+    "t": -1.2110631392495461,
+    "p_t": 0.31257142834919494,
+    "p_sf": 0.375,
+    "ci": [
+     -40.510567842363656,
+     18.17723450903032
+    ],
+    "lb90": -26.267568254897267,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.31257142834919494
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -45.833333333333336,
+     -39.23611111111111,
+     -27.77777777777778,
+     -3.125
+    ],
+    "mean": -28.993055555555557,
+    "wins": 0,
+    "losses": 4,
+    "sd": 18.789610081544026,
+    "t": -3.0860731467795386,
+    "p_t": 0.053878982165016964,
+    "p_sf": 0.125,
+    "ci": [
+     -58.89151814642118,
+     0.9054070353100592
+    ],
+    "lb90": -44.379344465156606,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.10775796433003393
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -37.833333333333336,
+     -44.66666666666666,
+     -23.166666666666664,
+     -39.33333333333333
+    ],
+    "mean": -36.25,
+    "wins": 0,
+    "losses": 4,
+    "sd": 9.201952288831206,
+    "t": -7.878762867309829,
+    "p_t": 0.004260557979866464,
+    "p_sf": 0.125,
+    "ci": [
+     -50.8923595314939,
+     -21.607640468506098
+    ],
+    "lb90": -43.78522270200761,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.017042231919465856
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -9.027777777777777,
+     -54.51388888888889,
+     -26.041666666666664,
+     -9.722222222222223
+    ],
+    "mean": -24.826388888888893,
+    "wins": 0,
+    "losses": 4,
+    "sd": 21.295981781091385,
+    "t": -2.331556172811168,
+    "p_t": 0.10200301566188985,
+    "p_sf": 0.125,
+    "ci": [
+     -58.713048157200575,
+     9.06027037942279
+    ],
+    "lb90": -42.26507584808877,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.1360040208825198
+   }
+  ],
+  "190m|S2": [
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     60.23943943943942,
+     59.737663817663815,
+     67.77580246913581,
+     65.04984984984983
+    ],
+    "mean": 63.20068889402222,
+    "wins": 4,
+    "losses": 0,
+    "sd": 3.8778259148436947,
+    "t": 32.595939210215775,
+    "p_t": 6.346155436465217e-05,
+    "p_sf": 0.125,
+    "ci": [
+     57.030202516408366,
+     69.37117527163608
+    ],
+    "lb90": 60.025245145696175,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.00038076932618791304
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -1.1666666666666643,
+     -44.50000000000001,
+     3.3333333333333304,
+     -19.666666666666664
+    ],
+    "mean": -15.500000000000002,
+    "wins": 1,
+    "losses": 3,
+    "sd": 21.74473116259048,
+    "t": -1.4256327092850998,
+    "p_t": 0.24921300478899044,
+    "p_sf": 0.375,
+    "ci": [
+     -50.10071967388675,
+     19.10071967388675
+    ],
+    "lb90": -33.30615534208729,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.2990556057467885
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -42.708333333333336,
+     -37.847222222222214,
+     -31.59722222222222,
+     -4.861111111111111
+    ],
+    "mean": -29.25347222222222,
+    "wins": 0,
+    "losses": 4,
+    "sd": 16.885558634714414,
+    "t": -3.4649102058229873,
+    "p_t": 0.040495559262370806,
+    "p_sf": 0.125,
+    "ci": [
+     -56.12216406707134,
+     -2.384780377373101
+    ],
+    "lb90": -43.08058637872712,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.07796372497424903
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     78.83283877349159,
+     43.971631205673766,
+     81.61616161616162,
+     71.1897738446411
+    ],
+    "mean": 68.90260135999202,
+    "wins": 4,
+    "losses": 0,
+    "sd": 17.19523829713491,
+    "t": 8.014149053284438,
+    "p_t": 0.004055794792426903,
+    "p_sf": 0.125,
+    "ci": [
+     41.54114006639709,
+     96.26406265358695
+    ],
+    "lb90": 54.82189914419526,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 190m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "p_bh": 0.01216738437728071
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     1.1494252873563218,
+     0.6980802792321117,
+     0.1718213058419244,
+     0.16666666666666669
+    ],
+    "mean": 0.546498384774256,
+    "wins": 4,
+    "losses": 0,
+    "sd": 0.47298800835485044,
+    "t": 2.3108339962997784,
+    "p_t": 0.05197581664949935,
+    "p_sf": 0.0625,
+    "ci": [
+     -0.010057957206765611,
+     null
+    ],
+    "lb90": 0.15918166474967016,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.07796372497424903
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -36.7816091954023,
+     6.557377049180328,
+     -15.18987341772152,
+     0.0
+    ],
+    "mean": -11.353526390985872,
+    "wins": 1,
+    "losses": 2,
+    "sd": 19.244115786144192,
+    "t": -1.1799478362274702,
+    "p_t": 0.3230650093201348,
+    "p_sf": 0.5,
+    "ci": [
+     -41.97520898201907,
+     19.26815620004733
+    ],
+    "lb90": -27.11199737630274,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 190m has no none whose lr was tuned on dim",
+    "p_bh": 0.3230650093201348
+   }
+  ],
+  "190m|S3": [
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -1.3257657657657376,
+     -2.1610256410256454,
+     -1.2987654320987758,
+     -1.804164164164149
+    ],
+    "mean": -1.647430250763577,
+    "wins": 0,
+    "losses": 4,
+    "sd": 0.4136749695077801,
+    "t": -7.964853434201284,
+    "p_t": 0.00412881484971761,
+    "p_sf": 0.125,
+    "ci": [
+     -2.305679439912769,
+     -0.989181061614385
+    ],
+    "lb90": -1.9861771735519862,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.00825762969943522
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     0.6666666666666643,
+     8.666666666666668,
+     2.5000000000000036,
+     5.5
+    ],
+    "mean": 4.333333333333334,
+    "wins": 4,
+    "losses": 0,
+    "sd": 3.5092470438563907,
+    "t": 2.4696655887590837,
+    "p_t": 0.09009113341048969,
+    "p_sf": 0.125,
+    "ci": [
+     -1.2506618111909331,
+     9.917328477857602
+    ],
+    "lb90": 1.459708567432875,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.10810936009258762
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -3.1249999999999996,
+     -1.3888888888888893,
+     3.819444444444443,
+     1.736111111111111
+    ],
+    "mean": 0.26041666666666613,
+    "wins": 2,
+    "losses": 2,
+    "sd": 3.11049876166127,
+    "t": 0.16744367165578394,
+    "p_t": 0.8776718014198657,
+    "p_sf": 0.875,
+    "ci": [
+     -4.689080979152557,
+     5.209914312485889
+    ],
+    "lb90": -2.286684225378232,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.8776718014198656
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -40.15825914935707,
+     -40.121580547112465,
+     -25.65656565656566,
+     -30.678466076696154
+    ],
+    "mean": -34.15371785743284,
+    "wins": 0,
+    "losses": 4,
+    "sd": 7.209920750223466,
+    "t": -9.474089671893903,
+    "p_t": 0.0024929202578756193,
+    "p_sf": 0.125,
+    "ci": [
+     -45.62631068390133,
+     -22.681125030964346
+    ],
+    "lb90": -40.05772135707065,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.007478760773626858
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "s4",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     36.61740558292282,
+     64.57242582897034,
+     29.89690721649485,
+     44.50000000000001
+    ],
+    "mean": 43.896684657097,
+    "wins": 4,
+    "losses": 0,
+    "sd": 15.020341037355347,
+    "t": 5.844965110702433,
+    "p_t": 0.009980546983125116,
+    "p_sf": 0.125,
+    "ci": [
+     19.99597023788063,
+     67.79739907631337
+    ],
+    "lb90": 31.596945294836907,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.014970820474687674
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     95.40229885057471,
+     89.61748633879779,
+     80.59071729957806,
+     80.43478260869566
+    ],
+    "mean": 86.51132127441156,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.318369974473007,
+    "t": 23.642237704890345,
+    "p_t": 0.00016581161508444353,
+    "p_sf": 0.125,
+    "ci": [
+     74.86616153143115,
+     98.15648101739197
+    ],
+    "lb90": 80.51851172243504,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.0009948696905066612
+   }
+  ],
+  "190m|SH": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     29.03538175046555,
+     47.89083820662766,
+     25.34798534798535,
+     31.546099290780145
+    ],
+    "mean": 33.45507614896468,
+    "wins": 4,
+    "losses": 0,
+    "sd": 9.954798485521017,
+    "t": 6.721396962002631,
+    "p_t": 0.0033611954629404472,
+    "p_sf": 0.0625,
+    "ci": [
+     21.741446770641822,
+     null
+    ],
+    "lb90": 25.303368643041868,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.003513378816945578
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     27.746741154562386,
+     47.03313840155944,
+     25.084249084249088,
+     30.702127659574472
+    ],
+    "mean": 32.64156407498635,
+    "wins": 4,
+    "losses": 0,
+    "sd": 9.86494004878275,
+    "t": 6.617691321705304,
+    "p_t": 0.003513378816945578,
+    "p_sf": 0.0625,
+    "ci": [
+     21.03366947632764,
+     null
+    ],
+    "lb90": 24.56343914276357,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 190m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.003513378816945578
+   }
+  ],
+  "190m|SL": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     10.513423405987169,
+     7.355515668183443,
+     14.305607624287177,
+     6.01195100260361
+    ],
+    "mean": 9.54662442526535,
+    "wins": 4,
+    "losses": 0,
+    "sd": 3.6913184251668603,
+    "t": 5.172474073316398,
+    "p_t": 0.014022331083225703,
+    "p_sf": 0.125,
+    "ci": [
+     3.672913083366381,
+     15.420335767164318
+    ],
+    "lb90": 6.523906471009445,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.014022331083225703
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     3.882541473492438,
+     5.151979392528574,
+     5.2827919822684635,
+     4.9739336894538155
+    ],
+    "mean": 4.822811634435823,
+    "wins": 4,
+    "losses": 0,
+    "sd": 0.6394995919814714,
+    "t": 15.083079629472403,
+    "p_t": 0.0006326604158899407,
+    "p_sf": 0.125,
+    "ci": [
+     3.8052250775698875,
+     5.840398191301758
+    ],
+    "lb90": 4.299143211456481,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.0012653208317798814
+   }
+  ],
+  "505m|S1": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     60.14822822822822,
+     63.35669515669515,
+     62.1953086419753,
+     61.77341341341341
+    ],
+    "mean": 61.86841136007802,
+    "wins": 4,
+    "losses": 0,
+    "sd": 1.3278937092448349,
+    "t": 93.18277649686617,
+    "p_t": 2.7244809530646563e-06,
+    "p_sf": 0.125,
+    "ci": [
+     59.75543614568017,
+     63.98138657447587
+    ],
+    "lb90": 60.781036147765796,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 1.0897923812258625e-05
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     43.224530168150345,
+     58.66261398176292,
+     48.383838383838395,
+     41.69124877089479
+    ],
+    "mean": 47.99055782616161,
+    "wins": 4,
+    "losses": 0,
+    "sd": 7.669067009661806,
+    "t": 12.515357543675426,
+    "p_t": 0.0010996345656473228,
+    "p_sf": 0.125,
+    "ci": [
+     35.78736084122593,
+     60.19375481109729
+    ],
+    "lb90": 41.71057222956587,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 505m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "p_bh": 0.001466179420863097
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     36.12479474548441,
+     24.083769633507853,
+     17.869415807560138,
+     38.5
+    ],
+    "mean": 29.1444950466381,
+    "wins": 4,
+    "losses": 0,
+    "sd": 9.814757772060775,
+    "t": 5.938912752304985,
+    "p_t": 0.004771750288937837,
+    "p_sf": 0.0625,
+    "ci": [
+     17.59564901553569,
+     null
+    ],
+    "lb90": 21.107462984593838,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.004771750288937837
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     91.95402298850574,
+     83.06010928961749,
+     71.72995780590718,
+     76.81159420289855
+    ],
+    "mean": 80.88892107173224,
+    "wins": 4,
+    "losses": 0,
+    "sd": 8.71132866264985,
+    "t": 18.57097216835511,
+    "p_t": 0.00034076264664140155,
+    "p_sf": 0.125,
+    "ci": [
+     67.02725321345122,
+     94.75058893001327
+    ],
+    "lb90": 73.75545640650887,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 505m has no none whose lr was tuned on dim",
+    "p_bh": 0.0006815252932828031
+   }
+  ],
+  "505m|S1b": [
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     38.473273273273264,
+     41.59897435897435,
+     40.10395061728395,
+     44.12272272272271
+    ],
+    "mean": 41.07473024306357,
+    "wins": 4,
+    "losses": 0,
+    "sd": 2.399658412956946,
+    "t": 34.23381429730225,
+    "p_t": 5.479897296933878e-05,
+    "p_sf": 0.125,
+    "ci": [
+     37.256338217934676,
+     44.893122268192464
+    ],
+    "lb90": 39.10971673475365,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.0002191958918773551
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -29.87141444114738,
+     -16.312056737588662,
+     -22.424242424242408,
+     -37.75811209439529
+    ],
+    "mean": -26.591456424343434,
+    "wins": 0,
+    "losses": 4,
+    "sd": 9.282313897733864,
+    "t": -5.729488728200699,
+    "p_t": 0.010554411209877657,
+    "p_sf": 0.125,
+    "ci": [
+     -41.361689208506796,
+     -11.821223640180074
+    ],
+    "lb90": -34.19248501196818,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 505m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect); X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.010554411209877657
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     35.467980295566505,
+     23.21116928446771,
+     16.83848797250859,
+     38.666666666666664
+    ],
+    "mean": 28.54607605480237,
+    "wins": 4,
+    "losses": 0,
+    "sd": 10.261058450993154,
+    "t": 5.563963248263035,
+    "p_t": 0.005727391123139691,
+    "p_sf": 0.0625,
+    "ci": [
+     16.47207617433662,
+     null
+    ],
+    "lb90": 20.143580784271965,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'; X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.007636521497519588
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     92.5287356321839,
+     70.49180327868852,
+     65.82278481012658,
+     83.33333333333333
+    ],
+    "mean": 78.04416426358307,
+    "wins": 4,
+    "losses": 0,
+    "sd": 12.167968734509737,
+    "t": 12.827804864790782,
+    "p_t": 0.0010223347912232672,
+    "p_sf": 0.125,
+    "ci": [
+     58.682210692609,
+     97.40611783455714
+    ],
+    "lb90": 68.08015321813541,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 505m has no none whose lr was tuned on dim; X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.0020446695824465344
+   }
+  ],
+  "505m|SE": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     5.333333333333334,
+     -11.000000000000002,
+     -18.833333333333336,
+     2.5
+    ],
+    "mean": -5.500000000000001,
+    "wins": 2,
+    "losses": 2,
+    "sd": 11.392817750508272,
+    "t": -0.965520579797676,
+    "p_t": 0.40550650805964983,
+    "p_sf": 0.5,
+    "ci": [
+     -23.62851537843783,
+     12.628515378437829
+    ],
+    "lb90": -14.829261471792435,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.40550650805964983
+   },
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -22.222222222222225,
+     -36.458333333333336,
+     -7.638888888888891,
+     -14.23611111111111
+    ],
+    "mean": -20.13888888888889,
+    "wins": 0,
+    "losses": 4,
+    "sd": 12.406414070242237,
+    "t": -3.246528573827566,
+    "p_t": 0.04761460621310376,
+    "p_sf": 0.125,
+    "ci": [
+     -39.880262198719976,
+     -0.3975155790578029
+    ],
+    "lb90": -30.298156185467104,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.06348614161747168
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -62.5,
+     -70.0,
+     -38.5,
+     -30.833333333333336
+    ],
+    "mean": -50.458333333333336,
+    "wins": 0,
+    "losses": 4,
+    "sd": 18.752962728889297,
+    "t": -5.381371899769342,
+    "p_t": 0.012568269313773861,
+    "p_sf": 0.125,
+    "ci": [
+     -80.29848180817172,
+     -20.618184858494953
+    ],
+    "lb90": -65.8146127454903,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for months (chosen on numbers); X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.03433968813404764
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -28.125,
+     -14.2361111111111,
+     -35.069444444444436,
+     -16.666666666666664
+    ],
+    "mean": -23.52430555555555,
+    "wins": 0,
+    "losses": 4,
+    "sd": 9.793780143592608,
+    "t": -4.8039276378785924,
+    "p_t": 0.01716984406702382,
+    "p_sf": 0.125,
+    "ci": [
+     -39.10839527192415,
+     -7.940215839186948
+    ],
+    "lb90": -31.54415962131097,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers); X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.03433968813404764
+   }
+  ],
+  "505m|S2": [
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     59.94554554554554,
+     65.96831908831908,
+     61.019012345679016,
+     62.45877877877878
+    ],
+    "mean": 62.34791393958061,
+    "wins": 4,
+    "losses": 0,
+    "sd": 2.6240539755954764,
+    "t": 47.52029837757586,
+    "p_t": 2.0518298710525684e-05,
+    "p_sf": 0.125,
+    "ci": [
+     58.17245849983119,
+     66.52336937933003
+    ],
+    "lb90": 60.19914914841782,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.0001231097922631541
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     1.4999999999999947,
+     -9.166666666666664,
+     -20.0,
+     2.333333333333334
+    ],
+    "mean": -6.333333333333334,
+    "wins": 2,
+    "losses": 2,
+    "sd": 10.508374085743517,
+    "t": -1.2053878709791326,
+    "p_t": 0.31445918672546913,
+    "p_sf": 0.5,
+    "ci": [
+     -23.054501475190072,
+     10.387834808523406
+    ],
+    "lb90": -14.938348496060339,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for months (chosen on numbers)",
+    "p_bh": 0.377351024070563
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -23.958333333333336,
+     -40.277777777777786,
+     -11.458333333333336,
+     -13.88888888888889
+    ],
+    "mean": -22.395833333333336,
+    "wins": 0,
+    "losses": 4,
+    "sd": 13.092012238957794,
+    "t": -3.421297341395731,
+    "p_t": 0.04180323040100897,
+    "p_sf": 0.125,
+    "ci": [
+     -43.22814632263348,
+     -1.563520344033197
+    ],
+    "lb90": -33.11651789477074,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for weekdays (chosen on numbers)",
+    "p_bh": 0.08360646080201795
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     54.9950544015826,
+     73.55623100303951,
+     70.80808080808082,
+     76.69616519174042
+    ],
+    "mean": 69.01388285111084,
+    "wins": 4,
+    "losses": 0,
+    "sd": 9.650510972664893,
+    "t": 14.302638077215374,
+    "p_t": 0.0007406820263704539,
+    "p_sf": 0.125,
+    "ci": [
+     53.657766356582215,
+     84.36999934563946
+    ],
+    "lb90": 61.111347923228216,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for clock (chosen on numbers); 505m: none's lr not tuned on clock (at 53M the S1 clock gain was an lr effect)",
+    "p_bh": 0.0022220460791113616
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "s4",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     0.4926108374384234,
+     2.4432809773123907,
+     -0.1718213058419244,
+     -0.6666666666666667
+    ],
+    "mean": 0.5243509605605559,
+    "wins": 2,
+    "losses": 2,
+    "sd": 1.3646096703796455,
+    "t": 0.7684995525712157,
+    "p_t": 0.2490730139591295,
+    "p_sf": 0.375,
+    "ci": [
+     -1.0813602899636559,
+     null
+    ],
+    "lb90": -0.593089930771199,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.37360952093869426
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -4.022988505747126,
+     15.846994535519126,
+     -8.438818565400844,
+     -7.971014492753622
+    ],
+    "mean": -1.1464567570956163,
+    "wins": 1,
+    "losses": 3,
+    "sd": 11.500796360339981,
+    "t": -0.19936997772591208,
+    "p_t": 0.8547213917260303,
+    "p_sf": 0.875,
+    "ci": [
+     -19.446790199487744,
+     17.15387668529651
+    ],
+    "lb90": -10.564138908173977,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for dim (chosen on numbers); 505m has no none whose lr was tuned on dim",
+    "p_bh": 0.8547213917260303
+   }
+  ],
+  "505m|S3": [
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "numbers",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     0.20268268268267775,
+     -2.6116239316239245,
+     1.176296296296286,
+     -0.6853653653653708
+    ],
+    "mean": -0.4795025795025829,
+    "wins": 2,
+    "losses": 2,
+    "sd": 1.6119726626936013,
+    "t": -0.5949264408756605,
+    "p_t": 0.593779804024557,
+    "p_sf": 0.75,
+    "ci": [
+     -3.0445108018063762,
+     2.0855056428012104
+    ],
+    "lb90": -1.7995021428221276,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.593779804024557
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "months",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     3.8333333333333393,
+     -1.8333333333333375,
+     1.1666666666666679,
+     0.16666666666666607
+    ],
+    "mean": 0.8333333333333339,
+    "wins": 3,
+    "losses": 1,
+    "sd": 2.3570226039551625,
+    "t": 0.7071067811865468,
+    "p_t": 0.5304777709329573,
+    "p_sf": 0.625,
+    "ci": [
+     -2.9172156053803078,
+     4.583882272046976
+    ],
+    "lb90": -1.0967668972476181,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.593779804024557
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "weekdays",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     1.736111111111111,
+     3.81944444444445,
+     3.8194444444444446,
+     -0.3472222222222221
+    ],
+    "mean": 2.256944444444446,
+    "wins": 3,
+    "losses": 1,
+    "sd": 1.9946398078257057,
+    "t": 2.263009527424072,
+    "p_t": 0.10862358012074647,
+    "p_sf": 0.25,
+    "ci": [
+     -0.9169725989489121,
+     5.430861487837804
+    ],
+    "lb90": 0.6235894029823252,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.1629353701811197
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "clock",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     -11.770524233432255,
+     -14.893617021276597,
+     -22.424242424242422,
+     -35.00491642084563
+    ],
+    "mean": -21.023325024949227,
+    "wins": 0,
+    "losses": 4,
+    "sd": 10.338199556648023,
+    "t": -4.067115344359954,
+    "p_t": 0.02681243782312559,
+    "p_sf": 0.125,
+    "ci": [
+     -37.47370751611929,
+     -4.572942533779159
+    ],
+    "lb90": -29.4889890005917,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.05362487564625118
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "s4",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     35.63218390804598,
+     21.640488656195462,
+     18.04123711340206,
+     39.166666666666664
+    ],
+    "mean": 28.620144086077545,
+    "wins": 4,
+    "losses": 0,
+    "sd": 10.344510680616262,
+    "t": 5.533397367882563,
+    "p_t": 0.011631922252139493,
+    "p_sf": 0.125,
+    "ci": [
+     12.159719188330023,
+     45.08056898382507
+    ],
+    "lb90": 20.14931210661284,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.03489576675641848
+   },
+   {
+    "a": "all6",
+    "b": "only_numbers",
+    "m": "dim",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     95.97701149425286,
+     67.21311475409836,
+     80.16877637130801,
+     84.78260869565217
+    ],
+    "mean": 82.03537782882785,
+    "wins": 4,
+    "losses": 0,
+    "sd": 11.90378245704909,
+    "t": 13.783077458753251,
+    "p_t": 0.0008265381567227337,
+    "p_sf": 0.125,
+    "ci": [
+     63.09380357915942,
+     100.97695207849628
+    ],
+    "lb90": 72.28770157549778,
+    "label": "all6-lam1@6e-4 - only-numbers@6e-4",
+    "caveat": null,
+    "p_bh": 0.004959228940336402
+   }
+  ],
+  "505m|SH": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     30.070763500931104,
+     17.153996101364523,
+     12.197802197802197,
+     27.50354609929078
+    ],
+    "mean": 21.73152697484715,
+    "wins": 4,
+    "losses": 0,
+    "sd": 8.459802354528213,
+    "t": 5.137596852535233,
+    "p_t": 0.0071430778559054,
+    "p_sf": 0.0625,
+    "ci": [
+     11.777032211448626,
+     null
+    ],
+    "lb90": 14.80403020508991,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'",
+    "p_bh": 0.007765096117715697
+   },
+   {
+    "a": "all6",
+    "b": "none_nlr",
+    "m": "s4_hard",
+    "side": "greater",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     29.296089385474865,
+     16.647173489278753,
+     11.626373626373626,
+     27.624113475177303
+    ],
+    "mean": 21.298437494076136,
+    "wins": 4,
+    "losses": 0,
+    "sd": 8.547118202394577,
+    "t": 4.983770433433136,
+    "p_t": 0.007765096117715697,
+    "p_sf": 0.0625,
+    "ci": [
+     11.241199768853903,
+     null
+    ],
+    "lb90": 14.299440205903231,
+    "label": "all6-lam1@6e-4 - none@4.8e-3",
+    "caveat": "none's lr not tuned for s4 (chosen on numbers); 505m has no none whose lr was tuned on S4: its S4 / s4_hard rows are not comparable with A8.3 and cannot show 'not learnable without the prior'; X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+    "p_bh": 0.007765096117715697
+   }
+  ],
+  "505m|SL": [
+   {
+    "a": "all6",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     5.977687302477079,
+     15.967987210922274,
+     10.314515271423488,
+     19.236188499515265
+    ],
+    "mean": 12.874094571084527,
+    "wins": 4,
+    "losses": 0,
+    "sd": 5.892376154172225,
+    "t": 4.36974634145471,
+    "p_t": 0.022168364416069952,
+    "p_sf": 0.125,
+    "ci": [
+     3.4980092104909257,
+     22.250179931678126
+    ],
+    "lb90": 8.048991682909655,
+    "label": "all6-lam1@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.044336728832139904
+   },
+   {
+    "a": "only_numbers",
+    "b": "none_plr",
+    "m": "bpb",
+    "side": "two",
+    "seeds": [
+     0,
+     1,
+     2,
+     3
+    ],
+    "n": 4,
+    "diffs": [
+     0.9706307879775977,
+     5.343382955620882,
+     8.853719904096579,
+     5.54404129502791
+    ],
+    "mean": 5.177943735680742,
+    "wins": 4,
+    "losses": 0,
+    "sd": 3.2338939499545893,
+    "t": 3.202296560005285,
+    "p_t": 0.049245264103071174,
+    "p_sf": 0.125,
+    "ci": [
+     0.032096809324587916,
+     10.323790662036895
+    ],
+    "lb90": 2.529797957185512,
+    "label": "only-numbers@6e-4 - none@6e-4",
+    "caveat": null,
+    "p_bh": 0.049245264103071174
+   }
+  ]
+ },
+ "missing": {
+  "53m": {
+   "none_plr": [],
+   "none_nlr": [],
+   "all6": [],
+   "only_numbers": []
+  },
+  "190m": {
+   "none_plr": [],
+   "none_nlr": [],
+   "all6": [],
+   "only_numbers": []
+  },
+  "505m": {
+   "none_plr": [],
+   "none_nlr": [],
+   "all6": [],
+   "only_numbers": []
+  }
+ },
+ "grad_split": {
+  "53m|all6|s0": {
+   "n": 26,
+   "lm_share": 0.8745186330747348,
+   "clip": 1.0,
+   "prior_over_lm": 0.5507658510573309,
+   "T": 0.6538501806023358,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|all6|s1": {
+   "n": 26,
+   "lm_share": 0.8808979070711818,
+   "clip": 1.0,
+   "prior_over_lm": 0.5348782161082553,
+   "T": 0.6739041549016351,
+   "frac_prior_gt_lm": 0.23076923076923078,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|all6|s2": {
+   "n": 26,
+   "lm_share": 0.9216206899801127,
+   "clip": 1.0,
+   "prior_over_lm": 0.41245637580203465,
+   "T": 0.6525377608502575,
+   "frac_prior_gt_lm": 0.11538461538461539,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|all6|s3": {
+   "n": 26,
+   "lm_share": 0.8732821463411906,
+   "clip": 1.0,
+   "prior_over_lm": 0.5575735488335862,
+   "T": 0.6483122726268926,
+   "frac_prior_gt_lm": 0.11538461538461539,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|only_numbers|s0": {
+   "n": 26,
+   "lm_share": 0.9917095006420763,
+   "clip": 1.0,
+   "prior_over_lm": 0.12978070222969637,
+   "T": 0.5878857887018727,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|only_numbers|s1": {
+   "n": 26,
+   "lm_share": 0.9942131495352837,
+   "clip": 1.0,
+   "prior_over_lm": 0.1045492798474246,
+   "T": 0.5817888480809141,
+   "frac_prior_gt_lm": 0.0,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|only_numbers|s2": {
+   "n": 26,
+   "lm_share": 0.9913635179693818,
+   "clip": 1.0,
+   "prior_over_lm": 0.13264348611554871,
+   "T": 0.6061844637124412,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "53m|only_numbers|s3": {
+   "n": 26,
+   "lm_share": 0.9885446388244524,
+   "clip": 1.0,
+   "prior_over_lm": 0.13524859159373043,
+   "T": 0.5783408553080762,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|all6|s0": {
+   "n": 26,
+   "lm_share": 0.952896837093302,
+   "clip": 1.0,
+   "prior_over_lm": 0.31244832621516716,
+   "T": 0.577169895469152,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|all6|s1": {
+   "n": 26,
+   "lm_share": 0.9377114132911528,
+   "clip": 1.0,
+   "prior_over_lm": 0.3716616543774296,
+   "T": 0.592261266070132,
+   "frac_prior_gt_lm": 0.19230769230769232,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|all6|s2": {
+   "n": 26,
+   "lm_share": 0.9534947374627356,
+   "clip": 1.0,
+   "prior_over_lm": 0.31472043505724356,
+   "T": 0.5713540724707692,
+   "frac_prior_gt_lm": 0.11538461538461539,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|all6|s3": {
+   "n": 26,
+   "lm_share": 0.9509780227991771,
+   "clip": 1.0,
+   "prior_over_lm": 0.3134358575955797,
+   "T": 0.5630888288450696,
+   "frac_prior_gt_lm": 0.11538461538461539,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|only_numbers|s0": {
+   "n": 26,
+   "lm_share": 0.9943483904089916,
+   "clip": 1.0,
+   "prior_over_lm": 0.11282331868880394,
+   "T": 0.5562023845008381,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|only_numbers|s1": {
+   "n": 26,
+   "lm_share": 0.9954393916701674,
+   "clip": 1.0,
+   "prior_over_lm": 0.09245589595644865,
+   "T": 0.5545825972055262,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|only_numbers|s2": {
+   "n": 26,
+   "lm_share": 0.9952320381339492,
+   "clip": 1.0,
+   "prior_over_lm": 0.09637568880237354,
+   "T": 0.5342964061478727,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "190m|only_numbers|s3": {
+   "n": 26,
+   "lm_share": 0.9945564128675445,
+   "clip": 1.0,
+   "prior_over_lm": 0.09843955813305016,
+   "T": 0.5461288105154718,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|all6|s0": {
+   "n": 26,
+   "lm_share": 0.9725835968802063,
+   "clip": 1.0,
+   "prior_over_lm": 0.23628292090601177,
+   "T": 0.5008708303658018,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|all6|s1": {
+   "n": 26,
+   "lm_share": 0.978283240353756,
+   "clip": 1.0,
+   "prior_over_lm": 0.21232739313574744,
+   "T": 0.5151387267511557,
+   "frac_prior_gt_lm": 0.11538461538461539,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|all6|s2": {
+   "n": 26,
+   "lm_share": 0.979485377754105,
+   "clip": 1.0,
+   "prior_over_lm": 0.1996610602632207,
+   "T": 0.4941002612407953,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|all6|s3": {
+   "n": 26,
+   "lm_share": 0.9708728127818126,
+   "clip": 1.0,
+   "prior_over_lm": 0.24828726422573033,
+   "T": 0.5002643094519317,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|only_numbers|s0": {
+   "n": 26,
+   "lm_share": 0.9932127915206377,
+   "clip": 1.0,
+   "prior_over_lm": 0.11403769028285236,
+   "T": 0.48714157095445926,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|only_numbers|s1": {
+   "n": 26,
+   "lm_share": 0.9952888902502446,
+   "clip": 1.0,
+   "prior_over_lm": 0.10320998173365195,
+   "T": 0.480445602398484,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|only_numbers|s2": {
+   "n": 26,
+   "lm_share": 0.9953419457682742,
+   "clip": 1.0,
+   "prior_over_lm": 0.0927999052246869,
+   "T": 0.4916587493426785,
+   "frac_prior_gt_lm": 0.07692307692307693,
+   "trainer_clip_coef": "NOT LOGGED"
+  },
+  "505m|only_numbers|s3": {
+   "n": 26,
+   "lm_share": 0.9953982618211087,
+   "clip": 1.0,
+   "prior_over_lm": 0.08529356684769282,
+   "T": 0.485940334022525,
+   "frac_prior_gt_lm": 0.038461538461538464,
+   "trainer_clip_coef": "NOT LOGGED"
+  }
+ },
+ "x1": {
+  "state": "a",
+  "label": "X1: picked over {2.4e-3, 4.8e-3, 9.6e-3, 1.92e-2} on seeds 0-1; bracket closed by X1",
+  "grid": {
+   "none": [
+    "2.4e-3",
+    "4.8e-3",
+    "9.6e-3",
+    "1.92e-2"
+   ],
+   "all6-lam1": [
+    "3e-4",
+    "6e-4",
+    "1.2e-3"
+   ]
+  },
+  "grid_source": "Amendment X1 (--grid_none)",
+  "amendment": "X1 (runs/rb6_505m/AUDIT.md): none's grid extended by --grid_none",
+  "bracket": {
+   "none": "closed",
+   "all6-lam1": "closed"
+  },
+  "pick": {
+   "none": "4.8e-3",
+   "all6-lam1": "6e-4"
+  },
+  "per_seed": {
+   "none": {
+    "area": [
+     38.1398998998999,
+     34.84581196581197
+    ],
+    "bpb": [
+     1.1270292166414893,
+     1.1421571725102215
+    ]
+   },
+   "all6-lam1": {
+    "area": [
+     76.61317317317317,
+     76.44478632478632
+    ],
+    "bpb": [
+     1.0979958030340986,
+     1.1065775512962008
+    ]
+   }
+  },
+  "picks_file": "runs/rb6_505m/picks_x1.json",
+  "picks_sha": "7880b95aacbc",
+  "x1_json": "runs/rb6_505m/picks_x1.json",
+  "x1_json_sha": "7880b95aacbc",
+  "x1_json_status": "picked"
+ },
+ "status": "complete"
+}

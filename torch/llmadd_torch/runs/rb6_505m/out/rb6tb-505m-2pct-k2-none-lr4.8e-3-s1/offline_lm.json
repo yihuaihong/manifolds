@@ -1,0 +1,16 @@
+{
+ "runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s1/rb6tb-505m-2pct-k2-none-lr4.8e-3/run_whole_none_seed1_rb6tb-505m-2pct-k2-none-lr4.8e-3.json": {
+  "run": "runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s1/rb6tb-505m-2pct-k2-none-lr4.8e-3/run_whole_none_seed1_rb6tb-505m-2pct-k2-none-lr4.8e-3.json",
+  "model": "runs/rb6_505m/out/rb6tb-505m-2pct-k2-none-lr4.8e-3-s1/rb6tb-505m-2pct-k2-none-lr4.8e-3/model_whole_none_seed1_rb6tb-505m-2pct-k2-none-lr4.8e-3.pt",
+  "tag": "_rb6tb-505m-2pct-k2-none-lr4.8e-3",
+  "seed": 1,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.143397387083964,
+  "nats_per_token_full": 3.8168912490575178,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1421571901869805,
+  "bpb_logged_final": 1.1421571725102215,
+  "orig_minus_logged": 1.767675894548404e-08,
+  "max_windows": 0
+ }
+}

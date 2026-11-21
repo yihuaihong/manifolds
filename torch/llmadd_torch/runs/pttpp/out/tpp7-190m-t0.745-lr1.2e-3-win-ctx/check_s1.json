@@ -1,0 +1,107 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (35 fields, no other)",
+   "ok": true,
+   "value": [
+    {},
+    []
+   ]
+  },
+  {
+   "check": "code_sha a3bce3ab63c1",
+   "ok": true,
+   "value": "a3bce3ab63c1"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 5150, \"n_params\": 190297344, \"grad_ckpt_on\": true, \"geo_layers\": [4, 8], \"read_layers\": [4, 8], \"lm_chunk\": 0, \"eval_every_steps\": 70}",
+   "ok": true,
+   "value": {
+    "steps": 5150,
+    "n_params": 190297344,
+    "grad_ckpt_on": true,
+    "geo_layers": [
+     4,
+     8
+    ],
+    "read_layers": [
+     4,
+     8
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 70
+   }
+  },
+  {
+   "check": "N_nonemb = n_params - V x d_model = 113283840",
+   "ok": true,
+   "value": 190297344
+  },
+  {
+   "check": "finished: 75 evals at the intended steps, the last at step 5149",
+   "ok": true,
+   "value": [
+    75,
+    5149
+   ]
+  },
+  {
+   "check": "prior_events == [[258, 1], [2060, 0]]",
+   "ok": true,
+   "value": [
+    [
+     258,
+     1
+    ],
+    [
+     2060,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.349903 == prior_used_frac (ctx)",
+   "ok": true,
+   "value": [
+    0.3499029126213592,
+    0.3499029126213592
+   ]
+  },
+  {
+   "check": "geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed reference (same init and first batch)",
+   "ok": true,
+   "value": 0.0
+  }
+ ],
+ "info": {
+  "tag": "_tpp7-190m-t0.745-lr1.2e-3-win-ctx",
+  "seed": 1,
+  "lr": 0.0012,
+  "tokens_consumed": 84377600,
+  "steps": 5150,
+  "eval_every_steps": 70,
+  "evals": 75,
+  "warmup_steps": 51,
+  "tpp_consumed": 0.7448335084686395,
+  "prior_events": [
+   [
+    258,
+    1
+   ],
+   [
+    2060,
+    0
+   ]
+  ],
+  "area": 68.76,
+  "diverged_at_step": null,
+  "final_val_bpb": 1.268972980724126,
+  "lm0": 11.67773723602295
+ }
+}

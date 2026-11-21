@@ -1,0 +1,716 @@
+{
+ "design": "pt6v2",
+ "domains": "numbers,dim,cities,countries,compass,hcube",
+ "method": "runs/pt6v2/tests/refs_pt6v2.py on runs/pt6v2/code (ef7b8854, CPU; dry = --dry_inputs DRY_GREP lines; lm0 / dsha0 = scale_work/step0_ng.py; canary = its own pilot command line)",
+ "seeds": {
+  "16": {
+   "dry": [
+    "2a38755d02bf8d68099b1b93713871624fb41236de173708357d01d82700cbca",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1230,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1230,
+     "n_train": 1770,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1473201728,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 112,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 112,
+     "n_train": 176,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1946320832,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1192,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1192,
+     "n_train": 1808,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1860253537,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 128,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 113550951,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 411,
+     "n_items": 32,
+     "n_readout": 382,
+     "n_train": 613,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 1778966944,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.604859352111816,
+   "dsha0": "8a053fdef8c956b0",
+   "cells": [
+    "dry_all6_lr2e-3_s16",
+    "dry_none_lr2e-3_s16",
+    "dry_only-compass_lr2e-3_s16",
+    "dry_only-hcube_lr2e-3_s16",
+    "dry_only-numbers_lr2e-3_s16",
+    "step0_all6_lr2e-3_s16",
+    "step0_none_lr2e-3_s16",
+    "step0_only-hcube_lr2e-3_s16"
+   ]
+  },
+  "17": {
+   "dry": [
+    "addda4b7c4ef886581893c4b25c40b8970e10a46cf662a30d453849f8fe48e7b",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1214,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1214,
+     "n_train": 1786,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 854920895,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 104,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 104,
+     "n_train": 184,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1569653880,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1182,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1182,
+     "n_train": 1818,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 808239930,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 150,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 205189456,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 408,
+     "n_items": 32,
+     "n_readout": 372,
+     "n_train": 616,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 1886917244,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.589261054992676,
+   "dsha0": "9d0641f89ce66ea6",
+   "cells": [
+    "dry_all6_lr1e-3_s17",
+    "dry_none_lr2e-3_s17",
+    "step0_none_lr2e-3_s17"
+   ]
+  },
+  "18": {
+   "dry": [
+    "f330a2e9eb514efac9b2d83d8b167999619be845aec5f1626d1f0a98a59038cc",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1202,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1202,
+     "n_train": 1798,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1476466784,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 116,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 116,
+     "n_train": 172,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 2087403425,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1172,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1172,
+     "n_train": 1828,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1688778190,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 150,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 2098393267,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 410,
+     "n_items": 32,
+     "n_readout": 370,
+     "n_train": 614,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 1124014817,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.583961486816406,
+   "dsha0": "45ab121d4d08da8b",
+   "cells": [
+    "dry_none_lr2e-3_s18",
+    "step0_none_lr2e-3_s18"
+   ]
+  },
+  "19": {
+   "dry": [
+    "b6d32671b71b1463b651e23683a8f36651d9780a6164400fa7115467c2ad1940",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1240,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1240,
+     "n_train": 1760,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 395677928,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 116,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 116,
+     "n_train": 172,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1177793345,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1190,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1190,
+     "n_train": 1810,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 658433254,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 166,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 1232251759,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 410,
+     "n_items": 32,
+     "n_readout": 368,
+     "n_train": 614,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 47088494,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.588722229003906,
+   "dsha0": "cb799c1708b46a3d",
+   "cells": [
+    "dry_none_lr2e-3_s19",
+    "step0_none_lr2e-3_s19"
+   ]
+  },
+  "20": {
+   "dry": [
+    "6b115afe5133f3c8bb46f833eae08fa63cb8a6d889f46805ac211bfcc7ccc385",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1216,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1216,
+     "n_train": 1784,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1013745199,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 112,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 112,
+     "n_train": 176,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1620343287,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1182,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1182,
+     "n_train": 1818,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 972373447,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 344,
+     "n_items": 27,
+     "n_readout": 130,
+     "n_train": 342,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 302387164,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 413,
+     "n_items": 32,
+     "n_readout": 372,
+     "n_train": 611,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 1928277579,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.596742630004883,
+   "dsha0": "f9f51e0370a739fe",
+   "cells": [
+    "dry_none_lr2e-3_s20",
+    "step0_none_lr2e-3_s20"
+   ]
+  },
+  "21": {
+   "dry": [
+    "f625f4a0ed72518eb7ff05aeac40ce65a60f463c6e7ce0c294c8d63ae904a330",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1208,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1208,
+     "n_train": 1792,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 40974969,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 120,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 120,
+     "n_train": 168,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1923681916,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1180,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1180,
+     "n_train": 1820,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 711179322,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 136,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 1239217042,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 415,
+     "n_items": 32,
+     "n_readout": 382,
+     "n_train": 609,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 25802663,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.598630905151367,
+   "dsha0": "5e9df3dddb2fb357",
+   "cells": [
+    "dry_none_lr2e-3_s21",
+    "step0_none_lr2e-3_s21"
+   ]
+  },
+  "22": {
+   "dry": [
+    "f5947783553e6f15f6aefe538d0353182fdc46efec86f55188b29934f7f1294c",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1190,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1190,
+     "n_train": 1810,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1665797647,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 108,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 108,
+     "n_train": 180,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 988539006,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1250,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1250,
+     "n_train": 1750,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1198268005,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 344,
+     "n_items": 27,
+     "n_readout": 154,
+     "n_train": 342,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 1262884626,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 416,
+     "n_items": 32,
+     "n_readout": 390,
+     "n_train": 608,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 690924241,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.578675270080566,
+   "dsha0": "d0432329e87d0e5c",
+   "cells": [
+    "dry_none_lr2e-3_s22",
+    "step0_none_lr2e-3_s22"
+   ]
+  },
+  "23": {
+   "dry": [
+    "4e40e7aca999e30cf8aceb7a753c0e2b8344b74258b5614215a83c6c505c0932",
+    67
+   ],
+   "dom": {
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1152,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1152,
+     "n_train": 1848,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 1242795452,
+     "target": "sphere"
+    },
+    "compass": {
+     "n_comparisons": 144,
+     "n_held": 116,
+     "n_held_keys": 11,
+     "n_items": 8,
+     "n_keys": 28,
+     "n_readout": 116,
+     "n_train": 172,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 215418625,
+     "target": "circle"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1192,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1192,
+     "n_train": 1808,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 38179253,
+     "target": "sphere"
+    },
+    "dim": {
+     "n_held": 344,
+     "n_items": 27,
+     "n_readout": 140,
+     "n_train": 342,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 1997626524,
+     "train_frac": 0.5
+    },
+    "hcube": {
+     "n_held": 409,
+     "n_items": 32,
+     "n_readout": 384,
+     "n_train": 615,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 321633026,
+     "train_frac": 0.6
+    }
+   },
+   "table_sha": {
+    "cities": "9016d24d7eea",
+    "compass": "6f79fb23aef3",
+    "countries": "b2aba51d4885"
+   },
+   "lm0": 11.60595417022705,
+   "dsha0": "bee20f435a96cecc",
+   "cells": [
+    "dry_none_lr2e-3_s23",
+    "step0_none_lr2e-3_s23"
+   ]
+  }
+ },
+ "canary": {
+  "dry": [
+   "2a38755d02bf8d68099b1b93713871624fb41236de173708357d01d82700cbca",
+   67
+  ],
+  "dom": {
+   "cities": {
+    "n_comparisons": 1500,
+    "n_held": 1230,
+    "n_held_keys": 376,
+    "n_items": 60,
+    "n_keys": 939,
+    "n_readout": 1230,
+    "n_train": 1770,
+    "raw_gram": false,
+    "readout": "held_2way",
+    "split_seed": 1473201728,
+    "target": "sphere"
+   },
+   "compass": {
+    "n_comparisons": 144,
+    "n_held": 112,
+    "n_held_keys": 11,
+    "n_items": 8,
+    "n_keys": 28,
+    "n_readout": 112,
+    "n_train": 176,
+    "raw_gram": false,
+    "readout": "held_2way",
+    "split_seed": 1946320832,
+    "target": "circle"
+   },
+   "countries": {
+    "n_comparisons": 1500,
+    "n_held": 1192,
+    "n_held_keys": 395,
+    "n_items": 70,
+    "n_keys": 987,
+    "n_readout": 1192,
+    "n_train": 1808,
+    "raw_gram": false,
+    "readout": "held_2way",
+    "split_seed": 1860253537,
+    "target": "sphere"
+   },
+   "dim": {
+    "n_held": 342,
+    "n_items": 27,
+    "n_readout": 128,
+    "n_train": 344,
+    "readout": "held_no_negtwin_nonid",
+    "split_mode": "class",
+    "split_seed": 113550951,
+    "train_frac": 0.5
+   },
+   "hcube": {
+    "n_held": 411,
+    "n_items": 32,
+    "n_readout": 382,
+    "n_train": 613,
+    "readout": "held_nonid",
+    "split_mode": "class",
+    "split_seed": 1778966944,
+    "train_frac": 0.6
+   }
+  },
+  "table_sha": {
+   "cities": "9016d24d7eea",
+   "compass": "6f79fb23aef3",
+   "countries": "b2aba51d4885"
+  },
+  "lm0": 11.604866981506348,
+  "dsha0": "8a053fdef8c956b0",
+  "cells": [
+   "dry_all6_lr2e-3_s16_canary",
+   "step0_all6_lr2e-3_s16_canary"
+  ]
+ }
+}

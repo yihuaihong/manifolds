@@ -1,0 +1,107 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (35 fields, no other)",
+   "ok": true,
+   "value": [
+    {},
+    []
+   ]
+  },
+  {
+   "check": "code_sha a3bce3ab63c1",
+   "ok": true,
+   "value": "a3bce3ab63c1"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 1908, \"n_params\": 93306368, \"grad_ckpt_on\": false, \"geo_layers\": [3, 6], \"read_layers\": [3, 6], \"lm_chunk\": 0, \"eval_every_steps\": 26}",
+   "ok": true,
+   "value": {
+    "steps": 1908,
+    "n_params": 93306368,
+    "grad_ckpt_on": false,
+    "geo_layers": [
+     3,
+     6
+    ],
+    "read_layers": [
+     3,
+     6
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 26
+   }
+  },
+  {
+   "check": "N_nonemb = n_params - V x d_model = 41964032",
+   "ok": true,
+   "value": 93306368
+  },
+  {
+   "check": "finished: 75 evals at the intended steps, the last at step 1907",
+   "ok": true,
+   "value": [
+    75,
+    1907
+   ]
+  },
+  {
+   "check": "prior_events == [[96, 1], [764, 0]]",
+   "ok": true,
+   "value": [
+    [
+     96,
+     1
+    ],
+    [
+     764,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.350105 == prior_used_frac (ctx)",
+   "ok": true,
+   "value": [
+    0.350104821802935,
+    0.350104821802935
+   ]
+  },
+  {
+   "check": "geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed reference (same init and first batch)",
+   "ok": true,
+   "value": 5.7220458984375e-05
+  }
+ ],
+ "info": {
+  "tag": "_tpp7-93m-t0.745-lr4.8e-3-win-ctx",
+  "seed": 2,
+  "lr": 0.0048,
+  "tokens_consumed": 31260672,
+  "steps": 1908,
+  "eval_every_steps": 26,
+  "evals": 75,
+  "warmup_steps": 19,
+  "tpp_consumed": 0.7449396664267152,
+  "prior_events": [
+   [
+    96,
+    1
+   ],
+   [
+    764,
+    0
+   ]
+  ],
+  "area": 5.54,
+  "diverged_at_step": null,
+  "final_val_bpb": 1.52255073606758,
+  "lm0": 11.637274742126465
+ }
+}

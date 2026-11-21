@@ -1,0 +1,17 @@
+{
+ "eval_code_sha": "5d694e38ab75",
+ "prefix": "eos",
+ "max_len": 512,
+ "limit": 0,
+ "dtype": "fp32",
+ "data": "data/general",
+ "slurm_job": "20678044",
+ "kind": "load_check",
+ "model": "runs/ptlr/out/53m-lr4e-3-7pct-none/model_whole_none_seed0_53m-lr4e-3-7pct-none.pt",
+ "train_code_sha": "a3bce3ab63c1",
+ "load_check": {
+  "bpb_replica": 1.2104564832781814,
+  "bpb_logged_final": 1.2104564832781814,
+  "replica_minus_logged": 0.0
+ }
+}

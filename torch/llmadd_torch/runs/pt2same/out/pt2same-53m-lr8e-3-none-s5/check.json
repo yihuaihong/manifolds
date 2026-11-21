@@ -1,0 +1,81 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (34 fields)",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "code_sha 93e22bf4c4c0",
+   "ok": true,
+   "value": "93e22bf4c4c0"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 18310, \"n_params\": 52672128, \"grad_ckpt_on\": false, \"geo_layers\": [2, 4], \"read_layers\": [2, 4], \"lm_chunk\": 0, \"eval_every_steps\": 250}",
+   "ok": true,
+   "value": {
+    "steps": 18310,
+    "n_params": 52672128,
+    "grad_ckpt_on": false,
+    "geo_layers": [
+     2,
+     4
+    ],
+    "read_layers": [
+     2,
+     4
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 250
+   }
+  },
+  {
+   "check": "finished: 75 evals, increasing, the last at step 18309",
+   "ok": true,
+   "value": [
+    75,
+    18309
+   ]
+  },
+  {
+   "check": "prior never on",
+   "ok": true,
+   "value": 0.0
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed Torch run (same init and first batch)",
+   "ok": true,
+   "value": 0.0
+  },
+  {
+   "check": "offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)",
+   "ok": true,
+   "value": -7.070703555989155e-08
+  }
+ ],
+ "info": {
+  "tag": "_pt2same-53m-lr8e-3-none",
+  "seed": 5,
+  "lr": 0.008,
+  "area": 23.75,
+  "area_no_b11": 20.57,
+  "b11_area": 39.68,
+  "b33_area": 1.95,
+  "t90_M": null,
+  "budget_M": 299.99104,
+  "lm0": 11.568119049072266,
+  "final_val_bpb": 1.2262538049760094,
+  "bpb_full": 1.2280302488797619,
+  "diverged": false,
+  "diverged_at_step": null,
+  "prior_used_frac": 0.0,
+  "cka_ops_helix3": 0.6735469102859497,
+  "sec_per_step_median": 0.12484137105941773,
+  "projected_run_h": 0.6349570844716496,
+  "gpu_util_median": 98,
+  "gpu_mem_max_MiB": 32237,
+  "gpu_samples": 41,
+  "pinned_calls": 1
+ }
+}

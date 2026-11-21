@@ -1,0 +1,11 @@
+{
+ "block": "pt2s505",
+ "status": "final",
+ "best": {
+  "none": "4.8e-3",
+  "win-ctx": "6e-4"
+ },
+ "open": {},
+ "nobest": {},
+ "why": []
+}

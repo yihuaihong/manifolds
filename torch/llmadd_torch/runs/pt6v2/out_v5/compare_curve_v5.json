@@ -1,0 +1,158 @@
+{
+ "pt6v2-all6-lr2e-3-s16": {
+  "steps_compared": 75,
+  "complete": true,
+  "n_diff_fields": 11364,
+  "n_diff_nonnumeric": 1107,
+  "max_abs_diff_by_field": {
+   "lpmargin_countries_held": 5.343297958374023,
+   "lpmargin_countries_seen": 4.3200883865356445,
+   "lpmargin_cities_held": 4.1054205894470215,
+   "lpmargin_cities_seen": 3.7637996673583984,
+   "gnorm_true_dim": 1.079180121421814,
+   "ties2_countries_held": 1,
+   "ties2_cities_held": 1,
+   "held_b23_ge1000": 0.75,
+   "gnorm_true_torus": 0.6460795402526855,
+   "gcos_dim|torus": 0.6191851496696472,
+   "gcos_dim|cities": 0.4976772964000702,
+   "gcos_dim|countries": 0.415364783257246
+  },
+  "v5_gpus": [
+   "NVIDIA B200"
+  ],
+  "registered_gpus": [
+   "NVIDIA B200"
+  ],
+  "v5_restarts_lines": [
+   "SLURM_JOB_ID 23859739 restart 0"
+  ],
+  "data_sha_equal": true,
+  "code_sha": [
+   "a398fccbfe93",
+   "041b2f4241b9"
+  ],
+  "args_diff": [
+   "out",
+   "save_model_at"
+  ],
+  "device_change": false
+ },
+ "pt6v2-only-dim-lr2e-3-s16": {
+  "steps_compared": 75,
+  "complete": true,
+  "n_diff_fields": 11054,
+  "n_diff_nonnumeric": 1199,
+  "max_abs_diff_by_field": {
+   "lpmargin_cities_held": 4.825735330581665,
+   "lpmargin_cities_seen": 3.9864068031311035,
+   "lpmargin_countries_held": 2.6437549591064453,
+   "lpmargin_countries_seen": 2.291233539581299,
+   "ties2_countries_held": 2,
+   "ties2_countries_seen": 1,
+   "ties2_cities_held": 1,
+   "gnorm_true_dim": 0.7781221866607666,
+   "gnorm_true_box5": 0.6825075149536133,
+   "dim_p3_held_times": 0.6081871345029239,
+   "held_b23_ge1000": 0.5,
+   "cka_box5@L2": 0.46203434467315674
+  },
+  "v5_gpus": [
+   "NVIDIA B200"
+  ],
+  "registered_gpus": [
+   "NVIDIA B200"
+  ],
+  "v5_restarts_lines": [
+   "SLURM_JOB_ID 23859741 restart 0"
+  ],
+  "data_sha_equal": true,
+  "code_sha": [
+   "a398fccbfe93",
+   "041b2f4241b9"
+  ],
+  "args_diff": [
+   "out",
+   "save_model_at"
+  ],
+  "device_change": false
+ },
+ "pt6v2-all6-lr2e-3-s17": {
+  "steps_compared": 75,
+  "complete": true,
+  "n_diff_fields": 11066,
+  "n_diff_nonnumeric": 1040,
+  "max_abs_diff_by_field": {
+   "lpmargin_countries_held": 4.8331403732299805,
+   "lpmargin_countries_seen": 4.398468017578125,
+   "lpmargin_cities_held": 4.307029724121094,
+   "lpmargin_cities_seen": 3.7935304641723633,
+   "gnorm_true_box5": 1.2106220722198486,
+   "ties2_countries_held": 1,
+   "gcos_cities|countries": 0.6794014275074005,
+   "gnorm_true_torus": 0.6537717580795288,
+   "gcos_dim|torus": 0.5549618005752563,
+   "gnorm_true_dim": 0.5120019912719727,
+   "gcos_dim|box5": 0.4045918583869934,
+   "held_b23_ge1000": 0.4
+  },
+  "v5_gpus": [
+   "NVIDIA H100 80GB HBM3"
+  ],
+  "registered_gpus": [
+   "NVIDIA B200"
+  ],
+  "v5_restarts_lines": [
+   "SLURM_JOB_ID 23859744 restart 0"
+  ],
+  "data_sha_equal": true,
+  "code_sha": [
+   "a398fccbfe93",
+   "041b2f4241b9"
+  ],
+  "args_diff": [
+   "out",
+   "save_model_at"
+  ],
+  "device_change": true
+ },
+ "pt6v2-only-dim-lr2e-3-s17": {
+  "steps_compared": 75,
+  "complete": true,
+  "n_diff_fields": 10925,
+  "n_diff_nonnumeric": 1208,
+  "max_abs_diff_by_field": {
+   "lpmargin_countries_held": 2.0901670455932617,
+   "ties2_countries_held": 2,
+   "lpmargin_countries_seen": 1.4199891090393066,
+   "lpmargin_cities_held": 1.4169034957885742,
+   "lpmargin_cities_seen": 1.3618578910827637,
+   "gnorm_true_box5": 1.2705891132354736,
+   "ties2_countries_seen": 1,
+   "ties2_cities_held": 1,
+   "gnorm_true_dim": 0.8428300023078918,
+   "cka_torus@L2": 0.5991560071706772,
+   "cka_torus": 0.5943810027092695,
+   "cka_torus@L4": 0.5915462858974934
+  },
+  "v5_gpus": [
+   "NVIDIA H100 80GB HBM3"
+  ],
+  "registered_gpus": [
+   "NVIDIA B200"
+  ],
+  "v5_restarts_lines": [
+   "SLURM_JOB_ID 23859746 restart 0"
+  ],
+  "data_sha_equal": true,
+  "code_sha": [
+   "a398fccbfe93",
+   "041b2f4241b9"
+  ],
+  "args_diff": [
+   "out",
+   "save_model_at"
+  ],
+  "device_change": true
+ }
+}

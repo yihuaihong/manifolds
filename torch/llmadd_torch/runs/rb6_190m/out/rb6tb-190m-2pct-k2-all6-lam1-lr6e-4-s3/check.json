@@ -1,0 +1,477 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (45 fields)",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "code_sha 93e22bf4c4c0",
+   "ok": true,
+   "value": "93e22bf4c4c0"
+  },
+  {
+   "check": "dep_sha toy_struct.py d182ce548bcc",
+   "ok": true,
+   "value": {
+    "toy_struct.py": "d182ce548bcc"
+   }
+  },
+  {
+   "check": "run facts = intent {\"steps\": 18310, \"n_params\": 190297344, \"grad_ckpt_on\": true, \"geo_layers\": [4, 8], \"read_layers\": [4, 8], \"lm_chunk\": 0, \"eval_every_steps\": 250, \"lam_rule\": \"each\"}",
+   "ok": true,
+   "value": {
+    "steps": 18310,
+    "n_params": 190297344,
+    "grad_ckpt_on": true,
+    "geo_layers": [
+     4,
+     8
+    ],
+    "read_layers": [
+     4,
+     8
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 250,
+    "lam_rule": "each"
+   }
+  },
+  {
+   "check": "lambda per domain = intent {\"numbers\": 1.0, \"months\": 1.0, \"weekdays\": 1.0, \"clock\": 1.0, \"s4\": 1.0, \"dim\": 1.0}",
+   "ok": true,
+   "value": {
+    "numbers": 1.0,
+    "months": 1.0,
+    "weekdays": 1.0,
+    "clock": 1.0,
+    "s4": 1.0,
+    "dim": 1.0
+   }
+  },
+  {
+   "check": "domains.<d> prior / shuf / lam = intent (active numbers,months,weekdays,clock,s4,dim; shuffled none)",
+   "ok": true,
+   "value": {
+    "numbers": [
+     true,
+     false,
+     1.0
+    ],
+    "months": [
+     true,
+     false,
+     1.0
+    ],
+    "weekdays": [
+     true,
+     false,
+     1.0
+    ],
+    "clock": [
+     true,
+     false,
+     1.0
+    ],
+    "s4": [
+     true,
+     false,
+     1.0
+    ],
+    "dim": [
+     true,
+     false,
+     1.0
+    ]
+   }
+  },
+  {
+   "check": "finished: 75 evals, increasing, the last at step 18309",
+   "ok": true,
+   "value": [
+    75,
+    18309
+   ]
+  },
+  {
+   "check": "data_sha after step 0 = Torch's df68c5608eedaa9a",
+   "ok": true,
+   "value": "df68c5608eedaa9a"
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the Torch CPU reference (same init and first batch; the prior is off at step 0)",
+   "ok": true,
+   "value": -3.528594970703125e-05
+  },
+  {
+   "check": "the numbers line is the first line after the text in every row (A2)",
+   "ok": true,
+   "value": {
+    "numbers": 1.0,
+    "months": 0.0,
+    "weekdays": 0.0,
+    "clock": 0.0,
+    "s4": 0.0,
+    "dim": 0.0
+   }
+  },
+  {
+   "check": "numbers token share in [0.019, 0.024] (the 2% setting; Torch dry 2.12-2.13%)",
+   "ok": true,
+   "value": 0.021237704299435077
+  },
+  {
+   "check": "domain lines per slot after the numbers line: K = 2 slots, every slot within 1/K +- 0.05 of every domain's lines",
+   "ok": true,
+   "value": {
+    "months": [
+     0.4999573320589842,
+     0.5000426679410158
+    ],
+    "weekdays": [
+     0.500153604587657,
+     0.499846395412343
+    ],
+    "clock": [
+     0.501045364554888,
+     0.498954635445112
+    ],
+    "s4": [
+     0.498370084653195,
+     0.501629915346805
+    ],
+    "dim": [
+     0.5004736141452758,
+     0.4995263858547242
+    ]
+   }
+  },
+  {
+   "check": "domain splits = Torch's dry run {\"months\": {\"n_train\": 118, \"n_held\": 106, \"n_heldE\": 40, \"n_readout\": 106, \"n_readoutE\": 40, \"readout\": \"held\", \"n_items\": 12}, \"weekdays\": {\"n_train\": 38, \"n_held\": 34, \"n_heldE\": 12, \"n_readout\": 34, \"n_readoutE\": 12, \"readout\": \"held\", \"n_items\": 7}, \"clock\": {\"n_train\": 478, \"n_held\": 442, \"n_heldE\": 146, \"n_readout\": 339, \"n_readoutE\": 112, \"readout\": \"held_wrap\", \"n_items\": 24}, \"s4\": {\"n_train\": 345, \"n_held\": 231, \"n_readout\": 200, \"readout\": \"held_fresh_nonid\", \"n_items\": 24}, \"dim\": {\"n_train\": 344, \"n_held\": 342, \"n_readout\": 132, \"readout\": \"held_no_negtwin_nonid\", \"n_items\": 27}}",
+   "ok": true,
+   "value": {
+    "months": {
+     "n_train": 118,
+     "n_held": 106,
+     "n_heldE": 40,
+     "n_readout": 106,
+     "n_readoutE": 40,
+     "readout": "held",
+     "n_items": 12
+    },
+    "weekdays": {
+     "n_train": 38,
+     "n_held": 34,
+     "n_heldE": 12,
+     "n_readout": 34,
+     "n_readoutE": 12,
+     "readout": "held",
+     "n_items": 7
+    },
+    "clock": {
+     "n_train": 478,
+     "n_held": 442,
+     "n_heldE": 146,
+     "n_readout": 339,
+     "n_readoutE": 112,
+     "readout": "held_wrap",
+     "n_items": 24
+    },
+    "s4": {
+     "n_train": 345,
+     "n_held": 231,
+     "n_readout": 200,
+     "readout": "held_fresh_nonid",
+     "n_items": 24
+    },
+    "dim": {
+     "n_train": 344,
+     "n_held": 342,
+     "n_readout": 132,
+     "readout": "held_no_negtwin_nonid",
+     "n_items": 27
+    }
+   }
+  },
+  {
+   "check": "held-out-format templates {'months': 4, 'weekdays': 4, 'clock': 4, 's4': 3, 'dim': 3}, scored at every eval (36 sets)",
+   "ok": true,
+   "value": {
+    "months": 4,
+    "weekdays": 4,
+    "clock": 4,
+    "s4": 3,
+    "dim": 3
+   }
+  },
+  {
+   "check": "prior_events == [[916, 1], [7324, 0]]",
+   "ok": true,
+   "value": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.349973",
+   "ok": true,
+   "value": 0.3499726925177499
+  },
+  {
+   "check": "prior_on_domains: the active priors (numbers,months,weekdays,clock,s4,dim) on exactly at the evals with prior_on, every other domain never",
+   "ok": true,
+   "value": {
+    "numbers": 26,
+    "months": 26,
+    "weekdays": 26,
+    "clock": 26,
+    "s4": 26,
+    "dim": 26
+   }
+  },
+  {
+   "check": "numbers prior applied on every on-step (ctx: prior_used_frac == prior_used_frac_numbers == prior_on_frac)",
+   "ok": true,
+   "value": [
+    0.3499726925177499,
+    0.3499726925177499,
+    0.3499726925177499
+   ]
+  },
+  {
+   "check": "every active domain prior applied on >= 95% of the on-steps; every inactive one never",
+   "ok": true,
+   "value": {
+    "months": 0.3499726925177499,
+    "weekdays": 0.3499726925177499,
+    "clock": 0.3499726925177499,
+    "s4": 0.3499726925177499,
+    "dim": 0.3499726925177499
+   }
+  },
+  {
+   "check": "geo_<d> logged at >= 95% of the evals for every active domain prior, never for an inactive one",
+   "ok": true,
+   "value": {
+    "months": 75,
+    "weekdays": 75,
+    "clock": 75,
+    "s4": 75,
+    "dim": 75
+   }
+  },
+  {
+   "check": "weighted prior gradients at the on-evals from the active priors only (each at >= 90% of the on-evals)",
+   "ok": true,
+   "value": {
+    "numbers": 26,
+    "months": 26,
+    "weekdays": 26,
+    "clock": 26,
+    "s4": 26,
+    "dim": 26
+   }
+  },
+  {
+   "check": "gnorm_prior_<d> / gnorm_true_<d> = lambda (rel. 1e-3) at every on-eval, every unshuffled active prior",
+   "ok": true,
+   "value": {
+    "numbers": [
+     1.0,
+     1.0,
+     26
+    ],
+    "months": [
+     1.0,
+     1.0,
+     26
+    ],
+    "weekdays": [
+     1.0,
+     1.0,
+     26
+    ],
+    "clock": [
+     1.0,
+     1.0,
+     26
+    ],
+    "s4": [
+     1.0,
+     1.0,
+     26
+    ],
+    "dim": [
+     1.0,
+     1.0,
+     26
+    ]
+   }
+  },
+  {
+   "check": "geo > -0.001 for every active prior (float CKA exceeds 1 at a perfect fit: pilot 411 / 416) and 0 < grad_prior < inf at every eval where the priors acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "CKA to the target USED rises by >= 0.1 from step 0 to the window's last eval (step 7250), every active prior (true target: cka_<d> / cka_ops_helix3; shuffled: 1 - geo_<d> / 1 - geo); CKA to the true target in the info",
+   "ok": true,
+   "value": {
+    "used": {
+     "numbers": 0.7373,
+     "months": 0.9006,
+     "weekdays": 0.8725,
+     "clock": 0.9449,
+     "s4": 0.9014,
+     "dim": 0.952
+    },
+    "true": {
+     "numbers": 0.7373,
+     "months": 0.9006,
+     "weekdays": 0.8725,
+     "clock": 0.9449,
+     "s4": 0.9014,
+     "dim": 0.952
+    }
+   }
+  },
+  {
+   "check": "offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)",
+   "ok": true,
+   "value": -3.535351789096808e-08
+  }
+ ],
+ "info": {
+  "versions": {
+   "python": "3.11.13",
+   "torch": "2.10.0",
+   "transformers": "4.57.6",
+   "numpy": "2.0.1",
+   "tokenizers": "0.22.2"
+  },
+  "tag": "_rb6tb-190m-2pct-k2-all6-lam1-lr6e-4",
+  "seed": 3,
+  "K": 2,
+  "lr": 0.0006,
+  "active": [
+   "numbers",
+   "months",
+   "weekdays",
+   "clock",
+   "s4",
+   "dim"
+  ],
+  "shuf": [],
+  "lam_domains": {
+   "numbers": 1.0,
+   "months": 1.0,
+   "weekdays": 1.0,
+   "clock": 1.0,
+   "s4": 1.0,
+   "dim": 1.0
+  },
+  "numbers_area": 76.98,
+  "numbers_final3": 99.43843843843844,
+  "readout_final3": {
+   "months": 0.7861635220125787,
+   "weekdays": 4.411764705882353,
+   "clock": 67.15830875122911,
+   "s4": 44.66666666666667,
+   "dim": 84.84848484848484
+  },
+  "readoutE_final3": {
+   "months": 6.0,
+   "weekdays": 2.4305555555555554,
+   "clock": 74.40476190476191,
+   "s4": null,
+   "dim": null
+  },
+  "seen_final3": {
+   "months": 100.0,
+   "weekdays": 100.0,
+   "clock": 100.0,
+   "s4": 100.0,
+   "dim": 100.0
+  },
+  "format_readout_final3": {
+   "months": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "weekdays": [
+    0.0,
+    0.9803921568627451,
+    9.967320261437909,
+    0.16339869281045752
+   ],
+   "clock": [
+    42.084562438544744,
+    4.523107177974435,
+    0.0,
+    0.2949852507374631
+   ],
+   "s4": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "dim": [
+    0.0,
+    0.0,
+    2.0202020202020203
+   ]
+  },
+  "final_cka": {
+   "months": 0.9944226145744324,
+   "weekdays": 0.9898057579994202,
+   "clock": 0.9951895177364349,
+   "s4": 0.9912369549274445,
+   "dim": 0.9927797317504883
+  },
+  "cka_ops_helix3": 0.972723126411438,
+  "cka_rise_used": {
+   "numbers": 0.7373,
+   "months": 0.9006,
+   "weekdays": 0.8725,
+   "clock": 0.9449,
+   "s4": 0.9014,
+   "dim": 0.952
+  },
+  "cka_rise_true": {
+   "numbers": 0.7373,
+   "months": 0.9006,
+   "weekdays": 0.8725,
+   "clock": 0.9449,
+   "s4": 0.9014,
+   "dim": 0.952
+  },
+  "grad_window_median": {
+   "lm_share_of_T": 0.9509780227991771,
+   "clip_factor": 1.0,
+   "prior_over_lm": 0.3134358575955797,
+   "n_on_evals": 26,
+   "frac_prior_gt_lm": 0.11538461538461539
+  },
+  "seen_all_ge_80": true,
+  "lm0": 11.64067268371582,
+  "final_val_bpb": 1.1265678090424196,
+  "bpb_full": 1.1273314217902677,
+  "diverged": false,
+  "diverged_at_step": null,
+  "sec_per_step_median": 0.45948314619064334,
+  "projected_run_h": 2.336982335208522,
+  "gpu_util_median": 97.0,
+  "gpu_mem_max_MiB": 37259,
+  "gpu_samples": 146,
+  "pinned_calls": 1
+ }
+}

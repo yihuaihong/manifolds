@@ -1,0 +1,16 @@
+{
+ "runs/pt2s505/out/pt2s505-lr3e-4-win-ctx-s0/pt2s505-lr3e-4-win-ctx/run_whole_helix3_seed0_pt2s505-lr3e-4-win-ctx.json": {
+  "run": "runs/pt2s505/out/pt2s505-lr3e-4-win-ctx-s0/pt2s505-lr3e-4-win-ctx/run_whole_helix3_seed0_pt2s505-lr3e-4-win-ctx.json",
+  "model": "runs/pt2s505/out/pt2s505-lr3e-4-win-ctx-s0/pt2s505-lr3e-4-win-ctx/model_whole_helix3_seed0_pt2s505-lr3e-4-win-ctx.pt",
+  "tag": "_pt2s505-lr3e-4-win-ctx",
+  "seed": 0,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.123791976930119,
+  "nats_per_token_full": 3.751444433019885,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1224612327996126,
+  "bpb_logged_final": 1.1224611797693362,
+  "orig_minus_logged": 5.303027639236291e-08,
+  "max_windows": 0
+ }
+}

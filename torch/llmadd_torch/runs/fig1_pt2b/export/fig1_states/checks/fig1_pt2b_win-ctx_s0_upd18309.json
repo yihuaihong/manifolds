@@ -1,0 +1,93 @@
+{
+ "run": "runs/fig1_pt2b/out/fig1-pt2b-lr2e-3-win-ctx/run_whole_helix3_seed0_fig1-pt2b-lr2e-3-win-ctx.json",
+ "code_sha_run": "7ec27f5ef8a2",
+ "steps": 18310,
+ "read_layers": [
+  2,
+  4
+ ],
+ "layers": [
+  2,
+  4,
+  6
+ ],
+ "export_sha": "12fde5744639",
+ "trainer_sha": "7ec27f5ef8a2",
+ "carrier": {
+  "ctx": "operand a of 'Q: x + 0 = x\\n' (format 0, 11 tokens) after 501 val.bin tokens (one chunk: default_rng(20261022).integers(0, len(val) - n)); state at index 504; alternatives: chunks k = 1..3 (seed 20261022 + k), and operand b of 'Q: 0 + x = x\\n' (index 507)",
+  "qx": "'Q: x' at position 0, state at index 3",
+  "audit_vii": [
+   "x=7: qx ids [48, 25, 220, 22] tokens ['Q', ':', ' ', '7'] -> state at index 3 ('7'); ctx row len 512, text 501 tokens (val.bin offset chunk k=0), tail tokens [' the', ' process', ' could', ' take', ' longer', 'Q', ':', ' ', '7', ' +', ' ', '0', ' =', ' ', '7', '\\n'] -> state at index 504 ('7'), i.e. the 4th token of the line 'Q: 7 + 0 = 7\\n'",
+   "x=42: qx ids [48, 25, 220, 2983] tokens ['Q', ':', ' ', '42'] -> state at index 3 ('42'); ctx row len 512, text 501 tokens (val.bin offset chunk k=0), tail tokens [' the', ' process', ' could', ' take', ' longer', 'Q', ':', ' ', '42', ' +', ' ', '0', ' =', ' ', '42', '\\n'] -> state at index 504 ('42'), i.e. the 4th token of the line 'Q: 42 + 0 = 42\\n'",
+   "x=538: qx ids [48, 25, 220, 22600] tokens ['Q', ':', ' ', '538'] -> state at index 3 ('538'); ctx row len 512, text 501 tokens (val.bin offset chunk k=0), tail tokens [' the', ' process', ' could', ' take', ' longer', 'Q', ':', ' ', '538', ' +', ' ', '0', ' =', ' ', '538', '\\n'] -> state at index 504 ('538'), i.e. the 4th token of the line 'Q: 538 + 0 = 538\\n'"
+  ]
+ },
+ "device": "cpu",
+ "ckpt": [
+  {
+   "file": "runs/fig1_pt2b/out/fig1-pt2b-lr2e-3-win-ctx/save_at/model_whole_helix3_seed0_fig1-pt2b-lr2e-3-win-ctx_upd18309.pt",
+   "updates": 18309,
+   "tokens": 299974656,
+   "label": "upd18309",
+   "cka": {
+    "ctx@L2": 0.9416744709014893,
+    "ctx@L4": 0.9388301968574524,
+    "ctx@L6": 0.9215946793556213,
+    "qx@L2": 0.8935866355895996,
+    "qx@L4": 0.8444092869758606,
+    "qx@L6": 0.5311940908432007,
+    "ctx@mean_read_layers": 0.9402523338794708,
+    "qx@mean_read_layers": 0.8689979612827301,
+    "emb": 0.5931445360183716,
+    "ctx@L2_opmix": 0.9543484172224999,
+    "ctx@L4_opmix": 0.955626693367958,
+    "ctx@L6_opmix": 0.9306324392557144,
+    "ctx@mean_read_layers_opmix": 0.9549875552952289,
+    "qx@L2_opmix": 0.8572185975313187,
+    "qx@L4_opmix": 0.8066829660534859,
+    "qx@L6_opmix": 0.611571935415268,
+    "qx@mean_read_layers_opmix": 0.8319507817924023
+   },
+   "checks": {
+    "carrier_cache_vs_full_rel_maxdiff": 1.2738614714180585e-06,
+    "carrier_b_cache_vs_full_rel_maxdiff": 8.161636628756241e-07,
+    "replay": {
+     "batch_step": 18309,
+     "state_updates": 18309,
+     "exact_state": true,
+     "bf16": 0.9453125,
+     "fp32": 0.9503012001514435,
+     "fp32_per_layer": {
+      "2": 0.9516798257827759,
+      "4": 0.9489225745201111
+     },
+     "n_ops": 64,
+     "logged_cka_ops_helix3": 0.9502907991409302,
+     "logged_bracket": {
+      "18309": 0.9502907991409302
+     },
+     "wrong_batches": {
+      "18308": 0.9612326920032501,
+      "18307": 0.9513134956359863
+     },
+     "right_closer_than_every_wrong": true
+    }
+   },
+   "cka_alt": {
+    "ctx_k1@L2": 0.9458253383636475,
+    "ctx_k1@L4": 0.9417663812637329,
+    "ctx_k1@L6": 0.9248949289321899,
+    "ctx_k2@L2": 0.9432485103607178,
+    "ctx_k2@L4": 0.9403181076049805,
+    "ctx_k2@L6": 0.9251793026924133,
+    "ctx_k3@L2": 0.944903552532196,
+    "ctx_k3@L4": 0.942461371421814,
+    "ctx_k3@L6": 0.9248707294464111,
+    "ctx_b@L2": 0.9469239115715027,
+    "ctx_b@L4": 0.9436555504798889,
+    "ctx_b@L6": 0.914071798324585
+   }
+  }
+ ],
+ "sec": 231.7
+}

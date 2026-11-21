@@ -1,0 +1,17 @@
+{
+ "eval_code_sha": "5d694e38ab75",
+ "prefix": "eos",
+ "max_len": 512,
+ "limit": 0,
+ "dtype": "fp32",
+ "data": "data/general",
+ "slurm_job": "20678044",
+ "kind": "load_check",
+ "model": "runs/rb6_190m/out/rb6tb-190m-2pct-k2-none-lr6e-4-s0/rb6tb-190m-2pct-k2-none-lr6e-4/model_whole_none_seed0_rb6tb-190m-2pct-k2-none-lr6e-4.pt",
+ "train_code_sha": "93e22bf4c4c0",
+ "load_check": {
+  "bpb_replica": 1.1271479072390929,
+  "bpb_logged_final": 1.1271479072390929,
+  "replica_minus_logged": 0.0
+ }
+}

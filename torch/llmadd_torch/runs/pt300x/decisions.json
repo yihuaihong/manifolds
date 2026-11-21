@@ -1,0 +1,49 @@
+{
+ "log": [
+  {
+   "size": "93m",
+   "arm": "none",
+   "stage": "X",
+   "lr": "1.2e-3",
+   "seq": 0,
+   "written": "2026-11-03T01:37:19-05:00",
+   "by": "select_pt300x.py"
+  },
+  {
+   "size": "93m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "1.2e-3",
+   "seq": 1,
+   "written": "2026-11-03T01:37:19-05:00",
+   "by": "select_pt300x.py"
+  },
+  {
+   "size": "93m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "2.4e-3",
+   "seq": 2,
+   "written": "2026-11-03T08:11:51-05:00",
+   "by": "select_pt300x.py"
+  },
+  {
+   "size": "294m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "seq": 3,
+   "written": "2026-11-03T08:11:51-05:00",
+   "by": "select_pt300x.py"
+  },
+  {
+   "size": "294m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 4,
+   "written": "2026-11-03T15:17:48-05:00",
+   "by": "select_pt300x.py"
+  }
+ ]
+}

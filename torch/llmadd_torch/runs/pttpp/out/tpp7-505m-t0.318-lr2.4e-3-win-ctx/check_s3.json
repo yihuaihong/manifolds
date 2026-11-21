@@ -1,0 +1,107 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (35 fields, no other)",
+   "ok": true,
+   "value": [
+    {},
+    []
+   ]
+  },
+  {
+   "check": "code_sha a3bce3ab63c1",
+   "ok": true,
+   "value": "a3bce3ab63c1"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 7813, \"n_params\": 505437184, \"grad_ckpt_on\": true, \"geo_layers\": [8, 16], \"read_layers\": [8, 16], \"lm_chunk\": 0, \"eval_every_steps\": 107}",
+   "ok": true,
+   "value": {
+    "steps": 7813,
+    "n_params": 505437184,
+    "grad_ckpt_on": true,
+    "geo_layers": [
+     8,
+     16
+    ],
+    "read_layers": [
+     8,
+     16
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 107
+   }
+  },
+  {
+   "check": "N_nonemb = n_params - V x d_model = 402752512",
+   "ok": true,
+   "value": 505437184
+  },
+  {
+   "check": "finished: 75 evals at the intended steps, the last at step 7812",
+   "ok": true,
+   "value": [
+    75,
+    7812
+   ]
+  },
+  {
+   "check": "prior_events == [[391, 1], [3126, 0]]",
+   "ok": true,
+   "value": [
+    [
+     391,
+     1
+    ],
+    [
+     3126,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.350058 == prior_used_frac (ctx)",
+   "ok": true,
+   "value": [
+    0.35005759631383593,
+    0.35005759631383593
+   ]
+  },
+  {
+   "check": "geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed reference (same init and first batch)",
+   "ok": true,
+   "value": 0.0
+  }
+ ],
+ "info": {
+  "tag": "_tpp7-505m-t0.318-lr2.4e-3-win-ctx",
+  "seed": 3,
+  "lr": 0.0024,
+  "tokens_consumed": 128008192,
+  "steps": 7813,
+  "eval_every_steps": 107,
+  "evals": 75,
+  "warmup_steps": 78,
+  "tpp_consumed": 0.31783337952216173,
+  "prior_events": [
+   [
+    391,
+    1
+   ],
+   [
+    3126,
+    0
+   ]
+  ],
+  "area": 81.16,
+  "diverged_at_step": null,
+  "final_val_bpb": 1.2094808941163597,
+  "lm0": 11.706802368164062
+ }
+}

@@ -1,0 +1,144 @@
+{
+ "group": "tpp7-294m-t0.318",
+ "log": [
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "1.92e-2",
+    "open": null,
+    "grid": [
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "mean": {
+     "9.6e-3": 6.656281541416677,
+     "1.92e-2": 7.766749077559888
+    },
+    "bpb": {
+     "9.6e-3": 1.2725947939501723,
+     "1.92e-2": 1.2690389724842726
+    },
+    "near": [
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "reasons": null
+   },
+   "seq": 0,
+   "time": "2026-10-27T00:13:56",
+   "job": "21032893"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "X",
+   "lr": "1.2e-3",
+   "basis": {
+    "status": "ok",
+    "best": "2.4e-3",
+    "open": "lower",
+    "grid": [
+     "2.4e-3",
+     "4.8e-3"
+    ],
+    "mean": {
+     "2.4e-3": 68.74267757882622,
+     "4.8e-3": 65.93112694295127
+    },
+    "bpb": {
+     "2.4e-3": 1.3113264464266432
+    },
+    "near": [
+     "2.4e-3"
+    ],
+    "reasons": null
+   },
+   "seq": 1,
+   "time": "2026-10-27T01:04:27",
+   "job": "21032901"
+  },
+  {
+   "seq": 2,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T6",
+   "time": "2026-10-27T06:43:57-04:00",
+   "why": "Amendment T6 (coordinator): none's pick at the upper grid edge is always extended one step up; the C at 1.92e-2 is withdrawn until F87 rule 1 is applied again"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "X",
+   "lr": "3.84e-2",
+   "amend": "T6",
+   "time": "2026-10-27T06:43:57-04:00",
+   "why": "Amendment T6: one ladder step above the upper edge, the selection seeds; then rule 1 over the three lrs; open again at either edge -> STOP (the user)"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "1.2e-3",
+   "basis": {
+    "status": "ok",
+    "best": "1.2e-3",
+    "open": null,
+    "grid": [
+     "1.2e-3",
+     "2.4e-3",
+     "4.8e-3"
+    ],
+    "mean": {
+     "1.2e-3": 68.52396133139376,
+     "2.4e-3": 68.74267757882622,
+     "4.8e-3": 65.93112694295127
+    },
+    "bpb": {
+     "1.2e-3": 1.3074456421676395,
+     "2.4e-3": 1.3113264464266432
+    },
+    "near": [
+     "1.2e-3",
+     "2.4e-3"
+    ],
+    "reasons": null
+   },
+   "seq": 4,
+   "time": "2026-10-27T06:56:50",
+   "job": "21067017"
+  },
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "1.92e-2",
+    "open": null,
+    "grid": [
+     "9.6e-3",
+     "1.92e-2",
+     "3.84e-2"
+    ],
+    "mean": {
+     "9.6e-3": 6.656281541416677,
+     "1.92e-2": 7.766749077559888,
+     "3.84e-2": 7.388412190777056
+    },
+    "bpb": {
+     "1.92e-2": 1.2690389724842726,
+     "3.84e-2": 1.3145378936949306
+    },
+    "near": [
+     "1.92e-2",
+     "3.84e-2"
+    ],
+    "reasons": null
+   },
+   "seq": 5,
+   "time": "2026-10-27T08:38:18",
+   "job": "21084258"
+  }
+ ]
+}

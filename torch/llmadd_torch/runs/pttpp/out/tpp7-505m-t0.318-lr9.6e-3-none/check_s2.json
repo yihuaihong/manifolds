@@ -1,0 +1,76 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (35 fields, no other)",
+   "ok": true,
+   "value": [
+    {},
+    []
+   ]
+  },
+  {
+   "check": "code_sha a3bce3ab63c1",
+   "ok": true,
+   "value": "a3bce3ab63c1"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 7813, \"n_params\": 505437184, \"grad_ckpt_on\": true, \"geo_layers\": [8, 16], \"read_layers\": [8, 16], \"lm_chunk\": 0, \"eval_every_steps\": 107}",
+   "ok": true,
+   "value": {
+    "steps": 7813,
+    "n_params": 505437184,
+    "grad_ckpt_on": true,
+    "geo_layers": [
+     8,
+     16
+    ],
+    "read_layers": [
+     8,
+     16
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 107
+   }
+  },
+  {
+   "check": "N_nonemb = n_params - V x d_model = 402752512",
+   "ok": true,
+   "value": 505437184
+  },
+  {
+   "check": "finished: 75 evals at the intended steps, the last at step 7812",
+   "ok": true,
+   "value": [
+    75,
+    7812
+   ]
+  },
+  {
+   "check": "prior never on",
+   "ok": true,
+   "value": 0.0
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed reference (same init and first batch)",
+   "ok": true,
+   "value": 0.0
+  }
+ ],
+ "info": {
+  "tag": "_tpp7-505m-t0.318-lr9.6e-3-none",
+  "seed": 2,
+  "lr": 0.0096,
+  "tokens_consumed": 128008192,
+  "steps": 7813,
+  "eval_every_steps": 107,
+  "evals": 75,
+  "warmup_steps": 78,
+  "tpp_consumed": 0.31783337952216173,
+  "prior_events": [],
+  "area": 11.46,
+  "diverged_at_step": null,
+  "final_val_bpb": 1.2020252968099716,
+  "lm0": 11.70854377746582
+ }
+}

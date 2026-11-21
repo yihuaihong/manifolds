@@ -1,0 +1,143 @@
+{
+ "group": "tpp7-294m-t0.745",
+ "log": [
+  {
+   "arm": "none",
+   "stage": "X",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "9.6e-3",
+    "open": "upper",
+    "grid": [
+     "4.8e-3",
+     "9.6e-3"
+    ],
+    "mean": {
+     "4.8e-3": 24.498418033418034,
+     "9.6e-3": 31.761362516362517
+    },
+    "bpb": {
+     "9.6e-3": 1.1897013897376676
+    },
+    "near": [
+     "9.6e-3"
+    ],
+    "reasons": null
+   },
+   "seq": 0,
+   "time": "2026-10-26T22:09:05",
+   "job": "21032593"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "2.4e-3",
+   "basis": {
+    "status": "ok",
+    "best": "2.4e-3",
+    "open": null,
+    "grid": [
+     "1.2e-3",
+     "2.4e-3"
+    ],
+    "mean": {
+     "1.2e-3": 84.94661700161701,
+     "2.4e-3": 84.39032121865455
+    },
+    "bpb": {
+     "1.2e-3": 1.1819414781885138,
+     "2.4e-3": 1.1816320951351353
+    },
+    "near": [
+     "1.2e-3",
+     "2.4e-3"
+    ],
+    "reasons": null
+   },
+   "seq": 1,
+   "time": "2026-10-27T00:26:46",
+   "job": "21032604"
+  },
+  {
+   "arm": "none",
+   "stage": "STOP",
+   "lr": "1.92e-2",
+   "why": "bracket still OPEN at the upper edge after one extension (best 1.92e-2): the user decides",
+   "basis": {
+    "status": "ok",
+    "best": "1.92e-2",
+    "open": "upper",
+    "grid": [
+     "4.8e-3",
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "mean": {
+     "4.8e-3": 24.498418033418034,
+     "9.6e-3": 31.761362516362517,
+     "1.92e-2": 41.16086984420318
+    },
+    "bpb": {
+     "1.92e-2": 1.2311456756519383
+    },
+    "near": [
+     "1.92e-2"
+    ],
+    "reasons": null
+   },
+   "seq": 2,
+   "time": "2026-10-27T06:12:11",
+   "job": "21052823"
+  },
+  {
+   "seq": 3,
+   "arm": "none",
+   "stage": "REOPEN",
+   "amend": "T7",
+   "time": "2026-10-27T17:37:37-04:00",
+   "why": "Amendment T7: the user approved one more step above the X (2026-10-27); the STOP is withdrawn"
+  },
+  {
+   "seq": 4,
+   "arm": "none",
+   "stage": "X",
+   "lr": "3.84e-2",
+   "amend": "T7",
+   "time": "2026-10-27T17:37:37-04:00",
+   "why": "Amendment T7: one ladder step above the first X, seeds 0-3; then F87 rule 1 over the four lrs; open again -> STOP (the user), no automatic further step"
+  },
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "1.92e-2",
+    "open": null,
+    "grid": [
+     "4.8e-3",
+     "9.6e-3",
+     "1.92e-2",
+     "3.84e-2"
+    ],
+    "mean": {
+     "4.8e-3": 24.498418033418034,
+     "9.6e-3": 31.761362516362517,
+     "1.92e-2": 41.16086984420318,
+     "3.84e-2": 25.928010189676854
+    },
+    "bpb": {
+     "1.92e-2": 1.2311456756519383
+    },
+    "near": [
+     "1.92e-2"
+    ],
+    "reasons": null
+   },
+   "seq": 5,
+   "time": "2026-10-28T05:14:01",
+   "job": "21146506"
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "runs/pttpp/out2/tpp2-190m-t0.745-lr9.6e-3-none-s7/tpp2-190m-t0.745-lr9.6e-3-none/run_whole_none_seed7_tpp2-190m-t0.745-lr9.6e-3-none.json": {
+  "run": "runs/pttpp/out2/tpp2-190m-t0.745-lr9.6e-3-none-s7/tpp2-190m-t0.745-lr9.6e-3-none/run_whole_none_seed7_tpp2-190m-t0.745-lr9.6e-3-none.json",
+  "model": "runs/pttpp/out2/tpp2-190m-t0.745-lr9.6e-3-none-s7/tpp2-190m-t0.745-lr9.6e-3-none/model_whole_none_seed7_tpp2-190m-t0.745-lr9.6e-3-none.pt",
+  "tag": "_tpp2-190m-t0.745-lr9.6e-3-none",
+  "seed": 7,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.2422047444789415,
+  "nats_per_token_full": 4.1467301502511,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.2391361672633145,
+  "bpb_logged_final": 1.2391361849400733,
+  "orig_minus_logged": -1.7676758723439434e-08,
+  "max_windows": 0
+ }
+}

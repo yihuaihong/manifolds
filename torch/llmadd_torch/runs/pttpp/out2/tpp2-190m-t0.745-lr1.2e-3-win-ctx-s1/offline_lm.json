@@ -1,0 +1,16 @@
+{
+ "runs/pttpp/out2/tpp2-190m-t0.745-lr1.2e-3-win-ctx-s1/tpp2-190m-t0.745-lr1.2e-3-win-ctx/run_whole_helix3_seed1_tpp2-190m-t0.745-lr1.2e-3-win-ctx.json": {
+  "run": "runs/pttpp/out2/tpp2-190m-t0.745-lr1.2e-3-win-ctx-s1/tpp2-190m-t0.745-lr1.2e-3-win-ctx/run_whole_helix3_seed1_tpp2-190m-t0.745-lr1.2e-3-win-ctx.json",
+  "model": "runs/pttpp/out2/tpp2-190m-t0.745-lr1.2e-3-win-ctx-s1/tpp2-190m-t0.745-lr1.2e-3-win-ctx/model_whole_helix3_seed1_tpp2-190m-t0.745-lr1.2e-3-win-ctx.pt",
+  "tag": "_tpp2-190m-t0.745-lr1.2e-3-win-ctx",
+  "seed": 1,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.2874331715996445,
+  "nats_per_token_full": 4.297711768396927,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.283996705584031,
+  "bpb_logged_final": 1.2839967939678256,
+  "orig_minus_logged": -8.83837947274202e-08,
+  "max_windows": 0
+ }
+}

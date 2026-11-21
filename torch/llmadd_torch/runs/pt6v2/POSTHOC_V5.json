@@ -1,0 +1,131 @@
+{
+ "amendment": "V5",
+ "kind": "post-hoc",
+ "approval": "user-approved 2026-11-20 (\"可以的，没问题\", relayed by the main session; B200 approved); post-hoc, exploratory, no verdict rule",
+ "why": "at lr 2e-3 dim accuracy drops far less after the prior window with all six priors than with only the dim prior (end of training 77.3 vs 52.3) while the logged cka_dim@L2 / @L4 (item positions) is retained equally: is the representation in later layers or at the answer position washed out less in the joint model? (probe_v5.py on the saved weights)",
+ "reading_rule": "descriptive (probe_v5.py per run: drift / CKA to dim's exponent vectors / ridge decodability per layer, item positions and the answer position); no verdict rule, no gate; readout_pt6v2.py does not read out_v5/",
+ "cells": {
+  "all6": {
+   "lr": "2e-3",
+   "registered": "all6@2e-3"
+  },
+  "only-dim": {
+   "lr": "2e-3",
+   "registered": "only-dim@2e-3"
+  }
+ },
+ "seeds": [
+  16,
+  17
+ ],
+ "save_model_at": {
+  "steps": [
+   7323,
+   12000,
+   18309
+  ],
+  "meaning": "weights only (model.state_dict()), after step s's update = the weights the eval of step s logs; 7323 = the LAST step with the prior on (prior_on(s) = 916 <= s < 7324; no eval there: nearest evals 7250 / 7500); 12000 = an eval step; 18309 = the final step and last eval",
+  "file": "out_v5/<name>/<tag>/wts_whole_helix3_seed<s>_<tag>_step<k>.pt"
+ },
+ "trainer": {
+  "path": "runs/pt6v2/out_v5/code/tools/pretrain_range.py",
+  "sha12": "041b2f4241b9",
+  "parent_sha12": "a398fccbfe93",
+  "patch": "runs/pt6v2/out_v5/patch_trainer_v5.py",
+  "diff": "runs/pt6v2/out_v5/trainer_v5.diff"
+ },
+ "code_commit": "ef7b8854",
+ "out_dir": "runs/pt6v2/out_v5",
+ "driver": "runs/pt6v2/posthoc_v5_jobs.py",
+ "racing": "each run has a B200 job (singleton chain) and an A100 / H100 copy (a100_tandon,h100_tandon) on the same out dir; the early run guard + run_guard.py let the first to claim compute; the other exits 0 before touching $OUT",
+ "runs": {
+  "pt6v2-all6-lr2e-3-s16:b200": {
+   "seed": 16,
+   "arm": "all6",
+   "role": "b200",
+   "slurm_name": "llmadd_pt6v2-b200-slot3",
+   "job_file": "out_v5/job_pt6v2-all6-lr2e-3-s16.sbatch",
+   "job_sha12": "e934414fcfdd",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s16.sbatch",
+   "registered_sha12": "45dc201bb979",
+   "job_id": "23859739"
+  },
+  "pt6v2-all6-lr2e-3-s16:copy": {
+   "seed": 16,
+   "arm": "all6",
+   "role": "copy",
+   "slurm_name": "llmadd_pt6v2v5-all6-s16-copy",
+   "job_file": "out_v5/job_pt6v2-all6-lr2e-3-s16_copy.sbatch",
+   "job_sha12": "cfe8235ca753",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s16.sbatch",
+   "registered_sha12": "45dc201bb979",
+   "job_id": "23859740"
+  },
+  "pt6v2-only-dim-lr2e-3-s16:b200": {
+   "seed": 16,
+   "arm": "only-dim",
+   "role": "b200",
+   "slurm_name": "llmadd_pt6v2-b200-slot4",
+   "job_file": "out_v5/job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "job_sha12": "45a5be111bec",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "registered_sha12": "545abc26ee4d",
+   "job_id": "23859741"
+  },
+  "pt6v2-only-dim-lr2e-3-s16:copy": {
+   "seed": 16,
+   "arm": "only-dim",
+   "role": "copy",
+   "slurm_name": "llmadd_pt6v2v5-only-dim-s16-copy",
+   "job_file": "out_v5/job_pt6v2-only-dim-lr2e-3-s16_copy.sbatch",
+   "job_sha12": "7b77c13eada8",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "registered_sha12": "545abc26ee4d",
+   "job_id": "23859742"
+  },
+  "pt6v2-all6-lr2e-3-s17:b200": {
+   "seed": 17,
+   "arm": "all6",
+   "role": "b200",
+   "slurm_name": "llmadd_pt6v2-b200-slot3",
+   "job_file": "out_v5/job_pt6v2-all6-lr2e-3-s17.sbatch",
+   "job_sha12": "5aecec66b96f",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s17.sbatch",
+   "registered_sha12": "90108e7b0f79",
+   "job_id": "23859743"
+  },
+  "pt6v2-all6-lr2e-3-s17:copy": {
+   "seed": 17,
+   "arm": "all6",
+   "role": "copy",
+   "slurm_name": "llmadd_pt6v2v5-all6-s17-copy",
+   "job_file": "out_v5/job_pt6v2-all6-lr2e-3-s17_copy.sbatch",
+   "job_sha12": "2ca7189a9518",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s17.sbatch",
+   "registered_sha12": "90108e7b0f79",
+   "job_id": "23859744"
+  },
+  "pt6v2-only-dim-lr2e-3-s17:b200": {
+   "seed": 17,
+   "arm": "only-dim",
+   "role": "b200",
+   "slurm_name": "llmadd_pt6v2-b200-slot4",
+   "job_file": "out_v5/job_pt6v2-only-dim-lr2e-3-s17.sbatch",
+   "job_sha12": "aacf11dd8b7a",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s17.sbatch",
+   "registered_sha12": "329053bb717e",
+   "job_id": "23859745"
+  },
+  "pt6v2-only-dim-lr2e-3-s17:copy": {
+   "seed": 17,
+   "arm": "only-dim",
+   "role": "copy",
+   "slurm_name": "llmadd_pt6v2v5-only-dim-s17-copy",
+   "job_file": "out_v5/job_pt6v2-only-dim-lr2e-3-s17_copy.sbatch",
+   "job_sha12": "ad9e5af7b7a4",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s17.sbatch",
+   "registered_sha12": "329053bb717e",
+   "job_id": "23859746"
+  }
+ }
+}

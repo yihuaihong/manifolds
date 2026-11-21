@@ -1,0 +1,427 @@
+{
+ "pass": true,
+ "valid_data_flagged": false,
+ "checks": [
+  {
+   "check": "run args = intent (46 fields, no other field)",
+   "ok": true,
+   "value": {
+    "diff": {},
+    "extra": []
+   }
+  },
+  {
+   "check": "the job's ARGS (12 flags) = the run's args",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "lambda per domain from the job's ARGS {\"numbers\": 0.0, \"dim\": 0.0, \"cities\": 0.0, \"countries\": 0.0, \"torus\": 0.0, \"box5\": 0.0} = the logged lam_domains and domains.<d>.lam",
+   "ok": true,
+   "value": [
+    {
+     "numbers": 0.0,
+     "dim": 0.0,
+     "cities": 0.0,
+     "countries": 0.0,
+     "torus": 0.0,
+     "box5": 0.0
+    },
+    {
+     "numbers": 0.0,
+     "dim": 0.0,
+     "cities": 0.0,
+     "countries": 0.0,
+     "torus": 0.0,
+     "box5": 0.0
+    }
+   ]
+  },
+  {
+   "check": "code_sha a398fccbfe93",
+   "ok": true,
+   "value": "a398fccbfe93"
+  },
+  {
+   "check": "dep_sha {\"toy_struct.py\": \"d182ce548bcc\", \"ft36.py\": \"2f84907b4725\", \"manifold_domains.py\": \"0607a9d693da\", \"manifold_atlas.py\": \"43efc295ecc0\", \"toy3.py\": \"ddf037ed29fd\", \"toy3_nonce.json\": \"9172a4c7c116\"}",
+   "ok": true,
+   "value": {
+    "toy_struct.py": "d182ce548bcc",
+    "ft36.py": "2f84907b4725",
+    "manifold_domains.py": "0607a9d693da",
+    "manifold_atlas.py": "43efc295ecc0",
+    "toy3.py": "ddf037ed29fd",
+    "toy3_nonce.json": "9172a4c7c116"
+   }
+  },
+  {
+   "check": "run facts = intent {\"steps\": 18310, \"n_params\": 52672128, \"grad_ckpt_on\": false, \"geo_layers\": [2, 4], \"read_layers\": [2, 4], \"lm_chunk\": 0, \"eval_every_steps\": 250, \"lam_rule\": \"norm\"}",
+   "ok": true,
+   "value": {
+    "steps": 18310,
+    "n_params": 52672128,
+    "grad_ckpt_on": false,
+    "geo_layers": [
+     2,
+     4
+    ],
+    "read_layers": [
+     2,
+     4
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 250,
+    "lam_rule": "norm"
+   }
+  },
+  {
+   "check": "lambda per domain = intent {\"numbers\": 0.0, \"dim\": 0.0, \"cities\": 0.0, \"countries\": 0.0, \"torus\": 0.0, \"box5\": 0.0}",
+   "ok": true,
+   "value": {
+    "numbers": 0.0,
+    "dim": 0.0,
+    "cities": 0.0,
+    "countries": 0.0,
+    "torus": 0.0,
+    "box5": 0.0
+   }
+  },
+  {
+   "check": "domains.<d> prior / shuf / lam = intent (active none; numbers target none)",
+   "ok": true,
+   "value": {
+    "numbers": [
+     false,
+     false,
+     0.0
+    ],
+    "dim": [
+     false,
+     false,
+     0.0
+    ],
+    "cities": [
+     false,
+     false,
+     0.0
+    ],
+    "countries": [
+     false,
+     false,
+     0.0
+    ],
+    "torus": [
+     false,
+     false,
+     0.0
+    ],
+    "box5": [
+     false,
+     false,
+     0.0
+    ]
+   }
+  },
+  {
+   "check": "finished: 75 evals, increasing, the last at step 18309",
+   "ok": true,
+   "value": [
+    75,
+    18309
+   ]
+  },
+  {
+   "check": "data_sha after step 0 = the CPU reference 225d52ea8d885afe (the same data in every arm of the batch and seed)",
+   "ok": true,
+   "value": "225d52ea8d885afe"
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the CPU reference (same init and first batch; no prior at step 0)",
+   "ok": true,
+   "value": 4.1961669921875e-05
+  },
+  {
+   "check": "the numbers line is the first line after the text in every row",
+   "ok": true,
+   "value": {
+    "numbers": 1.0,
+    "dim": 0.0,
+    "cities": 0.0,
+    "countries": 0.0,
+    "torus": 0.0,
+    "box5": 0.0
+   }
+  },
+  {
+   "check": "numbers token share in [0.019, 0.024] (the 2% setting)",
+   "ok": true,
+   "value": 0.02123644092836906
+  },
+  {
+   "check": "domain lines per slot after the numbers line: K = 2 slots, every slot within 1/K +- 0.05 of every domain's lines",
+   "ok": true,
+   "value": {
+    "dim": [
+     0.4970175109229929,
+     0.502982489077007
+    ],
+    "cities": [
+     0.5000981362643364,
+     0.4999018637356636
+    ],
+    "countries": [
+     0.498984503003823,
+     0.501015496996177
+    ],
+    "torus": [
+     0.500665619879847,
+     0.4993343801201529
+    ],
+    "box5": [
+     0.5032342299290006,
+     0.4967657700709995
+    ]
+   }
+  },
+  {
+   "check": "domain splits = the CPU reference {\"box5\": {\"n_held\": 362, \"n_items\": 25, \"n_readout\": 149, \"n_train\": 360, \"readout\": \"held_no_negtwin_nonid\", \"split_mode\": \"class\", \"split_seed\": 1695139898, \"train_frac\": 0.5}, \"cities\": {\"n_comparisons\": 1500, \"n_held\": 1214, \"n_held_keys\": 376, \"n_items\": 60, \"n_keys\": 939, \"n_readout\": 1214, \"n_train\": 1786, \"raw_gram\": false, \"readout\": \"held_2way\", \"split_seed\": 854920895, \"target\": \"sphere\"}, \"countries\": {\"n_comparisons\": 1500, \"n_held\": 1182, \"n_held_keys\": 395, \"n_items\": 70, \"n_keys\": 987, \"n_readout\": 1182, \"n_train\": 1818, \"raw_gram\": false, \"readout\": \"held_2way\", \"split_seed\": 808239930, \"target\": \"sphere\"}, \"dim\": {\"n_held\": 342, \"n_items\": 27, \"n_readout\": 150, \"n_train\": 344, \"readout\": \"held_no_negtwin_nonid\", \"split_mode\": \"class\", \"split_seed\": 205189456, \"train_frac\": 0.5}, \"torus\": {\"n_held\": 517, \"n_items\": 36, \"n_readout\": 493, \"n_train\": 779, \"readout\": \"held_nonid\", \"split_mode\": \"class\", \"split_seed\": 1500339002, \"train_frac\": 0.6}}",
+   "ok": true,
+   "value": {
+    "dim": {
+     "n_held": 342,
+     "n_items": 27,
+     "n_readout": 150,
+     "n_train": 344,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 205189456,
+     "train_frac": 0.5
+    },
+    "cities": {
+     "n_comparisons": 1500,
+     "n_held": 1214,
+     "n_held_keys": 376,
+     "n_items": 60,
+     "n_keys": 939,
+     "n_readout": 1214,
+     "n_train": 1786,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 854920895,
+     "target": "sphere"
+    },
+    "countries": {
+     "n_comparisons": 1500,
+     "n_held": 1182,
+     "n_held_keys": 395,
+     "n_items": 70,
+     "n_keys": 987,
+     "n_readout": 1182,
+     "n_train": 1818,
+     "raw_gram": false,
+     "readout": "held_2way",
+     "split_seed": 808239930,
+     "target": "sphere"
+    },
+    "torus": {
+     "n_held": 517,
+     "n_items": 36,
+     "n_readout": 493,
+     "n_train": 779,
+     "readout": "held_nonid",
+     "split_mode": "class",
+     "split_seed": 1500339002,
+     "train_frac": 0.6
+    },
+    "box5": {
+     "n_held": 362,
+     "n_items": 25,
+     "n_readout": 149,
+     "n_train": 360,
+     "readout": "held_no_negtwin_nonid",
+     "split_mode": "class",
+     "split_seed": 1695139898,
+     "train_frac": 0.5
+    }
+   }
+  },
+  {
+   "check": "domain tables (items, target, questions) = the reference {\"cities\": \"9016d24d7eea\", \"countries\": \"b2aba51d4885\"}",
+   "ok": true,
+   "value": {
+    "cities": "9016d24d7eea",
+    "countries": "b2aba51d4885"
+   }
+  },
+  {
+   "check": "held-out-format templates {'dim': 3}, scored at every eval (6 sets)",
+   "ok": true,
+   "value": {
+    "dim": 3
+   }
+  },
+  {
+   "check": "choice read-outs at every eval (6 sets: 2-way held / seen / heuristic-hard (non-empty) of the comparisons, k-way full-span (Rev G, the primary) and first-token held / seen of the k-step domains)",
+   "ok": true,
+   "value": []
+  },
+  {
+   "check": "toy read-outs (s4 / dim, Rev B exact match) at every eval (6 sets) and the per-question hits hits_<d>_held (one digit per held question, every eval)",
+   "ok": true,
+   "value": []
+  },
+  {
+   "check": "toy3 read-out set <d>_<set> logged (float) at every eval and = the metrics' read-out set {\"torus\": \"held_nonid\", \"box5\": \"held_no_negtwin_nonid\"}",
+   "ok": true,
+   "value": [
+    [],
+    []
+   ]
+  },
+  {
+   "check": "double-path fields logged (finite) at every eval before a divergence: 2-way 4 sets, k-span 0 (dp and own row); every k-way domain's held / seen",
+   "ok": true,
+   "value": [
+    [],
+    []
+   ]
+  },
+  {
+   "check": "2-way scoring double path (GPU-numerics tolerance, A5.1): |span log-prob - the direct per-position path| (first 4 rows of every set) <= 0.05 nats at eval 0 and <= 0.5 nat per scored token at every later eval (cities 2.5; countries 3)",
+   "ok": true,
+   "value": {
+    "n_over": 0,
+    "over": [],
+    "max_eval0": 0.003940582275390625,
+    "max_later": 0.18699289935467078,
+    "max_later_over_tol": 0.07479715974186832
+   }
+  },
+  {
+   "check": "k-way known answer (Rev G, tie-aware): no exact-match hit whose first-token k-way choice is another item with a logit more than one bf16 step away (ties within it: 0, logged)",
+   "ok": true,
+   "value": [
+    0,
+    0
+   ]
+  },
+  {
+   "check": "gradient split logged at every eval (grad_T, grad_lm_share, grad_total, clip_coef, grad_T_reldiff)",
+   "ok": true,
+   "value": []
+  },
+  {
+   "check": "decomposition double path: max |grad_T - grad_total| / grad_total < 0.05 over the evals (none: no window)",
+   "ok": true,
+   "value": [
+    2.373671156964475e-06,
+    4.531582210680842e-05,
+    75,
+    0
+   ]
+  },
+  {
+   "check": "no prior ever on (prior_on_frac 0, no events, no domain prior on or applied, no prior loss term or gradient; LM share 1)",
+   "ok": true,
+   "value": 0.0
+  },
+  {
+   "check": "stage 1 (A4): no saved model and no offline LM, by design",
+   "ok": true,
+   "value": []
+  },
+  {
+   "check": "GPU = B200 in every nvidia-smi sample (the batch's GPU type)",
+   "ok": true,
+   "value": [
+    "NVIDIA B200"
+   ]
+  }
+ ],
+ "info": {
+  "versions": {
+   "python": "3.11.13",
+   "torch": "2.10.0",
+   "transformers": "4.57.6",
+   "numpy": "2.0.1",
+   "tokenizers": "0.22.2"
+  },
+  "batch": "V6",
+  "tag": "_pt6v2-none-lr6.4e-2",
+  "seed": 17,
+  "lr": 0.064,
+  "active": [],
+  "read_area": {
+   "dim": 34.275555555555556,
+   "cities": 77.38824821526633,
+   "countries": 81.0095882684715,
+   "torus": 34.15821501014199,
+   "box5": 9.395973154362416
+  },
+  "read_final3": {
+   "dim": 49.55555555555556,
+   "cities": 87.78143876990666,
+   "countries": 90.29892836999437,
+   "torus": 90.26369168356997,
+   "box5": 18.568232662192393
+  },
+  "seen_final3": {
+   "dim": 99.66666666666667,
+   "cities": 95.22222222222221,
+   "countries": 97.11111111111111,
+   "torus": 98.77777777777777,
+   "box5": 99.55555555555554
+  },
+  "numbers_area": 4.844444444444443,
+  "hard_final3": {
+   "cities": 69.32870370370371,
+   "countries": 73.08743169398907
+  },
+  "heuristic": {
+   "cities": [
+    0.6688632619439868,
+    0.5378912685337727
+   ],
+   "countries": [
+    0.7360406091370558,
+    0.5042301184433164
+   ]
+  },
+  "final_cka": {
+   "dim": 0.20557000488042831,
+   "cities": 0.15525957196950912,
+   "countries": 0.23657825589179993,
+   "torus": 0.04270562343299389,
+   "box5": 0.2075769379734993
+  },
+  "cka_rise_true": null,
+  "final_cka_ops_helix3": 0.5481067895889282,
+  "grad_window_median": {
+   "lm_share": null,
+   "clip_coef": null,
+   "prior_over_lm": null,
+   "n_on_evals": 0,
+   "lm_share_norm": null,
+   "frac_prior_gt_lm": null
+  },
+  "ties2": 4,
+  "tiesk": 0,
+  "kway_em_tie": 0,
+  "read_area_first_token_kway": {},
+  "kspan_dp_max": null,
+  "lm0": 11.583746910095215,
+  "final_val_bpb": 1.3569251794564046,
+  "bpb_full": null,
+  "diverged": false,
+  "diverged_at_step": null,
+  "sec_per_step_median": 0.05675227403640747,
+  "projected_run_h": 0.2886483715573947,
+  "gpu_util_median": 98.0,
+  "gpu_mem_max_MiB": 32630,
+  "gpu_samples": 20,
+  "gpu_names": [
+   "NVIDIA B200"
+  ],
+  "commit": "ef7b8854"
+ }
+}

@@ -1,0 +1,97 @@
+size,arm,lr,seed,domain,readout,value
+53M,none@1e-3,1e-3,0,numbers,6-bucket held-out area (A5 READ),14.5726
+53M,none@1e-3,1e-3,1,numbers,6-bucket held-out area (A5 READ),17.3786
+53M,none@1e-3,1e-3,2,numbers,6-bucket held-out area (A5 READ),7.2669
+53M,none@1e-3,1e-3,3,numbers,6-bucket held-out area (A5 READ),23.0679
+53M,none@1e-3,1e-3,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.1642
+53M,none@1e-3,1e-3,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+53M,none@1e-3,1e-3,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.5155
+53M,none@1e-3,1e-3,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.1667
+53M,none@1e-3,1e-3,0,dim,"dim strict held-out, final3 (A5 READ)",1.7241
+53M,none@1e-3,1e-3,1,dim,"dim strict held-out, final3 (A5 READ)",32.7869
+53M,none@1e-3,1e-3,2,dim,"dim strict held-out, final3 (A5 READ)",8.4388
+53M,none@1e-3,1e-3,3,dim,"dim strict held-out, final3 (A5 READ)",6.5217
+53M,none@8e-3,8e-3,0,numbers,6-bucket held-out area (A5 READ),37.2234
+53M,none@8e-3,8e-3,1,numbers,6-bucket held-out area (A5 READ),26.2215
+53M,none@8e-3,8e-3,2,numbers,6-bucket held-out area (A5 READ),35.4815
+53M,none@8e-3,8e-3,3,numbers,6-bucket held-out area (A5 READ),47.718
+53M,none@8e-3,8e-3,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",6.8966
+53M,none@8e-3,8e-3,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",1.3962
+53M,none@8e-3,8e-3,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",1.3746
+53M,none@8e-3,8e-3,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",2.6667
+53M,none@8e-3,8e-3,0,dim,"dim strict held-out, final3 (A5 READ)",48.2759
+53M,none@8e-3,8e-3,1,dim,"dim strict held-out, final3 (A5 READ)",27.3224
+53M,none@8e-3,8e-3,2,dim,"dim strict held-out, final3 (A5 READ)",29.1139
+53M,none@8e-3,8e-3,3,dim,"dim strict held-out, final3 (A5 READ)",21.7391
+53M,all6-lam1@1e-3,1e-3,0,numbers,6-bucket held-out area (A5 READ),68.3212
+53M,all6-lam1@1e-3,1e-3,1,numbers,6-bucket held-out area (A5 READ),69.2058
+53M,all6-lam1@1e-3,1e-3,2,numbers,6-bucket held-out area (A5 READ),67.8756
+53M,all6-lam1@1e-3,1e-3,3,numbers,6-bucket held-out area (A5 READ),69.7001
+53M,all6-lam1@1e-3,1e-3,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",36.9458
+53M,all6-lam1@1e-3,1e-3,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",41.5358
+53M,all6-lam1@1e-3,1e-3,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",52.7491
+53M,all6-lam1@1e-3,1e-3,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",29.0
+53M,all6-lam1@1e-3,1e-3,0,dim,"dim strict held-out, final3 (A5 READ)",63.2184
+53M,all6-lam1@1e-3,1e-3,1,dim,"dim strict held-out, final3 (A5 READ)",83.0601
+53M,all6-lam1@1e-3,1e-3,2,dim,"dim strict held-out, final3 (A5 READ)",54.0084
+53M,all6-lam1@1e-3,1e-3,3,dim,"dim strict held-out, final3 (A5 READ)",38.4058
+53M,only-numbers@1e-3,1e-3,0,numbers,6-bucket held-out area (A5 READ),69.452
+53M,only-numbers@1e-3,1e-3,1,numbers,6-bucket held-out area (A5 READ),71.7901
+53M,only-numbers@1e-3,1e-3,2,numbers,6-bucket held-out area (A5 READ),72.5827
+53M,only-numbers@1e-3,1e-3,3,numbers,6-bucket held-out area (A5 READ),69.6055
+53M,only-numbers@1e-3,1e-3,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+53M,only-numbers@1e-3,1e-3,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+53M,only-numbers@1e-3,1e-3,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.1718
+53M,only-numbers@1e-3,1e-3,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.5
+53M,only-numbers@1e-3,1e-3,0,dim,"dim strict held-out, final3 (A5 READ)",4.023
+53M,only-numbers@1e-3,1e-3,1,dim,"dim strict held-out, final3 (A5 READ)",46.4481
+53M,only-numbers@1e-3,1e-3,2,dim,"dim strict held-out, final3 (A5 READ)",43.4599
+53M,only-numbers@1e-3,1e-3,3,dim,"dim strict held-out, final3 (A5 READ)",5.7971
+190M,none@6e-4,6e-4,0,numbers,6-bucket held-out area (A5 READ),18.1543
+190M,none@6e-4,6e-4,1,numbers,6-bucket held-out area (A5 READ),18.2843
+190M,none@6e-4,6e-4,2,numbers,6-bucket held-out area (A5 READ),10.0101
+190M,none@6e-4,6e-4,3,numbers,6-bucket held-out area (A5 READ),13.7392
+190M,none@6e-4,6e-4,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+190M,none@6e-4,6e-4,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+190M,none@6e-4,6e-4,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.1718
+190M,none@6e-4,6e-4,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+190M,none@6e-4,6e-4,0,dim,"dim strict held-out, final3 (A5 READ)",36.7816
+190M,none@6e-4,6e-4,1,dim,"dim strict held-out, final3 (A5 READ)",0.0
+190M,none@6e-4,6e-4,2,dim,"dim strict held-out, final3 (A5 READ)",20.2532
+190M,none@6e-4,6e-4,3,dim,"dim strict held-out, final3 (A5 READ)",0.0
+190M,none@4.8e-3,4.8e-3,0,numbers,6-bucket held-out area (A5 READ),36.3797
+190M,none@4.8e-3,4.8e-3,1,numbers,6-bucket held-out area (A5 READ),25.0726
+190M,none@4.8e-3,4.8e-3,2,numbers,6-bucket held-out area (A5 READ),34.2519
+190M,none@4.8e-3,4.8e-3,3,numbers,6-bucket held-out area (A5 READ),30.7204
+190M,none@4.8e-3,4.8e-3,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",2.7915
+190M,none@4.8e-3,4.8e-3,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.6981
+190M,none@4.8e-3,4.8e-3,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.0
+190M,none@4.8e-3,4.8e-3,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",1.0
+190M,none@4.8e-3,4.8e-3,0,dim,"dim strict held-out, final3 (A5 READ)",0.0
+190M,none@4.8e-3,4.8e-3,1,dim,"dim strict held-out, final3 (A5 READ)",14.2077
+190M,none@4.8e-3,4.8e-3,2,dim,"dim strict held-out, final3 (A5 READ)",7.173
+190M,none@4.8e-3,4.8e-3,3,dim,"dim strict held-out, final3 (A5 READ)",29.7101
+190M,all6-lam1@6e-4,6e-4,0,numbers,6-bucket held-out area (A5 READ),77.068
+190M,all6-lam1@6e-4,6e-4,1,numbers,6-bucket held-out area (A5 READ),75.861
+190M,all6-lam1@6e-4,6e-4,2,numbers,6-bucket held-out area (A5 READ),76.4872
+190M,all6-lam1@6e-4,6e-4,3,numbers,6-bucket held-out area (A5 READ),76.9849
+190M,all6-lam1@6e-4,6e-4,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",37.7668
+190M,all6-lam1@6e-4,6e-4,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",65.2705
+190M,all6-lam1@6e-4,6e-4,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",30.2405
+190M,all6-lam1@6e-4,6e-4,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",44.6667
+190M,all6-lam1@6e-4,6e-4,0,dim,"dim strict held-out, final3 (A5 READ)",95.4023
+190M,all6-lam1@6e-4,6e-4,1,dim,"dim strict held-out, final3 (A5 READ)",96.1749
+190M,all6-lam1@6e-4,6e-4,2,dim,"dim strict held-out, final3 (A5 READ)",85.654
+190M,all6-lam1@6e-4,6e-4,3,dim,"dim strict held-out, final3 (A5 READ)",80.4348
+190M,only-numbers@6e-4,6e-4,0,numbers,6-bucket held-out area (A5 READ),78.3938
+190M,only-numbers@6e-4,6e-4,1,numbers,6-bucket held-out area (A5 READ),78.022
+190M,only-numbers@6e-4,6e-4,2,numbers,6-bucket held-out area (A5 READ),77.7859
+190M,only-numbers@6e-4,6e-4,3,numbers,6-bucket held-out area (A5 READ),78.7891
+190M,only-numbers@6e-4,6e-4,0,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",1.1494
+190M,only-numbers@6e-4,6e-4,1,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.6981
+190M,only-numbers@6e-4,6e-4,2,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.3436
+190M,only-numbers@6e-4,6e-4,3,s4,"S4 fresh non-identity held-out, final3 (A5 READ)",0.1667
+190M,only-numbers@6e-4,6e-4,0,dim,"dim strict held-out, final3 (A5 READ)",0.0
+190M,only-numbers@6e-4,6e-4,1,dim,"dim strict held-out, final3 (A5 READ)",6.5574
+190M,only-numbers@6e-4,6e-4,2,dim,"dim strict held-out, final3 (A5 READ)",5.0633
+190M,only-numbers@6e-4,6e-4,3,dim,"dim strict held-out, final3 (A5 READ)",0.0

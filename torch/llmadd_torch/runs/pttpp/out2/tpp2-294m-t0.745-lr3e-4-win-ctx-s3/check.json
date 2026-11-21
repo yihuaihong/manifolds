@@ -1,0 +1,108 @@
+{
+ "pass": true,
+ "checks": [
+  {
+   "check": "run args = intent (34 fields)",
+   "ok": true,
+   "value": {}
+  },
+  {
+   "check": "code_sha 93e22bf4c4c0",
+   "ok": true,
+   "value": "93e22bf4c4c0"
+  },
+  {
+   "check": "run facts = intent {\"steps\": 9570, \"n_params\": 293931456, \"grad_ckpt_on\": true, \"geo_layers\": [6, 12], \"read_layers\": [6, 12], \"lm_chunk\": 0, \"eval_every_steps\": 131}",
+   "ok": true,
+   "value": {
+    "steps": 9570,
+    "n_params": 293931456,
+    "grad_ckpt_on": true,
+    "geo_layers": [
+     6,
+     12
+    ],
+    "read_layers": [
+     6,
+     12
+    ],
+    "lm_chunk": 0,
+    "eval_every_steps": 131
+   }
+  },
+  {
+   "check": "finished: 75 evals, increasing, the last at step 9569",
+   "ok": true,
+   "value": [
+    75,
+    9569
+   ]
+  },
+  {
+   "check": "prior_events == [[479, 1], [3828, 0]]",
+   "ok": true,
+   "value": [
+    [
+     479,
+     1
+    ],
+    [
+     3828,
+     0
+    ]
+   ]
+  },
+  {
+   "check": "prior_on_frac == 0.349948",
+   "ok": true,
+   "value": 0.34994775339602924
+  },
+  {
+   "check": "geo > 0 and 0 < grad_prior < inf at every eval where the prior acted (before a divergence)",
+   "ok": true,
+   "value": 26
+  },
+  {
+   "check": "prior_used_frac == prior_on_frac (ctx)",
+   "ok": true,
+   "value": [
+    0.34994775339602924,
+    0.34994775339602924
+   ]
+  },
+  {
+   "check": "step-0 lm within 1e-3 of the same-seed Torch run (same init and first batch)",
+   "ok": true,
+   "value": -1.9073486328125e-06
+  },
+  {
+   "check": "offline_lm on the full val, |orig_minus_logged| < 0.002 (skipped if the run diverged)",
+   "ok": true,
+   "value": 1.767675894548404e-08
+  }
+ ],
+ "info": {
+  "tag": "_tpp2-294m-t0.745-lr3e-4-win-ctx",
+  "seed": 3,
+  "lr": 0.0003,
+  "area": 54.75,
+  "area_no_b11": 53.97,
+  "b11_area": 58.67,
+  "b33_area": 22.84,
+  "t90_M": 136.10567569892473,
+  "budget_M": 156.79488,
+  "lm0": 11.68345832824707,
+  "final_val_bpb": 1.2121956023637352,
+  "bpb_full": 1.215419598810348,
+  "diverged": false,
+  "diverged_at_step": null,
+  "prior_used_frac": 0.34994775339602924,
+  "cka_ops_helix3": 0.9924134016036987,
+  "sec_per_step_median": 0.5924308755015599,
+  "projected_run_h": 1.574878744041647,
+  "gpu_util_median": 99.0,
+  "gpu_mem_max_MiB": 38149,
+  "gpu_samples": 98,
+  "pinned_calls": 1
+ }
+}

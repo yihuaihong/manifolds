@@ -1,0 +1,16 @@
+{
+ "runs/rb6_190m/out/rb6tb-190m-2pct-k2-only-numbers-lr6e-4-s0/rb6tb-190m-2pct-k2-only-numbers-lr6e-4/run_whole_helix3_seed0_rb6tb-190m-2pct-k2-only-numbers-lr6e-4.json": {
+  "run": "runs/rb6_190m/out/rb6tb-190m-2pct-k2-only-numbers-lr6e-4-s0/rb6tb-190m-2pct-k2-only-numbers-lr6e-4/run_whole_helix3_seed0_rb6tb-190m-2pct-k2-only-numbers-lr6e-4.json",
+  "model": "runs/rb6_190m/out/rb6tb-190m-2pct-k2-only-numbers-lr6e-4-s0/rb6tb-190m-2pct-k2-only-numbers-lr6e-4/model_whole_helix3_seed0_rb6tb-190m-2pct-k2-only-numbers-lr6e-4.pt",
+  "tag": "_rb6tb-190m-2pct-k2-only-numbers-lr6e-4",
+  "seed": 0,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.1321552297476165,
+  "nats_per_token_full": 3.7793626588732536,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1312437360124914,
+  "bpb_logged_final": 1.1312437360124914,
+  "orig_minus_logged": 0.0,
+  "max_windows": 0
+ }
+}

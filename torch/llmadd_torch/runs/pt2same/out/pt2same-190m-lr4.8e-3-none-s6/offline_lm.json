@@ -1,0 +1,16 @@
+{
+ "runs/pt2same/out/pt2same-190m-lr4.8e-3-none-s6/pt2same-190m-lr4.8e-3-none/run_whole_none_seed6_pt2same-190m-lr4.8e-3-none.json": {
+  "run": "runs/pt2same/out/pt2same-190m-lr4.8e-3-none-s6/pt2same-190m-lr4.8e-3-none/run_whole_none_seed6_pt2same-190m-lr4.8e-3-none.json",
+  "model": "runs/pt2same/out/pt2same-190m-lr4.8e-3-none-s6/pt2same-190m-lr4.8e-3-none/model_whole_none_seed6_pt2same-190m-lr4.8e-3-none.pt",
+  "tag": "_pt2same-190m-lr4.8e-3-none",
+  "seed": 6,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.1445617241398198,
+  "nats_per_token_full": 3.8207780411471726,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1420544351875208,
+  "bpb_logged_final": 1.1420544528642798,
+  "orig_minus_logged": -1.767675894548404e-08,
+  "max_windows": 0
+ }
+}

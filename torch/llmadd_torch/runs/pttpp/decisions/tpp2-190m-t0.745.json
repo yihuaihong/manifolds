@@ -1,0 +1,92 @@
+{
+ "group": "tpp2-190m-t0.745",
+ "log": [
+  {
+   "arm": "none",
+   "stage": "X",
+   "lr": "1.92e-2",
+   "basis": {
+    "status": "ok",
+    "best": "9.6e-3",
+    "open": null,
+    "grid": [
+     "4.8e-3",
+     "9.6e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "why": "T6: none's pick at the upper grid edge (closed within the tie band): one step up",
+   "seq": 0,
+   "time": "2026-10-27T14:21:31",
+   "job": "21033054"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "X",
+   "lr": "2.4e-3",
+   "basis": {
+    "status": "ok",
+    "best": "1.2e-3",
+    "open": "upper",
+    "grid": [
+     "6e-4",
+     "1.2e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 1,
+   "time": "2026-10-27T14:57:09",
+   "job": "21033062"
+  },
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "basis": {
+    "status": "ok",
+    "best": "9.6e-3",
+    "open": null,
+    "grid": [
+     "4.8e-3",
+     "9.6e-3",
+     "1.92e-2"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 2,
+   "time": "2026-10-28T08:00:37",
+   "job": "21125141"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "1.2e-3",
+   "basis": {
+    "status": "ok",
+    "best": "1.2e-3",
+    "open": null,
+    "grid": [
+     "6e-4",
+     "1.2e-3",
+     "2.4e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 3,
+   "time": "2026-10-29T21:36:03",
+   "job": "21129198"
+  }
+ ]
+}

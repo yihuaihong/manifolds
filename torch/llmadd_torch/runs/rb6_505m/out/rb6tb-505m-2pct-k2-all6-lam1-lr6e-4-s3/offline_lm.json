@@ -1,0 +1,16 @@
+{
+ "runs/rb6_505m/out/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4-s3/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4/run_whole_helix3_seed3_rb6tb-505m-2pct-k2-all6-lam1-lr6e-4.json": {
+  "run": "runs/rb6_505m/out/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4-s3/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4/run_whole_helix3_seed3_rb6tb-505m-2pct-k2-all6-lam1-lr6e-4.json",
+  "model": "runs/rb6_505m/out/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4-s3/rb6tb-505m-2pct-k2-all6-lam1-lr6e-4/model_whole_helix3_seed3_rb6tb-505m-2pct-k2-all6-lam1-lr6e-4.pt",
+  "tag": "_rb6tb-505m-2pct-k2-all6-lam1-lr6e-4",
+  "seed": 3,
+  "code_sha": "93e22bf4c4c0",
+  "bpb_full": 1.110649716667092,
+  "nats_per_token_full": 3.707572915770125,
+  "tokens_full": 1999872,
+  "bpb_orig_windows": 1.1079662728285486,
+  "bpb_logged_final": 1.1079662728285486,
+  "orig_minus_logged": 0.0,
+  "max_windows": 0
+ }
+}

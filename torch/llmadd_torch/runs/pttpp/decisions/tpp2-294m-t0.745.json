@@ -1,0 +1,69 @@
+{
+ "group": "tpp2-294m-t0.745",
+ "log": [
+  {
+   "arm": "none",
+   "stage": "C",
+   "lr": "4.8e-3",
+   "basis": {
+    "status": "ok",
+    "best": "4.8e-3",
+    "open": null,
+    "grid": [
+     "4.8e-3",
+     "9.6e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 0,
+   "time": "2026-10-27T16:28:56",
+   "job": "21033173"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "X",
+   "lr": "3e-4",
+   "basis": {
+    "status": "ok",
+    "best": "6e-4",
+    "open": "lower",
+    "grid": [
+     "6e-4",
+     "1.2e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 1,
+   "time": "2026-10-28T09:34:27",
+   "job": "21033186"
+  },
+  {
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "basis": {
+    "status": "ok",
+    "best": "6e-4",
+    "open": null,
+    "grid": [
+     "3e-4",
+     "6e-4",
+     "1.2e-3"
+    ],
+    "mean": null,
+    "bpb": null,
+    "near": null,
+    "reasons": null
+   },
+   "seq": 2,
+   "time": "2026-10-30T04:46:25",
+   "job": "21217607"
+  }
+ ]
+}

@@ -1,0 +1,83 @@
+{
+ "amendment": "V3",
+ "kind": "post-hoc",
+ "approval": "user-approved 2026-11-19 ~20:00 EST (relayed by the main session; B200 approved); post-hoc: Amendment V2's own condition was not triggered",
+ "why": "registered read-out (tests/readout_partial_20261119T1930.txt, 7 seeds): dim and box5 have N_m = 3.2e-2 = the grid top; box5's none still rising (1.6e-2 -> 3.2e-2: 31.2 -> 42.4)",
+ "reading_rule": "the registered verdict stays the registered one; the extended verdict (grid + 6.4e-2) is reported beside it; if a manifold's extended g changes sign or loses HELPS, both are reported and the paper wording follows the extended one",
+ "arm": "none",
+ "lr": "6.4e-2",
+ "seeds": [
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23
+ ],
+ "domains_arg": "numbers,dim,cities,countries,torus,box5",
+ "code_commit": "ef7b8854",
+ "cells_json_sha12": "ea9a9b01f081",
+ "make_jobs_pt6v2_sha12": "bb15d248afd8",
+ "driver": "runs/pt6v2/posthoc_v3_jobs.py",
+ "runs": {
+  "pt6v2-none-lr6.4e-2-s16": {
+   "seed": 16,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot7",
+   "job_sha12": "2f7d92a7b5ef",
+   "job_id": "23783618"
+  },
+  "pt6v2-none-lr6.4e-2-s17": {
+   "seed": 17,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot5",
+   "job_sha12": "8a011352d6c4",
+   "job_id": "23783619"
+  },
+  "pt6v2-none-lr6.4e-2-s18": {
+   "seed": 18,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot3",
+   "job_sha12": "876601314714",
+   "job_id": "23783620"
+  },
+  "pt6v2-none-lr6.4e-2-s19": {
+   "seed": 19,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot1",
+   "job_sha12": "00cb9c472179",
+   "job_id": "23783621"
+  },
+  "pt6v2-none-lr6.4e-2-s20": {
+   "seed": 20,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot7",
+   "job_sha12": "32de8fe31946",
+   "job_id": "23783622"
+  },
+  "pt6v2-none-lr6.4e-2-s21": {
+   "seed": 21,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot5",
+   "job_sha12": "9fcfdc7476d9",
+   "job_id": "23783623"
+  },
+  "pt6v2-none-lr6.4e-2-s22": {
+   "seed": 22,
+   "device": "b200",
+   "slot": "llmadd_pt6v2-b200-slot3",
+   "job_sha12": "4f7f41e012a0",
+   "job_id": "23783624"
+  },
+  "pt6v2-none-lr6.4e-2-s23": {
+   "seed": 23,
+   "device": "a100",
+   "slot": null,
+   "job_sha12": "9796b46175af",
+   "job_id": "23783625"
+  }
+ },
+ "readout": "readout_pt6v2.py --posthoc_none 6.4e-2 (flag off: the registered read-out, these runs left out)"
+}
