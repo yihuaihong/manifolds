@@ -353,7 +353,7 @@ table.dom.concepts td.n{white-space:nowrap}
     <p class="kicker">It helps with the right geometry, at the right time, in the right place</p>
     <div class="principles">
       <a class="principle" href="#geometry"><span class="num">1</span><h3>Right geometry</h3><p>A complete, regular manifold that matches the computation; a shuffled one of the same strength hurts.</p></a>
-      <a class="principle" href="#time"><span class="num">2</span><h3>Right time</h3><p>A window while the task is being learned, from about 5% to 40% of pretraining.</p></a>
+      <a class="principle" href="#time"><span class="num">2</span><h3>Right time</h3><p>On from about 5% of pretraining, while the task is being learned; with several priors, on until the end.</p></a>
       <a class="principle" href="#place"><span class="num">3</span><h3>Right place</h3><p>The concept's own tokens, even in ordinary text, within the operations the geometry matches.</p></a>
     </div>
     <p class="scope">Scope: whole-number tokenizers (as in OLMo-2), pretraining from scratch at 53M–1.07B parameters, and LoRA fine-tuning of OLMo-2 and Pythia checkpoints (160M–32B).</p>
@@ -409,7 +409,7 @@ table.dom.concepts td.n{white-space:nowrap}
   <div class="eq" role="math" aria-label="L equals L task plus the sum over k of lambda k t times L geo k, with L geo equal to one minus the CKA between H and F"><i>L</i> = <i>L</i><sub>task</sub> + Σ<sub><i>k</i></sub> λ<sub><i>k</i>,<i>t</i></sub> · <i>L</i><sub>geo</sub><sup>(<i>k</i>)</sup>,&nbsp;&nbsp;&nbsp; <i>L</i><sub>geo</sub> = 1 − CKA(<i>H<sub>L</sub></i>, <i>F<sub>G</sub></i>)</div>
   <div class="design">
     <div><b>Target</b>a helix for numbers (periods 2, 5, 10, 100, 1000), a circle for cycles, a line for orders, or a geometry read out of a trained model</div>
-    <div><b>Schedule</b>λ<sub>t</sub> on throughout, in a window [w<sub>0</sub>, w<sub>1</sub>) of training (main recipe: 5%–40%), or self-timed by training accuracy</div>
+    <div><b>Schedule</b>λ<sub>t</sub> on throughout, in a window [w<sub>0</sub>, w<sub>1</sub>) of training (most runs: 5%–40%), or self-timed by training accuracy</div>
     <div><b>Site</b>separate prompts of the items, the items where they occur in the training data, or numbers in ordinary web text</div>
     <div><b>Multiple priors</b>one per concept: one weight divided among them (λ / <i>K</i>) or a weight for each</div>
   </div>
@@ -1201,7 +1201,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Overleaf a6ab0d3).";
+  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Overleaf 051d2e2).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
