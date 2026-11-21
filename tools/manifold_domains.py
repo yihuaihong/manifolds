@@ -18,11 +18,22 @@ from __future__ import annotations
 
 import csv
 import math
+import os
+import sys
 from pathlib import Path
 
 import numpy as np
 
-DATA = Path("/scratch/yh6210/llmadd_torch/data/atlas")
+# Atlas CSVs (stars, warriner, landmarks, gurnee_*): $MANIFOLD_DATA, else <repo>/data/atlas. A domain whose file is
+# missing is skipped by domains() (release patch 2026-11-20; the tables of the domains that are built are unchanged).
+DATA = Path(os.environ.get("MANIFOLD_DATA", Path(__file__).resolve().parent.parent / "data" / "atlas"))
+
+
+def _have(fname, domain):
+    if (DATA / fname).exists():
+        return True
+    print(f"manifold_domains: {DATA / fname} not found: domain {domain!r} skipped", file=sys.stderr)
+    return False
 
 DAYS = "Monday Tuesday Wednesday Thursday Friday Saturday Sunday".split()
 MONTHS = "January February March April May June July August September October November December".split()
@@ -394,19 +405,21 @@ def domains() -> dict:
     col = _colours(); hue = np.array([hh for _, hh in col])
     add("colours", "cyclic", [c for c, _ in col], "The colour {}",
         {"hue": _std(np.stack([np.cos(np.radians(hue)), np.sin(np.radians(hue))], 1)), "line": line(hue)}, hue)
-    st = _stars(); dec = np.array([s[1] for s in st]); ra = np.array([s[2] for s in st])
-    add("stars", "sphere", [s[0] for s in st], "In the night sky, the star {}",
-        {"sphere": _std(unit_vec(dec, ra)), "harmonics": harmonics(dec, ra), "plane": _std(np.stack([dec, ra], 1))},
-        np.stack([dec, ra], 1))
+    if _have("stars.csv", "stars"):
+        st = _stars(); dec = np.array([s[1] for s in st]); ra = np.array([s[2] for s in st])
+        add("stars", "sphere", [s[0] for s in st], "In the night sky, the star {}",
+            {"sphere": _std(unit_vec(dec, ra)), "harmonics": harmonics(dec, ra), "plane": _std(np.stack([dec, ra], 1))},
+            np.stack([dec, ra], 1))
     ci = _cities(); lat = np.array([c[1] for c in ci]); lon = np.array([c[2] for c in ci])
     add("cities", "sphere", [c[0] for c in ci], "The city of {}",
         {"sphere": _std(unit_vec(lat, lon)), "harmonics": harmonics(lat, lon), "plane": _std(np.stack([lat, lon], 1))},
         np.stack([lat, lon], 1))
-    em = _emotions(); V = np.array([e[1] for e in em]); A = np.array([e[2] for e in em])
-    ang = np.arctan2(_std(A[:, None])[:, 0], _std(V[:, None])[:, 0])
-    add("emotions", "plane", [e[0] for e in em], "I feel {}",
-        {"plane": _std(np.stack([V, A], 1)), "valence": line(V), "arousal": line(A),
-         "circumplex": _std(np.stack([np.cos(ang), np.sin(ang)], 1))}, np.stack([V, A], 1))
+    if _have("warriner.csv", "emotions"):
+        em = _emotions(); V = np.array([e[1] for e in em]); A = np.array([e[2] for e in em])
+        ang = np.arctan2(_std(A[:, None])[:, 0], _std(V[:, None])[:, 0])
+        add("emotions", "plane", [e[0] for e in em], "I feel {}",
+            {"plane": _std(np.stack([V, A], 1)), "valence": line(V), "arousal": line(A),
+             "circumplex": _std(np.stack([np.cos(ang), np.sin(ang)], 1))}, np.stack([V, A], 1))
     # extra targets for two v1 domains (primary unchanged): the periodic table (Lei & Cooper 2502.10871 report a 3-D
     # spiral) and perceptual colour space
     Z = np.arange(1, len(ELEMENTS) + 1); g = np.array(ELEMENT_GROUPS); per = np.searchsorted([2, 10, 18, 36], Z) + 1
@@ -423,17 +436,20 @@ def domains() -> dict:
          "continent": onehot([c[5] for c in co])}, np.stack([lat, lon], 1))
     add("country_size", "magnitude", [c[0] for c in co], "The population of {}",
         {"log": line(pop), "logarea": line(area), "harmonics": harmonics(lat, lon)}, pop)
-    lm = _landmarks(); lat, lon = np.array([c[1] for c in lm]), np.array([c[2] for c in lm])
-    add("landmarks", "sphere", [c[0] for c in lm], "The famous landmark {}",
-        {"sphere": _std(unit_vec(lat, lon)), "harmonics": harmonics(lat, lon), "plane": _std(np.stack([lat, lon], 1))},
-        np.stack([lat, lon], 1))
-    us = _us_cities(); lat, lon = np.array([c[1] for c in us]), np.array([c[2] for c in us])
-    add("us_cities", "plane", [c[0] for c in us], "The American city of {}",
-        {"plane": _std(np.stack([lat, lon], 1)), "sphere": _std(unit_vec(lat, lon))}, np.stack([lat, lon], 1))
-    pe = _people(); yb = np.array([p[1] for p in pe], dtype=np.float64)
-    add("people", "linear", [p[0] for p in pe], "The historical figure {}",
-        {"rank": line(np.argsort(np.argsort(yb, kind="stable"), kind="stable")), "line": line(yb), "curve": curve(yb),
-         "logtime": line(np.log10(2030 - yb))}, yb)
+    if _have("landmarks.csv", "landmarks"):
+        lm = _landmarks(); lat, lon = np.array([c[1] for c in lm]), np.array([c[2] for c in lm])
+        add("landmarks", "sphere", [c[0] for c in lm], "The famous landmark {}",
+            {"sphere": _std(unit_vec(lat, lon)), "harmonics": harmonics(lat, lon), "plane": _std(np.stack([lat, lon], 1))},
+            np.stack([lat, lon], 1))
+    if _have("gurnee_us_place.csv", "us_cities"):
+        us = _us_cities(); lat, lon = np.array([c[1] for c in us]), np.array([c[2] for c in us])
+        add("us_cities", "plane", [c[0] for c in us], "The American city of {}",
+            {"plane": _std(np.stack([lat, lon], 1)), "sphere": _std(unit_vec(lat, lon))}, np.stack([lat, lon], 1))
+    if _have("gurnee_historical_figure.csv", "people"):
+        pe = _people(); yb = np.array([p[1] for p in pe], dtype=np.float64)
+        add("people", "linear", [p[0] for p in pe], "The historical figure {}",
+            {"rank": line(np.argsort(np.argsort(yb, kind="stable"), kind="stable")), "line": line(yb), "curve": curve(yb),
+             "logtime": line(np.log10(2030 - yb))}, yb)
     i = np.arange(len(GEO_PERIODS))
     add("geo_periods", "linear", GEO_PERIODS, "The geologic period {}", {"line": line(i), "curve": curve(i)}, i)
     cls, order, mass = [a[1] for a in ANIMALS], [a[2] for a in ANIMALS], np.log10([a[3] for a in ANIMALS])
