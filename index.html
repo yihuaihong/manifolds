@@ -517,12 +517,12 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   <div class="sec-head">
     <p class="eyebrow" hidden>Model size</p>
     <h2>The prior helps at every model size we pretrained, from 53M to 1.07B parameters</h2>
-    <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the average accuracy over training from 53% to 89%, by <b>36.1 points</b> (8 of 8 seeds). How the gain changes with size depends on what is held fixed: <b>with the same amount of training data, larger models gain more</b>; when larger models also get proportionally more data, there is no consistent trend.</p>
+    <p class="take">With each model at its own best learning rate, the prior keeps its advantage at every size we tested. At 1.07B it raises the average accuracy over training from 53% to 89%, by <b>36.1 points</b> (8 of 8 seeds). How the gain changes with size depends on what is held fixed: <b>with the same amount of training data, the gain increases with model size</b> (nine sizes); when larger models also get proportionally more data, there is no consistent trend.</p>
   </div>
   <figure data-group="g-size" style="margin-bottom:18px">
-    <div class="fig-body"><div class="fig-title">Six sizes, one recipe: 300M tokens, 7% arithmetic</div><div class="fig-sub">each arm at its own learning rate · means over 8 seeds · the number is the gain</div>
+    <div class="fig-body"><div class="fig-title">Nine sizes, one recipe: 300M tokens, 7% arithmetic</div><div class="fig-sub">each arm at its own learning rate · means over 8 seeds · the number is the gain</div>
       <div class="chart" id="c-size"></div><div class="legend" id="l-size"></div></div>
-    <figcaption>With the number of tokens fixed, larger models gain more, though not monotonically: the model without a prior falls from 66% to 53%, while the prior stays near 90%.</figcaption>
+    <figcaption>With the number of tokens fixed, the gain increases with model size, though not monotonically: on the eight sizes run on L40S GPUs, a pre-registered test finds +1.66 points per e-fold of non-embedding parameters (two-sided p = 0.096). The increase comes from the model without a prior getting weaker, while the prior stays at 89–90%; along the ladder, tokens per parameter fall from 21 to 0.5. The three sizes never seen before the test do not show the increase on their own, so they say only that the new sizes did not fall below the earlier trend.</figcaption>
   </figure>
   <figure class="paper" hidden>
     <div class="plate"><img src="media/fig2_scaling.png" alt="Paper Figure 2: curve-average accuracy of every seed at several model sizes, without and with the prior, and six priors at once at 53M, 190M and 505M"></div>
@@ -531,7 +531,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   </figure>
   <figure class="paper narrow" style="margin-top:18px">
     <div class="plate"><img src="media/fig3_size.png" alt="Paper Figure 3: gain of the helix prior against model size with 300M tokens, 0.745 tokens per parameter or 0.318 tokens per parameter (7% arithmetic), and with 2% arithmetic in its own panel, every seed shown as a dot"></div>
-    <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior (mean of 8 paired seeds with 95% interval; dots: seeds). Bottom: with 2% arithmetic and 300M tokens on one cluster, the prior adds 48.0 to 53.0 points at each of five sizes from 53M to 505M (8 of 8 seeds at each size). A pre-registered test finds the gain rising with log size, by 1.27 points per e-fold of parameters; this is a partial confirmation, because three of the five sizes were seen before the test, and the rise above 190M comes from the model without the prior getting weaker.
+    <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior (mean of 8 paired seeds with 95% interval; dots: seeds). Top: at 300M tokens, the solid line joins the eight sizes run on L40S GPUs and a dashed segment leads to 1.07B on B200 GPUs (sizes in millions of parameters). Bottom: with 2% arithmetic and 300M tokens on one cluster, the prior adds 48.0 to 53.0 points at each of five sizes from 53M to 505M (8 of 8 seeds at each size). A pre-registered test finds the gain rising with log size, by 1.27 points per e-fold of parameters; this is a partial confirmation, because three of the five sizes were seen before the test, and the rise above 190M comes from the model without the prior getting weaker.
       <span class="chips"><span class="chip">pre-registered</span></span></figcaption>
   </figure>
   <p class="tnote">The two results fit together because the gain varies mainly with the number of training tokens: within one size it first rises and then falls, peaking roughly between 70M and 130M tokens with 7% arithmetic, and with more tokens the model without a prior catches up.</p>
@@ -886,7 +886,8 @@ const CLAIMS = [
   { f: "F95", status: "holds", seeds: "5 (fresh)", claim: "In one toy cell (sums and differences of the vectors of {−2,…,2}³ from 6.7% of the table, one-layer network), a prior whose target encodes the whole table makes 5 of 5 seeds learn a task that no seed learned in any of the 28 settings we ran without a prior with four times the budget; the low weight decays were added after the pre-registered test, and the prior works only at learning rate 10⁻³. Given the structure, the model learns to use it." },
   { f: "F96", status: "holds", prereg: true, seeds: "4", claim: "On five zero-shot benchmarks after pretraining (505M with the window at two learning rates, 190M with the first set of six priors), against the model without a prior at the same learning rate, no comparison shows a decline that is both significant and larger than one point, and in 9 of 15 the 95% interval excludes a loss of more than one point (6 cannot tell); one small cost (LAMBADA at 505M, −0.63 [−0.92, −0.34]). We do not claim that general ability is unaffected." },
   { f: "F97", status: "holds", prereg: true, seeds: "8 per cell", claim: "How the gain changes with model size depends on what is held fixed. With the number of tokens fixed, larger models gain more (descriptive regression: +3.5 points per e-fold of non-embedding parameters, [2.5, 4.6]); no size effect is detected on the speed-up. With the ratio of tokens to non-embedding parameters fixed there is no consistent trend (at 0.745 the gain falls with size, where the number of tokens grows with size and the verdict depends on excluding the 93M cell; at 0.318 no trend). The gain varies strongly with the number of training tokens, although the design does not separate arithmetic tokens from total training, window timing or the prior's share of the gradient." },
-  { f: "F99", status: "holds", prereg: true, seeds: "8 per size", claim: "At a fixed 300M tokens with 7% arithmetic, over six sizes from 53M to 1.07B, the gain is larger at larger sizes (p = 0.038 from the spread of the six sizes; the slope is positive with means, medians and trimmed means). Four of the six sizes were seen before registration, the gain is not monotonic, two sizes ran on B200 (with L40S sizes alone the size-spread interval includes zero), and the rise comes from the model without a prior while the prior stays near 90%." },
+  { f: "F111", status: "holds", prereg: true, seeds: "8 per size", claim: "At a fixed 300M tokens with 7% arithmetic, the helix prior raises held-out accuracy averaged over training by 22.8 to 36.1 points at each of nine sizes from 53M to 1.07B (ten size-by-GPU cells, 8 of 8 seeds in each). On the eight L40S sizes the pre-registered test finds the gain increasing with size: +1.66 points per e-fold of non-embedding parameters (median-gain slope +0.96, trimmed +1.19; seed-bootstrap 90% CI [+0.71, +2.68], both halves positive; 90% residual interval [+0.03, +3.30], two-sided p = 0.096). The three sizes never seen before registration do not show it on their own (mean slope +0.93, median −0.48, trimmed +0.41; CI [−0.71, +2.68]), so this says only that the new sizes did not fall below the earlier trend. Along this ladder tokens per non-embedding parameter fall from 21 to 0.5, and the increase comes from the model without the prior getting weaker (−1.55 per e-fold; median −0.83, trimmed −1.11) while the prior arm stays at 89–90." },
+  { f: "F99", status: "holds", prereg: true, seeds: "8 per size", claim: "The earlier six-size test on mixed hardware, superseded as the headline by F111. At a fixed 300M tokens with 7% arithmetic, over six sizes from 53M to 1.07B, the gain is larger at larger sizes (six-size mixed-hardware fit: p = 0.038 from the spread of the six sizes; the slope is positive with means, medians and trimmed means). Four of the six sizes were seen before registration, the gain is not monotonic, two sizes ran on B200 (with L40S sizes alone the size-spread interval includes zero), and the rise comes from the model without a prior while the prior stays near 90%." },
   { f: "F74", status: "holds", seeds: "one model per checkpoint", claim: "Number geometry reaches half its final value in (9, 21]B tokens, few-shot addition in (84, 210]B; target coordinates are decodable in all eight final models for 27 of 34 domains." },
 ];
 // F81 screen (gains at 42B / 210B, robust marks, floor / ceiling bands) and F74 per-domain decodability (x / 8)
@@ -1157,8 +1158,8 @@ function sitesChart() {
   return { build, update };
 }
 
-/* ---------------------------------------------------------------- six sizes at 300M tokens: dumbbells (F87 8-seed means, F99 table) */
-const SIZES = [["53M", 66.1, 88.9, 22.8, ""], ["93M", 60.9, 89.8, 28.9, ""], ["190M", 66.5, 90.0, 23.5, ""], ["294M", 60.8, 89.9, 29.1, "†"], ["505M", 57.5, 89.7, 32.2, ""], ["1.07B", 53.3, 89.4, 36.1, "†"]];
+/* ---------------------------------------------------------------- nine sizes at 300M tokens: dumbbells (F111 table; 294M is the L40S cell, the B200 one is +29.1) */
+const SIZES = [["53M", 66.1, 88.9, 22.8, ""], ["93M", 60.9, 89.8, 28.9, ""], ["136M", 62.0, 89.9, 27.8, ""], ["190M", 66.5, 90.0, 23.5, ""], ["294M", 60.5, 89.5, 29.0, ""], ["391M", 64.1, 89.6, 25.5, ""], ["505M", 57.5, 89.7, 32.2, ""], ["731M", 59.0, 89.7, 30.7, ""], ["1.07B", 53.3, 89.4, 36.1, "†"]];
 function sizeChart() {
   const box = $("#c-size"), st = {};
   $("#l-size").replaceChildren(
@@ -1168,7 +1169,7 @@ function sizeChart() {
   function build() {
     box.replaceChildren();
     const W = Math.max(280, box.clientWidth || 600), narrow = W < 520, rh = 38, m = { l: narrow ? 56 : 70, r: narrow ? 50 : 64, t: 8, b: 34 }, H = m.t + SIZES.length * rh + m.b;
-    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Curve-average accuracy without and with the helix prior at six model sizes, 300M tokens, 7% arithmetic" }, box);
+    const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": "Curve-average accuracy without and with the helix prior at nine model sizes, 300M tokens, 7% arithmetic" }, box);
     const x = lin(40, 100, m.l, W - m.r);
     for (const v of [40, 50, 60, 70, 80, 90, 100]) { svg("line", { x1: x(v), x2: x(v), y1: m.t, y2: H - m.b, stroke: css("--grid") }, s); if (v % 20 === 0) txt(s, x(v), H - m.b + 16, v + "%", null, "middle"); }
     txt(s, (m.l + W - m.r) / 2, H - 3, "curve-average held-out accuracy", null, "middle");
@@ -1332,7 +1333,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf a634c20).";
+  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 444ac79).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
