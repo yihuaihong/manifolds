@@ -531,7 +531,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
   </figure>
   <figure class="paper narrow" style="margin-top:18px">
     <div class="plate"><img src="media/fig3_size.png" alt="Paper Figure 3: gain of the helix prior against model size with 300M tokens, 0.745 tokens per parameter or 0.318 tokens per parameter (7% arithmetic), and with 2% arithmetic in its own panel, every seed shown as a dot"></div>
-    <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior (mean of 8 paired seeds with 95% interval; dots: seeds).
+    <figcaption><b>Paper Figure 3. How the gain changes with model size depends on what is held fixed.</b> Gain of the helix prior (mean of 8 paired seeds with 95% interval; dots: seeds). Bottom: with 2% arithmetic and 300M tokens on one cluster, the prior adds 48.0 to 53.0 points at each of five sizes from 53M to 505M (8 of 8 seeds at each size). A pre-registered test finds the gain rising with log size, by 1.27 points per e-fold of parameters; this is a partial confirmation, because three of the five sizes were seen before the test, and the rise above 190M comes from the model without the prior getting weaker.
       <span class="chips"><span class="chip">pre-registered</span></span></figcaption>
   </figure>
   <p class="tnote">The two results fit together because the gain varies mainly with the number of training tokens: within one size it first rises and then falls, peaking roughly between 70M and 130M tokens with 7% arithmetic, and with more tokens the model without a prior catches up.</p>
@@ -1329,7 +1329,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-20 · matches the paper draft v2 (Overleaf 3298015).";
+  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf d262a6b).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
