@@ -779,3 +779,47 @@ refused), and the choice goes back to the user. If it passes, nothing changes. T
 every 731M log) and the amendment-5 resume-OOM contingency apply.
 
 ## pt2sz deadline (the user, 2026-11-10): "2. 给 pt2sz 定一个截止日：比如 11-13 还没开跑，论文的 2% 尺寸部分就只用已有的 3 个尺寸（F98），不再等它。"
+
+## 136M dropped (2026-11-11, the user; before any ptsz read-out)
+用户 2026-11-11：「没问题，你直接帮我做就行」（取消冗余作业的建议：集群拥堵、fair-share 低，只保留六流形组合和 731M）. The 23 136M jobs still queued were cancelled; 9 of its 32 stage-A runs had finished. 136M leaves the registered analysis.
+Before the first read-out, readout_ptsz.py / select_ptsz.py get an amendment that drops 136M from the primary, secondary
+and descriptive slopes. The ladder is then the 6 F99 points + 294M (L40S) + 391M + 731M. 136M's 9 finished runs are listed
+as descriptive only. 731M with expandable segments (amendment 7) and the seed-2 smoke 22378673 stay queued.
+
+## Smoke S2 result (job 22378673, read 2026-11-12 10:08 EST by the coordinator)
+S2 SMOKE PASS on all five criteria (tests/smoke_report_s2.py): ALLOC line present; S2A/S2B/S2C rc 0, no OOM; resumed at step 200 with lm 6.34010648727417 equal to S2A; step-0 lm 11.737107 vs CPU reference 11.737274 (within 2e-4); S2C reached 260. Peak reserved 43.86 GiB on the resume segment (headroom 0.56 GiB; nvidia-smi max 45,409 of 46,068 MiB): tight but no OOM. The 32 queued 731M jobs stay as submitted (amendment 7).
+
+## Stage A selection and X / C submission (coordinator, 2026-11-15 ~05:25 EST)
+All 32 731M stage-A jobs COMPLETED (last end 05:06). m3 check: every 731M log of the current wave (32 logs, jobs 22591xxx) has exactly one "ALLOC: PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True" line and no OOM; the 16 logs without it are the superseded pre-amendment-7 jobs (2234xxxx, 4 of them the seed-2 OOMs).
+`select_ptsz.py --write` (tests/select_after_A_20261115.out; decisions.json 6 entries, picks.json): 294m none 9.6e-3 (62.5) closed, win-ctx 6e-4 (89.3; top2 with 1.2e-3 -> lower bpb) closed; 391m none 9.6e-3 (65.4) closed, win-ctx 6e-4 (89.5; top2 -> bpb) closed; 731m none 9.6e-3 (58.2 vs 4.8e-3 55.0) OPEN at the upper edge -> X at 1.92e-2 seeds 0-3; 731m win-ctx 6e-4 (89.6; top2 -> bpb) closed. 136m INCOMPLETE (dropped 2026-11-11; nothing decided, nothing written for it).
+Rendered and `sbatch --test-only` OK for all 24 (tests/submit_test_XC_20261115.log; flags checked: 731M expandable_segments, --save_model on C only, --nice=100, l40s_public). Submitted 24 jobs 23226926-23226996 (tests/submit_go_XC_20261115.log): X 731m none 1.92e-2 s0-3; C 731m win-ctx 6e-4, 391m none 9.6e-3 / win-ctx 6e-4, 294m none 9.6e-3 / win-ctx 6e-4, seeds 4-7. After the X: select_ptsz.py again -> C for 731m none (or STOP). Still owed before the first read-out: the 136M-drop amendment of readout_ptsz.py / select_ptsz.py. /scratch at 94.9% at submission (C models ~34 GB).
+
+## Secondary test after the 136M drop: coordinator's assessment (2026-11-15 ~21:10 EST, before any C run started; for the user)
+Power of a two-point secondary (731M gap - 391M gap, seeds only): expected difference from F99's slope +2.79 per e-fold x ln(731/391) = +1.75 points; stage-A seed SD of none at the pick 7.2 (391M) / 2.9 (731M), win-ctx < 0.7, so SE at 8 + 8 seeds ~ 2.7 -> one-sided power ~ 15%; two points also cannot separate a trend from one size's own deviation (F99 was not monotone). Recommendation to the user: make the secondary descriptive (both gaps and their difference with seed intervals, no verdict word); the primary over the 7 L40S sizes unchanged; no extra runs. Pending the user's answer; goes into the 136M-drop amendment of readout_ptsz.py before the first read-out.
+- 2026-11-16 ~13:10: deleted smoke/S2A/ckpt_whole_helix3_seed2_psz-731m-lr6e-4-win-ctx.pt (8.8 GB; 200-step resume-test checkpoint of the S2 smoke, verdict already recorded above; /scratch quota at 98%).
+
+## X result, 731M none C, and 136M re-added (coordinator, 2026-11-16 ~22:00 EST)
+- All 24 X / C jobs of 11-15 (23226926-23226996) COMPLETED (731M ~9.1-9.3 h, 391M ~5.1 h, 294M ~4.1 h).
+- `select_ptsz.py --write` (tests/select_after_X_20261116.out; dry run first: select_after_XC_20261116_dry.out): 731m none
+  seeds 0-3 at 1.2e-3 35.9, 2.4e-3 48.8, 4.8e-3 55.0, 9.6e-3 58.2, 1.92e-2 57.0 -> top two within 2 -> lower in-training
+  bpb 9.6e-3 (1.1556 vs 1.2075) -> closed -> C at 9.6e-3 seeds 4-7 (decisions.json entry seq 6). Rendered, test-only OK
+  (tests/submit_test_C731none_20261116.log; --save_model present, l40s_public, nice 100, 23:30), submitted 23425744,
+  23425746, 23425747, 23425748 (tests/submit_go_C731none_20261116.log).
+- **136M re-added (the user, 2026-11-16: 「136M为什么要去掉，可以重新加上吗」).** This reverses "136M dropped" above
+  (dropped 11-11 only for queue congestion; the L40S queue has since cleared 24 jobs in under a day). Same setup: the 32
+  136M stage-A job files = the generator's rendering (`--check --stage A --size 136m` OK), pinned trainer
+  code7/tools/pretrain_range.py a3bce3ab63c1 (the jobs assert it), no HOLD. 9 runs finished on 11-11 are kept; the 23
+  cancelled ones (sacct CANCELLED, no run JSON, no claim, none queued) are resubmitted from their unchanged job files; each
+  SUBMITTED_ flag gets the new job line appended. Then select_ptsz.py -> X / C for 136M as registered.
+- Consequence: the registered analysis stands as written (primary over the eight L40S sizes, secondary over 136M / 391M /
+  731M with criteria (a)(b)). The planned 136M-drop amendment of readout_ptsz.py / select_ptsz.py is no longer needed, and
+  the "descriptive secondary" recommendation of 11-15 is withdrawn (no code change). Cost ~23 x 1.8 + 8 x 1.8 (+ X 4 x
+  1.8) ~ 55-63 L40S-h; the read-out waits for the 731M none C (~9 h each) in any case.
+- /scratch 95.97% after deletions (smoke S2A ckpt 8.8 GB; 3 OLMo checkpoints in /scratch/yh6210/llmadd_models, 41 GB,
+  user-approved; conda clean freed 0.24 GB only: the rest of pkgs is hard-linked into the envs). Not llmadd_torch/models
+  (the tokenizer path the jobs use).
+
+## Provisional look (coordinator, 2026-11-18 ~20:16 EST; 136M stage A 11/23 done, no 136M decision)
+`readout_ptsz.py` (cc44adc8329d) -> tests/readout_PROVISIONAL_20261118T2020.txt. Both verdicts NOT DETERMINABLE (136M not available), as designed. NOTE: this first run of the read-out wrote FIRST_READOUT.json (final cells 294m / 391m / 731m; c9750c8e91a9; read-only), its built-in first-read stamp: OWN_FAILURES.txt entries added after it are ignored. Descriptive, 8 seeds each (area points, prior - none, paired): 294M-L40S +29.0 [+25.7, +32.2], 391M +25.5 [+22.4, +28.8], 731M +30.7 [+28.4, +33.2], all 8/8; R_0.5 4.57 / 4.17 / 4.94. The prior arm sits at 89.5-89.7 at every new size; none 60.5 / 64.1 / 59.0 (the gain follows none). With the reused cells: 53M +22.8, 93M +28.9, 190M +23.5, 505M +32.2 (1.07B B200 +36.1, descriptive). No slope or verdict is read from this; the registered read-out runs once 136M has its C decision.
+- 2026-11-21 ~23:30 (coordinator): scratch quota full -> 136m none s6/s7 FAILED at start (0:53, no log); resubmitted: psz-136m-lr4.8e-3-none-s6 24046598 psz-136m-lr4.8e-3-none-s7 24046601 ; watcher ptsz-136m re-armed.
+- 2026-11-22 (coordinator): 136m stage A complete (none C s4-7 also complete, incl. the two resubmitted after the quota failure). select_ptsz --write: 136m win-ctx closed at 6e-4 (6e-4 89.6 vs 1.2e-3 89.4 within 2 -> lower bpb; lower edge within 2: not open) -> decisions.json 9 entries. Stage C win-ctx s4-7 submitted (24077478-24077481, L40S, test-only predicted start 2026-11-27); watcher ptsz-136m-C. After they finish: RUNBOOK_136m.md step 4.

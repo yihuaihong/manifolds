@@ -1,0 +1,66 @@
+{
+ "pass": true,
+ "valid_data_flagged": false,
+ "checks": [
+  {
+   "check": "flag consumed: args.drop_domains_after = 'torus,box5@7324' and run JSON drop_domains_after = domains ['torus', 'box5'], step 7324",
+   "ok": true,
+   "value": "{'arg': 'torus,box5@7324', 'json': {'domains': ['torus', 'box5'], 'step': 7324, 'dropped_lines': {'torus': 140621, 'box5': 140621}}}"
+  },
+  {
+   "check": "eval site keys = EXT in order",
+   "ok": true,
+   "value": "['dim', 'cities', 'countries', 'torus', 'box5']"
+  },
+  {
+   "check": "drop step = the first step after the prior window (window 916..7323)",
+   "ok": true,
+   "value": "[916, 7323, 7324]"
+  },
+  {
+   "check": "dom_sites: every domain > 0 at every eval before step 7324; ['torus', 'box5'] = 0 and every other domain > 0 at every eval from it",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "dropped_lines at every eval = the count recomputed from the cycling rule and the drop step",
+   "ok": true,
+   "value": "{'torus': 140621, 'box5': 140621}"
+  },
+  {
+   "check": "run JSON drop_domains_after.dropped_lines = the last eval's dropped_lines",
+   "ok": true,
+   "value": "{'domains': ['torus', 'box5'], 'step': 7324, 'dropped_lines': {'torus': 140621, 'box5': 140621}}"
+  },
+  {
+   "check": "slot share at the last eval: slot 1 = (lines in two-line rows / K + lines alone in their row) / lines, +- max(0.05, 4 sd)",
+   "ok": true,
+   "value": "{'dim': [0.6506, 0.65, 70310, 164058], 'cities': [0.5002, 0.5, 0, 234368], 'countries': [0.6496, 0.65, 70310, 164058], 'torus': [0.4975, 0.5, 0, 93747], 'box5': [0.5015, 0.5, 0, 93747]}"
+  },
+  {
+   "check": "geo_<d> of ['torus', 'box5'] not logged from step 7324 on (no sites)",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "the dropped domains' held-out evals (['torus_held', 'box5_held']) logged and finite at every eval",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "data_sha = the registered run's at every common eval before step 7324 (30) and different at every one from it (45)",
+   "ok": true,
+   "value": "[(0, '866c9a3e16b71e2f', '866c9a3e16b71e2f'), (250, 'abf108e4722a913b', 'abf108e4722a913b')]"
+  },
+  {
+   "check": "token share of every kept line type ['numbers', 'dim', 'cities', 'countries'] = the registered run's at every common eval (same lines, same total tokens)",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "step-0 lm = the registered run's (rel. 1e-6; same data, same init; device numerics may differ: flag only)",
+   "ok": true,
+   "value": "[11.597734451293945, 11.597734451293945]"
+  }
+ ]
+}

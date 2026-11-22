@@ -344,3 +344,21 @@ read-out after this point is an amendment written here before any pt2sz result i
 ## Deadline (the user, 2026-11-10)
 "给 pt2sz 定一个截止日：比如 11-13 还没开跑，论文的 2% 尺寸部分就只用已有的 3 个尺寸（F98），不再等它。" If no pt2sz job has started by
 2026-11-13, the paper's 2% size part uses F98's three sizes only. The batch may still run and be reported later.
+
+## Cancelled (2026-11-11, the user)
+用户 2026-11-11：「没问题，你直接帮我做就行」（取消冗余作业的建议：集群拥堵、fair-share 低，只保留六流形组合和 731M）. The coordinator cancelled the pending jobs [correction: 4 stage-A runs had already finished on 11-08..11-10 (294m none 1.92e-2 s0,
+2.4e-3 s0, 4.8e-3 s0; win-ctx 1.5e-4 s3); the coordinator's earlier 'none started' was wrong].
+**Reversed the same evening (the user, 2026-11-11): 「这个可以保留一下：pt2sz」.** 3 jobs had not been cancelled yet and stay queued; the
+61 cancelled ones' SUBMITTED_ flags went to superseded_cancel_20261111/, the 4 finished runs' flags were put back, and the 57
+cancelled-and-unrun jobs were resubmitted unchanged with `make_jobs_pt2sz.py --stage A --submit` (log resubmit_20261111.log;
+`--check --stage A` passed first). The 11-13 deadline rule stands.
+- 2026-11-11: p2z-93m-lr9.6e-3-none-s2 had also been cancelled (late) while its flag was kept; flag moved, resubmitted alone (--run). Check: 60 queued + 4 finished = 64, none missing.
+
+## Stage A done, selection and C (coordinator, 2026-11-18 ~20:45 EST)
+All 64 stage-A runs COMPLETED (expwatch pt2sz). `select_pt2sz.py` (dry: tests/select_after_A_20261118_dry.out; --write: tests/select_after_A_20261118.out; decisions.json 4 entries, picks.json): every arm closed -> C (seeds 4-7):
+- 93m none 4.8e-3 (2.4e-3 18.9, 4.8e-3 20.4, 9.6e-3 20.3, 1.92e-2 13.9; top two within 2 -> lower in-training bpb);
+- 93m win-ctx 6e-4 (75.4; top two with 1.2e-3 -> bpb);
+- 294m none 9.6e-3 (26.8);
+- 294m win-ctx 6e-4 (78.2; top two with 3e-4 -> bpb; pt2main rule 1, descriptive only, would pick 1.2e-3, the audit's I1 pick-sensitivity point).
+16 C jobs: test-only OK, submitted (tests/submit_C_20261118.log; --save_model, 08:00). Then readout_pt2sz.py (registered rule (a)(b)(c), with the audit's I1 / I2 numbers carried into the FINDINGS entry).
+- 2026-11-21 ~23:30 (coordinator): scratch quota full from 11-21 00:24 -> 12 stage C jobs FAILED at start (0:53, no log); resubmitted unchanged sbatch: p2z-93m-lr4.8e-3-none-s7 24046106 p2z-93m-lr6e-4-win-ctx-s4 24046513 p2z-93m-lr6e-4-win-ctx-s5 24046518 p2z-93m-lr6e-4-win-ctx-s6 24046520 p2z-93m-lr6e-4-win-ctx-s7 24046522 p2z-294m-lr9.6e-3-none-s5 24046563 p2z-294m-lr9.6e-3-none-s6 24046566 p2z-294m-lr9.6e-3-none-s7 24046572 p2z-294m-lr6e-4-win-ctx-s4 24046589 p2z-294m-lr6e-4-win-ctx-s5 24046591 p2z-294m-lr6e-4-win-ctx-s6 24046594 p2z-294m-lr6e-4-win-ctx-s7 24046595 ; watcher pt2sz-C re-armed.

@@ -1,0 +1,103 @@
+--- code/tools/pretrain_range.py	2026-11-17 01:14:04.000000000 -0500
++++ out_v7/code/tools/pretrain_range.py	2026-11-22 02:10:01.515067517 -0500
+@@ -172,6 +172,7 @@
+ HELD_BLOCKS = 9       # Rev D (--held_strat value_freq): the hundreds blocks 100-199 .. 900-999, two halves each
+ REVD_DEFAULTS = {"held_strat": "freq", "lam_decay": False}   # Rev D flags: kept out of the run JSON's args at these values
+ REVE_DEFAULTS = {"anc_eval_max": 0}   # Rev E (testing only): kept out of the run JSON's args at this value
++REVV7_DEFAULTS = {"drop_domains_after": ""}   # pt6v2 Amendment V7: kept out of the run JSON's args at this value
+ 
+ 
+ def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
+@@ -481,6 +482,8 @@
+     ap.add_argument("--text_min", type=int, default=16, help="--site text: skip the prior on batches with fewer numbers")
+     ap.add_argument("--ckpt_every", type=int, default=0, help="resumable checkpoint every N steps (0 = off)")
+     ap.add_argument("--stop_after", type=int, default=-1, help="testing only: exit after this step (simulated preemption)")
++    ap.add_argument("--drop_domains_after", default="", help="pt6v2 V7: 'd1,d2@S' = from training step S on, the lines "
++                    "of these domains are drawn as before and left out of the row (the row's text fills their space)")
+     ap.add_argument("--seed", type=int, default=0)
+     ap.add_argument("--tag", default="")
+     ap.add_argument("--d_model", type=int, default=384)
+@@ -1321,6 +1324,14 @@
+     for L in sorted(set(geo_layers) | set(read_layers)):
+         model.model.layers[L - 1].register_forward_hook(lambda _m, _i, o, L=L: store.__setitem__(L, nl._hidden(o)))
+     steps = int(args.tokens // (args.bs * args.seq))
++    DROP_D, DROP_AT = (), -1   # V7: domains whose lines are left out from step DROP_AT on
++    if args.drop_domains_after:
++        d_, s_ = args.drop_domains_after.split("@")
++        DROP_D, DROP_AT = tuple(lst(d_)), int(s_)
++        assert DOM and DROP_D and len(set(DROP_D)) == len(DROP_D) and set(DROP_D) <= set(EXT) and 0 < DROP_AT < steps, (
++            "--drop_domains_after", DROP_D, DROP_AT, steps)
++        print(f"V7 drop_domains_after = {args.drop_domains_after!r}: domain lines {list(DROP_D)} left out from step "
++              f"{DROP_AT} of {steps} (drawn, then dropped; text fills the space)", flush=True)
+     warm = max(1, steps // 100)
+     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.wd, fused=(dev == "cuda"))
+     sched = lambda s: min(1.0, (s + 1) / warm) * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(1.0, s / steps))))
+@@ -1591,7 +1602,7 @@
+         rows, ops, ans, tmeta = [], [], [], []
+         if DOM:   # Rev B: per-domain sites (row, position, item), token counts per line type, first line per row
+             batch.dsite = {d: [] for d in EXT}; batch.ntok = {t: 0 for t in ("text",) + tuple(DOMS)}; batch.first = []
+-            batch.ntext = []; batch.slot = []
++            batch.ntext = []; batch.slot = []; batch.dropped = []
+         if HO:   # Rev C: text exposure of the numbers 0..999 in this batch (text-site rule / raw tokens)
+             batch.h_st, h_txt, batch.h_ntext = np.zeros(1000, dtype=np.int64), [], []
+         for r in range(args.bs):
+@@ -1643,6 +1654,9 @@
+             d = EXT[((s * args.bs + r) * args.extra_lines + j) % len(EXT)]
+             ext.append((d, DPOOL[d][int(dom_rng.integers(len(DPOOL[d])))]))
+         ext = [ext[i] for i in order_rng.permutation(len(ext))]
++        if DROP_D and s >= DROP_AT:   # V7: drawn as before (every stream unchanged), then left out of the row
++            batch.dropped += [t for t, _ in ext if t in DROP_D]
++            ext = [(t, p) for t, p in ext if t not in DROP_D]
+         items = [("numbers", p) for p in parts] + ext
+         n0 = args.seq - sum(len(p[0]) for p in parts)   # the default path's text length (text, then the numbers line)
+         o = int(rng.integers(0, len(train) - n0))        # the default path's draw: same stream, same bound
+@@ -1960,6 +1974,8 @@
+         # and a running sha256 of every training batch (the data mixture must be identical across arms of one seed and K)
+         dyn.update(dtok={t: 0 for t in ("text",) + tuple(DOMS)}, dfirst={t: 0 for t in DOMS}, dused={d: 0 for d in DOMS},
+                    data_sha="", dslot={d: [0] * args.extra_lines for d in EXT})   # A2: domain lines per slot after numbers
++    if DROP_D:   # V7: lines drawn and left out, per domain (saved with dyn)
++        dyn["ddrop"] = {d: 0 for d in DROP_D}
+     if HO:   # Rev C counters (saved with dyn): candidate pairs redrawn for H, lines content-scanned, text exposure of 0..999
+         # (text-site rule: all steps / prior-on steps; raw token occurrences)
+         dyn["held"] = {"rej": 0, "lines": 0, "st": np.zeros(1000, dtype=np.int64), "st_on": np.zeros(1000, dtype=np.int64),
+@@ -2318,6 +2334,8 @@
+         # A2: share of each domain's lines in slot 1 / 2 / .. after the numbers line (slot 1 = the eval position)
+         lg["slot_frac"] = {d: [c / max(1, sum(v)) for c in v] for d, v in dyn["dslot"].items()}
+         lg["data_sha"] = dyn["data_sha"][:16]
++        if DROP_D:   # V7: lines left out so far, per domain
++            lg["dropped_lines"] = dict(dyn["ddrop"])
+         return lg
+ 
+     def dom_metrics(curve):
+@@ -2399,6 +2417,15 @@
+                 dyn["dfirst"][t] += 1
+             for t, j in batch.slot:
+                 dyn["dslot"][t][j] += 1
++            if DROP_D:   # V7
++                for t in batch.dropped:
++                    dyn["ddrop"][t] += 1
++                if s == 0 or s == DROP_AT:
++                    print(f"V7 step {s}: {len(batch.dropped)} lines dropped in this batch, sites "
++                          f"{ {d: int(len(batch.dsite[d])) for d in EXT} }", flush=True)
++                if s == 0:   # the flag is parsed as given and nothing is dropped before DROP_AT
++                    assert args.drop_domains_after == ",".join(DROP_D) + f"@{DROP_AT}" and not batch.dropped, (
++                        args.drop_domains_after, batch.dropped)
+             if s == 0:   # every domain site decodes to its item; the stored rows are the model's input
+                 assert (batch.np == x.cpu().numpy()).all()
+                 for d in EXT:
+@@ -2542,11 +2569,14 @@
+             res_ = {"args": {k: v for k, v in vars(args).items() if (DOM or k not in DOM_ARGS)
+                              and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])
+                              and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])
+-                             and not (k in REVE_DEFAULTS and v == REVE_DEFAULTS[k])}, "steps": steps,
++                             and not (k in REVE_DEFAULTS and v == REVE_DEFAULTS[k])
++                             and not (k in REVV7_DEFAULTS and v == REVV7_DEFAULTS[k])}, "steps": steps,
+                     "geo_layers": geo_layers, "read_layers": read_layers,
+                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
+                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
+                     "curve": curve}
++            if DROP_D:   # V7: the flag as consumed and the lines left out so far
++                res_["drop_domains_after"] = {"domains": list(DROP_D), "step": DROP_AT, "dropped_lines": dict(dyn["ddrop"])}
+             if HO:   # Rev C: H, its counts, the eval sets' pairs and masks, the exposure during training
+                 res_.update(held_operands=HINFO, held_exposure={k: dyn["held"][k].tolist() for k in ("st", "st_on", "raw")})
+             if DOM:   # Rev B: domain set-up and the per-domain read-outs of this curve

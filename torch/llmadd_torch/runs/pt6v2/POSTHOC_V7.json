@@ -1,0 +1,160 @@
+{
+ "amendment": "V7",
+ "kind": "post-hoc",
+ "approval": "user-approved 2026-11-22 (\"可以的\", relayed by the main session); post-hoc, exploratory, no verdict rule",
+ "why": "at lr 2e-3 all6 beats only-dim on strict dim by +25 pts at the end of training (8/8 seeds), the gain appears after the window and needs the torus / box5 priors (all4 ~ only-dim, F106); V5 probes (F107): only-dim still encodes the answer at the answer position but fails to output it. Hypothesis: torus / box5 share a lattice answer code with dim and post-window LM training on their lines keeps dim's state->token readout working. Prediction (hypothesis): without torus / box5 lines after the window, dim's end-of-training advantage over only-dim largely disappears.",
+ "reading_rule": "descriptive, no verdict rule, no gate: dim strict final3 / area of all6drop vs the registered all6@2e-3 and only-dim@2e-3, paired by seed; dim's drop from the window's close to the end; torus / box5 accuracy after the drop (out_v7/v7read.py); readout_pt6v2.py does not read out_v7/",
+ "cell": "all6drop@2e-3",
+ "seeds": [
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23
+ ],
+ "drop": {
+  "domains": [
+   "torus",
+   "box5"
+  ],
+  "step": 7324,
+  "meaning": "from step 7324 (the first step after the prior window 916..7323) the torus / box5 lines are drawn and left out; the row's text fills their space"
+ },
+ "trainer": {
+  "path": "runs/pt6v2/out_v7/code/tools/pretrain_range.py",
+  "sha12": "8da22c6ea208",
+  "parent_sha12": "a398fccbfe93",
+  "patch": "runs/pt6v2/out_v7/patch_trainer_v7.py",
+  "diff": "runs/pt6v2/out_v7/trainer_v7.diff"
+ },
+ "check_v7": {
+  "path": "runs/pt6v2/out_v7/check_v7.py",
+  "sha12": "cf44ea38c274"
+ },
+ "code_commit": "ef7b8854",
+ "out_dir": "runs/pt6v2/out_v7",
+ "driver": "runs/pt6v2/posthoc_v7_jobs.py",
+ "device": "A100 / H100 (a100_tandon,h100_tandon), one job per run; registered seeds 16-22 ran on B200: a flag in the read",
+ "runs": {
+  "pt6v2-all6drop-lr2e-3-s16": {
+   "seed": 16,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s16",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s16.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s16",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "294118cbe901",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s16.sbatch",
+   "registered_sha12": "45dc201bb979",
+   "job_id": "24064072"
+  },
+  "canary-all6drop-s16": {
+   "seed": 16,
+   "role": "canary",
+   "slurm_name": "llmadd_pt6v2v7-canary-s16",
+   "drop": "torus,box5@320",
+   "job_file": "out_v7/job_canary-all6drop-s16.sbatch",
+   "out": "runs/pt6v2/out_v7/canary-all6drop-s16",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "26484a9eae9b",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s16.sbatch",
+   "registered_sha12": "45dc201bb979",
+   "job_id": "24064071"
+  },
+  "pt6v2-all6drop-lr2e-3-s17": {
+   "seed": 17,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s17",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s17.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s17",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s17/pt6v2-all6-lr2e-3/run_whole_helix3_seed17_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "23906d5a8f6e",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s17.sbatch",
+   "registered_sha12": "90108e7b0f79",
+   "job_id": "24064073"
+  },
+  "pt6v2-all6drop-lr2e-3-s18": {
+   "seed": 18,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s18",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s18.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s18",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s18/pt6v2-all6-lr2e-3/run_whole_helix3_seed18_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "179a007b479f",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s18.sbatch",
+   "registered_sha12": "9e09468ce0bd",
+   "job_id": "24064074"
+  },
+  "pt6v2-all6drop-lr2e-3-s19": {
+   "seed": 19,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s19",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s19.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s19",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s19/pt6v2-all6-lr2e-3/run_whole_helix3_seed19_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "98e0d1bad692",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s19.sbatch",
+   "registered_sha12": "e1104d94011a",
+   "job_id": "24064075"
+  },
+  "pt6v2-all6drop-lr2e-3-s20": {
+   "seed": 20,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s20",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s20.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s20",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s20/pt6v2-all6-lr2e-3/run_whole_helix3_seed20_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "07f2eb9108c8",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s20.sbatch",
+   "registered_sha12": "be28275bdafc",
+   "job_id": "24064076"
+  },
+  "pt6v2-all6drop-lr2e-3-s21": {
+   "seed": 21,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s21",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s21.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s21",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s21/pt6v2-all6-lr2e-3/run_whole_helix3_seed21_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "f03ae98bd50b",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s21.sbatch",
+   "registered_sha12": "ae0e560a69f1",
+   "job_id": "24064078"
+  },
+  "pt6v2-all6drop-lr2e-3-s22": {
+   "seed": 22,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s22",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s22.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s22",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s22/pt6v2-all6-lr2e-3/run_whole_helix3_seed22_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "66db538a9f40",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s22.sbatch",
+   "registered_sha12": "ae51305ecc24",
+   "job_id": "24064079"
+  },
+  "pt6v2-all6drop-lr2e-3-s23": {
+   "seed": 23,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7-all6drop-s23",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7/job_pt6v2-all6drop-lr2e-3-s23.sbatch",
+   "out": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s23",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s23/pt6v2-all6-lr2e-3/run_whole_helix3_seed23_pt6v2-all6-lr2e-3.json",
+   "job_sha12": "5b6e69ccd31a",
+   "registered_job": "job_pt6v2-all6-lr2e-3-s23.sbatch",
+   "registered_sha12": "03a82a2db534",
+   "job_id": "24064080"
+  }
+ }
+}

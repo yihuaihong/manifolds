@@ -1,0 +1,85 @@
+{
+ "log": [
+  {
+   "size": "294m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "seq": 0,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "294m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 1,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "391m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "seq": 2,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "391m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 3,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "731m",
+   "arm": "none",
+   "stage": "X",
+   "lr": "1.92e-2",
+   "seq": 4,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "731m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 5,
+   "written": "2026-11-15T05:20:43-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "731m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "seq": 6,
+   "written": "2026-11-16T22:02:45-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "136m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "4.8e-3",
+   "seq": 7,
+   "written": "2026-11-19T06:03:08-05:00",
+   "by": "select_ptsz.py"
+  },
+  {
+   "size": "136m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 8,
+   "written": "2026-11-22T06:25:43-05:00",
+   "by": "select_ptsz.py"
+  }
+ ]
+}

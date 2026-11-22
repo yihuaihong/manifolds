@@ -1,0 +1,40 @@
+{
+ "log": [
+  {
+   "size": "93m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "4.8e-3",
+   "seq": 0,
+   "written": "2026-11-18T20:41:45-05:00",
+   "by": "select_pt2sz.py"
+  },
+  {
+   "size": "93m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 1,
+   "written": "2026-11-18T20:41:45-05:00",
+   "by": "select_pt2sz.py"
+  },
+  {
+   "size": "294m",
+   "arm": "none",
+   "stage": "C",
+   "lr": "9.6e-3",
+   "seq": 2,
+   "written": "2026-11-18T20:41:45-05:00",
+   "by": "select_pt2sz.py"
+  },
+  {
+   "size": "294m",
+   "arm": "win-ctx",
+   "stage": "C",
+   "lr": "6e-4",
+   "seq": 3,
+   "written": "2026-11-18T20:41:45-05:00",
+   "by": "select_pt2sz.py"
+  }
+ ]
+}

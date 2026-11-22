@@ -370,3 +370,117 @@ no gate; readout_pt6v2.py, CELLS.json, ALLOC.json, V3 / V4 and every registered 
 - 2026-11-20 ~18:15 (coordinator): V4 s20-s22 CHECKS PASS (all4 s20/s21/s22, all6full s21/s22; copies on H100 except where noted by check.txt). all6full final3 torus / box5 / dim: s21 99.5 / 95.5 / 98.9 (window 83.9 / 65.0 / 89.8; best none 93.6 / 60.2 / 69.9), s22 99.2 / 70.6 / 85.5 (93.2 / 41.1 / 71.4; 93.7 / 44.6 / 55.7) -> 7/7 seeds above window and above the best none lr on all three. all4 dim area h4 / h6: s20 +0.8 / +13.6, s21 +5.7 / +16.8, s22 -0.3 / +14.3 -> h6 > h4 in 7/7 (h6 - h4 = 17.2 12.1 18.7 20.5 12.8 11.1 14.6). bpb note: none@2e-3 s22 = 1.2387 (the known s22 outlier), so the final bpb read must not rest on none@2e-3 alone.
 - 2026-11-20 ~18:35 (coordinator): V4 complete, 16/16 CHECKS PASS, data_sha = pt6v2 in all. Devices: all4 A100 x3 / H100 x5; all6full B200 x2 / A100 x3 / H100 x3 (registered pt6v2 runs all B200: device change, flag only). 8-seed read tests/posthoc_speed_20261120/v4final.py -> v4final_out.txt: all6full - all6win@1e-3 final3 dim +12.3 [+5.9,+18.6] torus +9.4 [+5.4,+13.4] box5 +38.5 [+27.9,+49.1] (8/8 each); all6full beats the per-seed oracle best none lr on all six manifolds 8/8 (numbers +31.4, dim +35.2, cities +2.5, countries +2.1, torus +4.1, box5 +33.2); bpb 1.2112 vs none@2e-3 1.2098 (+0.11%), per-seed best none 1.2065 (+0.38%), window 1.2133. all4: dim area h4 +1.5 [-4.8,+7.8] (5/8) vs h6 +13.5 [+7.4,+19.6] (8/8), all6 - all4 area +12.0 [+3.8,+20.2] / final3 +22.0 [+8.6,+35.5] (7/8); numbers/cities/countries all6 - all4 within 0.4. Side read (v4tor.py): at lr 2e-3 every single prior lifts torus behaviour over none (area 19-37 vs 8.7) and all4 lifts it to 47.9 (8/8) - torus at 2e-3 is far below its N_m, so not a headline. Result audit (exp-auditor) started in the background.
 - 2026-11-20 ~18:55 (coordinator): V5 all 4 runs done, CHECKS PASS, 3 weight files each (s16 pair B200, s17 pair H100 copies; device change vs registered B200 for s17, flag only). Behavioural dim strict gap all6 - only-dim (out_v5/v5pair.py): s16 @7250 +0.0 / @12000 +15.5 / @18309 +24.1 (DiD +24.1); s17 +6.5 / +33.8 / +22.1 (DiD +15.6); registered pairs DiD +12.1 / +10.4. Both pairs have a gap >= 10 pt -> both answer the question, no extra seed. probe_v5.py --v5 launched on cpu_short (cpu_run.sh, 16 cpu, 48G, 1 h) -> out_v5/probe_v5.log.
+- 2026-11-20 ~19:20 (coordinator): code release step (a) (writer relayed the user's release request): pushed branch ptdom3 (ef7b8854 = the pt6v2 trainer) and refreshed the public mirror torch/llmadd_torch for pt6v2 / ptdom3 / ptdom2 / pt6comb / ptdom (manifolds main e85d205; 98 files, Slurm account names redacted, secret scan clean). LICENSE (MIT) and the README move wait for the user's own confirmation.
+- 2026-11-20 ~19:45 (coordinator): probe_v5 done (0 warnings; out_v5/probe_v5.log). Descriptive read: item positions (slot A, strict): lattice R2 0.96-0.99 at 18309 in all four runs, all6 - only-dim DiD_R2 within -0.004..+0.012 at L2-L6 (both seeds); answer position L5-L6 strict: R2 0.97-0.99 and nearest-lattice acc 1.000 in all four runs at all three checkpoints, while only-dim's own strict accuracy falls to 0.707 / 0.597 at 18309 (behaviour DiD +0.241 / +0.156 logged). Answer-position L2-L4 and transport-residual R2: mixed signs across seeds. Reading (preliminary, first result audit running): the post-window loss is not a loss of the item or answer-position representation; it is in the readout to the output token. Result audit (exp-auditor) started in the background.
+- 2026-11-20 ~20:10 (coordinator): V5 result audit back (tests/audit_v5_probe_result_20261120.md): S1 two fixes (s17 behaviour DiD was from eval 7250 -> window-mean baseline +21.6 / +18.2, verified out_v5/v5win.py; 'every layer' -> layers 2-6), S2 'wrong answers' -> strict ones, S3 holds and is strengthened by the transport residual on miss rows. FINDINGS F107 (manifolds main a5ef915), Notion V5 row green, writer informed.
+- 2026-11-20 ~20:50 (coordinator): release code gap fix: tools/manifold_domains.py data dir configurable (MANIFOLD_DATA) + missing-CSV domains skipped; pushed ptdom3 9d930c9 and main b313231; tag pt6v2-run = ef7b8854 (the commit the pt6v2 / V3 / V4 jobs ran). Checked (/scratch/yh6210/tmp_audit/relcheck): --dry_inputs of all6@1e-3 s16 byte-identical old vs patched without CSVs (table shas unchanged); all 36 domain tables identical with CSVs. The frozen run snapshots runs/*/code are untouched.
+- 2026-11-20 ~21:40 (coordinator): public release pushed, manifolds main 85f21ff (MIT LICENSE; reader-facing README from the writing session; old Burst README -> burst/README.md; 2288 per-seed JSON/CSV outputs under torch/llmadd_torch/runs/<batch>/out*/, redacted, numbers checked against sources). User confirmed in the coordinator session ('ok 按你推荐的来'); recipe confirmed as Overleaf 051d2e2 (several priors on to the end).
+
+## Amendment V6 (post-hoc interpretability, exploratory, 2026-11-22)
+User asked 2026-11-22 for interpretability verification of why the torus/box5 priors help dim; no-training read-outs are standing-authorized.
+Exploratory tier: no verdict rule, no gate; every number is reported. Code (exp-builder 2026-11-22): probe_v6.py (driver), probe_v6_lib/make_probe_copy6.py (probe copy of the V5 trainer sha 041b2f4241b9, counted edits E1-E4 as V5), probe_v6_lib/probe6_inner.py (the read-out, runs inside the trainer's main() with its own eval prompts), probe_v6_aggregate.py; out_v6/job_probe_v6.sbatch (cpu_short array over the 12 V5 checkpoints: all6 / only-dim x s16 / s17 x steps 7323 / 12000 / 18309; 7323 has no logged eval). Outputs only under out_v6/.
+Position: the answer-prediction position ap = seq - len(span) - 1 (the ' is' token, asserted, whose logits give the answer's first token; spans ' <item>' + '\n' = 2 tokens, asserted). Layers: 0 = embedding output, l = block l output. Forwards = the trainer's evaluate() (bf16 autocast, 250-row chunks, logits_to_keep = dom_max_ans + 1, exact match over the span). Sets: <d>_held / <d>_seen of dim, box5, torus (training template), seen rows of cities / countries; dim strict = rainbow6_summary.strict_mask (V5).
+- A1 decoders: grouped (by answer item) 9-fold ridge, alpha by inner grouped CV (V5's procedure, any width), state at ap -> dim 3-D exponents / box5 2-D integers / torus DTAB = the prior's cos/sin of both Z6 coordinates (4-D); OOF R2 and nearest-lattice accuracy on held + seen pooled, held, dim strict. Null: the same CV on 10 answer-label permutations (shuffled-label decoders, expect R2 <= 0). Layers 2-6.
+- A1 overlap: mean cos^2 of the principal angles between (a) the ridge decoder column spaces (rank = coordinate width, fit on seen rows) and (b) the top-k (k 3, 6) PCs of per-answer class means of seen rows, for dim-box5, dim-torus, box5-torus, dim-cities, dim-countries. Nulls: random subspaces of the same ranks (200), covariance-matched random subspaces (random combinations of each domain's own centred states, 200), shuffled-label decoders (10 per side); for (b) class means of row-shuffled answer labels (10).
+- A1 transfer: decoder fit on the source domain's rows (all), applied to the target's states, then an OLS map (intercept) from those 2-4 outputs to the target's coordinates, grouped 9-fold OOF R2 (and dim strict); pairs box5<->dim, torus<->dim, box5<->torus. Nulls: source decoder fit on shuffled labels (10); random projections of the same width (10). Own-decoder R2 printed beside it.
+- A2 ablation: at ap only, h <- h - ((h - mu_E) U) U^T (mean ablation: mu_E = the evaluated set's clean mean at that layer, fp32), on the state fed to block h + 1 for h in {3, 4, 5} or to the final norm (h = 6); later positions (the '\n' prediction) see the edit only through attention. U = top-k PCs of a source domain's SEEN-row class means at that layer; k = c_E and 2 c_E (c_E = the evaluated domain's coordinate width: dim 3, box5 2, torus 4). Evaluated on dim_held (exact match held + strict, first-token and '\n'-token accuracy, answer margin) with U from box5 (i), torus (ii), dim itself (iii, positive control: fit on seen, evaluated on held), 20 random k-subspaces (iv, negative control), cities / countries (v, specificity); reverse: box5_held and torus_held with U from dim, themselves, the other lattice domain, cities / countries, random. Re-run of blocks h+1..6 from the stored clean block inputs; k = 0 must give logits equal (torch.equal) to the clean forward (asserted, else the full-forward hook path) and the clean hits are compared with the logged hits (cross-device: flag only) and the V5 CPU probe.
+- A3 logit lens: final RMSNorm (fp32) + the tied unembedding on each layer's ap state, restricted to the domain's answer tokens; margin = correct-token logit - max over the other answer tokens, top-1 among them; dim strict / strict misses / all, box5 and torus held. DLA: every block's attn and MLP output (post-sublayer norms = what is added to the residual) through the final norm with its scale frozen at the real final residual, on the margin direction (correct - the best other token at the last layer); the last two blocks are tabled. Asserted / printed: the last-layer lens (bf16, the model's own path) equals the logits; components sum to the final residual.
+- A4 weights: linear CKA between the answer tokens' (tied) embedding rows and the lattice coordinates per domain (null: 200 row permutations); CKA between per-answer class means of the final-norm L6 state at ap and those tokens' unembedding rows (null: permutations).
+Hypothesis (a prediction, not a rule): box5 and torus share an answer-coordinate subspace with dim at L4-L6 (overlap and transfer above their nulls, in both arms), and in only-dim the break is in the readout: dim-strict lens margin collapses only at the last layer(s) / in the unembedding alignment (A3, A4 lower in only-dim than all6 while A1 R2 is equal); removing box5's or torus's answer subspace lowers dim strict accuracy more than random subspaces do, less than dim's own (iii), and more in all6 than in only-dim; cities / countries subspaces act like random.
+
+
+## Amendment V7 (post-hoc, 2026-11-22): all6@2e-3 with the torus / box5 lines removed after the prior window
+
+**Status.** Post-hoc and exploratory. The user approved it on 2026-11-22 (「可以的」, relayed by the main session). There is no verdict rule and no gate. Nothing in the registered analysis (readout_pt6v2.py, CELLS / ALLOC / COMPOSITION / PICK.json, the V3 / V4 / V5 outputs) changes, and readout_pt6v2.py does not read `out_v7/`.
+
+**Why.**
+- At lr 2e-3, all6 beats only-dim on strict dim by +25 pts at the end of training (8/8 seeds).
+- The gain appears after the window, and it needs the torus / box5 priors: all4 is about equal to only-dim (F106).
+- The V5 probes (F107) show that only-dim still encodes the answer at the answer position but fails to output it.
+
+**Hypothesis.** Torus / box5 share a lattice answer code with dim. Post-window LM training on their lines keeps dim's state→token readout working.
+
+**Prediction (this is the hypothesis, not a rule).** Without torus / box5 lines after the window, dim's end-of-training advantage over only-dim largely disappears.
+
+**Cell.** `all6drop@2e-3`, seeds 16..23, 8 runs, one job per run.
+- The run is the registered all6@2e-3 job of each seed. Its ARGS are byte-identical apart from the out dir, plus `--drop_domains_after torus,box5@7324`.
+- Step 7324 is the first step after the prior window (prior_on(s) = 916 ≤ s < 7324).
+- From that step, the torus and box5 lines are still drawn: every RNG stream consumes exactly what it did before. They are then left out of the row, and the row's text chunk extends to the left, to the same chunk end, to fill their space.
+- Tokens per step, the numbers line, and the dim / cities / countries lines (content, rate and order) are unchanged. Rows before step 7324 are byte-identical to the registered run.
+- The torus / box5 held-out evals still run at every eval. geo_torus / geo_box5 have no sites after the drop.
+
+**Comparison.** The registered all6@2e-3 and only-dim@2e-3 runs of the same seeds (`runs/pt6v2/out/`). No new control arm.
+
+**Trainer.** `runs/pt6v2/out_v7/code/tools/pretrain_range.py` 8da22c6ea208 = a398fccbfe93 + `--drop_domains_after`.
+- Patch: `out_v7/patch_trainer_v7.py`. Diff: `out_v7/trainer_v7.diff`. The other files in `out_v7/code/` are byte-identical.
+- At its default the flag is a no-op and is left out of the run JSON's args.
+- When on, it is printed, asserted at step 0, logged per eval (`dropped_lines`), and recorded in the run JSON (`drop_domains_after`).
+
+**Checks before submission (CPU smoke, `out_v7/smoke/`, job 24063503: 33/33 PASS, `compare2.txt`).**
+- Flag off: run JSON and stdout equal the registered trainer's, except code_sha, out and timing.
+- Flag on, real s16 config: batches 0..7323 are byte-identical to flag off, and the four RNG states after step 7329 are identical.
+- Steps 7324..7329: no torus / box5 line, checked three ways (segments, sites, and a token-sequence search). Kept lines are identical and in the same order, the tokens per step are equal, and the dropped count equals the cycling rule's count.
+- dry_inputs gives the 63-line reference sha b71458d3a12d. Resume preserves the drop.
+- Negative control: check_v7.py fails on a flag-off run.
+- In `compare.txt`, the only fail was an un-normalised `done in Ns` timing line. The normaliser was fixed and the comparison re-run, giving `compare2.txt`.
+
+**Job-level checks.**
+- `check_v7.py` (cf44ea38c274) runs before the registered CHECK_PY and exits 5 on a fail. Against the registered run of the same seed, it checks:
+  - data_sha is equal before 7324 and differs after it;
+  - the token share of the kept types is equal at every eval;
+  - dropped_lines matches the rule;
+  - dom_sites, the slot share, and geo_<dropped> is absent.
+- The registered CHECK_PY gets two counted edits:
+  - the slot rule is read at the last eval before the drop;
+  - geo_<dropped> is counted over the evals before the drop.
+- A step-0 lm difference from the registered run is flag-only (device numerics).
+
+**Device.** A100 / H100 (a100_tandon, h100_tandon). The registered seeds 16..22 ran on B200 and seed 23 on A100. The device difference is a flag in the read, not a gate.
+
+**Planned descriptive read (`out_v7/v7read.py`, no verdict rule).**
+1. Dim strict final3 and area of all6drop vs all6 and vs only-dim, paired by seed, with mean and sign counts.
+2. Dim's drop from the window's close (the eval at 7250) to the end, per run and per arm.
+3. Torus / box5 held-out accuracy after the drop (all6drop vs all6): this shows the dropped domains decaying.
+4. numbers / cities / countries final3, as a damage check.
+5. The device flag per run.
+
+**Canary.** `llmadd_pt6v2v7-canary-s16`, 800 steps, window 40..319, drop at 320.
+- check_v7 is fatal. The registered CHECK_PY is non-fatal, because a short run fails its length checks by design.
+- dry_inputs uses the production ARGS.
+
+## Amendment V6 addendum: fixes after the code review (exploratory, 2026-11-22)
+
+The code review is `tests/audit_v6_code_20261122.md`. These fixes were made before the full run. Every number is still reported, and there is still no verdict rule.
+
+**Torus coordinates (B1).** The prior's DTAB torus table holds the frequency-1 characters (1,0) and (0,1) of Z6×Z6. The trained models' answer states encode other characters.
+
+How the pair is chosen:
+- For each checkpoint, the read takes the generating pair of characters (36 pairs up to sign; det of the pair a unit mod 6) with the highest mean grouped-ridge OOF R² on the SEEN torus rows, over layers 4–6.
+- Held rows are not used to choose, so held R² stays clean.
+
+Where the chosen pair is used:
+- A1 R² and nearest;
+- the decoder-space overlap;
+- the transfer;
+- the A4 coordinate CKAs.
+
+The DTAB pair is reported beside it ('torus_dtab'). Class-mean PC overlap and A2 do not use coordinates and are unchanged.
+
+**A2 dose (B2).**
+- **Dose.** Every ablation condition records its dose: the fraction of the evaluated rows' centred answer-position variance at that layer which the subspace removes.
+- **Two dose-matched nulls, 5 draws each.**
+  - Random subspaces drawn from the evaluated set's own state covariance.
+  - Class-mean PCs of each other lattice source, with the answer labels shuffled.
+- **Read.**
+  - The drop is clean minus ablated.
+  - The drop is also given per unit dose.
+  - The read also gives the excess over a line, drop = a + b·dose, fitted through all null draws (isotropic random, covariance-matched, shuffled-label) at the same dose.
+  - This is computed on held accuracy and on dim strict.
+
+**Reporting.**
+- A2 held (all held rows, n=342 for dim) is the primary row, with strict (n=58) next to it.
+- Class-mean PC overlap is the primary A1 overlap; decoder-space overlap is secondary.
+- Shuffle nulls are reported as z-scores and as the max, not as a p95 at n=10.
+- The aggregate reports A2 as the drop from each arm's own clean value, plus the all6 − only-dim DiD. It prints the per-seed differences and the number of seeds in each mean.
+- 2026-11-22 (coordinator): V7 canary 24064071 read: every check_v7 drop check PASS (flag consumed; torus/box5 sites 0 from the drop step, every other domain > 0; dropped_lines = cycling rule; data_sha = registered before the drop, different after; kept line types' token share = registered). Only FAIL = step-0 lm vs the registered B200 run, rel 1.15e-6 (11.597748 vs 11.597734, canary on A100) = execution-environment difference, flag only (check_v7 exits 0 on flag-only). The registered CHECK_PY's prior_events / prior_on_frac FAILs are by design for the 800-step canary. Main runs continue; watcher re-armed.
+- 2026-11-22 (coordinator): V6 review fixes diff-checked (B1 torus pair chosen on SEEN rows only, probe6_inner.py:426-450; B2 dose + cov / shuffled-label nulls, :699-746; B3 aggregate drops + DiD, probe_v6_aggregate.py:37-142); post-fix smoke 24064752 rc=0, k=0 no-op, own-subspace control hurts (0.792 -> 0.058), torus chosen-pair R2 0.70-0.87 vs shuffled max -0.05. Full run submitted: sbatch --array=0-11 out_v6/job_probe_v6.sbatch -> 24066228 (shas probe6_inner 1c49096ba7f4, probe_v6 b607d40e4f70, aggregate b4b9cdecabf4).
