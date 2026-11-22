@@ -27,7 +27,7 @@ held-out addition accuracy, averaged over training, from 18% to 70%, each model 
 <td width="50%" valign="top">
 <h3>6 of 6</h3>
 <b>Priors that help each other.</b> Six priors trained together all gain. At the end of training they lead the
-dimensions prior alone by 25.0 points, and kept on until the end, all six end above the best model without priors
+dimensions prior alone by 25.0 points (7 of 8 seeds, one tie), and kept on until the end, all six end above the best model without priors
 (8 of 8 seeds).
 </td>
 </tr>
