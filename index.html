@@ -1334,7 +1334,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 8dc3cb1).";
+  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 5cbfa9d).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
