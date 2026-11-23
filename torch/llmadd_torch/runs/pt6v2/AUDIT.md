@@ -484,3 +484,23 @@ The DTAB pair is reported beside it ('torus_dtab'). Class-mean PC overlap and A2
 - The aggregate reports A2 as the drop from each arm's own clean value, plus the all6 − only-dim DiD. It prints the per-seed differences and the number of seeds in each mean.
 - 2026-11-22 (coordinator): V7 canary 24064071 read: every check_v7 drop check PASS (flag consumed; torus/box5 sites 0 from the drop step, every other domain > 0; dropped_lines = cycling rule; data_sha = registered before the drop, different after; kept line types' token share = registered). Only FAIL = step-0 lm vs the registered B200 run, rel 1.15e-6 (11.597748 vs 11.597734, canary on A100) = execution-environment difference, flag only (check_v7 exits 0 on flag-only). The registered CHECK_PY's prior_events / prior_on_frac FAILs are by design for the 800-step canary. Main runs continue; watcher re-armed.
 - 2026-11-22 (coordinator): V6 review fixes diff-checked (B1 torus pair chosen on SEEN rows only, probe6_inner.py:426-450; B2 dose + cov / shuffled-label nulls, :699-746; B3 aggregate drops + DiD, probe_v6_aggregate.py:37-142); post-fix smoke 24064752 rc=0, k=0 no-op, own-subspace control hurts (0.792 -> 0.058), torus chosen-pair R2 0.70-0.87 vs shuffled max -0.05. Full run submitted: sbatch --array=0-11 out_v6/job_probe_v6.sbatch -> 24066228 (shas probe6_inner 1c49096ba7f4, probe_v6 b607d40e4f70, aggregate b4b9cdecabf4).
+
+## Amendment V7b (post-hoc, 2026-11-22): V7 rerun with the dropped lines replaced in their slots (slot-matched)
+
+**Status / why.** Post-hoc, exploratory, no gate. The user approved it on 2026-11-22: 8 seeds, about 4 A100 h. Audit I1 (`tests/audit_v7_result_20261122.md`): V7 leaves the torus / box5 lines out and the text grows left, so dim's slot-1 share goes 0.50 → 0.748 over steps 7251..end (v7bread). The domain eval question is always in slot 1, so F109's "77% retained" may be inflated. **Hypothesis:** part of V7's retained dim advantage comes from that slot shift.
+**Change.** The arm is `all6dropS@2e-3`, seeds 16..23. Each is the V7 job of its seed + `--drop_fill inplace`; out dir `out_v7b/`; Slurm names `llmadd_pt6v2v7b-*`; driver `posthoc_v7b_jobs.py` (8d9ff67c972a); manifest `POSTHOC_V7B.json`. The default `left` is V7, and it is kept out of the run JSON's args.
+- From step 7324, each torus / box5 line is drawn as before. It is then replaced in its slot by a training-text filler of its token length: own stream `default_rng(7100 + seed)`, last token = its newline. Every kept line keeps its flag-off position and slot.
+- Trainer: `out_v7b/code/tools/pretrain_range.py` bb0b55eb5e34 = 8da22c6ea208 + `--drop_fill` (`out_v7b/patch_trainer_v7b.py`, `trainer_v7b.diff`).
+- `out_v7b/check_v7b.py` (12171d6c8db7) replaces check_v7.py and is log-and-flag only. The registered CHECK_PY and V7's `exit 5` no longer fail a job.
+**Checks before submission.** CPU smoke `out_v7b/smoke/`, jobs 24140394 + 24140573: 55/55 PASS (`compare.txt`).
+- Flag off: run JSON and stdout = the registered trainer's. Default and explicit `left`: = V7 (data_sha, run JSON, stdout). The real-config dumps at flag off and left equal the V7 smoke dumps byte for byte.
+- Inplace, real s16 config, steps 7324..7329:
+  - numbers / dim / cities / countries sites, slots and dslot counts = flag off's exactly, and no torus / box5 site remains;
+  - every filler sits at the dropped line's position and length (154 = cycling rule), is the replayed 7100 + seed text and ends in a newline;
+  - all other tokens = flag off's, and the left text is unchanged;
+  - token counts per type = V7's;
+  - batches 0..7323 and the four existing RNG states are unchanged.
+- Other checks pass: resume (curve = uninterrupted), the guard (inplace without a drop exits 1), dry_inputs 63 lines b71458d3a12d, and the step-0 assert / log lines. check_v7b passes on the tiny inplace run and flags the V7 run.
+- `out_v7b/v7bread.py` (50bdd048bc40) was smoke-tested on V7 outputs: S(V7) = 0.765 [0.500, 0.960]. With `--test-alias` (V7b := V7), S_b = S and the slot effect is 0.
+**Decision rule (verbatim, written before submission).** Report S_b with its CI and the paired slot effect; if the slot effect's CI includes 0 and S_b's CI includes 0.77, F109's 77% stands and its qualifier 2 is replaced by the measured slot effect; otherwise the paper's 77% is replaced by S_b. No check gates the read-out.
+**Jobs (submitted 2026-11-23 01:12 UTC, A100 / H100, 3 h).** Canary `llmadd_pt6v2v7b-canary-s16` 24140718 (drop@320, 800 steps); mains `llmadd_pt6v2v7b-all6dropS-s16..s23` 24140719, 24140721, 24140723, 24140725, 24140727, 24140729, 24140730, 24140731. Read-out: `out_v7b/v7bread.py --json out_v7b/v7bread.json | tee out_v7b/v7bread.txt` after all 8 mains finish.

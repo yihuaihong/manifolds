@@ -1,0 +1,168 @@
+--- ../out_v7/code/tools/pretrain_range.py	2026-11-22 02:10:01.515067517 -0500
++++ code/tools/pretrain_range.py	2026-11-22 19:59:13.537207402 -0500
+@@ -173,6 +173,8 @@
+ REVD_DEFAULTS = {"held_strat": "freq", "lam_decay": False}   # Rev D flags: kept out of the run JSON's args at these values
+ REVE_DEFAULTS = {"anc_eval_max": 0}   # Rev E (testing only): kept out of the run JSON's args at this value
+ REVV7_DEFAULTS = {"drop_domains_after": ""}   # pt6v2 Amendment V7: kept out of the run JSON's args at this value
++REVV7B_DEFAULTS = {"drop_fill": "left"}   # pt6v2 Amendment V7b: kept out of the run JSON's args at this value
++FILL = "_fill"   # V7b: the line type of a filler (text tokens in a dropped line's slot)
+ 
+ 
+ def features(target: str, x: np.ndarray, perm=None, perm_len=None) -> np.ndarray:
+@@ -484,6 +486,10 @@
+     ap.add_argument("--stop_after", type=int, default=-1, help="testing only: exit after this step (simulated preemption)")
+     ap.add_argument("--drop_domains_after", default="", help="pt6v2 V7: 'd1,d2@S' = from training step S on, the lines "
+                     "of these domains are drawn as before and left out of the row (the row's text fills their space)")
++    ap.add_argument("--drop_fill", default="left", choices=("left", "inplace"), help="pt6v2 V7b, with --drop_domains_after: "
++                    "left = V7 (the row's text extends to the left); inplace = each dropped line is replaced in its slot by "
++                    "a training-text filler of the same token length (own stream 7100 + seed, last token(s) = the line's "
++                    "newline): every kept line keeps its positions and slot")
+     ap.add_argument("--seed", type=int, default=0)
+     ap.add_argument("--tag", default="")
+     ap.add_argument("--d_model", type=int, default=384)
+@@ -1332,6 +1338,16 @@
+             "--drop_domains_after", DROP_D, DROP_AT, steps)
+         print(f"V7 drop_domains_after = {args.drop_domains_after!r}: domain lines {list(DROP_D)} left out from step "
+               f"{DROP_AT} of {steps} (drawn, then dropped; text fills the space)", flush=True)
++    DROP_FILL = args.drop_fill   # V7b
++    assert DROP_FILL == "left" or DROP_D, ("--drop_fill inplace needs --drop_domains_after", DROP_FILL)
++    if DROP_D and DROP_FILL == "inplace":
++        NLT = list(enc("\n"))
++        assert FILL not in EXT and all(list(DLINE[d, q][0][-len(NLT):]) == NLT and len(DLINE[d, q][0]) > len(NLT)
++                                       for d in DROP_D for q in DPOOL[d]), "a dropped domain's training line does not end with the newline"
++        fill_rng = np.random.default_rng(7100 + args.seed)   # V7b: the fillers' own stream (every other stream unchanged)
++        print(f"V7b drop_fill = {DROP_FILL!r}: each dropped line of {list(DROP_D)} from step {DROP_AT} -> a training-text filler "
++              f"of its token length in its slot (stream 7100 + seed = {7100 + args.seed}; last {len(NLT)} token(s) = the line's "
++              f"newline {NLT}); the kept lines keep their positions and slots, the row's text is the flag-off text", flush=True)
+     warm = max(1, steps // 100)
+     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, betas=(0.9, 0.95), weight_decay=args.wd, fused=(dev == "cuda"))
+     sched = lambda s: min(1.0, (s + 1) / warm) * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min(1.0, s / steps))))
+@@ -1602,7 +1618,7 @@
+         rows, ops, ans, tmeta = [], [], [], []
+         if DOM:   # Rev B: per-domain sites (row, position, item), token counts per line type, first line per row
+             batch.dsite = {d: [] for d in EXT}; batch.ntok = {t: 0 for t in ("text",) + tuple(DOMS)}; batch.first = []
+-            batch.ntext = []; batch.slot = []; batch.dropped = []
++            batch.ntext = []; batch.slot = []; batch.dropped = []; batch.fill = []
+         if HO:   # Rev C: text exposure of the numbers 0..999 in this batch (text-site rule / raw tokens)
+             batch.h_st, h_txt, batch.h_ntext = np.zeros(1000, dtype=np.int64), [], []
+         for r in range(args.bs):
+@@ -1643,6 +1659,13 @@
+             batch.dsite = {d: np.array(v, dtype=np.int64).reshape(-1, 3) for d, v in batch.dsite.items()}
+         return torch.tensor(np.array(rows), device=dev), np.array(ops), np.array(ans)
+ 
++    def fill_ids(ids):
++        """V7b: the filler of a dropped line ids: len(ids) training-text tokens from the fillers' own stream, the last
++        len(NLT) of them replaced by the line's newline."""
++        L_ = len(ids)
++        o_ = int(fill_rng.integers(0, len(train) - L_))
++        return [int(v) for v in np.asarray(train[o_:o_ + L_ - len(NLT)], dtype=np.int64)] + list(NLT)
++
+     def dom_row(s, r, parts, rows, ops, ans):
+         """Rev B row (amendment A2): text, the numbers lines (parts, drawn as in the default path) FIRST, then
+         --extra_lines domain lines (domain cycled over EXT by the global line index, question drawn from the domain's
+@@ -1656,15 +1679,18 @@
+         ext = [ext[i] for i in order_rng.permutation(len(ext))]
+         if DROP_D and s >= DROP_AT:   # V7: drawn as before (every stream unchanged), then left out of the row
+             batch.dropped += [t for t, _ in ext if t in DROP_D]
+-            ext = [(t, p) for t, p in ext if t not in DROP_D]
++            if DROP_FILL == "inplace":   # V7b: in its slot, a text filler of the line's token length (the row's text unchanged)
++                ext = [(FILL, fill_ids(DLINE[t, p][0])) if t in DROP_D else (t, p) for t, p in ext]
++            else:
++                ext = [(t, p) for t, p in ext if t not in DROP_D]
+         items = [("numbers", p) for p in parts] + ext
+         n0 = args.seq - sum(len(p[0]) for p in parts)   # the default path's text length (text, then the numbers line)
+         o = int(rng.integers(0, len(train) - n0))        # the default path's draw: same stream, same bound
+-        n = n0 - sum(len(DLINE[t, p][0]) for t, p in ext)
++        n = n0 - sum(len(p) if t == FILL else len(DLINE[t, p][0]) for t, p in ext)
+         row = list(np.asarray(train[o + n0 - n:o + n0], dtype=np.int64))
+         off = n
+         batch.ntok["text"] += n; batch.first.append(items[0][0]); batch.ntext.append(n)
+-        batch.slot += [(t, j) for j, (t, _) in enumerate(ext)]   # slot j + 1 after the numbers line(s)
++        batch.slot += [(t, j) for j, (t, _) in enumerate(ext) if t != FILL]   # slot j + 1 after the numbers line(s)
+         for j, (t, p) in enumerate(items):
+             if t == "numbers":
+                 ids, ia, ib, a, b = p
+@@ -1672,10 +1698,13 @@
+                 na = len(enc(str(a + b)))
+                 bk = BUCKETS.index(tuple(sorted((len(str(a)), len(str(b))))))
+                 ans.append((r, off + len(ids) - nl_len - na, na, int(j == 0), bk))
++            elif t == FILL:   # V7b: text tokens in the dropped line's slot (no sites; counted as text)
++                ids = p
++                batch.fill.append((r, off, len(ids)))
+             else:
+                 ids, sites, _, _ = DLINE[t, p]
+                 batch.dsite[t] += [(r, off + q, v) for q, v in sites]
+-            row += ids; off += len(ids); batch.ntok[t] += len(ids)
++            row += ids; off += len(ids); batch.ntok["text" if t == FILL else t] += len(ids)
+         assert len(row) == args.seq
+         rows.append(row)
+ 
+@@ -1976,6 +2005,8 @@
+                    data_sha="", dslot={d: [0] * args.extra_lines for d in EXT})   # A2: domain lines per slot after numbers
+     if DROP_D:   # V7: lines drawn and left out, per domain (saved with dyn)
+         dyn["ddrop"] = {d: 0 for d in DROP_D}
++    if DROP_D and DROP_FILL == "inplace":   # V7b: filler lines / tokens so far (saved with dyn)
++        dyn["dfill"] = {"lines": 0, "tokens": 0}
+     if HO:   # Rev C counters (saved with dyn): candidate pairs redrawn for H, lines content-scanned, text exposure of 0..999
+         # (text-site rule: all steps / prior-on steps; raw token occurrences)
+         dyn["held"] = {"rej": 0, "lines": 0, "st": np.zeros(1000, dtype=np.int64), "st_on": np.zeros(1000, dtype=np.int64),
+@@ -2336,6 +2367,8 @@
+         lg["data_sha"] = dyn["data_sha"][:16]
+         if DROP_D:   # V7: lines left out so far, per domain
+             lg["dropped_lines"] = dict(dyn["ddrop"])
++        if DROP_D and DROP_FILL == "inplace":   # V7b: filler lines / tokens so far
++            lg["fill"] = dict(dyn["dfill"])
+         return lg
+ 
+     def dom_metrics(curve):
+@@ -2396,6 +2429,8 @@
+             prng.bit_generator.state = st["prng"]
+         if DOM:
+             dom_rng.bit_generator.state = st["dom_rng"]; order_rng.bit_generator.state = st["order_rng"]
++        if DROP_D and DROP_FILL == "inplace":   # V7b
++            fill_rng.bit_generator.state = st["fill_rng"]
+         dyn.update(st["dyn"]); curve = st["curve"]; start = st["step"] + 1
+         torch.set_rng_state(st["torch_rng"].cpu())
+         if dev == "cuda" and st.get("cuda_rng") is not None:
+@@ -2426,6 +2461,14 @@
+                 if s == 0:   # the flag is parsed as given and nothing is dropped before DROP_AT
+                     assert args.drop_domains_after == ",".join(DROP_D) + f"@{DROP_AT}" and not batch.dropped, (
+                         args.drop_domains_after, batch.dropped)
++                if DROP_FILL == "inplace":   # V7b
++                    dyn["dfill"]["lines"] += len(batch.fill); dyn["dfill"]["tokens"] += sum(L_ for _, _, L_ in batch.fill)
++                    if s == 0:   # the flag is parsed as given and there is no filler before DROP_AT
++                        assert args.drop_fill == "inplace" and not batch.fill, (args.drop_fill, batch.fill)
++                    if s == 0 or s == DROP_AT:   # logged, not asserted (one filler per dropped line)
++                        print(f"V7b step {s}: {len(batch.fill)} fillers ({sum(L_ for _, _, L_ in batch.fill)} tokens) for "
++                              f"{len(batch.dropped)} dropped lines: " + ("ok" if len(batch.fill) == len(batch.dropped)
++                                                                       else "## FLAG fillers != dropped lines"), flush=True)
+             if s == 0:   # every domain site decodes to its item; the stored rows are the model's input
+                 assert (batch.np == x.cpu().numpy()).all()
+                 for d in EXT:
+@@ -2570,13 +2613,16 @@
+                              and not (k in REVC_DEFAULTS and v == REVC_DEFAULTS[k])
+                              and not (k in REVD_DEFAULTS and v == REVD_DEFAULTS[k])
+                              and not (k in REVE_DEFAULTS and v == REVE_DEFAULTS[k])
+-                             and not (k in REVV7_DEFAULTS and v == REVV7_DEFAULTS[k])}, "steps": steps,
++                             and not (k in REVV7_DEFAULTS and v == REVV7_DEFAULTS[k])
++                             and not (k in REVV7B_DEFAULTS and v == REVV7B_DEFAULTS[k])}, "steps": steps,
+                     "geo_layers": geo_layers, "read_layers": read_layers,
+                     "n_params": n_params, "grad_ckpt_on": ckpt_on, "lm_chunk": lm_chunk,
+                     "eval_every_steps": eval_every, "code_sha": code_sha, "prior_events": dyn["events"],
+                     "curve": curve}
+             if DROP_D:   # V7: the flag as consumed and the lines left out so far
+                 res_["drop_domains_after"] = {"domains": list(DROP_D), "step": DROP_AT, "dropped_lines": dict(dyn["ddrop"])}
++                if DROP_FILL != "left":   # V7b: the fill mode as consumed, its stream, the fillers so far
++                    res_["drop_domains_after"].update(fill=DROP_FILL, fill_stream=7100 + args.seed, fill_counts=dict(dyn["dfill"]))
+             if HO:   # Rev C: H, its counts, the eval sets' pairs and masks, the exposure during training
+                 res_.update(held_operands=HINFO, held_exposure={k: dyn["held"][k].tolist() for k in ("st", "st_on", "raw")})
+             if DOM:   # Rev B: domain set-up and the per-domain read-outs of this curve
+@@ -2599,6 +2645,8 @@
+                    "torch_rng": torch.get_rng_state(), "cuda_rng": torch.cuda.get_rng_state() if dev == "cuda" else None}
+             if DOM:
+                 st_.update(dom_rng=dom_rng.bit_generator.state, order_rng=order_rng.bit_generator.state)
++            if DROP_D and DROP_FILL == "inplace":   # V7b
++                st_["fill_rng"] = fill_rng.bit_generator.state
+             torch.save(st_, tmp)
+             tmp.replace(ck)
+         if s == args.stop_after:

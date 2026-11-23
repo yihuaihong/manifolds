@@ -1,0 +1,101 @@
+{
+ "pass": true,
+ "valid_data_flagged": false,
+ "checks": [
+  {
+   "check": "flag consumed: args drop_domains_after = 'torus,box5@7324', drop_fill = 'inplace'; run JSON drop_domains_after = ['torus', 'box5']@7324, fill inplace, fill_stream 7100 + seed",
+   "ok": true,
+   "value": "{'arg': ['torus,box5@7324', 'inplace'], 'json': {'domains': ['torus', 'box5'], 'step': 7324, 'dropped_lines': {'torus': 140621, 'box5': 140621}, 'fill': 'inplace', 'fill_stream': 7118, 'fill_counts': {'lines': 281242, 'tokens': 1687452}}}"
+  },
+  {
+   "check": "eval site keys = EXT in order",
+   "ok": true,
+   "value": "['dim', 'cities', 'countries', 'torus', 'box5']"
+  },
+  {
+   "check": "drop step = the first step after the prior window (window 916..7323)",
+   "ok": true,
+   "value": "[916, 7323, 7324]"
+  },
+  {
+   "check": "dom_sites: every domain > 0 at every eval before step 7324; ['torus', 'box5'] = 0 and every kept domain > 0 at every eval from it",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "dropped_lines at every eval = the count recomputed from the cycling rule and the drop step",
+   "ok": true,
+   "value": "{'torus': 140621, 'box5': 140621}"
+  },
+  {
+   "check": "fill.lines at every eval = the dropped lines so far (one filler per dropped line); fill.tokens > 0 only from the drop",
+   "ok": true,
+   "value": "{'lines': 281242, 'tokens': 1687452}"
+  },
+  {
+   "check": "run JSON fill_counts / dropped_lines = the last eval's",
+   "ok": true,
+   "value": "{'domains': ['torus', 'box5'], 'step': 7324, 'dropped_lines': {'torus': 140621, 'box5': 140621}, 'fill': 'inplace', 'fill_stream': 7118, 'fill_counts': {'lines': 281242, 'tokens': 1687452}}"
+  },
+  {
+   "check": "slot share of every kept domain at the last eval: slot 1 = 1/K +- max(0.02, 4 sd) (no slot shift: fillers keep the slots)",
+   "ok": true,
+   "value": "{'dim': 0.50074, 'cities': 0.4993, 'countries': 0.49932}"
+  },
+  {
+   "check": "geo_<d> of ['torus', 'box5'] not logged from step 7324 on (no sites)",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "the dropped domains' held-out evals (['torus_held', 'box5_held']) logged and finite at every eval",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "data_sha = the registered run's at every common eval before step 7324 (30) and different at every one from it (45)",
+   "ok": true,
+   "value": "[(0, 'f9e8e812f5038e78', 'f9e8e812f5038e78'), (250, 'f060a63cc5c1e39b', 'f060a63cc5c1e39b')]"
+  },
+  {
+   "check": "slot share of every kept domain ['dim', 'cities', 'countries'] = the registered all6 run's at every common eval (75; dim slot 1 at step 18309: {'step': 18309, 'v7b': 0.500738155379574, 'registered_all6': 0.500738155379574})",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "dom_sites of every kept domain = the registered run's at every common eval",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "token share of every kept line type ['numbers', 'dim', 'cities', 'countries'] = the registered run's at every common eval",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "step-0 lm = the registered run's (rel. 1e-6; same data, same init; device numerics may differ: flag only)",
+   "ok": true,
+   "value": "[11.589298248291016, 11.589298248291016]"
+  },
+  {
+   "check": "token share of EVERY line type, text included (fillers = text), = the V7 run's at every common eval (75)",
+   "ok": true,
+   "value": "[]"
+  },
+  {
+   "check": "data_sha = the V7 run's before step 7324 (30) and different from it after (45)",
+   "ok": true,
+   "value": ""
+  }
+ ],
+ "info": {
+  "slot1_dim": 0.50074,
+  "slot1_cities": 0.4993,
+  "slot1_countries": 0.49932,
+  "dim_slot1_last_common": {
+   "step": 18309,
+   "v7b": 0.500738155379574,
+   "registered_all6": 0.500738155379574
+  }
+ }
+}

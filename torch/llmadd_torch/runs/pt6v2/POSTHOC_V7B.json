@@ -1,0 +1,177 @@
+{
+ "amendment": "V7b",
+ "kind": "post-hoc",
+ "approval": "user-approved 2026-11-22 (8 seeds, ~4 A100 h; relayed by the main session); post-hoc, exploratory, no gate",
+ "why": "audit I1 (runs/pt6v2/tests/audit_v7_result_20261122.md): V7 leaves the torus / box5 lines out and the row's text grows to the left, so dim's slot-1 share goes 0.50 -> ~0.75 after the drop; the domain eval question is always in slot 1, so F109's '77% retained' may be inflated by the slot shift. V7b replaces each dropped line in its slot by a same-length text filler: every kept line keeps the flag-off (registered all6) positions and slots; total text tokens = V7's.",
+ "reading_rule": "Report S_b with its CI and the paired slot effect; if the slot effect's CI includes 0 and S_b's CI includes 0.77, F109's 77% stands and its qualifier 2 is replaced by the measured slot effect; otherwise the paper's 77% is replaced by S_b. No check gates the read-out.",
+ "readout": "runs/pt6v2/out_v7b/v7bread.py (descriptive; no check gates it)",
+ "cell": "all6dropS@2e-3",
+ "seeds": [
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23
+ ],
+ "drop": {
+  "domains": [
+   "torus",
+   "box5"
+  ],
+  "step": 7324,
+  "fill": "inplace",
+  "fill_stream": "default_rng(7100 + seed)",
+  "meaning": "from step 7324 each torus / box5 line is drawn as before and replaced in its slot by a training-text filler of its token length (last token = its newline); every kept line keeps its flag-off positions and slot; the row's text is the flag-off text"
+ },
+ "trainer": {
+  "path": "runs/pt6v2/out_v7b/code/tools/pretrain_range.py",
+  "sha12": "bb0b55eb5e34",
+  "parent_sha12": "8da22c6ea208",
+  "patch": "runs/pt6v2/out_v7b/patch_trainer_v7b.py",
+  "diff": "runs/pt6v2/out_v7b/trainer_v7b.diff"
+ },
+ "check_v7b": {
+  "path": "runs/pt6v2/out_v7b/check_v7b.py",
+  "sha12": "12171d6c8db7",
+  "gates": false
+ },
+ "driver": {
+  "path": "runs/pt6v2/posthoc_v7b_jobs.py",
+  "parent": "runs/pt6v2/posthoc_v7_jobs.py",
+  "parent_sha12": "24028b9cb991"
+ },
+ "code_commit": "ef7b8854",
+ "out_dir": "runs/pt6v2/out_v7b",
+ "device": "A100 / H100 (a100_tandon,h100_tandon) as V7; registered seeds 16-22 ran on B200: a flag in the read",
+ "runs": {
+  "pt6v2-all6dropS-lr2e-3-s16": {
+   "seed": 16,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s16",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s16.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s16",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s16",
+   "job_sha12": "1f172cd3dff4",
+   "job_id": "24140719"
+  },
+  "canary-all6dropS-s16": {
+   "seed": 16,
+   "role": "canary",
+   "slurm_name": "llmadd_pt6v2v7b-canary-s16",
+   "drop": "torus,box5@320",
+   "job_file": "out_v7b/job_canary-all6dropS-s16.sbatch",
+   "out": "runs/pt6v2/out_v7b/canary-all6dropS-s16",
+   "run_json": "runs/pt6v2/out_v7b/canary-all6dropS-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/canary-all6drop-s16/pt6v2-all6-lr2e-3/run_whole_helix3_seed16_pt6v2-all6-lr2e-3.json",
+   "v7_name": "canary-all6drop-s16",
+   "job_sha12": "9a1658c3b429",
+   "job_id": "24140718"
+  },
+  "pt6v2-all6dropS-lr2e-3-s17": {
+   "seed": 17,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s17",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s17.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s17",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s17/pt6v2-all6-lr2e-3/run_whole_helix3_seed17_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s17/pt6v2-all6-lr2e-3/run_whole_helix3_seed17_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s17/pt6v2-all6-lr2e-3/run_whole_helix3_seed17_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s17",
+   "job_sha12": "60fa47835567",
+   "job_id": "24140721"
+  },
+  "pt6v2-all6dropS-lr2e-3-s18": {
+   "seed": 18,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s18",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s18.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s18",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s18/pt6v2-all6-lr2e-3/run_whole_helix3_seed18_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s18/pt6v2-all6-lr2e-3/run_whole_helix3_seed18_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s18/pt6v2-all6-lr2e-3/run_whole_helix3_seed18_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s18",
+   "job_sha12": "0ad785838b71",
+   "job_id": "24140723"
+  },
+  "pt6v2-all6dropS-lr2e-3-s19": {
+   "seed": 19,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s19",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s19.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s19",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s19/pt6v2-all6-lr2e-3/run_whole_helix3_seed19_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s19/pt6v2-all6-lr2e-3/run_whole_helix3_seed19_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s19/pt6v2-all6-lr2e-3/run_whole_helix3_seed19_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s19",
+   "job_sha12": "a88ebf34614b",
+   "job_id": "24140725"
+  },
+  "pt6v2-all6dropS-lr2e-3-s20": {
+   "seed": 20,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s20",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s20.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s20",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s20/pt6v2-all6-lr2e-3/run_whole_helix3_seed20_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s20/pt6v2-all6-lr2e-3/run_whole_helix3_seed20_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s20/pt6v2-all6-lr2e-3/run_whole_helix3_seed20_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s20",
+   "job_sha12": "f309bb50020e",
+   "job_id": "24140727"
+  },
+  "pt6v2-all6dropS-lr2e-3-s21": {
+   "seed": 21,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s21",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s21.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s21",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s21/pt6v2-all6-lr2e-3/run_whole_helix3_seed21_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s21/pt6v2-all6-lr2e-3/run_whole_helix3_seed21_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s21/pt6v2-all6-lr2e-3/run_whole_helix3_seed21_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s21",
+   "job_sha12": "11f32f150ed6",
+   "job_id": "24140729"
+  },
+  "pt6v2-all6dropS-lr2e-3-s22": {
+   "seed": 22,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s22",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s22.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s22",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s22/pt6v2-all6-lr2e-3/run_whole_helix3_seed22_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s22/pt6v2-all6-lr2e-3/run_whole_helix3_seed22_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s22/pt6v2-all6-lr2e-3/run_whole_helix3_seed22_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s22",
+   "job_sha12": "c22355f40bbc",
+   "job_id": "24140730"
+  },
+  "pt6v2-all6dropS-lr2e-3-s23": {
+   "seed": 23,
+   "role": "main",
+   "slurm_name": "llmadd_pt6v2v7b-all6dropS-s23",
+   "drop": "torus,box5@7324",
+   "job_file": "out_v7b/job_pt6v2-all6dropS-lr2e-3-s23.sbatch",
+   "out": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s23",
+   "run_json": "runs/pt6v2/out_v7b/pt6v2-all6dropS-lr2e-3-s23/pt6v2-all6-lr2e-3/run_whole_helix3_seed23_pt6v2-all6-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-all6-lr2e-3-s23/pt6v2-all6-lr2e-3/run_whole_helix3_seed23_pt6v2-all6-lr2e-3.json",
+   "v7_run": "runs/pt6v2/out_v7/pt6v2-all6drop-lr2e-3-s23/pt6v2-all6-lr2e-3/run_whole_helix3_seed23_pt6v2-all6-lr2e-3.json",
+   "v7_name": "pt6v2-all6drop-lr2e-3-s23",
+   "job_sha12": "d9bbe70afb2e",
+   "job_id": "24140731"
+  }
+ }
+}
