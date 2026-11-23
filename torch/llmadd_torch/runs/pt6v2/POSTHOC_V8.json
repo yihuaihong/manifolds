@@ -1,0 +1,225 @@
+{
+ "amendment": "V8",
+ "kind": "post-hoc",
+ "approval": "user-approved 2026-11-23 (relayed by the main session); post-hoc, exploratory, no gate",
+ "why": "at 1x all6@2e-3 ends ~25 pts above only-dim@2e-3 on strict dim (final3), and only-dim loses 32.9 pts from the window's end to final3 (F105 addendum 2). Question: does a model without the joint priors catch up with all6 1x if it trains 2x / 4x longer?",
+ "reading_rule": "Report each arm's final3 strict dim at x2 / x4 against all6 1x; 'catches up' = mean >= all6 1x mean with both seeds within all6's 8-seed range; no gate.",
+ "readout": "runs/pt6v2/out_v8/v8read.py (descriptive; no check gates it)",
+ "cells": [
+  "only-dim@2e-3 x2 / x4",
+  "none@3.2e-2 (N_m, area-best none lr for dim) x2 / x4"
+ ],
+ "seeds": [
+  16,
+  17
+ ],
+ "reference": "registered 1x runs runs/pt6v2/out/: all6@2e-3, only-dim@2e-3, none@* (8 seeds each, 18,310 steps)",
+ "trainer": {
+  "path": "runs/pt6v2/code/tools/pretrain_range.py",
+  "sha12": "a398fccbfe93",
+  "changed": false
+ },
+ "schedule_note": "cosine LR and warmup (steps // 100) stretch with the steps; prior window kept at absolute steps 916..7323",
+ "driver": {
+  "path": "runs/pt6v2/posthoc_v8_jobs.py",
+  "sha12": "7aa1516ba1de",
+  "parent": "runs/pt6v2/posthoc_v7_jobs.py",
+  "parent_sha12": "24028b9cb991"
+ },
+ "code_commit": "ef7b8854",
+ "out_dir": "runs/pt6v2/out_v8",
+ "device": "A100 / H100 (a100_tandon,h100_tandon) as V7 / V7b; registered seeds 16 / 17 ran on B200: a flag in the read",
+ "runs": {
+  "pt6v2-only-dim-lr2e-3-x2-s16": {
+   "arm": "only-dim",
+   "lr": "2e-3",
+   "x": 2,
+   "seed": 16,
+   "slurm_name": "llmadd_pt6v2v8-onlydim-x2-s16",
+   "tokens": 599982080,
+   "steps": 36620,
+   "window": "0.025,0.2",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "job_file": "out_v8/job_pt6v2-only-dim-lr2e-3-x2-s16.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x2-s16",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x2-s16/pt6v2-only-dim-lr2e-3/run_whole_none_seed16_pt6v2-only-dim-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-only-dim-lr2e-3-s16/pt6v2-only-dim-lr2e-3/run_whole_none_seed16_pt6v2-only-dim-lr2e-3.json",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "registered_sha12": "545abc26ee4d",
+   "job_sha12": "97b014a51424",
+   "job_id": "24153622"
+  },
+  "pt6v2-only-dim-lr2e-3-x4-s16": {
+   "arm": "only-dim",
+   "lr": "2e-3",
+   "x": 4,
+   "seed": 16,
+   "slurm_name": "llmadd_pt6v2v8-onlydim-x4-s16",
+   "tokens": 1199964160,
+   "steps": 73240,
+   "window": "0.0125,0.1",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "job_file": "out_v8/job_pt6v2-only-dim-lr2e-3-x4-s16.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x4-s16",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x4-s16/pt6v2-only-dim-lr2e-3/run_whole_none_seed16_pt6v2-only-dim-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-only-dim-lr2e-3-s16/pt6v2-only-dim-lr2e-3/run_whole_none_seed16_pt6v2-only-dim-lr2e-3.json",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "registered_sha12": "545abc26ee4d",
+   "job_sha12": "ae2cf50f2097",
+   "job_id": "24153624"
+  },
+  "pt6v2-only-dim-lr2e-3-x2-s17": {
+   "arm": "only-dim",
+   "lr": "2e-3",
+   "x": 2,
+   "seed": 17,
+   "slurm_name": "llmadd_pt6v2v8-onlydim-x2-s17",
+   "tokens": 599982080,
+   "steps": 36620,
+   "window": "0.025,0.2",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "job_file": "out_v8/job_pt6v2-only-dim-lr2e-3-x2-s17.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x2-s17",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x2-s17/pt6v2-only-dim-lr2e-3/run_whole_none_seed17_pt6v2-only-dim-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-only-dim-lr2e-3-s17/pt6v2-only-dim-lr2e-3/run_whole_none_seed17_pt6v2-only-dim-lr2e-3.json",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s17.sbatch",
+   "registered_sha12": "329053bb717e",
+   "job_sha12": "28a330ae22a1",
+   "job_id": "24153625"
+  },
+  "pt6v2-only-dim-lr2e-3-x4-s17": {
+   "arm": "only-dim",
+   "lr": "2e-3",
+   "x": 4,
+   "seed": 17,
+   "slurm_name": "llmadd_pt6v2v8-onlydim-x4-s17",
+   "tokens": 1199964160,
+   "steps": 73240,
+   "window": "0.0125,0.1",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "job_file": "out_v8/job_pt6v2-only-dim-lr2e-3-x4-s17.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x4-s17",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-only-dim-lr2e-3-x4-s17/pt6v2-only-dim-lr2e-3/run_whole_none_seed17_pt6v2-only-dim-lr2e-3.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-only-dim-lr2e-3-s17/pt6v2-only-dim-lr2e-3/run_whole_none_seed17_pt6v2-only-dim-lr2e-3.json",
+   "registered_job": "job_pt6v2-only-dim-lr2e-3-s17.sbatch",
+   "registered_sha12": "329053bb717e",
+   "job_sha12": "6673dcdd68d4",
+   "job_id": "24153626"
+  },
+  "pt6v2-none-lr3.2e-2-x2-s16": {
+   "arm": "none",
+   "lr": "3.2e-2",
+   "x": 2,
+   "seed": 16,
+   "slurm_name": "llmadd_pt6v2v8-none-x2-s16",
+   "tokens": 599982080,
+   "steps": 36620,
+   "window": null,
+   "events": [],
+   "job_file": "out_v8/job_pt6v2-none-lr3.2e-2-x2-s16.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x2-s16",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x2-s16/pt6v2-none-lr3.2e-2/run_whole_none_seed16_pt6v2-none-lr3.2e-2.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-none-lr3.2e-2-s16/pt6v2-none-lr3.2e-2/run_whole_none_seed16_pt6v2-none-lr3.2e-2.json",
+   "registered_job": "job_pt6v2-none-lr3.2e-2-s16.sbatch",
+   "registered_sha12": "c81289bc441f",
+   "job_sha12": "708eab24624e",
+   "job_id": "24153627"
+  },
+  "pt6v2-none-lr3.2e-2-x4-s16": {
+   "arm": "none",
+   "lr": "3.2e-2",
+   "x": 4,
+   "seed": 16,
+   "slurm_name": "llmadd_pt6v2v8-none-x4-s16",
+   "tokens": 1199964160,
+   "steps": 73240,
+   "window": null,
+   "events": [],
+   "job_file": "out_v8/job_pt6v2-none-lr3.2e-2-x4-s16.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x4-s16",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x4-s16/pt6v2-none-lr3.2e-2/run_whole_none_seed16_pt6v2-none-lr3.2e-2.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-none-lr3.2e-2-s16/pt6v2-none-lr3.2e-2/run_whole_none_seed16_pt6v2-none-lr3.2e-2.json",
+   "registered_job": "job_pt6v2-none-lr3.2e-2-s16.sbatch",
+   "registered_sha12": "c81289bc441f",
+   "job_sha12": "6e1163bb929a",
+   "job_id": "24153629"
+  },
+  "pt6v2-none-lr3.2e-2-x2-s17": {
+   "arm": "none",
+   "lr": "3.2e-2",
+   "x": 2,
+   "seed": 17,
+   "slurm_name": "llmadd_pt6v2v8-none-x2-s17",
+   "tokens": 599982080,
+   "steps": 36620,
+   "window": null,
+   "events": [],
+   "job_file": "out_v8/job_pt6v2-none-lr3.2e-2-x2-s17.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x2-s17",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x2-s17/pt6v2-none-lr3.2e-2/run_whole_none_seed17_pt6v2-none-lr3.2e-2.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-none-lr3.2e-2-s17/pt6v2-none-lr3.2e-2/run_whole_none_seed17_pt6v2-none-lr3.2e-2.json",
+   "registered_job": "job_pt6v2-none-lr3.2e-2-s17.sbatch",
+   "registered_sha12": "d85ea9500419",
+   "job_sha12": "3edc13784155",
+   "job_id": "24153630"
+  },
+  "pt6v2-none-lr3.2e-2-x4-s17": {
+   "arm": "none",
+   "lr": "3.2e-2",
+   "x": 4,
+   "seed": 17,
+   "slurm_name": "llmadd_pt6v2v8-none-x4-s17",
+   "tokens": 1199964160,
+   "steps": 73240,
+   "window": null,
+   "events": [],
+   "job_file": "out_v8/job_pt6v2-none-lr3.2e-2-x4-s17.sbatch",
+   "out": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x4-s17",
+   "run_json": "runs/pt6v2/out_v8/pt6v2-none-lr3.2e-2-x4-s17/pt6v2-none-lr3.2e-2/run_whole_none_seed17_pt6v2-none-lr3.2e-2.json",
+   "ref_run": "runs/pt6v2/out/pt6v2-none-lr3.2e-2-s17/pt6v2-none-lr3.2e-2/run_whole_none_seed17_pt6v2-none-lr3.2e-2.json",
+   "registered_job": "job_pt6v2-none-lr3.2e-2-s17.sbatch",
+   "registered_sha12": "d85ea9500419",
+   "job_sha12": "25ee2cf2b20c",
+   "job_id": "24153632"
+  }
+ },
+ "sbatch_extra": [
+  "--dependency=afterok:24153545"
+ ]
+}
