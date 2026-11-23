@@ -6,7 +6,7 @@
 
 Yihuai Hong · Hanxi Ma · Chen Zhao
 
-Paper (arXiv, coming soon) · [Project page](https://yihuaihong.github.io/manifolds/)
+Paper (arXiv, coming soon) · [Project page](https://yihuaihong.github.io/manifolds/) · [Models (Hugging Face)](https://huggingface.co/YihuaiHong/manifold-pretraining-engineering)
 
 <img src="https://yihuaihong.github.io/manifolds/media/fig1_manifold.png" width="860" alt="A 53M model pretrained from scratch and OLMo-2-7B fine-tuned, with and without a helix prior on numbers: their number manifolds and their accuracy on unseen addition problems">
 
