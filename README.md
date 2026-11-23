@@ -123,6 +123,20 @@ Each run writes `run_<geometry>_seed<s>.json`; other tasks, targets and splits a
 **Check a paper number without a GPU**: `python tools/pt2main_summary.py` reads `results/` and prints the
 curve averages of Figure 1d over 8 seeds: 18.4 without the prior, 69.9 with it.
 
+## Reproduce with Claude Code
+
+In a clone of this repository, start [Claude Code](https://claude.com/claude-code) and type `/reproduce`. The
+command's prompt is [`.claude/commands/reproduce.md`](.claude/commands/reproduce.md); any other coding agent can be
+given the same file as its instructions.
+
+| Command | What it does | Needs |
+|---|---|---|
+| `/reproduce check` | reads the stored per-seed results and checks the 18.4 → 69.9 of Figure 1d | no GPU |
+| `/reproduce pretrain` | reruns the 53M comparison of Figure 1d (helix prior against no prior, each at its own best learning rate) | one GPU, about an hour per run |
+| `/reproduce finetune` | reruns the OLMo-2-7B fine-tuning of Figure 1h | one GPU that fits OLMo-2-7B with LoRA |
+
+The agent writes the commands it ran and its numbers, next to the paper's, to `REPRODUCTION.md`.
+
 ## Reproducing the paper
 
 Scripts are in `tools/` unless a path is given; `make_jobs_*.py` are in `torch/llmadd_torch/`, and `runs/` is
@@ -132,22 +146,44 @@ Scripts are in `tools/` unless a path is given; `make_jobs_*.py` are in `torch/l
 |---|---|---|
 | **Fig. 1a–d** · pretraining, 53M | `pretrain_range.py`; tasks from `make_pt2main_tasks.py` (e.g. `tasks/350-pt2b-lr2e-3-win-ctx-s0.sh`); read-out `pt2main_summary.py`; panels b, c: `--save_at` and `fig1_export.py` (branch `fig1-export`) | `results/*-pt2b-*/`, `runs/fig1_pt2b/` |
 | **Fig. 1e–h** · fine-tuning OLMo-2-7B | `manifold_train.py --train_pairs 7000 --epochs 10 --fixed_test --curve_every 50`; `make_jobs_broad.py`, `make_jobs_s1.py`, `make_jobs_viz.py`; 3-D axes as in `viz_helix3d.py` | `results/b3-curve-9B-n7000-*-torch/`, `results/s1-curve-9B-n7000-*-torch/`, `runs/viz-9B-n7000-*/` |
-| **Fig. 2a** · model size, 2% | as Fig. 1a–d (e.g. `tasks/358-pt2s190-lr6e-4-win-ctx-s0.sh`); 505M: `make_jobs_pt2s505.py` | `results/*-pt2s190-*/`, `runs/pt2s505/` |
-| **Fig. 2b** · model size, 7% | `make_jobs_ptlr.py`, `make_jobs_ptlr1b.py`; read-out `ptscale_summary.py` (1.07B: branch `ladder-1b`); 93M: `make_jobs_pt300x.py`; 136M, 294M, 391M, 731M: `make_jobs_ptsz.py`, read-out `runs/ptsz/readout_ptsz.py` | `runs/ptlr/`, `runs/ptlr_1b/`, `runs/pt300x/`, `runs/ptsz/` |
-| **Fig. 2c** · first set of six priors | 53M: `make_rb6_tasks.py`, `make_rb6m_tasks.py` (e.g. `tasks/419-rb6pb-53m-2pct-k2-all6-lam1-s0.sh`), read-out `rainbow6_summary.py`; 190M, 505M: `make_jobs_rb6scale.py`, read-out `rb6scale_summary.py` (branch `scale-ladder`) | `results/*-rb6pb-*/`, `results/*-rb6mb-*/`, `runs/rb6_190m/`, `runs/rb6_505m/` |
-| **Fig. 3** · gain vs. size at fixed data | `make_jobs_pttpp.py` (read-out `pttpp_summary.py`, branch `ladder-tpp`), `make_jobs_pt2same.py`, `make_jobs_pt300x.py`, `make_jobs_ptsz.py` (read-out `runs/ptsz/readout_ptsz.py`), `make_jobs_pt2sz.py` (read-out `runs/pt2sz/readout_pt2sz.py`) | `runs/pttpp/`, `runs/pt2same/`, `runs/pt300x/`, `runs/ptsz/`, `runs/pt2sz/` |
-| **Fig. 4** · right time and place | `make_jobs_pt999.py`, `make_jobs_pt999b.py`; read-out `pt999_summary.py` | `runs/pt999/`, `runs/pt999b/` |
-| **Fig. 5** · the benefit window, OLMo-2 1B–32B | `manifold_train.py`, `concept_train.py`, `fetch_olmo.py` (e.g. `tasks/081-curve-lora-lam20-s1-2000.sh`) | `results/` of the tasks in FINDINGS F14, F23–F27, F32, F34 |
-| **Fig. 6** · the window for Pythia | `pythia_train.py` (e.g. `tasks/242-pythia-160m-step1000.sh`) | `results/*-pythia-*/` |
-| **Table 1** · concepts helped | rows from Fig. 1, Fig. 2c and Table 2; months, weekdays: `ft36.py`, `make_jobs_ft36.py`, read-out `ft36_summary.py`; vector sums: `toy_struct.py`, `make_jobs_newmani.py` | `results/ft36-torch/`, `runs/newmani/` |
-| **Table 2** · six priors together | [below](#six-priors-together-table-2) | `runs/pt6v2/` |
-| **Table 3** · parts of the helix; three operations | `manifold_train.py` (e.g. `tasks/288-p4-sep-7b-tokens42B.sh`); b: `--task mixed`, `make_jobs_mixops.py` | `results/28[89]-*/`, `results/290-*/`, `results/mo-*-torch/` |
-| **Table 4** · costs | zero-shot benchmarks: `downstream_eval.py`, `downstream_readout.py` (branch `downstream`); the other rows reuse the runs above | `runs/downstream/` |
+| **Fig. 2** · gain vs. size at fixed data | `make_jobs_pttpp.py` (read-out `pttpp_summary.py`, branch `ladder-tpp`), `make_jobs_pt2same.py`, `make_jobs_pt300x.py`, `make_jobs_ptsz.py` (read-out `runs/ptsz/readout_ptsz.py`), `make_jobs_pt2sz.py` (read-out `runs/pt2sz/readout_pt2sz.py`) | `runs/pttpp/`, `runs/pt2same/`, `runs/pt300x/`, `runs/ptsz/`, `runs/pt2sz/` |
+| **Fig. 3** · right time and place | `make_jobs_pt999.py`, `make_jobs_pt999b.py`; read-out `pt999_summary.py` | `runs/pt999/`, `runs/pt999b/` |
+| **Fig. 4** · the benefit window, OLMo-2 1B–32B | `manifold_train.py`, `concept_train.py`, `fetch_olmo.py` (e.g. `tasks/081-curve-lora-lam20-s1-2000.sh`) | `results/` of the tasks in FINDINGS F14, F23–F27, F32, F34 |
+| **Fig. 5** · the window for Pythia | `pythia_train.py` (e.g. `tasks/242-pythia-160m-step1000.sh`) | `results/*-pythia-*/` |
+| **Fig. 6a (App. G)** · model size, 2% | as Fig. 1a–d (e.g. `tasks/358-pt2s190-lr6e-4-win-ctx-s0.sh`); 505M: `make_jobs_pt2s505.py` | `results/*-pt2s190-*/`, `runs/pt2s505/` |
+| **Fig. 6b (App. G)** · model size, 7% | `make_jobs_ptlr.py`, `make_jobs_ptlr1b.py`; read-out `ptscale_summary.py` (1.07B: branch `ladder-1b`); 93M: `make_jobs_pt300x.py`; 136M, 294M, 391M, 731M: `make_jobs_ptsz.py`, read-out `runs/ptsz/readout_ptsz.py` | `runs/ptlr/`, `runs/ptlr_1b/`, `runs/pt300x/`, `runs/ptsz/` |
+| **Fig. 6c (App. G)** · first set of six priors | 53M: `make_rb6_tasks.py`, `make_rb6m_tasks.py` (e.g. `tasks/419-rb6pb-53m-2pct-k2-all6-lam1-s0.sh`), read-out `rainbow6_summary.py`; 190M, 505M: `make_jobs_rb6scale.py`, read-out `rb6scale_summary.py` (branch `scale-ladder`) | `results/*-rb6pb-*/`, `results/*-rb6mb-*/`, `runs/rb6_190m/`, `runs/rb6_505m/` |
+| **Table 1** · six priors together | [below](#six-priors-together-table-1) | `runs/pt6v2/` |
+| **Table 2** · parts of the helix; three operations | `manifold_train.py` (e.g. `tasks/288-p4-sep-7b-tokens42B.sh`); b: `--task mixed`, `make_jobs_mixops.py` | `results/28[89]-*/`, `results/290-*/`, `results/mo-*-torch/` |
+| **Table 4 (App. B)** · concepts helped | rows from Fig. 1, Fig. 6c and Table 1; months, weekdays: `ft36.py`, `make_jobs_ft36.py`, read-out `ft36_summary.py`; vector sums: `toy_struct.py`, `make_jobs_newmani.py` | `results/ft36-torch/`, `runs/newmani/` |
+| **Table 15 (App. I)** · costs | zero-shot benchmarks: `downstream_eval.py`, `downstream_readout.py` (branch `downstream`); the other rows reuse the runs above | `runs/downstream/` |
 
 `results/<task>/` holds run outputs. `runs/<batch>/` holds the records of the runs on our second cluster
 (pre-registration `AUDIT.md`, read-out scripts) and their per-seed outputs under `out*/` (JSON and CSV, no weights).
 
-### Six priors together (Table 2)
+### Concept-domain data
+
+Numbers, the calendar domains and the six priors of Table 1 need no data files. Five other domains of the atlas and
+the 36-domain screen (stars, emotions, landmarks, US cities, people) read files from third parties, which we do not
+re-host. `tools/atlas_fetch_data.py` downloads them from their original sources into `data/atlas/` (or
+`$MANIFOLD_DATA`) and checks each against the copy the paper used:
+
+```bash
+pip install skyfield==1.55      # IAU star names
+python tools/atlas_fetch_data.py
+```
+
+| File | Source |
+|---|---|
+| `gurnee_us_place.csv`, `gurnee_historical_figure.csv` | Gurnee & Tegmark (2024), [wesg52/world-models](https://github.com/wesg52/world-models) (MIT) |
+| `warriner.csv` | Warriner, Kuperman & Brysbaert (2013), supplementary material of *Behavior Research Methods* 45 |
+| `stars.csv` | Hipparcos main catalogue (CDS I/239) with the IAU star names in `skyfield` |
+| `landmarks.csv` | coordinates of 76 English Wikipedia articles |
+
+If the CDS server cannot be reached, download `hip_main.dat` from CDS catalogue I/239 by hand and pass
+`--hip hip_main.dat`.
+
+### Six priors together (Table 1)
 
 On branch `ptdom3`: six priors (λ 1 each) at learning rate 1e-3. In the flags, `dim` is dimensions and `box5` is the
 grid.
@@ -172,7 +208,7 @@ python pretrain_range.py --data ../pretrain_data --tokenizer allenai/OLMo-2-1124
 
 Seeds 16–23; a run takes 0.3–0.75 GPU-hours on one A100 or B200. Cities and countries come from `geonamescache`
 (pip); the other domains in `tools/manifold_domains.py` read CSV files from `$MANIFOLD_DATA` (default `data/atlas`)
-and are skipped when those files are absent. Every Table 2 run used the commit tagged `pt6v2-run`; `ptdom3` adds
+and are skipped when those files are absent ([Concept-domain data](#concept-domain-data)). Every Table 1 run used the commit tagged `pt6v2-run`; `ptdom3` adds
 only this data-folder change. Pre-registration and amendments: `runs/pt6v2/AUDIT.md`.
 
 ## Repository
@@ -193,7 +229,7 @@ torch/llmadd_torch/    job generators, records and per-seed outputs of the runs 
 report/FINDINGS.md     findings log (in Chinese; entries F1, F2, …, each naming its code and runs)
 ```
 
-Some trainer versions live on branches: `ptdom3` (Table 2), `fig1-export` (Figure 1 states), `scale-ladder`,
+Some trainer versions live on branches: `ptdom3` (Table 1), `fig1-export` (Figure 1 states), `scale-ladder`,
 `ladder-1b`, `ladder-tpp` (model size) and `downstream` (zero-shot benchmarks). `torch/llmadd_torch/` is a
 snapshot: its generators hard-code the paths of the cluster they ran on, so they record what was run but do not run
 as they are; to rerun a cell, use its trainer command. Its read-outs also hard-code the cluster root, and they read
