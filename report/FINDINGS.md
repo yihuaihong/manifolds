@@ -5937,3 +5937,18 @@ numbers、量纲格、torus、box5 四个概念上，190M–1.07B 的六先验 r
 - 505M：「in both seeds run so far, all six concepts are higher averaged over training」。
 
 **不要写**：在「分离」那句里加入 countries（差距只有 0.6，新 run 进来可能被打破）或 cities。
+
+**F114 补记·追加（2026-11-24）：先验开到训练结束的那组同样分开**
+
+all6full@6e-4（先验开到训练结束）的 5 个 run（190M s16、505M s16 / s17 / s18、1.07B s16）在同样四个概念上，也全部高于同样那 16 个不加先验 run：
+
+| 概念 | all6full 最低 | 不加先验最高 |
+|---|---|---|
+| numbers | 77.6（505M s17） | 29.8 |
+| dim | 84.9 | 47.0 |
+| torus | 87.3 | 72.2 |
+| box5 | 79.9 | 44.4 |
+
+所以「分离」对 10 个六先验 run 对 16 个不加先验 run 成立。合并两组后，下限是 numbers ≥77.6、dim ≥80.0、torus ≥86.0、box5 ≥68.5；dim / torus / box5 的最低值都来自窗口臂。读法同本补记（scratchpad 的 size_levels_full.py，用同一个加载器）。countries 上 all6full 最低为 91.3（505M s17），等于不加先验的最高值，不算分开。
+
+能写：「every model with the six priors, in the window or kept on until the end (10 runs), is above every model without priors trained at these sizes (16 runs) on numbers, dimensions, torus and grid (numbers ≥77.6% vs ≤29.8%, dimensions ≥80.0% vs ≤47.0%, torus ≥86.0% vs ≤72.2%, grid ≥68.5% vs ≤44.4%)」。
