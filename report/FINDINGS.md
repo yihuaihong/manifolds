@@ -5902,3 +5902,38 @@
 3. 「先验降低 bpb」（限定 4）。
 4. 「和 53M 一样 8–30%」：两个定义不同。同定义下 53M 是 10–56%。
 5. 「505M 7–38%」：应为 8–38%，7% 是单个 eval 的数。
+
+## [2026-11-24] F114 补记（可以写得更强的三处，含 505M seed 17 复现；没有新训练）
+
+numbers、量纲格、torus、box5 四个概念上，190M–1.07B 的六先验 run 全部高于目前所有不加先验 run（任何尺寸、任何 lr、任何 seed）：numbers ≥77.8 对 ≤29.8，dim ≥80.0 对 ≤47.0，torus ≥86.0 对 ≤72.2，box5 ≥68.5 对 ≤44.4。numbers 的增益在 53M–1.07B 每个尺寸都是 47–51 点。505M seed 17 复现了六个概念面积全为正（2/2）。
+
+**怎么读的**
+- 主会话用审查员的独立加载器读（/scratch/yh6210/tmp_audit/pt6v2_size_s16/indep.py，exec 到 reach() 之前）。脚本在 scratchpad 的 size_levels.py。
+- 和 sizeread / indep_out 已审的值逐个对上：
+  - all6 s16 面积：numbers 78.3 / 78.9 / 78.2，dim 92.3 / 91.2 / 88.8；
+  - none 的最大值：numbers 29.8（505M 9.6e-3 s16）、box5 44.4（同一 run）；
+  - 505M 两 seed 均值：dim 44.5 =（42.1 + 47.0）/ 2，torus 71.9 =（71.6 + 72.2）/ 2。
+- 进入比较的 run：
+  - 六先验 5 个：190M s16、505M s16 / s17 / s18、1.07B s16。
+  - 不加先验 16 个：190M 4 个 lr、505M s16 4 个 + s17 4 个 lr、1.07B 4 个 lr。全部是跑完 75 个 eval 的 run。
+
+**结果**（训练平均准确率，即面积）
+1. **分离**：在上面四个概念上，每个六先验 run 都高于每个不加先验 run。
+   - countries 也是如此，但差距很窄（≥91.9 对 ≤91.3）。
+   - cities 不完全分离：505M s16 为 88.9，1.07B none@9.6e-3 为 89.5。
+2. **numbers 增益和尺寸无关**：53M 为 46.9（论文），190M 51.2，505M 49.1，1.07B 50.9（均为 s16）。
+   - 不加先验的 numbers 面积在所有尺寸、所有 lr 上都只有 10–30，所以增益对 none 的 lr 选择不敏感。
+   - 1.07B 上 numbers 的最好 none lr 在网格内部。
+3. **505M seed 17 复现**：六个概念面积全为正，2/2。
+   - s16 / s17 分别为：numbers +49.9 / +58.7，dim +49.1 / +35.9，box5 +41.9 / +41.2，torus +15.2 / +15.8，cities +1.0 / +4.2，countries +2.6 / +2.6。
+   - none 的最好 lr 按三个 seed 的均值重选，numbers 改为 4.8e-3。
+   - 终值上 cities / countries 两个 seed 正负不一（±2 以内），以面积为准。
+
+**限定**：「分离」指的是目前训过的不加先验 run。1.07B 的 none@1.92e-2 / 3.84e-2 和 505M s18 的 none 跑完后要重新核对。
+
+**可以写**
+- 「From 190M to 1.07B, every model with the six priors is above every model without priors that we trained at these sizes, at any learning rate or seed, on numbers, dimensions, torus and grid (accuracy averaged over training: numbers ≥77.8% vs ≤29.8%, dimensions ≥80.0% vs ≤47.0%, torus ≥86.0% vs ≤72.2%, grid ≥68.5% vs ≤44.4%).」
+- 「On numbers the gain is 47–51 points at every size from 53M to 1.07B.」
+- 505M：「in both seeds run so far, all six concepts are higher averaged over training」。
+
+**不要写**：在「分离」那句里加入 countries（差距只有 0.6，新 run 进来可能被打破）或 cities。
