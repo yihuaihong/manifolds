@@ -794,7 +794,7 @@ table.dom td.n{font-family:var(--font-body);font-size:.86rem;font-variant-numeri
     <li><b>It supplies values; it does not teach them</b>We hold three-digit numbers out of every arithmetic problem, so that they appear only in web text. On the held-out numbers from 700 to 999, every configuration we tested without a prior ends at or below 11%; while a helix prior keeps their coordinates in place, accuracy on them is 99%. Once the prior stops maintaining their coordinates, they are overwritten.</li>
     <li hidden><b>Given the structure, a model learns to use it</b>Only one case, a toy, meets our criteria: with a target that encodes the whole table, a prior lets a one-layer network learn from 6.7% of the table, on which none of the 28 settings we ran without a prior learns within four times the budget.</li>
     <li><b>It does not fix a geometry the computation does not use</b>No target we tried, whether the logarithm, prime exponents or per-place codes, helps multiplication in the training format; in pretraining, the calendar priors do not help their own tasks.</li>
-    <li><b>It does not act at inference</b>Snapping representations onto the ideal manifold at inference never helps (at three OLMo-2 sizes); the prior acts on learning.</li>
+    <li><b>It does not help when imposed only at inference</b>Snapping representations onto the ideal manifold at inference never helps (at three OLMo-2 sizes); the prior acts on learning.</li>
   </ul>
   <h3 class="subhead" id="costs">What it costs</h3>
   <p class="subtake">In pretraining, against models without a prior at the same learning rate and seeds, no comparison on five zero-shot benchmarks shows a decline that is both significant and larger than one point.</p>
@@ -1336,7 +1336,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 6206868).";
+  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 99f8d1b).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
