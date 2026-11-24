@@ -896,7 +896,7 @@ const CLAIMS = [
 // F81 screen (gains at 42B / 210B, robust marks, floor / ceiling bands) and F74 per-domain decodability (x / 8)
 const DOMAINS = [
   ["Numbers", [["Numbers","The number x","helix","step",8,"+41.6","up","","−1.1","","c"],["Number words","The number x","helix","step",8,"−6.9","","","−18.5","dn","c"],["Ordinals","It came x","helix","step",8,"+2.0","","","−10.1","",""],["Years‡","In the year x","helix","step",8,"−14.0","dn","","−2.4","dn","c"]]],
-  ["Cycles", [["Weekdays","The day was x","circle","step",8,"0.0","","f","−1.0","","f"],["Months","The month of x","circle","step",8,"+1.2","","f","+21.6","up",""],["Hours","The time was x","circle","step",8,"−2.0","","","+4.1","",""],["Zodiac signs","The zodiac sign x","circle","step",6,"+1.2","","f","+1.2","","f"],["Chinese zodiac","The Year of the x","circle","step",3,"+0.6","","f","+0.6","","f"],["Musical keys","A piece in the key of x","chromatic","step",2,"+0.6","","f","−0.3","","f"],["Pitch‡","The note x","chromatic","step",2,"+0.3","","f","−0.6","","f"],["Compass","The wind blew from the x","circle","anchor",8,"+3.2","","","−0.6","","c"],["Colours","The colour x","hue circle","anchor",8,"+4.0","up","","+0.8","","c"]]],
+  ["Cycles", [["Weekdays","The day was x","circle","step",8,"0.0","","f","−1.0","","f"],["Months","The month of x","circle","step",8,"+1.2","","f","+21.6","up",""],["Hours","The time was x","circle","step",8,"−2.0","","","+4.1","",""],["Zodiac signs","The zodiac sign x","circle","step",6,"+1.2","","f","+1.2","","f"],["Chinese zodiac","The Year of the x","circle","step",3,"+0.6","","f","+0.6","","f"],["Musical keys","A piece in the key of x","chromatic","step",2,"+0.6","","f","−0.3","","f"],["Pitch‡","The note x","chromatic","step",2,"+0.3","","f","−0.6","","f"],["Compass","The wind blew from the x","circle","anchor",8,"+3.2","","","−0.6","","c"],["Colors","The color x","hue circle","anchor",8,"+4.0","up","","+0.8","","c"]]],
   ["Magnitudes and scales", [["Animal weight","The weight of a x","log line","order",8,"−0.1","","c","−0.1","","c"],["Country population","The population of x","log line","order",8,"0.0","","c","0.0","","c"],["Kinship","My x","generation","order",8,"0.0","","c","+0.2","","c"],["Scalar adjectives","It was x","within scale","order",3,"−2.3","","","+3.8","",""],["Units","One x","within scale","order",8,"+0.5","","c","−2.5","","c"]]],
   ["Orders", [["Letters","The letter x","line","step",8,"−13.8","dn","","−10.2","",""],["Greek letters","The Greek letter x","line","step",8,"0.0","","f","−1.0","","f"],["Planets","The planet x","line","step",8,"0.0","","f","+15.1","","f"],["Chemical elements","The element x","line","step",7,"0.0","","f","0.0","","f"],["Geologic periods","The geologic period x","line","step",8,"0.0","","f","−8.8","","f"],["US presidents","President x","line","order",8,"+0.5","","c","−0.2","","c"],["Historical figures","The historical figure x","rank","order",8,"−0.7","","c","+0.3","","c"],["Military ranks","The military rank of x","line","order",8,"+6.2","","","0.0","","c"],["Life stages","The life stage x","line","order",6,"0.0","","c","0.0","","c"],["Metric prefixes","The metric prefix x","line","order",8,"0.0","","","+1.6","",""]]],
   ["Places", [["Countries","The country of x","sphere","anchor",8,"+2.4","up","c","+1.5","","c"],["Cities","The city of x","sphere","anchor",8,"+3.7","up","","+1.7","",""],["US cities","The American city of x","plane","anchor",8,"+0.2","","c","−0.1","","c"],["Landmarks","The famous landmark x","sphere","anchor",8,"+11.9","up","","+14.1","up",""],["Stars","In the night sky, the star x","sphere","anchor",1,"+18.7","up","f","+42.2","up","f"],["Emotions","I feel x","plane","order",8,"+0.1","","c","+0.5","","c"]]],
@@ -1092,7 +1092,7 @@ function fig3D() {
     if (ov.dataset.k !== String(k)) { ov.dataset.k = k; ov.replaceChildren(h("b", { text: cpName(cp) }), h("span", { text: `helix R² above null ${F[k].geometry.toFixed(2)}` })); [...tk.children].forEach((e, j) => e.classList.toggle("on", j <= k)); }
   }
   $("#cap-3d").replaceChildren(
-    "Each dot is one number, placed by a linear read-out on three helix axes; without structure the dots collapse to the centre. Colour: last digit.",
+    "Each dot is one number, placed by a linear read-out on three helix axes; without structure the dots collapse to the centre. Color: last digit.",
     "");
   return { build, update };
 }
@@ -1336,7 +1336,7 @@ load().then(() => {
   let w = window.innerWidth; window.addEventListener("resize", () => { if (Math.abs(window.innerWidth - w) > 8) { w = window.innerWidth; rebuildAll(); } });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", rebuildAll);
   new MutationObserver(rebuildAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 3dd1df2).";
+  $("#built").textContent = "Page version 2026-11-22 · matches the paper draft v2 (Overleaf 36dc1a3).";
 }).catch(err => { $("#load-error").hidden = false; console.error(err); });
 })();
 </script>
