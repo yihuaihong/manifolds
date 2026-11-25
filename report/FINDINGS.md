@@ -6068,3 +6068,44 @@ countries（91.3 对 91.7）和 cities 仍然不分开。还没跑完的：190M 
 **能写**：「In the two same-learning-rate comparisons of the number prior at 505M, none of the 10 benchmark verdicts is worse: 6 non-inferior (one with a small LAMBADA cost) and 4 undetermined; the language-model loss is higher with the prior in one of the two comparisons (4/4 seeds).」
 
 F96 原条目的「不得写」照旧适用。
+
+## [2026-11-25] F114 补记四（190M 三个 seed 齐了，20 个复现 run；探索档，复现）
+
+190M 上，六先验在 seed 16 / 17 / 18 三个 seed 中都把六个概念的曲线面积提到不加先验最好 lr 之上。seed 均值：numbers +51.3、dim +48.1、box5 +42.9、torus +20.4、cities +4.2、countries +3.4，每个概念 3/3。分离仍然成立，现在是 18 个六先验 run 对 36 个不加先验 run，边界值不变。
+
+**设置**
+- REP 190M 的 20 个 run 全部完成：s17 / s18 各 9 个，s16 补 none@1.2e-3 / 3.84e-2。部分 run 由 B200 竞速副本跑完。
+- CHECK_PY 只有预期内的 FAIL：step-0 lm、offline_lm，以及 B200 副本的 GPU 白名单。
+- 读数：sizeread.py --rep，输出在 sizeread_rep_190done.txt。N_m 取 6 个 lr（1.2e-3–3.84e-2）中 seed 均值面积最高的那个。
+  - numbers 的 N_m 是 9.6e-3，在网格内部。
+  - torus 和 box5 的 N_m 是 1.92e-2，也在内部。
+  - dim 的 N_m 是 3.84e-2，落在网格上沿（open）。
+
+**结果**（190M，三个 seed，s16 / s17 / s18）
+1. 面积，all6 − none@N_m（均值，括号内为逐 seed）：
+   - numbers +51.3（+54.1 / +50.2 / +49.6）
+   - dim +48.1（+58.8 / +45.5 / +39.9）
+   - box5 +42.9（+48.4 / +42.6 / +37.7）
+   - torus +20.4（+18.6 / +17.7 / +24.9）
+   - cities +4.2（+5.9 / +6.0 / +0.7）
+   - countries +3.4（+3.7 / +3.6 / +2.8）
+   - 六个概念全部 3/3。
+2. 终值，对最好的不加先验 final3：
+   - numbers +32.0、dim +52.4、torus +3.2、box5 +46.4、countries +1.2，都是 3/3；
+   - cities +1.7，2/3。
+3. 先验开到底，终值对最好的不加先验：
+   - 六个概念的均值都为正（numbers +32.5、dim +51.6、cities +1.3、countries +1.5、torus +3.8、box5 +50.5）；
+   - cities 2/3，其余 3/3。
+4. 联合增益：同补记三，190M 三个 seed 都是正值（面积均值 +10.4）。
+5. 分离：18 个六先验 run 对 36 个不加先验 run，横跨所有尺寸、lr 和 seed。
+   - numbers ≥75.3 对 ≤32.3
+   - dim ≥80.0 对 ≤49.5
+   - torus ≥86.0 对 ≤72.5
+   - box5 ≥68.5 对 ≤49.1
+   - cities 和 countries 不分开。
+
+**限定**：190M 上，dim 的最好不加先验 lr 是试过的最高值 3.84e-2，所以 dim 的 +48.1 可能偏大。不过方向已由分离句确定：不加先验在 dim 上最高只有 49.5。
+
+**能写**
+- 「At 190M and at 505M, in all three seeds, the six priors raise accuracy averaged over training on all six concepts above the model without priors at its best learning rate (190M mean gains: numbers 51.3, dimensions 48.1, grid 42.9, torus 20.4, cities 4.2, countries 3.4 points), and the final accuracy on numbers, dimensions, torus and grid.」
+- 分离句的计数改为 18 对 36，边界值不变。
