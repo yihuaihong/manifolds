@@ -6052,3 +6052,19 @@ all6full@6e-4（先验开到训练结束）的 5 个 run（190M s16、505M s16 /
 | box5 | 68.5 | 49.1 |
 
 countries（91.3 对 91.7）和 cities 仍然不分开。还没跑完的：190M s18 的不加先验和 s16 none@3.84e-2；1.07B 的全部不加先验复现，以及 1.92e-2 / 3.84e-2。
+
+## [2026-11-25] F96 补记（论文删去 rb6 后重新计数，没有新 run）：只算 P1 + P2，10 个判词里 0 个 worse、6 个 non-inferior、4 个 undetermined
+
+**背景**：用户 11-25 决定从论文中删去第一组六先验（rb6）。F96 的 P3（190M all6-λ1@6e-4 − none@6e-4）用的就是 rb6 的 190M 模型，因此随之删去。下面按 F96 表格对剩下两个对比重新计数。
+
+**结果**
+- P1（505M win-ctx@1.2e-3 − none@1.2e-3）：non-inferior 3 个（LAMBADA 是小代价 −0.63 [−0.92, −0.34]，0/4；HellaSwag；PIQA），undetermined 2 个（BLiMP，ARC-E）。
+- P2（505M win-ctx@3e-4 − none@3e-4）：non-inferior 3 个（BLiMP，LAMBADA，HellaSwag），undetermined 2 个（ARC-E，PIQA）。
+- 合计 10 个判词：0 worse、6 non-inferior、4 undetermined。
+- 同 lr 的 LM：P2 4/4 更高（+0.012 到 +0.020 nats/token），LAMBADA ppl ×1.061 [1.021, 1.103]；P1 测不出。所以「两个对比里有一个」。
+
+**范围**：P1 和 P2 都只有单个 helix 先验（2% / 7% 设置的 win-ctx，505M）。删去 P3 之后，F96 里没有任何六先验的下游评测。论文中关于通用能力的句子只覆盖单个数字先验，不能写成六先验也不伤通用能力。
+
+**能写**：「In the two same-learning-rate comparisons of the number prior at 505M, none of the 10 benchmark verdicts is worse: 6 non-inferior (one with a small LAMBADA cost) and 4 undetermined; the language-model loss is higher with the prior in one of the two comparisons (4/4 seeds).」
+
+F96 原条目的「不得写」照旧适用。
