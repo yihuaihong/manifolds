@@ -6013,3 +6013,29 @@ all6full@6e-4（先验开到训练结束）的 5 个 run（190M s16、505M s16 /
 - **开到底臂（all6full）在 505M s16 不成立**：1.1108，高于 none@2.4e-3 的 1.1070。
 - 能写：「in each seed, the final validation loss with the six priors in the window is below that of the model without priors at every learning rate run in that seed」。
 - lr 混杂照旧（F114 限定 4）：这句只说明看不到代价。
+
+## [2026-11-25] F114 补记三（更正 F114 结果 5：联合增益在 190M 三个 seed 上都成立，在 505M 上没有）
+
+量纲格上联合训练相对只开量纲格先验的提升，在 190M 三个 seed 中都为正：面积 +4.6 / +12.6 / +14.1（均值 +10.4），终值 +5.2 / +15.6 / +11.1（均值 +10.6），和 53M 的联合增益同一量级。505M 上没有：面积 +3.2 / −0.3 / −7.2（均值 −1.4）。1.07B 只有 seed 16（−1.8）。
+
+**设置**
+- 数据：all6@6e-4 和 only-dim@6e-4，190M 的 s16 / s17 / s18 都已跑完；s18 的两臂在 B200 上，竞速副本，用户已批准。
+- 读数：sizeread.py --rep，输出 sizeread_rep_0125.txt，dim 用 strict 集。
+- 和 F114 结果 5 的关系：F114 结果 5 根据 seed 16（+4.6）写了「190M 以上 only-dim 不再丢量纲格，联合优势没有出现」。这是 F114 审查当时就指出的单 seed 噪声（53M 上这个差的 seed sd 为 7.3），现在被 s17 / s18 推翻。
+
+**结果**
+1. 190M，all6 − only-dim，量纲格（strict），s16 / s17 / s18：
+   - 面积 +4.6 / +12.6 / +14.1，3/3，均值 +10.4；
+   - 终值 +5.2 / +15.6 / +11.1，3/3，均值 +10.6。
+   - only-dim 的终值为 94.8 / 78.4 / 87.7，三个 seed 中有两个在先验关掉后掉分；all6 为 100.0 / 93.9 / 98.8。
+2. 505M：面积 +3.2 / −0.3 / −7.2，终值 −1.1 / −2.6 / −1.6，联合增益没有出现。
+3. 1.07B：s16 面积 −1.8、终值 +0.6。only-dim 不在 1.07B 的复现里，所以只有一个 seed。
+
+**作废**：F114 结果 5 里「190M 以上 only-dim 不再丢量纲格」，以及「53M 的联合优势在这三个尺寸上没有出现」中的 190M 部分。505M 部分保留，1.07B 只有单 seed。
+
+**能写**
+- 「The joint lift on dimensions over the dimensions prior alone holds at 190M in all three seeds (accuracy averaged over training +10.4 points on average, final +10.6), of the size seen at 53M, but not at 505M (−1.4 on average over three seeds).」
+
+**190M 中期读数**（s16 / s17 齐，s18 的不加先验还没跑完，seed 均值不配对，不入论文）：两个 seed 上，六个概念的面积都高于不加先验，2/2。按 seed 均值选出的 N_m，各概念的面积差（s16 / s17）为：numbers +54.1 / +50.2，dim +49.8 / +42.8，cities +7.7 / +4.1，countries +3.7 / +3.6，torus +18.6 / +17.7，box5 +48.4 / +42.6。s18 跑完后定稿。
+
+**其他**：190M 的 B200 副本在 CHECK_PY 的 GPU 白名单检查上 FAIL（B200 不在 53M 的意图里）。这只是标记，读数时注明设备混用。
