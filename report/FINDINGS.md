@@ -6131,3 +6131,32 @@ F96 原条目的「不得写」照旧适用。
 能写：
 - 「At 190M ... on numbers, dimensions, torus and grid it reaches the best final accuracy without priors after 8–36% of training in all three seeds (8–30% on all six manifolds with seed 16)」
 - bpb 那句按 seed 写，三个 seed 都成立。
+
+## [2026-11-25] F114 补记五（1.07B seed 16 补上 none@1.92e-2 / 3.84e-2；分离边界和 1.07B 读数更新）
+
+1.07B 上，不加先验的模型把 lr 提到 3.84e-2 后，在量纲格上明显变好：面积 64.6，终值 87.9；在 9.6e-3 时只有 10.0 / 10.9。所以论文里「不加先验的模型在量纲格上从未超过 49.5%」不再成立。四个概念的分离仍然成立，现在是 18 个六先验 run 对 40 个不加先验 run：numbers ≥75.3 对 ≤32.3，dim ≥80.0 对 ≤64.6，torus ≥86.0 对 ≤74.8，box5 ≥68.5 对 ≤49.1。
+
+**设置**
+- 1.07B s16 的不加先验跑到了 6 个 lr，新增 none@1.92e-2（B200）和 none@3.84e-2（B200 先跑，被抢占后在 H100 上续完，设备混用）。
+- 读数：sizeread.py --rep，输出 sizeread_rep_1855.txt。
+- 分离：用 size_levels(_full).py 重新核对，40 个不加先验 run 里包括已完成的 1.07B s17 / s18 部分 lr，以及 SAMELR 里已经跑完的 none@6e-4。
+
+**结果（1.07B，seed 16，6 个 lr，面积，all6 − none@N_m）**
+| 概念 | 面积差 | none 的 N_m |
+|---|---|---|
+| numbers | +50.9 | 4.8e-3，网格内部 |
+| dim | +24.2 | 3.84e-2，**仍在上沿** |
+| box5 | +38.6 | 3.84e-2，**仍在上沿** |
+| torus | +18.7 | 9.6e-3，内部 |
+| cities | +3.1 | 9.6e-3，内部 |
+| countries | +2.9 | 9.6e-3，内部 |
+
+终值对最好的不加先验：numbers +27.3、dim +12.1、torus +0.7、box5 +35.1、cities +0.8、countries +0.5。不加先验最好的终值为：dim 87.9 @3.84e-2，torus 96.4 @3.84e-2。
+
+**读法**
+- 1.07B 的 dim 和 box5 在 lr 加倍后还在往上走，增益量级仍未定，可能继续缩小。所以 1.07B 照旧只写 numbers 的量级；dim、box5、torus 只写方向。方向有分离句撑着：all6 的 dim 面积 88.8，所有不加先验 run 最高 64.6。
+- 190M 的 dim 也在上沿（3.84e-2，见补记四）。下一步给 190M 和 1.07B 补 none@7.68e-2（s16–18）。
+
+**作废**：论文 / 卡片里的「no model without priors exceeds 49.5% on dimensions」，以及分离句里的「≤49.5」「≤72.5」「36 runs」。
+
+**能写**：「every model with the six priors (18 runs) is above every model without priors finished so far (40 runs) on numbers, dimensions, torus and grid (numbers ≥75.3% vs ≤32.3%, dimensions ≥80.0% vs ≤64.6%, torus ≥86.0% vs ≤74.8%, grid ≥68.5% vs ≤49.1%)」。190M 的 dim 限定改为「…may be an overestimate; the direction holds by the separation」，不再写 49.5。
