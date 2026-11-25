@@ -5996,3 +5996,20 @@ all6full@6e-4（先验开到训练结束）的 5 个 run（190M s16、505M s16 /
 - 分离一句改成 12 对 27 的计数，用上面的边界值；全部跑完后再更新一次。
 
 **不得写**：505M 上 cities / countries 的终值更高（约为 0，1–2/3）。
+
+**F114 补记二·追加（2026-11-24）：bpb 按 seed 比较（数值取自 sizeread_rep_505done.txt 和 sizeread_190m / _1b 的逐 run 行）**
+
+先验窗口臂（all6）在每个 seed 内，都低于同一 seed 跑过的所有不加先验 lr。
+
+| 尺寸 / seed | all6 | 同 seed 不加先验最低（lr） | 同 seed 跑过的不加先验 lr |
+|---|---|---|---|
+| 505M s16 | 1.0960 | 1.1070（2.4e-3） | 5 个 |
+| 505M s17 | 1.1147 | 1.1199（4.8e-3） | 4 个，没跑 2.4e-3 |
+| 505M s18 | 1.1003 | 1.1235（4.8e-3） | 4 个，没跑 2.4e-3 |
+| 190M s16 | 1.1250 | 1.1413（4.8e-3） | 4 个 |
+| 1.07B s16 | 1.0839 | 1.0917（1.2e-3） | 4 个 |
+
+- **跨 seed 不成立**：505M s17 的 all6（1.1147）高于 s16 none@2.4e-3（1.1070）。
+- **开到底臂（all6full）在 505M s16 不成立**：1.1108，高于 none@2.4e-3 的 1.1070。
+- 能写：「in each seed, the final validation loss with the six priors in the window is below that of the model without priors at every learning rate run in that seed」。
+- lr 混杂照旧（F114 限定 4）：这句只说明看不到代价。
