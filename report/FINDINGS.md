@@ -5952,3 +5952,47 @@ all6full@6e-4（先验开到训练结束）的 5 个 run（190M s16、505M s16 /
 所以「分离」对 10 个六先验 run 对 16 个不加先验 run 成立。合并两组后，下限是 numbers ≥77.6、dim ≥80.0、torus ≥86.0、box5 ≥68.5；dim / torus / box5 的最低值都来自窗口臂。读法同本补记（scratchpad 的 size_levels_full.py，用同一个加载器）。countries 上 all6full 最低为 91.3（505M s17），等于不加先验的最高值，不算分开。
 
 能写：「every model with the six priors, in the window or kept on until the end (10 runs), is above every model without priors trained at these sizes (16 runs) on numbers, dimensions, torus and grid (numbers ≥77.6% vs ≤29.8%, dimensions ≥80.0% vs ≤47.0%, torus ≥86.0% vs ≤72.2%, grid ≥68.5% vs ≤44.4%)」。
+
+## [2026-11-24] F114 补记二（505M 三个 seed 齐了，15 个复现 run；探索档，复现）
+
+505M 上，六先验在 seed 16 / 17 / 18 三个 seed 中都把六个概念的曲线面积提到不加先验最好 lr 之上（seed 均值：numbers +51.4、dim +42.8、box5 +37.1、torus +18.2、cities +3.4、countries +3.0；每个概念 3/3）。numbers / dim / torus / box5 的终值也是 3/3 更高。分离一句对 12 个六先验 run 对 27 个不加先验 run 仍然成立。
+
+**设置**
+- REP 505M 共 15 个 run：s17 / s18 各 7 个，加 s16 none@3.84e-2；15 个全部完成。
+- CHECK_PY 只有两条预期内的 FAIL：step-0 lm 参考值、offline_lm。
+- 读数：sizeread.py --rep（b73927e7741c 起），输出在 sizeread_rep_505done.txt。
+  - N_m 取三个 seed 都有的 lr（4.8e-3–3.84e-2）中、seed 均值最高的那个。
+  - dim 和 torus 的 N_m 都落在 1.92e-2，在网格内部；3.84e-2 已经下降。numbers 的 N_m 4.8e-3 在共同网格的下沿，但 s16 在 2.4e-3 上更低（23.6），实际上区间已经闭合。
+- 交叉核对：用审查员的独立加载器（scratchpad 的 size_levels.py）复算 seed 均值。例如 all6 dim 为 (91.2 + 82.8 + 80.0) / 3 = 84.7，numbers 为 (78.9 + 78.1 + 77.8) / 3 = 78.3，都和 sizeread 一致。
+
+**结果**（505M，三个 seed）
+1. 曲线面积，all6 − none@N_m，seed 均值后括号里依次为 s16 / s17 / s18：
+   - numbers +51.4（+49.9 / +58.7 / +45.6）
+   - dim +42.8（+49.1 / +35.9 / +43.4）
+   - box5 +37.1（+41.9 / +41.2 / +28.2）
+   - torus +18.2（+16.2 / +23.0 / +15.6）
+   - cities +3.4（+1.0 / +4.2 / +5.0）
+   - countries +3.0（+2.6 / +2.6 / +3.8）
+   - 六个概念全部 3/3。
+2. 终值：
+   - 对最好 none 的 final3，numbers +27.1、dim +44.9、torus +6.2、box5 +35.0，都是 3/3。
+   - cities +0.1（2/3）、countries −0.4（1/3），约为 0。
+3. 先验开到训练结束（all6full），终值对最好 none：
+   - numbers / dim / torus / box5 为 +26.8 / +48.3 / +4.2 / +40.6，都是 3/3。
+   - cities / countries 为 −0.2 / −0.5（1/3），约为 0。
+4. 联合增益：505M 上，only-dim 在 dim 上与 all6 持平或略高（面积 86.1 对 84.7，终值 95.2 对 93.4），和 F114 结果 5 一致。
+5. bpb：all6 1.104、all6full 1.106、only-dim 1.102，不加先验最好为 1.124（4.8e-3）。lr 混杂（F114 限定 4），只能写「看不到代价」。
+6. 分离（窗口臂和开到底臂合计 12 个六先验 run，不加先验 27 个 run，覆盖任何尺寸、任何 lr、任何 seed）：
+   - numbers ≥76.1（190M s17 all6）对 ≤32.3
+   - dim ≥80.0 对 ≤49.5
+   - torus ≥86.0 对 ≤72.5
+   - box5 ≥68.5 对 ≤49.1
+   - 四个概念仍然完全分开。countries 不再分开（开到底臂最低 91.3，不加先验最高 91.7），cities 仍不分开。
+
+**限定**：190M 的 s17 / s18 和 1.07B 的复现还没跑完。分离那一句的边界值会随新 run 变化，等全部跑完再定稿。
+
+**能写**
+- 「At 505M, in all three seeds, the six priors raise accuracy averaged over training on all six concepts above the model without priors at its best learning rate (mean gains: numbers 51.4, dimensions 42.8, grid 37.1, torus 18.2, cities 3.4, countries 3.0 points), and the final accuracy on numbers, dimensions, torus and grid.」
+- 分离一句改成 12 对 27 的计数，用上面的边界值；全部跑完后再更新一次。
+
+**不得写**：505M 上 cities / countries 的终值更高（约为 0，1–2/3）。
