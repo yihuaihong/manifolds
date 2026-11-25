@@ -512,3 +512,40 @@ The DTAB pair is reported beside it ('torus_dtab'). Class-mean PC overlap and A2
 **Checks before submission.** CPU dry (cpu_short jobs 24152103, 24153545): dry_inputs gives 63 lines b71458d3a12d for all four configs (= the in-job assert), with dim the only prior for only-dim and none for none. The only-dim x2 / x4 step-0 run JSONs confirm steps, window, events and lr. The none x2 / x4 step-0 checks run in 24153545, and all 8 GPU jobs wait on it (afterok; it exits 1 on V8 DRY FAIL). `out_v8/v8read.py` (b623468c678f) was smoke-tested on the 1x runs, both with the arms absent and with `--test-alias`.
 **Reading rule (verbatim).** Report each arm's final3 strict dim at ×2 / ×4 against all6 1×; 'catches up' = mean ≥ all6 1× mean with both seeds within all6's 8-seed range; no gate.
 **Jobs (submitted 2026-11-23 04:14 UTC, dependency afterok:24153545).** `llmadd_pt6v2v8-onlydim-x2-s16` 24153622, `-onlydim-x4-s16` 24153624, `-onlydim-x2-s17` 24153625, `-onlydim-x4-s17` 24153626, `-none-x2-s16` 24153627, `-none-x4-s16` 24153629, `-none-x2-s17` 24153630, `-none-x4-s17` 24153632. Read-out after all 8 finish: `cd out_v8 && python -B v8read.py --json v8read.json | tee v8read.txt`.
+
+## Amendment V9 (post-hoc, 2026-11-25 UTC, user-approved)
+**Approval.** User, 2026-11-25 (relayed by the main session): "可以的，我觉得都可以跑 可以多用一些gpu" ("fine, run all of it, use more GPUs"); B200 approved. Exploratory, no gate.
+**Question.** At lr 2e-3 the joint lift on dim is h6 = all6 − only-dim = +13.5 strict-dim area (8/8). Removing the torus and box5 priors (all4) leaves h4 = +1.5. But all4 also has fewer priors and less total prior gradient: the median grad_prior over prior-on evals, averaged over seeds, is 0.095 for all4 and 0.143 for all6 (reproduced by `out_v9/v9read.py`). V9 asks whether the lift comes from the torus / box5 geometry or from the prior dose.
+**Cells.** all6-shufTB@2e-3, seeds 16–23 (8 runs). This is the registered all6@2e-3 run plus `--prior_shuf torus,box5`; data, domains, the six priors, λ 1 each, window 0.05–0.4, 18,310 steps and trainer a398fccbfe93 are all unchanged. The trainer's own mechanism replaces each shuffled target with F[q]. q is far_perm on the domain's own stream; it is drawn in every arm and logged as shuf_cka_to_true, so the data RNG is unchanged. The CKA to the true target is below 0.15. The target Gram is P G Pᵀ (same spectrum and Frobenius norm), so the dose is matched.
+**Comparators.** all6@2e-3 and only-dim@2e-3 in `out/`, and all4@2e-3 in `out_v4/`, all on the same seeds.
+**Jobs.**
+* Rendered by `posthoc_v9_jobs.py` into `out_v9/job_*.sbatch` and `POSTHOC_V9.json`. Each job is the registered job's A100 render, with byte-identity of the registered render asserted for every seed, plus counted edits:
+  * ARGS gain `--prior_shuf torus,box5`;
+  * out dir `out_v9/pt6v2-all6shufTB-lr2e-3-s<seed>`;
+  * the dry spec gives torus / box5 shuf true;
+  * intent: `prior_shuf` and `shuf`;
+  * CHECK_PY: `dw` expects shuf for torus / box5, and the λ ratio check skips them;
+  * CHECK_PY is log-and-flag only;
+  * V9 early run guard;
+  * A100 / H100, 03:00:00, `--open-mode=append`.
+* Each primary has a B200 race copy (`-b200r`):
+  * <slurm-account>, `--comment="preemption=yes"`, no qos, `--constraint=b200`, 12:00:00;
+  * it shares the primary's out dir, and the run guard leaves one trainer per run.
+**Checks before submission.** These are CPU dry runs.
+* 24530352 (rows):
+  * dry_inputs for all 8 seeds gives the rows sha each job asserts (unchanged by the flag);
+  * the domains line has six priors, λ 1, and shuf on torus / box5 only.
+* 24530353 (step0):
+  * the s16 job's ARGS at step 0 log `prior_shuf`, λ, prior and shuf for all six domains;
+  * with window 0,0.4, the shuffled and unshuffled runs are compared on the same batch at step 0, checking that the torus / box5 geo and prior-gradient terms differ and that the post-update parameters differ;
+  * the trainer's Gram functions are checked to be permutation-equivariant.
+* All 16 GPU jobs wait on 24530353 (afterok; it exits 1 on FAIL).
+* `out_v9/v9read.py` reproduces the known answer with `--test-alias`: h6 +13.5 [+7.4, +19.6] 8/8, h4 +1.5 [−4.8, +7.8] 5/8, final3 all6 77.3 / all4 55.3 / only 52.3, dose 0.1428 / 0.0953.
+**Reading rule (verbatim).** Exploratory, no gate. Lift from the torus / box5 geometry if h_shuf (all6-shufTB − only-dim, dim strict area) is close to h4 and all6 − all6-shufTB > 0 in most seeds; lift from the prior dose if h_shuf is close to h6.
+**Expected flags (not failures).**
+* CHECK_PY "item-state CKA to the target rises" may fail for torus / box5, because the target is shuffled.
+* The device differs from the registered run: s16–s22 ran on B200, s23 on A100.
+**Jobs (submitted 2026-11-25 ~07:50 UTC, dependency afterok:24530353).**
+* Primary `llmadd_pt6v2v9-shufTB-s<seed>`: s16 24530845, s17 24530847, s18 24530853, s19 24530879, s20 24530881, s21 24530901, s22 24530912, s23 24530924.
+* B200 race `-b200r`: s16 24530846, s17 24530852, s18 24530858, s19 24530880, s20 24530900, s21 24530902, s22 24530913, s23 24530933.
+**Read-out.** `cd out_v9 && python -B v9read.py --json v9read.json | tee v9read.txt`.

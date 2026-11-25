@@ -152,10 +152,10 @@ Scripts are in `tools/` unless a path is given; `make_jobs_*.py` are in `torch/l
 | **Fig. 5** · the window for Pythia | `pythia_train.py` (e.g. `tasks/242-pythia-160m-step1000.sh`) | `results/*-pythia-*/` |
 | **Fig. 6a (App. G)** · model size, 2% | as Fig. 1a–d (e.g. `tasks/358-pt2s190-lr6e-4-win-ctx-s0.sh`); 505M: `make_jobs_pt2s505.py` | `results/*-pt2s190-*/`, `runs/pt2s505/` |
 | **Fig. 6b (App. G)** · model size, 7% | `make_jobs_ptlr.py`, `make_jobs_ptlr1b.py`; read-out `ptscale_summary.py` (1.07B: branch `ladder-1b`); 93M: `make_jobs_pt300x.py`; 136M, 294M, 391M, 731M: `make_jobs_ptsz.py`, read-out `runs/ptsz/readout_ptsz.py` | `runs/ptlr/`, `runs/ptlr_1b/`, `runs/pt300x/`, `runs/ptsz/` |
-| **Fig. 6c (App. G)** · first set of six priors | 53M: `make_rb6_tasks.py`, `make_rb6m_tasks.py` (e.g. `tasks/419-rb6pb-53m-2pct-k2-all6-lam1-s0.sh`), read-out `rainbow6_summary.py`; 190M, 505M: `make_jobs_rb6scale.py`, read-out `rb6scale_summary.py` (branch `scale-ladder`) | `results/*-rb6pb-*/`, `results/*-rb6mb-*/`, `runs/rb6_190m/`, `runs/rb6_505m/` |
 | **Table 1** · six priors together | [below](#six-priors-together-table-1) | `runs/pt6v2/` |
+| **Sec. 4.4, App. J** · six priors at 190M–1.07B | the Table 1 recipe at three sizes: `runs/pt6v2_size/make_pt6sz_jobs.py` (seed 16), `make_pt6sz_rep.py` (more seeds and learning rates), `make_pt6sz_1b_fix.py` (1.07B); read-out `runs/pt6v2_size/sizeread.py` | `runs/pt6v2_size/` |
 | **Table 2** · parts of the helix; three operations | `manifold_train.py` (e.g. `tasks/288-p4-sep-7b-tokens42B.sh`); b: `--task mixed`, `make_jobs_mixops.py` | `results/28[89]-*/`, `results/290-*/`, `results/mo-*-torch/` |
-| **Table 4 (App. B)** · concepts helped | rows from Fig. 1, Fig. 6c and Table 1; months, weekdays: `ft36.py`, `make_jobs_ft36.py`, read-out `ft36_summary.py`; vector sums: `toy_struct.py`, `make_jobs_newmani.py` | `results/ft36-torch/`, `runs/newmani/` |
+| **Table 4 (App. B)** · concepts helped | rows from Fig. 1 and Table 1; months, weekdays: `ft36.py`, `make_jobs_ft36.py`, read-out `ft36_summary.py`; vector sums: `toy_struct.py`, `make_jobs_newmani.py` | `results/ft36-torch/`, `runs/newmani/` |
 | **Table 15 (App. I)** · costs | zero-shot benchmarks: `downstream_eval.py`, `downstream_readout.py` (branch `downstream`); the other rows reuse the runs above | `runs/downstream/` |
 
 `results/<task>/` holds run outputs. `runs/<batch>/` holds the records of the runs on our second cluster

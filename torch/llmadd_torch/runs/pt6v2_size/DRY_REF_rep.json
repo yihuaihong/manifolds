@@ -1,0 +1,77 @@
+{
+ "505m/all6-lr6e-4-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/all6full-lr6e-4-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/only-dim-lr6e-4-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr4.8e-3-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr9.6e-3-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr1.92e-2-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr3.84e-2-s17": {
+  "n": 63,
+  "sha": "f3279d42097d3de4db54c938863fabb06da1c8c1e5f425fcdfd240481bf1fb74",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/all6-lr6e-4-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/all6full-lr6e-4-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/only-dim-lr6e-4-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr4.8e-3-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr9.6e-3-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr1.92e-2-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr3.84e-2-s18": {
+  "n": 63,
+  "sha": "bdd706e241979a72f9e5c236b6c59f4b1e2d4c47dddc023ef3117d8ce41465b8",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr3.84e-2-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ }
+}

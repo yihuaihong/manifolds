@@ -1,0 +1,3812 @@
+{
+ "rule": "exploratory, no gates: per size and manifold report all6 - best-none on area and final3; 'promising' = all six positive at a size (-> 2 more seeds under the standing authorisation)",
+ "known53": false,
+ "sizes": {},
+ "rep": {
+  "per_seed": {
+   "16": {
+    "missing": [],
+    "manifolds": {
+     "numbers": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 29.79992202729045,
+      "none_final3": 64.00194931773879,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 80.65497076023392,
+      "all6_area": 78.91812865497077,
+      "all6_final3": 99.77777777777777,
+      "d_area": 49.11820662768032,
+      "d_final3": 35.77582846003898,
+      "d_final3_vs_bestf3": 19.12280701754385,
+      "reach_step_f3": 6250,
+      "reach_frac_f3": 0.341398143091207,
+      "reach_step_1": 6000,
+      "reach_frac_1": 0.32774440196613874,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 19.345029239766077
+     },
+     "dim": {
+      "N_m": "3.84e-2",
+      "edge": "open",
+      "none_area": 49.54022988505748,
+      "none_final3": 56.896551724137936,
+      "best_final3_lr": "3.84e-2",
+      "best_none_final3": 56.896551724137936,
+      "all6_area": 91.19540229885058,
+      "all6_final3": 97.12643678160919,
+      "d_area": 41.6551724137931,
+      "d_final3": 40.22988505747125,
+      "d_final3_vs_bestf3": 40.22988505747125,
+      "reach_step_f3": 1750,
+      "reach_frac_f3": 0.09563080283997816,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 99.42528735632185,
+      "d_full_vs_bestf3": 42.52873563218391
+     },
+     "cities": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 87.95230352303521,
+      "none_final3": 95.47425474254743,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 95.47425474254743,
+      "all6_area": 88.90731707317074,
+      "all6_final3": 93.0081300813008,
+      "d_area": 0.9550135501355328,
+      "d_final3": -2.4661246612466243,
+      "d_final3_vs_bestf3": -2.4661246612466243,
+      "reach_step_f3": null,
+      "reach_frac_f3": null,
+      "reach_step_1": null,
+      "reach_frac_1": null,
+      "full_final3": 96.34146341463415,
+      "d_full_vs_bestf3": 0.8672086720867185
+     },
+     "countries": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 90.56040268456374,
+      "none_final3": 97.59507829977629,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 97.59507829977629,
+      "all6_area": 93.16554809843399,
+      "all6_final3": 97.11968680089485,
+      "d_area": 2.605145413870247,
+      "d_final3": -0.47539149888143584,
+      "d_final3_vs_bestf3": -0.47539149888143584,
+      "reach_step_f3": null,
+      "reach_frac_f3": null,
+      "reach_step_1": null,
+      "reach_frac_1": null,
+      "full_final3": 97.98657718120806,
+      "d_full_vs_bestf3": 0.39149888143177236
+     },
+     "torus": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 71.60815253122946,
+      "none_final3": 95.39776462853386,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 96.25246548323472,
+      "all6_area": 86.81130834976989,
+      "all6_final3": 97.96186719263642,
+      "d_area": 15.203155818540424,
+      "d_final3": 2.564102564102555,
+      "d_final3_vs_bestf3": 1.7094017094017033,
+      "reach_step_f3": 7000,
+      "reach_frac_f3": 0.3823593664664118,
+      "reach_step_1": 4000,
+      "reach_frac_1": 0.21851447296559257,
+      "full_final3": 99.60552268244575,
+      "d_full_vs_bestf3": 3.3530571992110367
+     },
+     "box5": {
+      "N_m": "3.84e-2",
+      "edge": "open",
+      "none_area": 49.08932461873638,
+      "none_final3": 55.773420479302835,
+      "best_final3_lr": "3.84e-2",
+      "best_none_final3": 55.773420479302835,
+      "all6_area": 86.30936819172112,
+      "all6_final3": 95.42483660130719,
+      "d_area": 37.22004357298474,
+      "d_final3": 39.651416122004356,
+      "d_final3_vs_bestf3": 39.651416122004356,
+      "reach_step_f3": 1750,
+      "reach_frac_f3": 0.09563080283997816,
+      "reach_step_1": 1500,
+      "reach_frac_1": 0.08197706171490989,
+      "full_final3": 97.60348583877995,
+      "d_full_vs_bestf3": 41.83006535947711
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 78.91812865497077,
+       "dim": 91.19540229885058,
+       "cities": 88.90731707317074,
+       "countries": 93.16554809843399,
+       "torus": 86.81130834976989,
+       "box5": 86.30936819172112
+      },
+      "final3": {
+       "numbers": 99.77777777777777,
+       "dim": 97.12643678160919,
+       "cities": 93.0081300813008,
+       "countries": 97.11968680089485,
+       "torus": 97.96186719263642,
+       "box5": 95.42483660130719
+      },
+      "bpb": 1.0959692510105246,
+      "share": 0.7733948636411595,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 80.04849902534113,
+       "dim": 90.73563218390802,
+       "cities": 91.79945799457998,
+       "countries": 95.00671140939596,
+       "torus": 87.32938856015778,
+       "box5": 85.02832244008715
+      },
+      "final3": {
+       "numbers": 100.0,
+       "dim": 99.42528735632185,
+       "cities": 96.34146341463415,
+       "countries": 97.98657718120806,
+       "torus": 99.60552268244575,
+       "box5": 97.60348583877995
+      },
+      "bpb": 1.110834273929066,
+      "share": 0.8834313526494026,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 20.165847953216375,
+       "dim": 87.99999999999997,
+       "cities": 74.28943089430894,
+       "countries": 79.78747203579418,
+       "torus": 7.481919789612096,
+       "box5": 6.6579520697167744
+      },
+      "final3": {
+       "numbers": 44.230019493177394,
+       "dim": 98.27586206896551,
+       "cities": 78.64498644986449,
+       "countries": 83.78076062639822,
+       "torus": 12.491781722550954,
+       "box5": 8.061002178649238
+      },
+      "bpb": 1.0948528841408591,
+      "share": 0.9456041629436811,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@2.4e-3": {
+      "area": {
+       "numbers": 23.618479532163747,
+       "dim": 6.459770114942528,
+       "cities": 84.27642276422763,
+       "countries": 88.4731543624161,
+       "torus": 0.8362919132149901,
+       "box5": 6.727668845315902
+      },
+      "final3": {
+       "numbers": 52.71734892787525,
+       "dim": 6.321839080459769,
+       "cities": 92.81842818428184,
+       "countries": 96.16890380313198,
+       "torus": 1.1176857330703485,
+       "box5": 7.625272331154685
+      },
+      "bpb": 1.1069595460559325,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0024,
+      "path": "runs/pt6v2_size/505m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 28.998206627680307,
+       "dim": 26.666666666666668,
+       "cities": 85.67046070460704,
+       "countries": 89.26733780760624,
+       "torus": 71.03221564760025,
+       "box5": 42.570806100217865
+      },
+      "final3": {
+       "numbers": 80.65497076023392,
+       "dim": 29.88505747126437,
+       "cities": 94.579945799458,
+       "countries": 95.77740492170022,
+       "torus": 94.74030243261012,
+       "box5": 51.41612200435729
+      },
+      "bpb": 1.1276657920828337,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/505m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 29.79992202729045,
+       "dim": 34.781609195402304,
+       "cities": 87.95230352303521,
+       "countries": 90.56040268456374,
+       "torus": 71.60815253122946,
+       "box5": 44.444444444444436
+      },
+      "final3": {
+       "numbers": 64.00194931773879,
+       "dim": 41.95402298850575,
+       "cities": 95.47425474254743,
+       "countries": 97.59507829977629,
+       "torus": 95.39776462853386,
+       "box5": 55.119825708061
+      },
+      "bpb": 1.153983763857355,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/505m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.92e-2": {
+      "area": {
+       "numbers": 20.03719298245614,
+       "dim": 42.06896551724138,
+       "cities": 85.98915989159892,
+       "countries": 89.44183445190154,
+       "torus": 70.65088757396448,
+       "box5": 43.07625272331155
+      },
+      "final3": {
+       "numbers": 70.0,
+       "dim": 37.931034482758626,
+       "cities": 92.11382113821138,
+       "countries": 95.46979865771812,
+       "torus": 96.25246548323472,
+       "box5": 46.62309368191722
+      },
+      "bpb": 1.204785681802333,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0192,
+      "path": "runs/pt6v2_size/505m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2/run_whole_none_seed16_pt6v2-none-lr1.92e-2.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@3.84e-2": {
+      "area": {
+       "numbers": 6.008732943469786,
+       "dim": 49.54022988505748,
+       "cities": 79.98373983739836,
+       "countries": 83.14653243847874,
+       "torus": 44.439184746877054,
+       "box5": 49.08932461873638
+      },
+      "final3": {
+       "numbers": 13.935672514619881,
+       "dim": 56.896551724137936,
+       "cities": 90.5691056910569,
+       "countries": 92.95302013422818,
+       "torus": 92.63642340565418,
+       "box5": 55.773420479302835
+      },
+      "bpb": 1.2644069855176252,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0384,
+      "path": "runs/pt6v2_size/505m/none-lr3.84e-2-s16/pt6v2-none-lr3.84e-2/run_whole_none_seed16_pt6v2-none-lr3.84e-2.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": false,
+     "full_final3": true
+    },
+    "only_dim_vs_all6_dim": {
+     "area": -3.1954022988506097,
+     "final3": 1.1494252873563227,
+     "only_dim_area": 87.99999999999997,
+     "only_dim_final3": 98.27586206896551
+    }
+   },
+   "17": {
+    "missing": [],
+    "manifolds": {
+     "numbers": {
+      "N_m": "4.8e-3",
+      "edge": "open",
+      "none_area": 19.405805805805805,
+      "none_final3": 49.74874874874875,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 49.74874874874875,
+      "all6_area": 78.11647647647648,
+      "all6_final3": 98.57457457457458,
+      "d_area": 58.71067067067067,
+      "d_final3": 48.82582582582583,
+      "d_final3_vs_bestf3": 48.82582582582583,
+      "reach_step_f3": 2750,
+      "reach_frac_f3": 0.15024576734025122,
+      "reach_step_1": 2500,
+      "reach_frac_1": 0.13659202621518296,
+      "full_final3": 97.44744744744743,
+      "d_full_vs_bestf3": 47.69869869869868
+     },
+     "dim": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 46.96103896103895,
+      "none_final3": 61.9047619047619,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 61.9047619047619,
+      "all6_area": 82.83982683982683,
+      "all6_final3": 90.04329004329004,
+      "d_area": 35.878787878787875,
+      "d_final3": 28.138528138528144,
+      "d_final3_vs_bestf3": 28.138528138528144,
+      "reach_step_f3": 2000,
+      "reach_frac_f3": 0.10928454396504643,
+      "reach_step_1": 1500,
+      "reach_frac_1": 0.08197706171490989,
+      "full_final3": 94.8051948051948,
+      "d_full_vs_bestf3": 32.900432900432904
+     },
+     "cities": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 87.0620538165843,
+      "none_final3": 94.6183415705656,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 94.6183415705656,
+      "all6_area": 90.36353651839647,
+      "all6_final3": 94.70071389346514,
+      "d_area": 3.3014827018121764,
+      "d_final3": 0.08237232289953056,
+      "d_final3_vs_bestf3": 0.08237232289953056,
+      "reach_step_f3": 11500,
+      "reach_frac_f3": 0.6281267067176406,
+      "reach_step_1": 11000,
+      "reach_frac_1": 0.6008192244675041,
+      "full_final3": 92.6414058209775,
+      "d_full_vs_bestf3": -1.9769357495881081
+     },
+     "countries": {
+      "N_m": "4.8e-3",
+      "edge": "open",
+      "none_area": 90.26283135927807,
+      "none_final3": 96.33389734912578,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 96.33389734912578,
+      "all6_area": 91.91088550479414,
+      "all6_final3": 95.03666102650875,
+      "d_area": 1.6480541455160704,
+      "d_final3": -1.2972363226170245,
+      "d_final3_vs_bestf3": -1.2972363226170245,
+      "reach_step_f3": null,
+      "reach_frac_f3": null,
+      "reach_step_1": null,
+      "reach_frac_1": null,
+      "full_final3": 94.41624365482232,
+      "d_full_vs_bestf3": -1.9176536943034534
+     },
+     "torus": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 72.1974306964165,
+      "none_final3": 97.97160243407708,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 97.97160243407708,
+      "all6_area": 88.00811359026369,
+      "all6_final3": 98.37728194726166,
+      "d_area": 15.810682893847186,
+      "d_final3": 0.4056795131845803,
+      "d_final3_vs_bestf3": 0.4056795131845803,
+      "reach_step_f3": 5500,
+      "reach_frac_f3": 0.30043691971600217,
+      "reach_step_1": 5250,
+      "reach_frac_1": 0.28678317859093394,
+      "full_final3": 99.7971602434077,
+      "d_full_vs_bestf3": 1.8255578093306184
+     },
+     "box5": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 34.78299776286354,
+      "none_final3": 44.96644295302014,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 44.96644295302014,
+      "all6_area": 76.0,
+      "all6_final3": 87.47203579418344,
+      "d_area": 41.21700223713646,
+      "d_final3": 42.5055928411633,
+      "d_final3_vs_bestf3": 42.5055928411633,
+      "reach_step_f3": 2000,
+      "reach_frac_f3": 0.10928454396504643,
+      "reach_step_1": 1750,
+      "reach_frac_1": 0.09563080283997816,
+      "full_final3": 91.49888143176734,
+      "d_full_vs_bestf3": 46.5324384787472
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 78.11647647647648,
+       "dim": 82.83982683982683,
+       "cities": 90.36353651839647,
+       "countries": 91.91088550479414,
+       "torus": 88.00811359026369,
+       "box5": 76.0
+      },
+      "final3": {
+       "numbers": 98.57457457457458,
+       "dim": 90.04329004329004,
+       "cities": 94.70071389346514,
+       "countries": 95.03666102650875,
+       "torus": 98.37728194726166,
+       "box5": 87.47203579418344
+      },
+      "bpb": 1.1146971760504982,
+      "share": 0.806473023572998,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6-lr6e-4-s17/pt6v2-all6-lr6e-4/run_whole_helix3_seed17_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 77.61037037037038,
+       "dim": 85.71428571428572,
+       "cities": 88.9159802306425,
+       "countries": 91.33333333333333,
+       "torus": 87.97565922920893,
+       "box5": 81.78076062639819
+      },
+      "final3": {
+       "numbers": 97.44744744744743,
+       "dim": 94.8051948051948,
+       "cities": 92.6414058209775,
+       "countries": 94.41624365482232,
+       "torus": 99.7971602434077,
+       "box5": 91.49888143176734
+      },
+      "bpb": 1.1082433648626149,
+      "share": 0.8833503764543782,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6full-lr6e-4-s17/pt6v2-all6full-lr6e-4/run_whole_helix3_seed17_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 12.215575575575578,
+       "dim": 83.15151515151514,
+       "cities": 75.9253157605711,
+       "countries": 83.53299492385787,
+       "torus": 2.9154834347532113,
+       "box5": 2.308724832214765
+      },
+      "final3": {
+       "numbers": 24.68968968968969,
+       "dim": 92.64069264069263,
+       "cities": 80.58758923668314,
+       "countries": 88.71968415115624,
+       "torus": 5.206220419202165,
+       "box5": 2.9082774049217
+      },
+      "bpb": 1.116852291141519,
+      "share": 0.9495905200529176,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/only-dim-lr6e-4-s17/pt6v2-only-dim-lr6e-4/run_whole_none_seed17_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 19.405805805805805,
+       "dim": 7.757575757575758,
+       "cities": 85.68478857770457,
+       "countries": 90.26283135927807,
+       "torus": 1.1277890466531442,
+       "box5": 2.5950782997762865
+      },
+      "final3": {
+       "numbers": 49.74874874874875,
+       "dim": 12.554112554112553,
+       "cities": 93.46512904997255,
+       "countries": 96.33389734912578,
+       "torus": 1.757944557133198,
+       "box5": 2.237136465324385
+      },
+      "bpb": 1.1198643136351376,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/505m/none-lr4.8e-3-s17/pt6v2-none-lr4.8e-3/run_whole_none_seed17_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 17.554034034034032,
+       "dim": 23.584415584415584,
+       "cities": 86.16803953871499,
+       "countries": 89.30287648054144,
+       "torus": 72.1974306964165,
+       "box5": 34.78299776286354
+      },
+      "final3": {
+       "numbers": 48.44544544544545,
+       "dim": 23.376623376623375,
+       "cities": 94.17902251510161,
+       "countries": 96.22109419063734,
+       "torus": 97.97160243407708,
+       "box5": 44.96644295302014
+      },
+      "bpb": 1.1561550620211445,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/505m/none-lr9.6e-3-s17/pt6v2-none-lr9.6e-3/run_whole_none_seed17_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.92e-2": {
+      "area": {
+       "numbers": 15.5011011011011,
+       "dim": 46.96103896103895,
+       "cities": 87.0620538165843,
+       "countries": 89.7326565143824,
+       "torus": 65.05476673427991,
+       "box5": 25.762863534675617
+      },
+      "final3": {
+       "numbers": 38.64664664664665,
+       "dim": 61.9047619047619,
+       "cities": 94.6183415705656,
+       "countries": 95.71347997743938,
+       "torus": 87.55916159567275,
+       "box5": 32.662192393736014
+      },
+      "bpb": 1.2024857852175788,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0192,
+      "path": "runs/pt6v2_size/505m/none-lr1.92e-2-s17/pt6v2-none-lr1.92e-2/run_whole_none_seed17_pt6v2-none-lr1.92e-2.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@3.84e-2": {
+      "area": {
+       "numbers": 9.985025025025026,
+       "dim": 25.887445887445885,
+       "cities": 81.80999450851182,
+       "countries": 85.5160744500846,
+       "torus": 54.90466531440161,
+       "box5": 15.015659955257272
+      },
+      "final3": {
+       "numbers": 26.934934934934933,
+       "dim": 21.645021645021643,
+       "cities": 88.19330038440415,
+       "countries": 93.96503102086858,
+       "torus": 91.95402298850574,
+       "box5": 14.093959731543626
+      },
+      "bpb": 1.2681793119264773,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0384,
+      "path": "runs/pt6v2_size/505m/none-lr3.84e-2-s17/pt6v2-none-lr3.84e-2/run_whole_none_seed17_pt6v2-none-lr3.84e-2.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": false,
+     "full_final3": false
+    },
+    "only_dim_vs_all6_dim": {
+     "area": 0.31168831168831446,
+     "final3": 2.597402597402592,
+     "only_dim_area": 83.15151515151514,
+     "only_dim_final3": 92.64069264069263
+    }
+   },
+   "18": {
+    "missing": [],
+    "manifolds": {
+     "numbers": {
+      "N_m": "4.8e-3",
+      "edge": "open",
+      "none_area": 32.28873294346978,
+      "none_final3": 86.55555555555556,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 86.55555555555556,
+      "all6_area": 77.84795321637428,
+      "all6_final3": 99.81481481481481,
+      "d_area": 45.5592202729045,
+      "d_final3": 13.259259259259252,
+      "d_final3_vs_bestf3": 13.259259259259252,
+      "reach_step_f3": 8750,
+      "reach_frac_f3": 0.47793555434188967,
+      "reach_step_1": 7000,
+      "reach_frac_1": 0.3823593664664118,
+      "full_final3": 99.88888888888889,
+      "d_full_vs_bestf3": 13.333333333333329
+     },
+     "dim": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 36.54320987654321,
+      "none_final3": 45.67901234567901,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 45.67901234567901,
+      "all6_area": 79.95061728395062,
+      "all6_final3": 93.00411522633745,
+      "d_area": 43.40740740740741,
+      "d_final3": 47.325102880658434,
+      "d_final3_vs_bestf3": 47.325102880658434,
+      "reach_step_f3": 1750,
+      "reach_frac_f3": 0.09563080283997816,
+      "reach_step_1": 1500,
+      "reach_frac_1": 0.08197706171490989,
+      "full_final3": 96.29629629629629,
+      "d_full_vs_bestf3": 50.61728395061728
+     },
+     "cities": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 87.51858014420411,
+      "none_final3": 95.2024403771492,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 95.78480310593456,
+      "all6_area": 92.51580698835275,
+      "all6_final3": 97.33777038269551,
+      "d_area": 4.997226844148642,
+      "d_final3": 2.135330005546308,
+      "d_final3_vs_bestf3": 1.5529672767609526,
+      "reach_step_f3": 5500,
+      "reach_frac_f3": 0.30043691971600217,
+      "reach_step_1": 5250,
+      "reach_frac_1": 0.28678317859093394,
+      "full_final3": 95.17470881863561,
+      "d_full_vs_bestf3": -0.6100942872989492
+     },
+     "countries": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 90.05574516496017,
+      "none_final3": 96.67235494880546,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 96.67235494880546,
+      "all6_area": 93.86916951080774,
+      "all6_final3": 97.15585893060296,
+      "d_area": 3.813424345847565,
+      "d_final3": 0.4835039817974973,
+      "d_final3_vs_bestf3": 0.4835039817974973,
+      "reach_step_f3": 7250,
+      "reach_frac_f3": 0.39601310759148006,
+      "reach_step_1": 7000,
+      "reach_frac_1": 0.3823593664664118,
+      "full_final3": 96.50170648464163,
+      "d_full_vs_bestf3": -0.1706484641638326
+     },
+     "torus": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 72.47773279352226,
+      "none_final3": 93.7246963562753,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 93.7246963562753,
+      "all6_area": 88.10796221322538,
+      "all6_final3": 99.86504723346829,
+      "d_area": 15.630229419703113,
+      "d_final3": 6.1403508771929864,
+      "d_final3_vs_bestf3": 6.1403508771929864,
+      "reach_step_f3": 5750,
+      "reach_frac_f3": 0.31409066084107046,
+      "reach_step_1": 4750,
+      "reach_frac_1": 0.25947569634079737,
+      "full_final3": 98.9203778677463,
+      "d_full_vs_bestf3": 5.195681511470994
+     },
+     "box5": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 40.35220125786164,
+      "none_final3": 58.700209643605874,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 58.700209643605874,
+      "all6_area": 68.51153039832285,
+      "all6_final3": 80.92243186582809,
+      "d_area": 28.15932914046121,
+      "d_final3": 22.222222222222214,
+      "d_final3_vs_bestf3": 22.222222222222214,
+      "reach_step_f3": 2500,
+      "reach_frac_f3": 0.13659202621518296,
+      "reach_step_1": 2500,
+      "reach_frac_1": 0.13659202621518296,
+      "full_final3": 91.61425576519916,
+      "d_full_vs_bestf3": 32.91404612159329
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 77.84795321637428,
+       "dim": 79.95061728395062,
+       "cities": 92.51580698835275,
+       "countries": 93.86916951080774,
+       "torus": 88.10796221322538,
+       "box5": 68.51153039832285
+      },
+      "final3": {
+       "numbers": 99.81481481481481,
+       "dim": 93.00411522633745,
+       "cities": 97.33777038269551,
+       "countries": 97.15585893060296,
+       "torus": 99.86504723346829,
+       "box5": 80.92243186582809
+      },
+      "bpb": 1.1003359054069606,
+      "share": 0.8245563102552079,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6-lr6e-4-s18/pt6v2-all6-lr6e-4/run_whole_helix3_seed18_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 79.98230019493178,
+       "dim": 84.88888888888889,
+       "cities": 90.57681641708263,
+       "countries": 93.15585893060296,
+       "torus": 88.26990553306342,
+       "box5": 79.8574423480084
+      },
+      "final3": {
+       "numbers": 99.88888888888889,
+       "dim": 96.29629629629629,
+       "cities": 95.17470881863561,
+       "countries": 96.50170648464163,
+       "torus": 98.9203778677463,
+       "box5": 91.61425576519916
+      },
+      "bpb": 1.0977850607145463,
+      "share": 0.8788855298318956,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/all6full-lr6e-4-s18/pt6v2-all6full-lr6e-4/run_whole_helix3_seed18_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 15.084990253411307,
+       "dim": 87.17695473251028,
+       "cities": 73.26012201885746,
+       "countries": 82.613196814562,
+       "torus": 0.9392712550607286,
+       "box5": 10.19706498951782
+      },
+      "final3": {
+       "numbers": 34.781676413255354,
+       "dim": 94.65020576131687,
+       "cities": 77.50970604547976,
+       "countries": 86.60409556313994,
+       "torus": 1.0121457489878543,
+       "box5": 12.997903563941302
+      },
+      "bpb": 1.0950146176463735,
+      "share": 0.928604524317916,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 505437184,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/505m/only-dim-lr6e-4-s18/pt6v2-only-dim-lr6e-4/run_whole_none_seed18_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 32.28873294346978,
+       "dim": 5.514403292181071,
+       "cities": 86.85856905158072,
+       "countries": 89.88282138794085,
+       "torus": 65.39001349527666,
+       "box5": 15.639412997903564
+      },
+      "final3": {
+       "numbers": 86.55555555555556,
+       "dim": 2.05761316872428,
+       "cities": 95.78480310593456,
+       "countries": 96.24573378839591,
+       "torus": 91.49797570850203,
+       "box5": 18.658280922431867
+      },
+      "bpb": 1.123468056794403,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/505m/none-lr4.8e-3-s18/pt6v2-none-lr4.8e-3/run_whole_none_seed18_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 23.816140350877195,
+       "dim": 16.493827160493826,
+       "cities": 87.51858014420411,
+       "countries": 90.05574516496017,
+       "torus": 59.98380566801619,
+       "box5": 40.35220125786164
+      },
+      "final3": {
+       "numbers": 58.500974658869396,
+       "dim": 20.576131687242796,
+       "cities": 95.2024403771492,
+       "countries": 96.67235494880546,
+       "torus": 92.3076923076923,
+       "box5": 58.700209643605874
+      },
+      "bpb": 1.1572049996308806,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/505m/none-lr9.6e-3-s18/pt6v2-none-lr9.6e-3/run_whole_none_seed18_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.92e-2": {
+      "area": {
+       "numbers": 12.365068226120856,
+       "dim": 36.54320987654321,
+       "cities": 86.98169717138103,
+       "countries": 88.7019340159272,
+       "torus": 72.47773279352226,
+       "box5": 39.11111111111111
+      },
+      "final3": {
+       "numbers": 36.11111111111111,
+       "dim": 45.67901234567901,
+       "cities": 94.86966167498613,
+       "countries": 95.36405005688282,
+       "torus": 93.7246963562753,
+       "box5": 42.55765199161425
+      },
+      "bpb": 1.2049956640212525,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0192,
+      "path": "runs/pt6v2_size/505m/none-lr1.92e-2-s18/pt6v2-none-lr1.92e-2/run_whole_none_seed18_pt6v2-none-lr1.92e-2.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@3.84e-2": {
+      "area": {
+       "numbers": 7.189161793372318,
+       "dim": 33.925925925925924,
+       "cities": 80.15640599001664,
+       "countries": 83.21046643913537,
+       "torus": 34.18353576248313,
+       "box5": 30.440251572327043
+      },
+      "final3": {
+       "numbers": 11.023391812865496,
+       "dim": 34.5679012345679,
+       "cities": 87.7149195784803,
+       "countries": 90.30147895335608,
+       "torus": 84.0080971659919,
+       "box5": 28.09224318658281
+      },
+      "bpb": 1.2764738658868042,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 505437184,
+      "lr": 0.0384,
+      "path": "runs/pt6v2_size/505m/none-lr3.84e-2-s18/pt6v2-none-lr3.84e-2/run_whole_none_seed18_pt6v2-none-lr3.84e-2.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": true,
+     "full_final3": false
+    },
+    "only_dim_vs_all6_dim": {
+     "area": 7.226337448559661,
+     "final3": 1.6460905349794217,
+     "only_dim_area": 87.17695473251028,
+     "only_dim_final3": 94.65020576131687
+    }
+   }
+  },
+  "mean": {
+   "manifolds": {
+    "numbers": {
+     "N_m": "4.8e-3",
+     "edge": "open",
+     "none_area": 26.897581792318633,
+     "none_final3": 72.31975835484609,
+     "best_final3_lr": "4.8e-3",
+     "best_none_final3": 72.31975835484609,
+     "all6_area": 78.29418611594052,
+     "all6_final3": 99.38905572238905,
+     "d_area": 51.39660432362189,
+     "d_final3": 27.06929736754296,
+     "seed_d_area": {
+      "16": 49.91992202729047,
+      "17": 58.71067067067067,
+      "18": 45.5592202729045
+     },
+     "seed_d_final3": {
+      "16": 19.12280701754385,
+      "17": 48.82582582582583,
+      "18": 13.259259259259252
+     },
+     "full_final3": 99.11211211211211,
+     "d_full_vs_bestf3": 26.792353757266028,
+     "seed_d_full": {
+      "16": 19.345029239766077,
+      "17": 47.69869869869868,
+      "18": 13.333333333333329
+     },
+     "fewer_seeds": []
+    },
+    "dim": {
+     "N_m": "1.92e-2",
+     "edge": null,
+     "none_area": 41.85773811827451,
+     "none_final3": 48.50493624439985,
+     "best_final3_lr": "1.92e-2",
+     "best_none_final3": 48.50493624439985,
+     "all6_area": 84.66194880754267,
+     "all6_final3": 93.39128068374555,
+     "d_area": 42.80421068926816,
+     "d_final3": 44.8863444393457,
+     "seed_d_area": {
+      "16": 49.1264367816092,
+      "17": 35.878787878787875,
+      "18": 43.40740740740741
+     },
+     "seed_d_final3": {
+      "16": 59.19540229885056,
+      "17": 28.138528138528144,
+      "18": 47.325102880658434
+     },
+     "full_final3": 96.84225948593765,
+     "d_full_vs_bestf3": 48.337323241537796,
+     "seed_d_full": {
+      "16": 61.49425287356322,
+      "17": 32.900432900432904,
+      "18": 50.61728395061728
+     },
+     "fewer_seeds": []
+    },
+    "cities": {
+     "N_m": "9.6e-3",
+     "edge": null,
+     "none_area": 87.21297440198477,
+     "none_final3": 94.95190587826607,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 94.95190587826607,
+     "all6_area": 90.59555352663999,
+     "all6_final3": 95.01553811915382,
+     "d_area": 3.382579124655223,
+     "d_final3": 0.06363224088774189,
+     "seed_d_area": {
+      "16": 0.9550135501355328,
+      "17": 4.195496979681479,
+      "18": 4.997226844148642
+     },
+     "seed_d_final3": {
+      "16": -2.4661246612466243,
+      "17": 0.5216913783635277,
+      "18": 2.135330005546308
+     },
+     "full_final3": 94.71919268474909,
+     "d_full_vs_bestf3": -0.23271319351698594,
+     "seed_d_full": {
+      "16": 0.8672086720867185,
+      "17": -1.537616694124111,
+      "18": -0.027731558513593768
+     },
+     "fewer_seeds": []
+    },
+    "countries": {
+     "N_m": "9.6e-3",
+     "edge": null,
+     "none_area": 89.97300811002178,
+     "none_final3": 96.82950914640635,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 96.82950914640635,
+     "all6_area": 92.98186770467862,
+     "all6_final3": 96.43740225266886,
+     "d_area": 3.0088595946568404,
+     "d_final3": -0.3921068937374912,
+     "seed_d_area": {
+      "16": 2.605145413870247,
+      "17": 2.608009024252695,
+      "18": 3.813424345847565
+     },
+     "seed_d_final3": {
+      "16": -0.47539149888143584,
+      "17": -1.184433164128592,
+      "18": 0.4835039817974973
+     },
+     "full_final3": 96.30150910689069,
+     "d_full_vs_bestf3": -0.5280000395156605,
+     "seed_d_full": {
+      "16": 0.39149888143177236,
+      "17": -1.8048505358150209,
+      "18": -0.1706484641638326
+     },
+     "fewer_seeds": []
+    },
+    "torus": {
+     "N_m": "1.92e-2",
+     "edge": null,
+     "none_area": 69.39446236725554,
+     "none_final3": 92.5121078117276,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 95.22568645676775,
+     "all6_area": 87.64246138441966,
+     "all6_final3": 98.73473212445545,
+     "d_area": 18.24799901716412,
+     "d_final3": 6.222624312727845,
+     "seed_d_area": {
+      "16": 16.160420775805406,
+      "17": 22.95334685598378,
+      "18": 15.630229419703113
+     },
+     "seed_d_final3": {
+      "16": 1.7094017094017033,
+      "17": 10.818120351588917,
+      "18": 6.1403508771929864
+     },
+     "full_final3": 99.44102026453326,
+     "d_full_vs_bestf3": 4.215333807765518,
+     "seed_d_full": {
+      "16": 4.207758053911888,
+      "17": 1.8255578093306184,
+      "18": 6.61268556005399
+     },
+     "fewer_seeds": []
+    },
+    "box5": {
+     "N_m": "9.6e-3",
+     "edge": null,
+     "none_area": 39.859881155056534,
+     "none_final3": 52.92882610156234,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 52.92882610156234,
+     "all6_area": 76.94029953001466,
+     "all6_final3": 87.93976808710624,
+     "d_area": 37.08041837495812,
+     "d_final3": 35.0109419855439,
+     "seed_d_area": {
+      "16": 41.864923747276684,
+      "17": 41.21700223713646,
+      "18": 28.15932914046121
+     },
+     "seed_d_final3": {
+      "16": 40.30501089324619,
+      "17": 42.5055928411633,
+      "18": 22.222222222222214
+     },
+     "full_final3": 93.57220767858216,
+     "d_full_vs_bestf3": 40.64338157701982,
+     "seed_d_full": {
+      "16": 42.483660130718945,
+      "17": 46.5324384787472,
+      "18": 32.91404612159329
+     },
+     "fewer_seeds": []
+    }
+   },
+   "cells": {
+    "all6": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 78.29418611594052,
+      "dim": 84.66194880754267,
+      "cities": 90.59555352663999,
+      "countries": 92.98186770467862,
+      "torus": 87.64246138441966,
+      "box5": 76.94029953001466
+     },
+     "final3": {
+      "numbers": 99.38905572238905,
+      "dim": 93.39128068374555,
+      "cities": 95.01553811915382,
+      "countries": 96.43740225266886,
+      "torus": 98.73473212445545,
+      "box5": 87.93976808710624
+     },
+     "bpb": 1.1036674441559944
+    },
+    "all6full": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 79.2137231968811,
+      "dim": 87.1129355956942,
+      "cities": 90.43075154743504,
+      "countries": 93.16530122444408,
+      "torus": 87.85831777414337,
+      "box5": 82.22217513816459
+     },
+     "final3": {
+      "numbers": 99.11211211211211,
+      "dim": 96.84225948593765,
+      "cities": 94.71919268474909,
+      "countries": 96.30150910689069,
+      "torus": 99.44102026453326,
+      "box5": 93.57220767858216
+     },
+     "bpb": 1.1056208998354091
+    },
+    "only-dim": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 15.822137927401087,
+      "dim": 86.10948996134181,
+      "cities": 74.49162289124583,
+      "countries": 81.97788792473801,
+      "torus": 3.778891493142012,
+      "box5": 6.387913963816453
+     },
+     "final3": {
+      "numbers": 34.56712853204081,
+      "dim": 95.18892015699168,
+      "cities": 78.9140939106758,
+      "countries": 86.36818011356479,
+      "torus": 6.236715963580324,
+      "box5": 7.989061049170746
+     },
+     "bpb": 1.1022399309762505
+    },
+    "none@4.8e-3": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 26.897581792318633,
+      "dim": 13.312881905474498,
+      "cities": 86.07127277796411,
+      "countries": 89.80433018494172,
+      "torus": 45.85000606317669,
+      "box5": 20.268432465965905
+     },
+     "final3": {
+      "numbers": 72.31975835484609,
+      "dim": 14.832261064700402,
+      "cities": 94.60995931845503,
+      "countries": 96.11901201974064,
+      "torus": 62.665407566081775,
+      "box5": 24.103846464037847
+     },
+     "bpb": 1.1236660541707915
+    },
+    "none@9.6e-3": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 23.723365470733892,
+      "dim": 24.953283980103905,
+      "cities": 87.21297440198477,
+      "countries": 89.97300811002178,
+      "torus": 67.92979629855405,
+      "box5": 39.859881155056534
+     },
+     "final3": {
+      "numbers": 56.98278980735122,
+      "dim": 28.635592684123974,
+      "cities": 94.95190587826607,
+      "countries": 96.82950914640635,
+      "torus": 95.22568645676775,
+      "box5": 52.92882610156234
+     },
+     "bpb": 1.1557812751697931
+    },
+    "none@1.92e-2": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 15.967787436559364,
+      "dim": 41.85773811827451,
+      "cities": 86.67763695985475,
+      "countries": 89.29214166073704,
+      "torus": 69.39446236725554,
+      "box5": 35.983409123032764
+     },
+     "final3": {
+      "numbers": 48.25258591925259,
+      "dim": 48.50493624439985,
+      "cities": 93.86727479458769,
+      "countries": 95.5157762306801,
+      "torus": 92.5121078117276,
+      "box5": 40.61431268908916
+     },
+     "bpb": 1.2040890436803882
+    },
+    "none@3.84e-2": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 7.7276399206223765,
+      "dim": 36.45120056614309,
+      "cities": 80.65004677864228,
+      "countries": 83.9576911092329,
+      "torus": 44.509128607920594,
+      "box5": 31.51507871544023
+     },
+     "final3": {
+      "numbers": 17.297999754140104,
+      "dim": 37.703158201242495,
+      "cities": 88.82577521798045,
+      "countries": 92.40651003615095,
+      "torus": 89.53284785338394,
+      "box5": 32.65320779914309
+     },
+     "bpb": 1.2696867211103022
+    }
+   },
+   "all_six_positive": {
+    "area": true,
+    "final3": false,
+    "full_final3": false
+   },
+   "only_dim_vs_all6_dim": {
+    "area": 1.4475411537991363,
+    "final3": 1.7976394732461358
+   }
+  }
+ },
+ "rep_190m": {
+  "per_seed": {
+   "16": {
+    "missing": [
+     "none@3.84e-2"
+    ],
+    "manifolds": {
+     "numbers": {
+      "N_m": "2.4e-3",
+      "edge": "?",
+      "none_area": 27.1201559454191,
+      "none_final3": 59.473684210526315,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 74.0701754385965,
+      "all6_area": 78.32592592592594,
+      "all6_final3": 99.92592592592592,
+      "d_area": 51.205769980506844,
+      "d_final3": 40.45224171539961,
+      "d_final3_vs_bestf3": 25.85575048732943,
+      "reach_step_f3": 5500,
+      "reach_frac_f3": 0.30043691971600217,
+      "reach_step_1": 5250,
+      "reach_frac_1": 0.28678317859093394,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 25.929824561403507
+     },
+     "dim": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 43.95402298850575,
+      "none_final3": 64.9425287356322,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 64.9425287356322,
+      "all6_area": 92.29885057471263,
+      "all6_final3": 100.0,
+      "d_area": 48.34482758620688,
+      "d_final3": 35.057471264367805,
+      "d_final3_vs_bestf3": 35.057471264367805,
+      "reach_step_f3": 1500,
+      "reach_frac_f3": 0.08197706171490989,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 35.057471264367805
+     },
+     "cities": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 86.99078590785906,
+      "none_final3": 92.76422764227642,
+      "best_final3_lr": "2.4e-3",
+      "best_none_final3": 95.09485094850947,
+      "all6_area": 92.90948509485092,
+      "all6_final3": 97.23577235772358,
+      "d_area": 5.918699186991859,
+      "d_final3": 4.471544715447152,
+      "d_final3_vs_bestf3": 2.1409214092141013,
+      "reach_step_f3": 5250,
+      "reach_frac_f3": 0.28678317859093394,
+      "reach_step_1": 3750,
+      "reach_frac_1": 0.2048607318405243,
+      "full_final3": 94.76964769647697,
+      "d_full_vs_bestf3": -0.32520325203250877
+     },
+     "countries": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 90.78411633109617,
+      "none_final3": 95.13422818791946,
+      "best_final3_lr": "2.4e-3",
+      "best_none_final3": 95.58165548098434,
+      "all6_area": 94.53243847874721,
+      "all6_final3": 97.62304250559284,
+      "d_area": 3.748322147651038,
+      "d_final3": 2.4888143176733735,
+      "d_final3_vs_bestf3": 2.041387024608497,
+      "reach_step_f3": 3750,
+      "reach_frac_f3": 0.2048607318405243,
+      "reach_step_1": 3000,
+      "reach_frac_1": 0.1638995084653195,
+      "full_final3": 98.29418344519016,
+      "d_full_vs_bestf3": 2.712527964205819
+     },
+     "torus": {
+      "N_m": "1.92e-2",
+      "edge": "?",
+      "none_area": 69.60420775805392,
+      "none_final3": 95.59500328731097,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 95.59500328731097,
+      "all6_area": 88.19197896120973,
+      "all6_final3": 98.94806048652201,
+      "d_area": 18.58777120315581,
+      "d_final3": 3.3530571992110367,
+      "d_final3_vs_bestf3": 3.3530571992110367,
+      "reach_step_f3": 4750,
+      "reach_frac_f3": 0.25947569634079737,
+      "reach_step_1": 3250,
+      "reach_frac_1": 0.17755324959038776,
+      "full_final3": 99.80276134122286,
+      "d_full_vs_bestf3": 4.207758053911888
+     },
+     "box5": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 43.39869281045751,
+      "none_final3": 55.119825708061,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 55.119825708061,
+      "all6_area": 84.40958605664488,
+      "all6_final3": 93.89978213507625,
+      "d_area": 41.01089324618737,
+      "d_final3": 38.77995642701525,
+      "d_final3_vs_bestf3": 38.77995642701525,
+      "reach_step_f3": 1750,
+      "reach_frac_f3": 0.09563080283997816,
+      "reach_step_1": 1500,
+      "reach_frac_1": 0.08197706171490989,
+      "full_final3": 99.56427015250546,
+      "d_full_vs_bestf3": 44.44444444444446
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 78.32592592592594,
+       "dim": 92.29885057471263,
+       "cities": 92.90948509485092,
+       "countries": 94.53243847874721,
+       "torus": 88.19197896120973,
+       "box5": 84.40958605664488
+      },
+      "final3": {
+       "numbers": 99.92592592592592,
+       "dim": 100.0,
+       "cities": 97.23577235772358,
+       "countries": 97.62304250559284,
+       "torus": 98.94806048652201,
+       "box5": 93.89978213507625
+      },
+      "bpb": 1.1249844310411146,
+      "share": 0.74687774611581,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 79.07399610136451,
+       "dim": 92.3448275862069,
+       "cities": 90.98753387533877,
+       "countries": 94.79306487695752,
+       "torus": 88.44181459566074,
+       "box5": 89.14161220043572
+      },
+      "final3": {
+       "numbers": 100.0,
+       "dim": 100.0,
+       "cities": 94.76964769647697,
+       "countries": 98.29418344519016,
+       "torus": 99.80276134122286,
+       "box5": 99.56427015250546
+      },
+      "bpb": 1.1247774627095868,
+      "share": 0.8102592182306568,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 12.033606237816763,
+       "dim": 87.72413793103449,
+       "cities": 72.93875338753388,
+       "countries": 81.61968680089485,
+       "torus": 2.574621959237344,
+       "box5": 20.836601307189543
+      },
+      "final3": {
+       "numbers": 18.12475633528265,
+       "dim": 94.82758620689657,
+       "cities": 77.26287262872629,
+       "countries": 86.4373601789709,
+       "torus": 4.339250493096647,
+       "box5": 28.32244008714597
+      },
+      "bpb": 1.122273806125044,
+      "share": 0.8863487067136131,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.2e-3": {
+      "area": {
+       "numbers": 26.047485380116957,
+       "dim": 25.77011494252874,
+       "cities": 80.71978319783196,
+       "countries": 86.07606263982103,
+       "torus": 5.604207758053913,
+       "box5": 33.368191721132895
+      },
+      "final3": {
+       "numbers": 57.35867446393762,
+       "dim": 33.90804597701149,
+       "cities": 85.52845528455285,
+       "countries": 90.24049217002238,
+       "torus": 7.626561472715319,
+       "box5": 45.53376906318083
+      },
+      "bpb": 1.135814848640692,
+      "share": null,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < ; GPU = A100|H100|H200|L40S in every nvidia-smi samp"
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0012,
+      "path": "runs/pt6v2_size/190m/none-lr1.2e-3-s16/pt6v2-none-lr1.2e-3/run_whole_none_seed16_pt6v2-none-lr1.2e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@2.4e-3": {
+      "area": {
+       "numbers": 27.1201559454191,
+       "dim": 9.793103448275865,
+       "cities": 86.76747967479676,
+       "countries": 89.3993288590604,
+       "torus": 1.351742274819198,
+       "box5": 30.57080610021787
+      },
+      "final3": {
+       "numbers": 59.473684210526315,
+       "dim": 12.643678160919539,
+       "cities": 95.09485094850947,
+       "countries": 95.58165548098434,
+       "torus": 1.314924391847469,
+       "box5": 33.769063180827885
+      },
+      "bpb": 1.1440083534087933,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0024,
+      "path": "runs/pt6v2_size/190m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 24.90814814814815,
+       "dim": 7.034482758620689,
+       "cities": 85.24227642276423,
+       "countries": 89.24049217002238,
+       "torus": 1.2123602892833663,
+       "box5": 14.318082788671022
+      },
+      "final3": {
+       "numbers": 58.60623781676414,
+       "dim": 9.770114942528735,
+       "cities": 93.5230352303523,
+       "countries": 95.41387024608503,
+       "torus": 2.30111768573307,
+       "box5": 16.993464052287578
+      },
+      "bpb": 1.14125247598995,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/190m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 24.248343079922027,
+       "dim": 43.95402298850575,
+       "cities": 86.99078590785906,
+       "countries": 90.78411633109617,
+       "torus": 61.680473372781066,
+       "box5": 43.39869281045751
+      },
+      "final3": {
+       "numbers": 74.0701754385965,
+       "dim": 64.9425287356322,
+       "cities": 92.76422764227642,
+       "countries": 95.13422818791946,
+       "torus": 95.39776462853385,
+       "box5": 55.119825708061
+      },
+      "bpb": 1.1661641820489195,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/190m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.92e-2": {
+      "area": {
+       "numbers": 21.982846003898633,
+       "dim": 42.50574712643677,
+       "cities": 85.0449864498645,
+       "countries": 87.72595078299776,
+       "torus": 69.60420775805392,
+       "box5": 36.04357298474945
+      },
+      "final3": {
+       "numbers": 66.05068226120856,
+       "dim": 54.59770114942529,
+       "cities": 91.0569105691057,
+       "countries": 95.35794183445189,
+       "torus": 95.59500328731097,
+       "box5": 44.226579520697165
+      },
+      "bpb": 1.2289323730898232,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0192,
+      "path": "runs/pt6v2_size/190m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2/run_whole_none_seed16_pt6v2-none-lr1.92e-2.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": true,
+     "full_final3": false
+    },
+    "only_dim_vs_all6_dim": {
+     "area": -4.57471264367814,
+     "final3": -5.172413793103431,
+     "only_dim_area": 87.72413793103449,
+     "only_dim_final3": 94.82758620689657
+    }
+   },
+   "17": {
+    "missing": [],
+    "manifolds": {
+     "numbers": {
+      "N_m": "9.6e-3",
+      "edge": null,
+      "none_area": 25.917157157157156,
+      "none_final3": 62.72772772772773,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 62.72772772772773,
+      "all6_area": 76.07163163163165,
+      "all6_final3": 98.50050050050051,
+      "d_area": 50.15447447447449,
+      "d_final3": 35.772772772772775,
+      "d_final3_vs_bestf3": 35.772772772772775,
+      "reach_step_f3": 4250,
+      "reach_frac_f3": 0.23216821409066085,
+      "reach_step_1": 3500,
+      "reach_frac_1": 0.19120699071545602,
+      "full_final3": 99.54954954954954,
+      "d_full_vs_bestf3": 36.82182182182181
+     },
+     "dim": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 42.87445887445887,
+      "none_final3": 45.02164502164502,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 45.02164502164502,
+      "all6_area": 85.62770562770564,
+      "all6_final3": 93.93939393939394,
+      "d_area": 42.75324675324677,
+      "d_final3": 48.917748917748916,
+      "d_final3_vs_bestf3": 48.917748917748916,
+      "reach_step_f3": 1500,
+      "reach_frac_f3": 0.08197706171490989,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 99.56709956709956,
+      "d_full_vs_bestf3": 54.54545454545454
+     },
+     "cities": {
+      "N_m": "4.8e-3",
+      "edge": null,
+      "none_area": 87.98023064250413,
+      "none_final3": 95.96375617792422,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 95.96375617792422,
+      "all6_area": 92.08127402526083,
+      "all6_final3": 95.8539264140582,
+      "d_area": 4.1010433827567,
+      "d_final3": -0.10982976386603127,
+      "d_final3_vs_bestf3": -0.10982976386603127,
+      "reach_step_f3": 11250,
+      "reach_frac_f3": 0.6144729655925724,
+      "reach_step_1": 8000,
+      "reach_frac_1": 0.43697433096668487,
+      "full_final3": 96.62273476112026,
+      "d_full_vs_bestf3": 0.6589785831960313
+     },
+     "countries": {
+      "N_m": "4.8e-3",
+      "edge": null,
+      "none_area": 91.69655950366611,
+      "none_final3": 97.68753525098703,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 98.27975183305134,
+      "all6_area": 94.91708967851099,
+      "all6_final3": 98.61816130851665,
+      "d_area": 3.220530174844882,
+      "d_final3": 0.9306260575296221,
+      "d_final3_vs_bestf3": 0.33840947546531197,
+      "reach_step_f3": 9000,
+      "reach_frac_f3": 0.49158929546695795,
+      "reach_step_1": 4500,
+      "reach_frac_1": 0.2458219552157291,
+      "full_final3": 98.90016920473774,
+      "d_full_vs_bestf3": 0.6204173716864005
+     },
+     "torus": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 71.63488843813387,
+      "none_final3": 97.22785665990533,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 97.22785665990533,
+      "all6_area": 89.30899256254227,
+      "all6_final3": 99.72954699121028,
+      "d_area": 17.6741041244084,
+      "d_final3": 2.5016903313049568,
+      "d_final3_vs_bestf3": 2.5016903313049568,
+      "reach_step_f3": 6500,
+      "reach_frac_f3": 0.35505188421627526,
+      "reach_step_1": 4000,
+      "reach_frac_1": 0.21851447296559257,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 2.7721433400946722
+     },
+     "box5": {
+      "N_m": "1.92e-2",
+      "edge": null,
+      "none_area": 42.219239373601795,
+      "none_final3": 44.07158836689038,
+      "best_final3_lr": "1.92e-2",
+      "best_none_final3": 44.07158836689038,
+      "all6_area": 84.86800894854586,
+      "all6_final3": 93.0648769574944,
+      "d_area": 42.64876957494407,
+      "d_final3": 48.993288590604024,
+      "d_final3_vs_bestf3": 48.993288590604024,
+      "reach_step_f3": 1750,
+      "reach_frac_f3": 0.09563080283997816,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 95.30201342281877,
+      "d_full_vs_bestf3": 51.23042505592839
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 76.07163163163165,
+       "dim": 85.62770562770564,
+       "cities": 92.08127402526083,
+       "countries": 94.91708967851099,
+       "torus": 89.30899256254227,
+       "box5": 84.86800894854586
+      },
+      "final3": {
+       "numbers": 98.50050050050051,
+       "dim": 93.93939393939394,
+       "cities": 95.8539264140582,
+       "countries": 98.61816130851665,
+       "torus": 99.72954699121028,
+       "box5": 93.0648769574944
+      },
+      "bpb": 1.1256683713579196,
+      "share": 0.759266029595253,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6-lr6e-4-s17/pt6v2-all6-lr6e-4/run_whole_helix3_seed17_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 78.67895895895896,
+       "dim": 90.28571428571428,
+       "cities": 93.15431081823174,
+       "countries": 95.50930626057529,
+       "torus": 89.10885733603787,
+       "box5": 83.48993288590604
+      },
+      "final3": {
+       "numbers": 99.54954954954954,
+       "dim": 99.56709956709956,
+       "cities": 96.62273476112026,
+       "countries": 98.90016920473774,
+       "torus": 100.0,
+       "box5": 95.30201342281877
+      },
+      "bpb": 1.1276128943818389,
+      "share": 0.8477128545573132,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6full-lr6e-4-s17/pt6v2-all6full-lr6e-4/run_whole_helix3_seed17_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 11.267827827827826,
+       "dim": 72.98701298701299,
+       "cities": 75.23228995057661,
+       "countries": 86.15454032712915,
+       "torus": 1.138607167004733,
+       "box5": 2.756152125279642
+      },
+      "final3": {
+       "numbers": 23.913913913913916,
+       "dim": 78.35497835497837,
+       "cities": 79.07742998352553,
+       "countries": 91.51156232374507,
+       "torus": 1.4198782961460445,
+       "box5": 3.131991051454139
+      },
+      "bpb": 1.1244568593334991,
+      "share": 0.9255975373089678,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/only-dim-lr6e-4-s17/pt6v2-only-dim-lr6e-4/run_whole_none_seed17_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.2e-3": {
+      "area": {
+       "numbers": 23.15047047047047,
+       "dim": 7.341991341991343,
+       "cities": 83.6891817682592,
+       "countries": 88.93852227862381,
+       "torus": 10.198782961460447,
+       "box5": 3.5525727069351225
+      },
+      "final3": {
+       "numbers": 45.51751751751752,
+       "dim": 6.0606060606060606,
+       "cities": 91.35090609555189,
+       "countries": 94.98025944726453,
+       "torus": 15.280594996619337,
+       "box5": 3.131991051454139
+      },
+      "bpb": 1.1274686078373544,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0012,
+      "path": "runs/pt6v2_size/190m/none-lr1.2e-3-s17/pt6v2-none-lr1.2e-3/run_whole_none_seed17_pt6v2-none-lr1.2e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@2.4e-3": {
+      "area": {
+       "numbers": 14.436876876876878,
+       "dim": 17.8008658008658,
+       "cities": 81.96046128500825,
+       "countries": 86.8753525098703,
+       "torus": 62.48275862068965,
+       "box5": 33.61968680089486
+      },
+      "final3": {
+       "numbers": 37.5945945945946,
+       "dim": 21.21212121212121,
+       "cities": 90.33498077979132,
+       "countries": 92.526790750141,
+       "torus": 74.71264367816093,
+       "box5": 39.14988814317673
+      },
+      "bpb": 1.130083097700172,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0024,
+      "path": "runs/pt6v2_size/190m/none-lr2.4e-3-s17/pt6v2-none-lr2.4e-3/run_whole_none_seed17_pt6v2-none-lr2.4e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 21.891731731731735,
+       "dim": 12.779220779220779,
+       "cities": 87.98023064250413,
+       "countries": 91.69655950366611,
+       "torus": 51.24273157538878,
+       "box5": 3.212527964205816
+      },
+      "final3": {
+       "numbers": 58.24424424424425,
+       "dim": 19.047619047619047,
+       "cities": 95.96375617792422,
+       "countries": 97.68753525098703,
+       "torus": 81.7444219066937,
+       "box5": 4.026845637583893
+      },
+      "bpb": 1.1408867261716433,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/190m/none-lr4.8e-3-s17/pt6v2-none-lr4.8e-3/run_whole_none_seed17_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 25.917157157157156,
+       "dim": 29.21212121212121,
+       "cities": 86.0878638110928,
+       "countries": 91.27918781725887,
+       "torus": 58.07437457741719,
+       "box5": 10.487695749440716
+      },
+      "final3": {
+       "numbers": 62.72772772772773,
+       "dim": 35.93073593073593,
+       "cities": 94.67325645249863,
+       "countries": 98.27975183305134,
+       "torus": 91.27789046653145,
+       "box5": 13.19910514541387
+      },
+      "bpb": 1.1818164217481129,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/190m/none-lr9.6e-3-s17/pt6v2-none-lr9.6e-3/run_whole_none_seed17_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.92e-2": {
+      "area": {
+       "numbers": 20.00412412412412,
+       "dim": 42.87445887445887,
+       "cities": 85.7902251510159,
+       "countries": 90.14664410603498,
+       "torus": 71.63488843813387,
+       "box5": 42.219239373601795
+      },
+      "final3": {
+       "numbers": 58.776776776776785,
+       "dim": 45.02164502164502,
+       "cities": 92.77869302581,
+       "countries": 95.06486181613086,
+       "torus": 97.22785665990533,
+       "box5": 44.07158836689038
+      },
+      "bpb": 1.2114156507309894,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0192,
+      "path": "runs/pt6v2_size/190m/none-lr1.92e-2-s17/pt6v2-none-lr1.92e-2/run_whole_none_seed17_pt6v2-none-lr1.92e-2.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@3.84e-2": {
+      "area": {
+       "numbers": 11.477557557557558,
+       "dim": 40.086580086580085,
+       "cities": 80.93245469522239,
+       "countries": 84.64861816130852,
+       "torus": 44.54361054766734,
+       "box5": 28.7248322147651
+      },
+      "final3": {
+       "numbers": 35.885885885885884,
+       "dim": 44.15584415584416,
+       "cities": 89.31905546403075,
+       "countries": 92.55499153976311,
+       "torus": 92.0892494929006,
+       "box5": 37.36017897091723
+      },
+      "bpb": 1.297716645738081,
+      "share": null,
+      "dev": "NVIDIA A100-SXM4-80GB",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0384,
+      "path": "runs/pt6v2_size/190m/none-lr3.84e-2-s17/pt6v2-none-lr3.84e-2/run_whole_none_seed17_pt6v2-none-lr3.84e-2.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": false,
+     "full_final3": true
+    },
+    "only_dim_vs_all6_dim": {
+     "area": -12.640692640692649,
+     "final3": -15.584415584415567,
+     "only_dim_area": 72.98701298701299,
+     "only_dim_final3": 78.35497835497837
+    }
+   },
+   "18": {
+    "missing": [
+     "none@2.4e-3",
+     "none@4.8e-3",
+     "none@9.6e-3",
+     "none@1.92e-2",
+     "none@3.84e-2"
+    ],
+    "manifolds": {
+     "numbers": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 24.478596491228068,
+      "none_final3": 51.44444444444445,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 51.44444444444445,
+      "all6_area": 75.25964912280702,
+      "all6_final3": 99.55555555555556,
+      "d_area": 50.78105263157895,
+      "d_final3": 48.11111111111111,
+      "d_final3_vs_bestf3": 48.11111111111111,
+      "reach_step_f3": 3000,
+      "reach_frac_f3": 0.1638995084653195,
+      "reach_step_1": 2750,
+      "reach_frac_1": 0.15024576734025122,
+      "full_final3": 99.85185185185185,
+      "d_full_vs_bestf3": 48.4074074074074
+     },
+     "dim": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 10.847736625514406,
+      "none_final3": 7.4074074074074066,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 7.4074074074074066,
+      "all6_area": 88.41152263374487,
+      "all6_final3": 98.76543209876543,
+      "d_area": 77.56378600823047,
+      "d_final3": 91.35802469135803,
+      "d_final3_vs_bestf3": 91.35802469135803,
+      "reach_step_f3": 1250,
+      "reach_frac_f3": 0.06832332058984161,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 99.58847736625515,
+      "d_full_vs_bestf3": 92.18106995884774
+     },
+     "cities": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 82.0177481974487,
+      "none_final3": 89.18469217970049,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 89.18469217970049,
+      "all6_area": 91.0393788130893,
+      "all6_final3": 96.56128674431503,
+      "d_area": 9.021630615640603,
+      "d_final3": 7.376594564614535,
+      "d_final3_vs_bestf3": 7.376594564614535,
+      "reach_step_f3": 3250,
+      "reach_frac_f3": 0.17755324959038776,
+      "reach_step_1": 3000,
+      "reach_frac_1": 0.1638995084653195,
+      "full_final3": 97.06045479755963,
+      "d_full_vs_bestf3": 7.875762617859138
+     },
+     "countries": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 87.78043230944253,
+      "none_final3": 93.62912400455062,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 93.62912400455062,
+      "all6_area": 94.24004550625712,
+      "all6_final3": 98.06598407281001,
+      "d_area": 6.459613196814587,
+      "d_final3": 4.436860068259392,
+      "d_final3_vs_bestf3": 4.436860068259392,
+      "reach_step_f3": 2250,
+      "reach_frac_f3": 0.12293828509011469,
+      "reach_step_1": 2000,
+      "reach_frac_1": 0.10928454396504643,
+      "full_final3": 98.09442548350398,
+      "d_full_vs_bestf3": 4.465301478953364
+     },
+     "torus": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 5.500674763832658,
+      "none_final3": 8.906882591093119,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 8.906882591093119,
+      "all6_area": 89.17139001349528,
+      "all6_final3": 99.19028340080972,
+      "d_area": 83.67071524966262,
+      "d_final3": 90.2834008097166,
+      "d_final3_vs_bestf3": 90.2834008097166,
+      "reach_step_f3": 1500,
+      "reach_frac_f3": 0.08197706171490989,
+      "reach_step_1": 1500,
+      "reach_frac_1": 0.08197706171490989,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 91.09311740890688
+     },
+     "box5": {
+      "N_m": "1.2e-3",
+      "edge": "?",
+      "none_area": 21.979035639412995,
+      "none_final3": 29.559748427672954,
+      "best_final3_lr": "1.2e-3",
+      "best_none_final3": 29.559748427672954,
+      "all6_area": 81.66876310272538,
+      "all6_final3": 89.51781970649895,
+      "d_area": 59.68972746331238,
+      "d_final3": 59.958071278826,
+      "d_final3_vs_bestf3": 59.958071278826,
+      "reach_step_f3": 1500,
+      "reach_frac_f3": 0.08197706171490989,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 94.12997903563941,
+      "d_full_vs_bestf3": 64.57023060796645
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 75.25964912280702,
+       "dim": 88.41152263374487,
+       "cities": 91.0393788130893,
+       "countries": 94.24004550625712,
+       "torus": 89.17139001349528,
+       "box5": 81.66876310272538
+      },
+      "final3": {
+       "numbers": 99.55555555555556,
+       "dim": 98.76543209876543,
+       "cities": 96.56128674431503,
+       "countries": 98.06598407281001,
+       "torus": 99.19028340080972,
+       "box5": 89.51781970649895
+      },
+      "bpb": 1.1249007669412623,
+      "share": 0.7671750702597633,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < ; GPU = A100|H100|H200|L40S in every nvidia-smi samp"
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6-lr6e-4-s18/pt6v2-all6-lr6e-4/run_whole_helix3_seed18_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 77.48311890838207,
+       "dim": 90.0411522633745,
+       "cities": 93.17692734331669,
+       "countries": 94.98634812286689,
+       "torus": 89.58974358974359,
+       "box5": 83.44654088050315
+      },
+      "final3": {
+       "numbers": 99.85185185185185,
+       "dim": 99.58847736625515,
+       "cities": 97.06045479755963,
+       "countries": 98.09442548350398,
+       "torus": 100.0,
+       "box5": 94.12997903563941
+      },
+      "bpb": 1.130662259028624,
+      "share": 0.8207816999018508,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < ; GPU = A100|H100|H200|L40S in every nvidia-smi samp"
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/all6full-lr6e-4-s18/pt6v2-all6full-lr6e-4/run_whole_helix3_seed18_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 9.852319688109162,
+       "dim": 74.32098765432099,
+       "cities": 76.2983915696062,
+       "countries": 82.4835039817975,
+       "torus": 10.143049932523617,
+       "box5": 8.947589098532495
+      },
+      "final3": {
+       "numbers": 16.42300194931774,
+       "dim": 87.65432098765432,
+       "cities": 82.88962839711593,
+       "countries": 88.87940841865756,
+       "torus": 17.543859649122805,
+       "box5": 12.368972746331238
+      },
+      "bpb": 1.1228871101133024,
+      "share": 0.9416694735393452,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 190297344,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/190m/only-dim-lr6e-4-s18/pt6v2-only-dim-lr6e-4/run_whole_none_seed18_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.2e-3": {
+      "area": {
+       "numbers": 24.478596491228068,
+       "dim": 10.847736625514406,
+       "cities": 82.0177481974487,
+       "countries": 87.78043230944253,
+       "torus": 5.500674763832658,
+       "box5": 21.979035639412995
+      },
+      "final3": {
+       "numbers": 51.44444444444445,
+       "dim": 7.4074074074074066,
+       "cities": 89.18469217970049,
+       "countries": 93.62912400455062,
+       "torus": 8.906882591093119,
+       "box5": 29.559748427672954
+      },
+      "bpb": 1.1257229660277683,
+      "share": null,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < ; GPU = A100|H100|H200|L40S in every nvidia-smi samp"
+      ],
+      "events": [],
+      "n_params": 190297344,
+      "lr": 0.0012,
+      "path": "runs/pt6v2_size/190m/none-lr1.2e-3-s18/pt6v2-none-lr1.2e-3/run_whole_none_seed18_pt6v2-none-lr1.2e-3.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": true,
+     "full_final3": true
+    },
+    "only_dim_vs_all6_dim": {
+     "area": -14.090534979423879,
+     "final3": -11.111111111111114,
+     "only_dim_area": 74.32098765432099,
+     "only_dim_final3": 87.65432098765432
+    }
+   }
+  },
+  "mean": {
+   "manifolds": {
+    "numbers": {
+     "N_m": "9.6e-3",
+     "edge": null,
+     "none_area": 25.082750118539593,
+     "none_final3": 68.39895158316212,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 68.39895158316212,
+     "all6_area": 76.5524022267882,
+     "all6_final3": 99.32732732732732,
+     "d_area": 51.46965210824861,
+     "d_final3": 30.92837574416521,
+     "seed_d_area": {
+      "16": 54.07758284600392,
+      "17": 50.15447447447449
+     },
+     "seed_d_final3": {
+      "16": 25.85575048732943,
+      "17": 35.772772772772775
+     },
+     "full_final3": 99.80046713380045,
+     "d_full_vs_bestf3": 31.401515550638337,
+     "seed_d_full": {
+      "16": 25.929824561403507,
+      "17": 36.82182182182181
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "dim": {
+     "N_m": "1.92e-2",
+     "edge": null,
+     "none_area": 42.69010300044782,
+     "none_final3": 49.80967308553515,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 50.436632333184065,
+     "all6_area": 88.77935961205439,
+     "all6_final3": 97.56827534605311,
+     "d_area": 46.08925661160657,
+     "d_final3": 47.75860226051796,
+     "seed_d_area": {
+      "16": 49.79310344827586,
+      "17": 42.75324675324677
+     },
+     "seed_d_final3": {
+      "16": 45.40229885057471,
+      "17": 48.917748917748916
+     },
+     "full_final3": 99.71852564445157,
+     "d_full_vs_bestf3": 49.28189331126751,
+     "seed_d_full": {
+      "16": 35.057471264367805,
+      "17": 63.63636363636363
+     },
+     "fewer_seeds": [
+      "none@1.92e-2",
+      "none@9.6e-3"
+     ]
+    },
+    "cities": {
+     "N_m": "4.8e-3",
+     "edge": null,
+     "none_area": 86.61125353263418,
+     "none_final3": 94.74339570413827,
+     "best_final3_lr": "4.8e-3",
+     "best_none_final3": 94.74339570413827,
+     "all6_area": 92.01004597773368,
+     "all6_final3": 96.5503285053656,
+     "d_area": 5.398792445099502,
+     "d_final3": 1.8069328012273331,
+     "seed_d_area": {
+      "16": 7.667208672086687,
+      "17": 4.1010433827567
+     },
+     "seed_d_final3": {
+      "16": 3.7127371273712697,
+      "17": -0.10982976386603127
+     },
+     "full_final3": 96.15094575171895,
+     "d_full_vs_bestf3": 1.4075500475806848,
+     "seed_d_full": {
+      "16": 1.2466124661246596,
+      "17": 0.6589785831960313
+     },
+     "fewer_seeds": [
+      "none@4.8e-3"
+     ]
+    },
+    "countries": {
+     "N_m": "9.6e-3",
+     "edge": null,
+     "none_area": 91.03165207417752,
+     "none_final3": 96.7069900104854,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 96.7069900104854,
+     "all6_area": 94.56319122117178,
+     "all6_final3": 98.1023959623065,
+     "d_area": 3.5315391469942625,
+     "d_final3": 1.395405951821104,
+     "seed_d_area": {
+      "16": 3.748322147651038,
+      "17": 3.637901861252118
+     },
+     "seed_d_final3": {
+      "16": 2.4888143176733735,
+      "17": 0.33840947546531197
+     },
+     "full_final3": 98.42959271114397,
+     "d_full_vs_bestf3": 1.7226027006585696,
+     "seed_d_full": {
+      "16": 3.1599552572706955,
+      "17": 0.6204173716864005
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "torus": {
+     "N_m": "1.92e-2",
+     "edge": null,
+     "none_area": 70.6195480980939,
+     "none_final3": 96.41142997360815,
+     "best_final3_lr": "1.92e-2",
+     "best_none_final3": 96.41142997360815,
+     "all6_area": 88.89078717908244,
+     "all6_final3": 99.289296959514,
+     "d_area": 18.271239080988536,
+     "d_final3": 2.877866985905854,
+     "seed_d_area": {
+      "16": 18.58777120315581,
+      "17": 17.6741041244084
+     },
+     "seed_d_final3": {
+      "16": 3.3530571992110367,
+      "17": 2.5016903313049568
+     },
+     "full_final3": 99.93425378040763,
+     "d_full_vs_bestf3": 3.5228238067994795,
+     "seed_d_full": {
+      "16": 4.207758053911888,
+      "17": 2.7721433400946722
+     },
+     "fewer_seeds": [
+      "none@1.92e-2"
+     ]
+    },
+    "box5": {
+     "N_m": "1.92e-2",
+     "edge": null,
+     "none_area": 39.13140617917563,
+     "none_final3": 44.14908394379377,
+     "best_final3_lr": "1.92e-2",
+     "best_none_final3": 44.14908394379377,
+     "all6_area": 83.64878603597204,
+     "all6_final3": 92.16082626635654,
+     "d_area": 44.51737985679641,
+     "d_final3": 48.01174232256277,
+     "seed_d_area": {
+      "16": 48.36601307189543,
+      "17": 42.64876957494407
+     },
+     "seed_d_final3": {
+      "16": 49.673202614379086,
+      "17": 48.993288590604024
+     },
+     "full_final3": 96.33208753698788,
+     "d_full_vs_bestf3": 52.183003593194115,
+     "seed_d_full": {
+      "16": 55.33769063180829,
+      "17": 51.23042505592839
+     },
+     "fewer_seeds": [
+      "none@1.92e-2"
+     ]
+    }
+   },
+   "cells": {
+    "all6": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 76.5524022267882,
+      "dim": 88.77935961205439,
+      "cities": 92.01004597773368,
+      "countries": 94.56319122117178,
+      "torus": 88.89078717908244,
+      "box5": 83.64878603597204
+     },
+     "final3": {
+      "numbers": 99.32732732732732,
+      "dim": 97.56827534605311,
+      "cities": 96.5503285053656,
+      "countries": 98.1023959623065,
+      "torus": 99.289296959514,
+      "box5": 92.16082626635654
+     },
+     "bpb": 1.125184523113432
+    },
+    "all6full": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 78.41202465623518,
+      "dim": 90.89056471176524,
+      "cities": 92.4395906789624,
+      "countries": 95.09623975346658,
+      "torus": 89.04680517381406,
+      "box5": 85.35936198894831
+     },
+     "final3": {
+      "numbers": 99.80046713380045,
+      "dim": 99.71852564445157,
+      "cities": 96.15094575171895,
+      "countries": 98.42959271114397,
+      "torus": 99.93425378040763,
+      "box5": 96.33208753698788
+     },
+     "bpb": 1.12768420537335
+    },
+    "only-dim": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 11.05125125125125,
+      "dim": 78.34404619078948,
+      "cities": 74.8231449692389,
+      "countries": 83.41924370327384,
+      "torus": 4.618759686255231,
+      "box5": 10.846780843667226
+     },
+     "final3": {
+      "numbers": 19.487224066171436,
+      "dim": 86.94562851650976,
+      "cities": 79.74331033645592,
+      "countries": 88.94277697379118,
+      "torus": 7.767662812788498,
+      "box5": 14.607801294977117
+     },
+     "bpb": 1.123205925190615
+    },
+    "none@1.2e-3": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 24.558850780605166,
+      "dim": 14.653280970011496,
+      "cities": 82.14223772117995,
+      "countries": 87.59833907596244,
+      "torus": 7.101221827782339,
+      "box5": 19.633266689160337
+     },
+     "final3": {
+      "numbers": 51.440212141966526,
+      "dim": 15.792019815008318,
+      "cities": 88.68801785326842,
+      "countries": 92.94995854061251,
+      "torus": 10.604679686809257,
+      "box5": 26.07516951410264
+     },
+     "bpb": 1.129668807501938
+    },
+    "none@2.4e-3": {
+     "n": 2,
+     "seeds": [
+      16,
+      17
+     ],
+     "area": {
+      "numbers": 20.77851641114799,
+      "dim": 13.796984624570833,
+      "cities": 84.3639704799025,
+      "countries": 88.13734068446536,
+      "torus": 31.917250447754423,
+      "box5": 32.09524645055637
+     },
+     "final3": {
+      "numbers": 48.534139402560456,
+      "dim": 16.927899686520377,
+      "cities": 92.7149158641504,
+      "countries": 94.05422311556268,
+      "torus": 38.0137840350042,
+      "box5": 36.459475662002305
+     },
+     "bpb": 1.1370457255544826
+    },
+    "none@4.8e-3": {
+     "n": 2,
+     "seeds": [
+      16,
+      17
+     ],
+     "area": {
+      "numbers": 23.39993993993994,
+      "dim": 9.906851768920735,
+      "cities": 86.61125353263418,
+      "countries": 90.46852583684424,
+      "torus": 26.227545932336074,
+      "box5": 8.76530537643842
+     },
+     "final3": {
+      "numbers": 58.425241030504196,
+      "dim": 14.408866995073891,
+      "cities": 94.74339570413827,
+      "countries": 96.55070274853603,
+      "torus": 42.02276979621339,
+      "box5": 10.510154844935736
+     },
+     "bpb": 1.1410696010807966
+    },
+    "none@9.6e-3": {
+     "n": 2,
+     "seeds": [
+      16,
+      17
+     ],
+     "area": {
+      "numbers": 25.082750118539593,
+      "dim": 36.58307210031348,
+      "cities": 86.53932485947593,
+      "countries": 91.03165207417752,
+      "torus": 59.87742397509913,
+      "box5": 26.943194279949115
+     },
+     "final3": {
+      "numbers": 68.39895158316212,
+      "dim": 50.436632333184065,
+      "cities": 93.71874204738754,
+      "countries": 96.7069900104854,
+      "torus": 93.33782754753264,
+      "box5": 34.159465426737434
+     },
+     "bpb": 1.1739903018985163
+    },
+    "none@1.92e-2": {
+     "n": 2,
+     "seeds": [
+      16,
+      17
+     ],
+     "area": {
+      "numbers": 20.993485064011377,
+      "dim": 42.69010300044782,
+      "cities": 85.4176058004402,
+      "countries": 88.93629744451637,
+      "torus": 70.6195480980939,
+      "box5": 39.13140617917563
+     },
+     "final3": {
+      "numbers": 62.413729518992675,
+      "dim": 49.80967308553515,
+      "cities": 91.91780179745786,
+      "countries": 95.21140182529138,
+      "torus": 96.41142997360815,
+      "box5": 44.14908394379377
+     },
+     "bpb": 1.2201740119104063
+    },
+    "none@3.84e-2": {
+     "n": 1,
+     "seeds": [
+      17
+     ],
+     "area": {
+      "numbers": 11.477557557557558,
+      "dim": 40.086580086580085,
+      "cities": 80.93245469522239,
+      "countries": 84.64861816130852,
+      "torus": 44.54361054766734,
+      "box5": 28.7248322147651
+     },
+     "final3": {
+      "numbers": 35.885885885885884,
+      "dim": 44.15584415584416,
+      "cities": 89.31905546403075,
+      "countries": 92.55499153976311,
+      "torus": 92.0892494929006,
+      "box5": 37.36017897091723
+     },
+     "bpb": 1.297716645738081
+    }
+   },
+   "all_six_positive": {
+    "area": true,
+    "final3": true,
+    "full_final3": true
+   },
+   "only_dim_vs_all6_dim": {
+    "area": -10.435313421264908,
+    "final3": -10.622646829543356
+   }
+  }
+ },
+ "rep_1b": {
+  "per_seed": {
+   "16": {
+    "missing": [
+     "none@1.92e-2",
+     "none@3.84e-2"
+    ],
+    "manifolds": {
+     "numbers": {
+      "N_m": "4.8e-3",
+      "edge": "?",
+      "none_area": 27.355165692007795,
+      "none_final3": 72.56725146198832,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 72.56725146198832,
+      "all6_area": 78.2307992202729,
+      "all6_final3": 99.85185185185185,
+      "d_area": 50.875633528265105,
+      "d_final3": 27.284600389863527,
+      "d_final3_vs_bestf3": 27.284600389863527,
+      "reach_step_f3": 5250,
+      "reach_frac_f3": 0.28678317859093394,
+      "reach_step_1": 5000,
+      "reach_frac_1": 0.27312943746586565,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 27.43274853801168
+     },
+     "dim": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 10.022988505747128,
+      "none_final3": 10.919540229885056,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 10.919540229885056,
+      "all6_area": 88.82758620689654,
+      "all6_final3": 100.0,
+      "d_area": 78.80459770114942,
+      "d_final3": 89.08045977011494,
+      "d_final3_vs_bestf3": 89.08045977011494,
+      "reach_step_f3": 1250,
+      "reach_frac_f3": 0.06832332058984161,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 100.0,
+      "d_full_vs_bestf3": 89.08045977011494
+     },
+     "cities": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 89.53387533875338,
+      "none_final3": 96.07046070460704,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 96.07046070460704,
+      "all6_area": 92.6341463414634,
+      "all6_final3": 96.91056910569105,
+      "d_area": 3.1002710027100306,
+      "d_final3": 0.8401084010840094,
+      "d_final3_vs_bestf3": 0.8401084010840094,
+      "reach_step_f3": 9250,
+      "reach_frac_f3": 0.5052430365920262,
+      "reach_step_1": 8750,
+      "reach_frac_1": 0.47793555434188967,
+      "full_final3": 94.03794037940379,
+      "d_full_vs_bestf3": -2.032520325203251
+     },
+     "countries": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 91.33333333333333,
+      "none_final3": 97.20357941834452,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 97.20357941834452,
+      "all6_area": 94.23154362416106,
+      "all6_final3": 97.7069351230425,
+      "d_area": 2.898210290827734,
+      "d_final3": 0.5033557046979809,
+      "d_final3_vs_bestf3": 0.5033557046979809,
+      "reach_step_f3": 9250,
+      "reach_frac_f3": 0.5052430365920262,
+      "reach_step_1": 5500,
+      "reach_frac_1": 0.30043691971600217,
+      "full_final3": 94.88255033557046,
+      "d_full_vs_bestf3": -2.3210290827740607
+     },
+     "torus": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 67.27679158448389,
+      "none_final3": 92.89940828402366,
+      "best_final3_lr": "9.6e-3",
+      "best_none_final3": 92.89940828402366,
+      "all6_area": 86.01709401709402,
+      "all6_final3": 97.10716633793557,
+      "d_area": 18.740302432610136,
+      "d_final3": 4.207758053911903,
+      "d_final3_vs_bestf3": 4.207758053911903,
+      "reach_step_f3": 4500,
+      "reach_frac_f3": 0.2458219552157291,
+      "reach_step_1": 4250,
+      "reach_frac_1": 0.23216821409066085,
+      "full_final3": 99.40828402366864,
+      "d_full_vs_bestf3": 6.508875739644978
+     },
+     "box5": {
+      "N_m": "9.6e-3",
+      "edge": "?",
+      "none_area": 24.801742919389973,
+      "none_final3": 21.350762527233115,
+      "best_final3_lr": "4.8e-3",
+      "best_none_final3": 26.57952069716776,
+      "all6_area": 84.04357298474946,
+      "all6_final3": 94.55337690631808,
+      "d_area": 59.24183006535949,
+      "d_final3": 73.20261437908496,
+      "d_final3_vs_bestf3": 67.97385620915031,
+      "reach_step_f3": 1500,
+      "reach_frac_f3": 0.08197706171490989,
+      "reach_step_1": 1250,
+      "reach_frac_1": 0.06832332058984161,
+      "full_final3": 99.56427015250546,
+      "d_full_vs_bestf3": 72.98474945533769
+     }
+    },
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 78.2307992202729,
+       "dim": 88.82758620689654,
+       "cities": 92.6341463414634,
+       "countries": 94.23154362416106,
+       "torus": 86.01709401709402,
+       "box5": 84.04357298474946
+      },
+      "final3": {
+       "numbers": 99.85185185185185,
+       "dim": 100.0,
+       "cities": 96.91056910569105,
+       "countries": 97.7069351230425,
+       "torus": 97.10716633793557,
+       "box5": 94.55337690631808
+      },
+      "bpb": 1.083879028481224,
+      "share": 0.8277669545726346,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 80.23914230019493,
+       "dim": 92.04597701149426,
+       "cities": 89.85474254742546,
+       "countries": 91.98881431767337,
+       "torus": 88.14201183431953,
+       "box5": 87.25925925925925
+      },
+      "final3": {
+       "numbers": 100.0,
+       "dim": 100.0,
+       "cities": 94.03794037940379,
+       "countries": 94.88255033557046,
+       "torus": 99.40828402366864,
+       "box5": 99.56427015250546
+      },
+      "bpb": 1.090441719665524,
+      "share": 0.911731714538359,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "only-dim": {
+      "area": {
+       "numbers": 13.35953216374269,
+       "dim": 90.66666666666666,
+       "cities": 77.93170731707316,
+       "countries": 84.4675615212528,
+       "torus": 1.5647600262984878,
+       "box5": 21.708061002178646
+      },
+      "final3": {
+       "numbers": 23.64327485380117,
+       "dim": 99.42528735632185,
+       "cities": 83.08943089430895,
+       "countries": 88.89821029082773,
+       "torus": 2.235371466140697,
+       "box5": 27.886710239651418
+      },
+      "bpb": 1.0893475813201698,
+      "share": 0.950949321452176,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@1.2e-3": {
+      "area": {
+       "numbers": 23.682417153996102,
+       "dim": 8.367816091954024,
+       "cities": 79.0590785907859,
+       "countries": 84.1241610738255,
+       "torus": 2.0854700854700856,
+       "box5": 17.64705882352941
+      },
+      "final3": {
+       "numbers": 50.10331384015595,
+       "dim": 6.896551724137931,
+       "cities": 86.2330623306233,
+       "countries": 87.89149888143176,
+       "torus": 4.0105193951347795,
+       "box5": 22.22222222222222
+      },
+      "bpb": 1.0917069160067103,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; decomposition double path: max |grad_T - grad_tota; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 1072259840,
+      "lr": 0.0012,
+      "path": "runs/pt6v2_size/1b/none-lr1.2e-3-s16/pt6v2-none-lr1.2e-3/run_whole_none_seed16_pt6v2-none-lr1.2e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@2.4e-3": {
+      "area": {
+       "numbers": 27.335048732943477,
+       "dim": 8.597701149425287,
+       "cities": 83.31924119241192,
+       "countries": 88.63087248322145,
+       "torus": 3.571334648257724,
+       "box5": 21.05446623093682
+      },
+      "final3": {
+       "numbers": 62.35282651072125,
+       "dim": 7.471264367816093,
+       "cities": 90.94850948509486,
+       "countries": 92.81319910514542,
+       "torus": 7.10059171597633,
+       "box5": 25.925925925925924
+      },
+      "bpb": 1.097771175620434,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; decomposition double path: max |grad_T - grad_tota; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 1072259840,
+      "lr": 0.0024,
+      "path": "runs/pt6v2_size/1b/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@4.8e-3": {
+      "area": {
+       "numbers": 27.355165692007795,
+       "dim": 4.3678160919540225,
+       "cities": 85.85040650406505,
+       "countries": 89.02908277404923,
+       "torus": 61.11242603550296,
+       "box5": 20.766884531590417
+      },
+      "final3": {
+       "numbers": 72.56725146198832,
+       "dim": 8.045977011494253,
+       "cities": 92.73712737127371,
+       "countries": 95.21812080536913,
+       "torus": 86.45627876397107,
+       "box5": 26.57952069716776
+      },
+      "bpb": 1.115983902684019,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; decomposition double path: max |grad_T - grad_tota; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 1072259840,
+      "lr": 0.0048,
+      "path": "runs/pt6v2_size/1b/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "none@9.6e-3": {
+      "area": {
+       "numbers": 25.013177387914233,
+       "dim": 10.022988505747128,
+       "cities": 89.53387533875338,
+       "countries": 91.33333333333333,
+       "torus": 67.27679158448389,
+       "box5": 24.801742919389973
+      },
+      "final3": {
+       "numbers": 61.92397660818714,
+       "dim": 10.919540229885056,
+       "cities": 96.07046070460704,
+       "countries": 97.20357941834452,
+       "torus": 92.89940828402366,
+       "box5": 21.350762527233115
+      },
+      "bpb": 1.1535920999105074,
+      "share": null,
+      "dev": "NVIDIA H100 80GB HBM3",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; decomposition double path: max |grad_T - grad_tota; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [],
+      "n_params": 1072259840,
+      "lr": 0.0096,
+      "path": "runs/pt6v2_size/1b/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": true,
+     "final3": true,
+     "full_final3": false
+    },
+    "only_dim_vs_all6_dim": {
+     "area": 1.8390804597701162,
+     "final3": -0.5747126436781542,
+     "only_dim_area": 90.66666666666666,
+     "only_dim_final3": 99.42528735632185
+    }
+   },
+   "17": {
+    "missing": [
+     "none@4.8e-3",
+     "none@9.6e-3",
+     "none@1.92e-2",
+     "none@3.84e-2"
+    ],
+    "manifolds": {},
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 77.1887087087087,
+       "dim": 88.74458874458875,
+       "cities": 88.9544206479956,
+       "countries": 93.64692611393117,
+       "torus": 89.13319810682894,
+       "box5": 84.98434004474272
+      },
+      "final3": {
+       "numbers": 98.64864864864865,
+       "dim": 95.67099567099567,
+       "cities": 93.46512904997255,
+       "countries": 96.95431472081218,
+       "torus": 99.86477349560514,
+       "box5": 96.19686800894854
+      },
+      "bpb": 1.0875793486127152,
+      "share": 0.8249898108941333,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6-lr6e-4-s17/pt6v2-all6-lr6e-4/run_whole_helix3_seed17_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 78.65853853853854,
+       "dim": 89.71428571428572,
+       "cities": 91.9890170236134,
+       "countries": 94.16018048505357,
+       "torus": 88.85192697768763,
+       "box5": 87.43624161073825
+      },
+      "final3": {
+       "numbers": 99.17517517517517,
+       "dim": 97.83549783549783,
+       "cities": 95.11257550796266,
+       "countries": 97.54653130287649,
+       "torus": 99.79716024340772,
+       "box5": 97.76286353467563
+      },
+      "bpb": 1.0865297822149156,
+      "share": 0.8921961109101404,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6full-lr6e-4-s17/pt6v2-all6full-lr6e-4/run_whole_helix3_seed17_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": false,
+     "final3": false,
+     "full_final3": false
+    }
+   },
+   "18": {
+    "missing": [
+     "none@4.8e-3",
+     "none@9.6e-3",
+     "none@1.92e-2",
+     "none@3.84e-2"
+    ],
+    "manifolds": {},
+    "runs": {
+     "all6": {
+      "area": {
+       "numbers": 78.03680311890838,
+       "dim": 87.0946502057613,
+       "cities": 90.7864669994454,
+       "countries": 92.5915813424346,
+       "torus": 88.81511470985156,
+       "box5": 82.9517819706499
+      },
+      "final3": {
+       "numbers": 99.88888888888889,
+       "dim": 95.88477366255144,
+       "cities": 94.75873544093179,
+       "countries": 95.59158134243458,
+       "torus": 99.39271255060729,
+       "box5": 95.38784067085953
+      },
+      "bpb": 1.088166764987571,
+      "share": 0.8380884540667644,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ],
+       [
+        7324,
+        0
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6-lr6e-4-s18/pt6v2-all6-lr6e-4/run_whole_helix3_seed18_pt6v2-all6-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     },
+     "all6full": {
+      "area": {
+       "numbers": 79.70487329434698,
+       "dim": 88.19753086419752,
+       "cities": 93.33333333333333,
+       "countries": 94.86234357224117,
+       "torus": 88.5910931174089,
+       "box5": 85.62683438155136
+      },
+      "final3": {
+       "numbers": 99.88888888888889,
+       "dim": 93.4156378600823,
+       "cities": 96.42262895174709,
+       "countries": 98.29351535836179,
+       "torus": 99.32523616734143,
+       "box5": 97.69392033542977
+      },
+      "bpb": 1.0891230334519202,
+      "share": 0.8931617793128103,
+      "dev": "NVIDIA B200",
+      "flags": [
+       "check.json: step-0 lm within 1e-3 of the CPU reference (same i; offline_lm on the full val, |orig_minus_logged| < "
+      ],
+      "events": [
+       [
+        916,
+        1
+       ]
+      ],
+      "n_params": 1072259840,
+      "lr": 0.0006,
+      "path": "runs/pt6v2_size/1b/all6full-lr6e-4-s18/pt6v2-all6full-lr6e-4/run_whole_helix3_seed18_pt6v2-all6full-lr6e-4.json",
+      "area_vs_metrics_max": 0.0
+     }
+    },
+    "all_six_positive": {
+     "area": false,
+     "final3": false,
+     "full_final3": false
+    }
+   }
+  },
+  "mean": {
+   "manifolds": {
+    "numbers": {
+     "N_m": "4.8e-3",
+     "edge": "?",
+     "none_area": 27.355165692007795,
+     "none_final3": 72.56725146198832,
+     "best_final3_lr": "4.8e-3",
+     "best_none_final3": 72.56725146198832,
+     "all6_area": 77.81877034929666,
+     "all6_final3": 99.46312979646314,
+     "d_area": 50.46360465728886,
+     "d_final3": 26.895878334474816,
+     "seed_d_area": {
+      "16": 50.875633528265105
+     },
+     "seed_d_final3": {
+      "16": 27.284600389863527
+     },
+     "full_final3": 99.68802135468802,
+     "d_full_vs_bestf3": 27.1207698926997,
+     "seed_d_full": {
+      "16": 27.43274853801168
+     },
+     "fewer_seeds": [
+      "none@4.8e-3"
+     ]
+    },
+    "dim": {
+     "N_m": "9.6e-3",
+     "edge": "?",
+     "none_area": 10.022988505747128,
+     "none_final3": 10.919540229885056,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 10.919540229885056,
+     "all6_area": 88.22227505241553,
+     "all6_final3": 97.1852564445157,
+     "d_area": 78.1992865466684,
+     "d_final3": 86.26571621463064,
+     "seed_d_area": {
+      "16": 78.80459770114942
+     },
+     "seed_d_final3": {
+      "16": 89.08045977011494
+     },
+     "full_final3": 97.08371189852672,
+     "d_full_vs_bestf3": 86.16417166864166,
+     "seed_d_full": {
+      "16": 89.08045977011494
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "cities": {
+     "N_m": "9.6e-3",
+     "edge": "?",
+     "none_area": 89.53387533875338,
+     "none_final3": 96.07046070460704,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 96.07046070460704,
+     "all6_area": 90.79167799630147,
+     "all6_final3": 95.04481119886513,
+     "d_area": 1.2578026575480976,
+     "d_final3": -1.0256495057419102,
+     "seed_d_area": {
+      "16": 3.1002710027100306
+     },
+     "seed_d_final3": {
+      "16": 0.8401084010840094
+     },
+     "full_final3": 95.1910482797045,
+     "d_full_vs_bestf3": -0.8794124249025401,
+     "seed_d_full": {
+      "16": -2.032520325203251
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "countries": {
+     "N_m": "9.6e-3",
+     "edge": "?",
+     "none_area": 91.33333333333333,
+     "none_final3": 97.20357941834452,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 97.20357941834452,
+     "all6_area": 93.49001702684228,
+     "all6_final3": 96.75094372876309,
+     "d_area": 2.1566836935089526,
+     "d_final3": -0.4526356895814274,
+     "seed_d_area": {
+      "16": 2.898210290827734
+     },
+     "seed_d_final3": {
+      "16": 0.5033557046979809
+     },
+     "full_final3": 96.90753233226958,
+     "d_full_vs_bestf3": -0.29604708607493535,
+     "seed_d_full": {
+      "16": -2.3210290827740607
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "torus": {
+     "N_m": "9.6e-3",
+     "edge": "?",
+     "none_area": 67.27679158448389,
+     "none_final3": 92.89940828402366,
+     "best_final3_lr": "9.6e-3",
+     "best_none_final3": 92.89940828402366,
+     "all6_area": 87.9884689445915,
+     "all6_final3": 98.78821746138267,
+     "d_area": 20.711677360107615,
+     "d_final3": 5.888809177359008,
+     "seed_d_area": {
+      "16": 18.740302432610136
+     },
+     "seed_d_final3": {
+      "16": 4.207758053911903
+     },
+     "full_final3": 99.51022681147259,
+     "d_full_vs_bestf3": 6.610818527448927,
+     "seed_d_full": {
+      "16": 6.508875739644978
+     },
+     "fewer_seeds": [
+      "none@9.6e-3"
+     ]
+    },
+    "box5": {
+     "N_m": "9.6e-3",
+     "edge": "?",
+     "none_area": 24.801742919389973,
+     "none_final3": 21.350762527233115,
+     "best_final3_lr": "4.8e-3",
+     "best_none_final3": 26.57952069716776,
+     "all6_area": 83.99323166671404,
+     "all6_final3": 95.37936186204206,
+     "d_area": 59.191488747324065,
+     "d_final3": 74.02859933480894,
+     "seed_d_area": {
+      "16": 59.24183006535949
+     },
+     "seed_d_final3": {
+      "16": 73.20261437908496
+     },
+     "full_final3": 98.3403513408703,
+     "d_full_vs_bestf3": 71.76083064370255,
+     "seed_d_full": {
+      "16": 72.98474945533769
+     },
+     "fewer_seeds": [
+      "none@4.8e-3",
+      "none@9.6e-3"
+     ]
+    }
+   },
+   "cells": {
+    "all6": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 77.81877034929666,
+      "dim": 88.22227505241553,
+      "cities": 90.79167799630147,
+      "countries": 93.49001702684228,
+      "torus": 87.9884689445915,
+      "box5": 83.99323166671404
+     },
+     "final3": {
+      "numbers": 99.46312979646314,
+      "dim": 97.1852564445157,
+      "cities": 95.04481119886513,
+      "countries": 96.75094372876309,
+      "torus": 98.78821746138267,
+      "box5": 95.37936186204206
+     },
+     "bpb": 1.0865417140271703
+    },
+    "all6full": {
+     "n": 3,
+     "seeds": [
+      16,
+      17,
+      18
+     ],
+     "area": {
+      "numbers": 79.53418471102681,
+      "dim": 89.98593119665917,
+      "cities": 91.72569763479072,
+      "countries": 93.67044612498937,
+      "torus": 88.52834397647202,
+      "box5": 86.77411175051628
+     },
+     "final3": {
+      "numbers": 99.68802135468802,
+      "dim": 97.08371189852672,
+      "cities": 95.1910482797045,
+      "countries": 96.90753233226958,
+      "torus": 99.51022681147259,
+      "box5": 98.3403513408703
+     },
+     "bpb": 1.0886981784441199
+    },
+    "only-dim": {
+     "n": 1,
+     "seeds": [
+      16
+     ],
+     "area": {
+      "numbers": 13.35953216374269,
+      "dim": 90.66666666666666,
+      "cities": 77.93170731707316,
+      "countries": 84.4675615212528,
+      "torus": 1.5647600262984878,
+      "box5": 21.708061002178646
+     },
+     "final3": {
+      "numbers": 23.64327485380117,
+      "dim": 99.42528735632185,
+      "cities": 83.08943089430895,
+      "countries": 88.89821029082773,
+      "torus": 2.235371466140697,
+      "box5": 27.886710239651418
+     },
+     "bpb": 1.0893475813201698
+    },
+    "none@4.8e-3": {
+     "n": 1,
+     "seeds": [
+      16
+     ],
+     "area": {
+      "numbers": 27.355165692007795,
+      "dim": 4.3678160919540225,
+      "cities": 85.85040650406505,
+      "countries": 89.02908277404923,
+      "torus": 61.11242603550296,
+      "box5": 20.766884531590417
+     },
+     "final3": {
+      "numbers": 72.56725146198832,
+      "dim": 8.045977011494253,
+      "cities": 92.73712737127371,
+      "countries": 95.21812080536913,
+      "torus": 86.45627876397107,
+      "box5": 26.57952069716776
+     },
+     "bpb": 1.115983902684019
+    },
+    "none@9.6e-3": {
+     "n": 1,
+     "seeds": [
+      16
+     ],
+     "area": {
+      "numbers": 25.013177387914233,
+      "dim": 10.022988505747128,
+      "cities": 89.53387533875338,
+      "countries": 91.33333333333333,
+      "torus": 67.27679158448389,
+      "box5": 24.801742919389973
+     },
+     "final3": {
+      "numbers": 61.92397660818714,
+      "dim": 10.919540229885056,
+      "cities": 96.07046070460704,
+      "countries": 97.20357941834452,
+      "torus": 92.89940828402366,
+      "box5": 21.350762527233115
+     },
+     "bpb": 1.1535920999105074
+    }
+   },
+   "all_six_positive": {
+    "area": true,
+    "final3": false,
+    "full_final3": false
+   },
+   "only_dim_vs_all6_dim": {
+    "area": 1.8390804597701162,
+    "final3": -0.5747126436781542,
+    "seeds": [
+     16
+    ]
+   }
+  }
+ }
+}

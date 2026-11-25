@@ -1,0 +1,122 @@
+{
+ "1b/canary-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/all6-lr6e-4-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/all6full-lr6e-4-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/only-dim-lr6e-4-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/none-lr1.2e-3-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/none-lr2.4e-3-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/none-lr4.8e-3-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "1b/none-lr9.6e-3-s16": {
+  "n": 63,
+  "sha": "49fd76eb2665c3fbe708c0465fad62f912367bd74198ed88e976ac5cd0949b5f",
+  "model_line": "model: 1072.3M parameters; gradient checkpointing on"
+ },
+ "505m/canary-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/all6-lr6e-4-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/all6full-lr6e-4-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/only-dim-lr6e-4-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr2.4e-3-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr4.8e-3-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr9.6e-3-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "505m/none-lr1.92e-2-s16": {
+  "n": 63,
+  "sha": "c0b4ea853dbd4eeb25a14e5f077cdcb4f4cbeca3d4c79ef80f663a36aa5ec86e",
+  "model_line": "model: 505.4M parameters; gradient checkpointing on"
+ },
+ "190m/canary-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/all6-lr6e-4-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/all6full-lr6e-4-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/only-dim-lr6e-4-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/none-lr2.4e-3-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/none-lr4.8e-3-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/none-lr9.6e-3-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ },
+ "190m/none-lr1.92e-2-s16": {
+  "n": 63,
+  "sha": "527cf442147d090ec89cf1d7eec5cf01d115badf55733518b6cd2836c23e4e69",
+  "model_line": "model: 190.3M parameters; gradient checkpointing on"
+ }
+}

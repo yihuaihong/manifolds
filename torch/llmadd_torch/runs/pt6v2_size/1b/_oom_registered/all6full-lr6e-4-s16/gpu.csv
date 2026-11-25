@@ -1,0 +1,5 @@
+timestamp, name, utilization.gpu [%], utilization.memory [%], memory.used [MiB], memory.total [MiB]
+2026/11/24 01:44:00.568, NVIDIA H100 80GB HBM3, 0 %, 0 %, 0 MiB, 81559 MiB
+2026/11/24 01:45:00.573, NVIDIA H100 80GB HBM3, 0 %, 0 %, 633 MiB, 81559 MiB
+2026/11/24 01:46:00.577, NVIDIA H100 80GB HBM3, 0 %, 0 %, 633 MiB, 81559 MiB
+2026/11/24 01:47:00.580, NVIDIA H100 80GB HBM3, 100 %, 72 %, 58209 MiB, 81559 MiB

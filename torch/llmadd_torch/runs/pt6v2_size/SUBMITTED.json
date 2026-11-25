@@ -1,0 +1,510 @@
+{
+ "commit": "ef7b8854",
+ "trainer_sha12": "a398fccbfe93",
+ "runs": {
+  "1b/canary-s16": {
+   "size": "1b",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": true,
+   "slurm_name": "llmadd_pt6sz-1b-canary-s16",
+   "out": "runs/pt6v2_size/1b/canary-s16",
+   "run_json": "runs/pt6v2_size/1b/canary-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/canary-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 100 --tokens 4915200 --eval_every 50 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [
+    [
+     15,
+     1
+    ],
+    [
+     120,
+     0
+    ]
+   ],
+   "steps": 300,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340300",
+   "job_sha12": "1b00a47d3577"
+  },
+  "1b/all6-lr6e-4-s16": {
+   "size": "1b",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-all6-lr6e-4-s16",
+   "out": "runs/pt6v2_size/1b/all6-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/1b/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/all6-lr6e-4-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340301",
+   "job_sha12": "38813afb6592"
+  },
+  "1b/all6full-lr6e-4-s16": {
+   "size": "1b",
+   "arm": "all6full",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-all6full-lr6e-4-s16",
+   "out": "runs/pt6v2_size/1b/all6full-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/1b/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4 --target helix3 --schedule window --window 0.05,1.0 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6full-lr6e-4 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,1.0",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340302",
+   "job_sha12": "4d3f20cbb96b"
+  },
+  "1b/only-dim-lr6e-4-s16": {
+   "size": "1b",
+   "arm": "only-dim",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-only-dim-lr6e-4-s16",
+   "out": "runs/pt6v2_size/1b/only-dim-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/1b/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4 --target none --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains dim --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-only-dim-lr6e-4 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340303",
+   "job_sha12": "8bcce1e14111"
+  },
+  "1b/none-lr1.2e-3-s16": {
+   "size": "1b",
+   "arm": "none",
+   "lr": "1.2e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-none-lr1.2e-3-s16",
+   "out": "runs/pt6v2_size/1b/none-lr1.2e-3-s16",
+   "run_json": "runs/pt6v2_size/1b/none-lr1.2e-3-s16/pt6v2-none-lr1.2e-3/run_whole_none_seed16_pt6v2-none-lr1.2e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/none-lr1.2e-3-s16/pt6v2-none-lr1.2e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 1.2e-3 --seed 16 --tag _pt6v2-none-lr1.2e-3 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340304",
+   "job_sha12": "7b3ac0eb2a44"
+  },
+  "1b/none-lr2.4e-3-s16": {
+   "size": "1b",
+   "arm": "none",
+   "lr": "2.4e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-none-lr2.4e-3-s16",
+   "out": "runs/pt6v2_size/1b/none-lr2.4e-3-s16",
+   "run_json": "runs/pt6v2_size/1b/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 2.4e-3 --seed 16 --tag _pt6v2-none-lr2.4e-3 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340316",
+   "job_sha12": "7733e016da5b"
+  },
+  "1b/none-lr4.8e-3-s16": {
+   "size": "1b",
+   "arm": "none",
+   "lr": "4.8e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-none-lr4.8e-3-s16",
+   "out": "runs/pt6v2_size/1b/none-lr4.8e-3-s16",
+   "run_json": "runs/pt6v2_size/1b/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 4.8e-3 --seed 16 --tag _pt6v2-none-lr4.8e-3 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340317",
+   "job_sha12": "604dd39128ce"
+  },
+  "1b/none-lr9.6e-3-s16": {
+   "size": "1b",
+   "arm": "none",
+   "lr": "9.6e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-1b-none-lr9.6e-3-s16",
+   "out": "runs/pt6v2_size/1b/none-lr9.6e-3-s16",
+   "run_json": "runs/pt6v2_size/1b/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/1b/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 9.6e-3 --seed 16 --tag _pt6v2-none-lr9.6e-3 --ckpt_every 500 --d_model 1280 --n_layers 36 --n_heads 20 --d_ff 5120 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 1072259840,
+   "job_id": "24340318",
+   "job_sha12": "1c99882e811a"
+  },
+  "505m/canary-s16": {
+   "size": "505m",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": true,
+   "slurm_name": "llmadd_pt6sz-505m-canary-s16",
+   "out": "runs/pt6v2_size/505m/canary-s16",
+   "run_json": "runs/pt6v2_size/505m/canary-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/canary-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 100 --tokens 4915200 --eval_every 50 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [
+    [
+     15,
+     1
+    ],
+    [
+     120,
+     0
+    ]
+   ],
+   "steps": 300,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340319",
+   "job_sha12": "11d4ce4d2ae3"
+  },
+  "505m/all6-lr6e-4-s16": {
+   "size": "505m",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-all6-lr6e-4-s16",
+   "out": "runs/pt6v2_size/505m/all6-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/505m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340321",
+   "job_sha12": "54e59885d116"
+  },
+  "505m/all6full-lr6e-4-s16": {
+   "size": "505m",
+   "arm": "all6full",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-all6full-lr6e-4-s16",
+   "out": "runs/pt6v2_size/505m/all6full-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/505m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4 --target helix3 --schedule window --window 0.05,1.0 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6full-lr6e-4 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,1.0",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340322",
+   "job_sha12": "10f2cb751125"
+  },
+  "505m/only-dim-lr6e-4-s16": {
+   "size": "505m",
+   "arm": "only-dim",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-only-dim-lr6e-4-s16",
+   "out": "runs/pt6v2_size/505m/only-dim-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/505m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4 --target none --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains dim --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-only-dim-lr6e-4 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340329",
+   "job_sha12": "a2e62c942a8a"
+  },
+  "505m/none-lr2.4e-3-s16": {
+   "size": "505m",
+   "arm": "none",
+   "lr": "2.4e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-none-lr2.4e-3-s16",
+   "out": "runs/pt6v2_size/505m/none-lr2.4e-3-s16",
+   "run_json": "runs/pt6v2_size/505m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 2.4e-3 --seed 16 --tag _pt6v2-none-lr2.4e-3 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340330",
+   "job_sha12": "d8f6676795e5"
+  },
+  "505m/none-lr4.8e-3-s16": {
+   "size": "505m",
+   "arm": "none",
+   "lr": "4.8e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-none-lr4.8e-3-s16",
+   "out": "runs/pt6v2_size/505m/none-lr4.8e-3-s16",
+   "run_json": "runs/pt6v2_size/505m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 4.8e-3 --seed 16 --tag _pt6v2-none-lr4.8e-3 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340336",
+   "job_sha12": "cc4cc97a175d"
+  },
+  "505m/none-lr9.6e-3-s16": {
+   "size": "505m",
+   "arm": "none",
+   "lr": "9.6e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-none-lr9.6e-3-s16",
+   "out": "runs/pt6v2_size/505m/none-lr9.6e-3-s16",
+   "run_json": "runs/pt6v2_size/505m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 9.6e-3 --seed 16 --tag _pt6v2-none-lr9.6e-3 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340338",
+   "job_sha12": "5c7459097f89"
+  },
+  "505m/none-lr1.92e-2-s16": {
+   "size": "505m",
+   "arm": "none",
+   "lr": "1.92e-2",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-505m-none-lr1.92e-2-s16",
+   "out": "runs/pt6v2_size/505m/none-lr1.92e-2-s16",
+   "run_json": "runs/pt6v2_size/505m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2/run_whole_none_seed16_pt6v2-none-lr1.92e-2.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/505m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 1.92e-2 --seed 16 --tag _pt6v2-none-lr1.92e-2 --ckpt_every 500 --d_model 1024 --n_layers 24 --n_heads 16 --d_ff 4096 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 505437184,
+   "job_id": "24340349",
+   "job_sha12": "613d313d32ce"
+  },
+  "190m/canary-s16": {
+   "size": "190m",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": true,
+   "slurm_name": "llmadd_pt6sz-190m-canary-s16",
+   "out": "runs/pt6v2_size/190m/canary-s16",
+   "run_json": "runs/pt6v2_size/190m/canary-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/canary-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 100 --tokens 4915200 --eval_every 50 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [
+    [
+     15,
+     1
+    ],
+    [
+     120,
+     0
+    ]
+   ],
+   "steps": 300,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340350",
+   "job_sha12": "73a18464b02f"
+  },
+  "190m/all6-lr6e-4-s16": {
+   "size": "190m",
+   "arm": "all6",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-all6-lr6e-4-s16",
+   "out": "runs/pt6v2_size/190m/all6-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/190m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/run_whole_helix3_seed16_pt6v2-all6-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4 --target helix3 --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6-lr6e-4 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340361",
+   "job_sha12": "848787dc90d6"
+  },
+  "190m/all6full-lr6e-4-s16": {
+   "size": "190m",
+   "arm": "all6full",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-all6full-lr6e-4-s16",
+   "out": "runs/pt6v2_size/190m/all6full-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/190m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4/run_whole_helix3_seed16_pt6v2-all6full-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/all6full-lr6e-4-s16/pt6v2-all6full-lr6e-4 --target helix3 --schedule window --window 0.05,1.0 --site ctx --lam_rule each --prior_domains numbers,dim,cities,countries,torus,box5 --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-all6full-lr6e-4 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,1.0",
+   "base_job": "job_pt6v2-all6-lr1e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340362",
+   "job_sha12": "ce291bb16ea1"
+  },
+  "190m/only-dim-lr6e-4-s16": {
+   "size": "190m",
+   "arm": "only-dim",
+   "lr": "6e-4",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-only-dim-lr6e-4-s16",
+   "out": "runs/pt6v2_size/190m/only-dim-lr6e-4-s16",
+   "run_json": "runs/pt6v2_size/190m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4/run_whole_none_seed16_pt6v2-only-dim-lr6e-4.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/only-dim-lr6e-4-s16/pt6v2-only-dim-lr6e-4 --target none --schedule window --window 0.05,0.4 --site ctx --lam_rule each --prior_domains dim --lam 1 --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 6e-4 --seed 16 --tag _pt6v2-only-dim-lr6e-4 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [
+    [
+     916,
+     1
+    ],
+    [
+     7324,
+     0
+    ]
+   ],
+   "steps": 18310,
+   "window": "0.05,0.4",
+   "base_job": "job_pt6v2-only-dim-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340407",
+   "job_sha12": "dd399c641af1"
+  },
+  "190m/none-lr2.4e-3-s16": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "2.4e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr2.4e-3-s16",
+   "out": "runs/pt6v2_size/190m/none-lr2.4e-3-s16",
+   "run_json": "runs/pt6v2_size/190m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3/run_whole_none_seed16_pt6v2-none-lr2.4e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr2.4e-3-s16/pt6v2-none-lr2.4e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 2.4e-3 --seed 16 --tag _pt6v2-none-lr2.4e-3 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340411",
+   "job_sha12": "bb0514cb0c0e"
+  },
+  "190m/none-lr4.8e-3-s16": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "4.8e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr4.8e-3-s16",
+   "out": "runs/pt6v2_size/190m/none-lr4.8e-3-s16",
+   "run_json": "runs/pt6v2_size/190m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3/run_whole_none_seed16_pt6v2-none-lr4.8e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr4.8e-3-s16/pt6v2-none-lr4.8e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 4.8e-3 --seed 16 --tag _pt6v2-none-lr4.8e-3 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340414",
+   "job_sha12": "c2587ea12b36"
+  },
+  "190m/none-lr9.6e-3-s16": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "9.6e-3",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr9.6e-3-s16",
+   "out": "runs/pt6v2_size/190m/none-lr9.6e-3-s16",
+   "run_json": "runs/pt6v2_size/190m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3/run_whole_none_seed16_pt6v2-none-lr9.6e-3.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr9.6e-3-s16/pt6v2-none-lr9.6e-3 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 9.6e-3 --seed 16 --tag _pt6v2-none-lr9.6e-3 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340416",
+   "job_sha12": "0941eef33f3b"
+  },
+  "190m/none-lr1.92e-2-s16": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "1.92e-2",
+   "canary": false,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr1.92e-2-s16",
+   "out": "runs/pt6v2_size/190m/none-lr1.92e-2-s16",
+   "run_json": "runs/pt6v2_size/190m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2/run_whole_none_seed16_pt6v2-none-lr1.92e-2.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr1.92e-2-s16/pt6v2-none-lr1.92e-2 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 1.92e-2 --seed 16 --tag _pt6v2-none-lr1.92e-2 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24340419",
+   "job_sha12": "5e656255ff4a"
+  }
+ }
+}

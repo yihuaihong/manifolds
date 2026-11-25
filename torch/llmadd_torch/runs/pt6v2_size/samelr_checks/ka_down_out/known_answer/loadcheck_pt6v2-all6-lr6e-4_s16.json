@@ -1,0 +1,17 @@
+{
+ "eval_code_sha": "5d694e38ab75",
+ "prefix": "eos",
+ "max_len": 512,
+ "limit": 0,
+ "dtype": "fp32",
+ "data": "data/general",
+ "slurm_job": "24531562",
+ "kind": "load_check",
+ "model": "runs/pt6v2_size/190m/all6-lr6e-4-s16/pt6v2-all6-lr6e-4/model_whole_helix3_seed16_pt6v2-all6-lr6e-4.pt",
+ "train_code_sha": "a398fccbfe93",
+ "load_check": {
+  "bpb_replica": 1.1249456217169593,
+  "bpb_logged_final": 1.1249844310411146,
+  "replica_minus_logged": -3.8809324155231195e-05
+ }
+}
