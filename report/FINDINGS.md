@@ -6109,3 +6109,25 @@ F96 原条目的「不得写」照旧适用。
 **能写**
 - 「At 190M and at 505M, in all three seeds, the six priors raise accuracy averaged over training on all six concepts above the model without priors at its best learning rate (190M mean gains: numbers 51.3, dimensions 48.1, grid 42.9, torus 20.4, cities 4.2, countries 3.4 points), and the final accuracy on numbers, dimensions, torus and grid.」
 - 分离句的计数改为 18 对 36，边界值不变。
+
+**F114 补记四·追加（2026-11-25 12:10 ET）：190M 逐 seed 的 bpb、达到比例和 lr 边界（数值取自 sizeread_rep_190done.txt；每个 seed 的不加先验都跑了 6 个 lr，1.2e-3–3.84e-2）**
+
+1. **bpb**：窗口臂在每个 seed 内，都低于同 seed 所有不加先验的 run。
+
+   | seed | 窗口臂 | 同 seed 不加先验最低（都是 1.2e-3） | 差距 |
+   |---|---|---|---|
+   | s16 | 1.1250 | 1.1358 | 0.011 |
+   | s17 | 1.1257 | 1.1275 | 0.0018 |
+   | s18 | 1.1249 | 1.1257 | 0.0008 |
+
+   App. J 里 s16 的「1.125 对 1.141」（4 个 lr 时）要改为「1.125 对 1.136」（6 个 lr）。s17 / s18 的差距只有 0.001–0.002，而且不加先验的 bpb 随 lr 降低单调下降，所以同 lr 的比较要等 SAMELR。
+2. **达到比例**：以每个 seed 内所有 lr 中最好的不加先验 final3 为基准，看六先验的 running-3 曲线最早何时达到，依次为 numbers / dim / cities / countries / torus / box5。
+   - s16：0.30 / 0.08 / 0.29 / 0.20 / 0.26 / 0.10，也就是 8–30%。6 个 lr 下不变。
+   - s17：0.23 / 0.08 / 0.61 / 0.49 / 0.36 / 0.10。
+   - s18：0.26 / 0.10 / never / 0.49 / 0.22 / 0.10。
+   - 三个 seed 合起来：numbers、dim、torus、box5 在 8–36% 内达到，每个 seed 都是；cities、countries 为 20–61%，s18 的 cities 一直没达到。
+3. **最好 lr 是否在边界**：按 seed 均值取 N_m，numbers / cities / countries 都是 9.6e-3，torus / box5 都是 1.92e-2，都在网格内部；只有 dim 在上沿（3.84e-2）。
+
+能写：
+- 「At 190M ... on numbers, dimensions, torus and grid it reaches the best final accuracy without priors after 8–36% of training in all three seeds (8–30% on all six manifolds with seed 16)」
+- bpb 那句按 seed 写，三个 seed 都成立。
