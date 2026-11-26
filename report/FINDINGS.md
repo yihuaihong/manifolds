@@ -6217,3 +6217,59 @@ F96 原条目的「不得写」照旧适用。
 和补记五的 40 个相比，多出 12 个：1.07B 的 s17 / s18 新增 5 个（s17 的 4.8e-3 / 9.6e-3 / 1.92e-2，s18 的 4.8e-3 / 9.6e-3），none@6e-4 新增 7 个。
 
 1.07B 的联合增益：only-dim 按设计只跑了 s16，没有三个 seed 的数，所以仍然写 −1.8（seed 16）。
+
+## [2026-11-25] F115 pt6v2 Amendment V9：同数量、同强度的对照（53M，8 个新 run，探索档，已过结果层审查）
+
+量纲格的联合增益来自 torus 和 grid 先验的目标几何，而不是多出来的先验梯度。
+
+把这两个先验的目标换成打乱版本后，联合增益完全消失。打乱版本的设置：
+- 数据相同，同样开六个先验，λ 和目标谱都不变；
+- 总的先验梯度是真版本的 91%。
+
+量纲格的结果：
+- 真目标六先验比打乱版本高 +18.0（面积，[+10.4, +25.7]，8/8），训练结束时高 +34.5（[+21.2, +47.8]，8/8）。
+- 打乱版本对只开量纲格先验是 −4.5（[−14.6, +5.5]）。如果增益来自剂量，这里应该是 +13.5。
+
+**设置**
+- 用户 11-25 批准：「可以的，我觉得都可以跑 可以多用一些gpu」。这次是为了补上论文删去 pt6comb 组合之后缺少的同数量对照。
+- 新臂 all6-shufTB@2e-3：all6 加 `--prior_shuf torus,box5`，seed 16–23。训练器 a398fccbfe93 没有改动。
+- 打乱方式：目标表按行置换（pretrain_range.py:1151，`F[qperm]`）。step 0 时核对过：Gram 对置换等变，谱和 Frobenius 范数都相同。
+- 对照臂都是已有的同 seed run：all6@2e-3、all4（只开 numbers / dim / cities / countries 四个先验）、only-dim@2e-3。同一 seed 内，各臂的 data_sha、held 集和 strict 掩码都相同。
+- 读数用 out_v9/v9read.py（30e8ef2e3914），结果在 v9read.txt / .json。已知答案测试：h6 +13.5、h4 +1.5、梯度 0.143 / 0.095，都复现。
+- 审查记录：runs/pt6v2/tests/audit_v9_result_20261125.md。审查员从 32 个 run JSON 独立重算，全部复现；检查脚本在 /scratch/yh6210/tmp_audit/pt6v2_v9_result/。
+
+**结果**（量纲格 strict 题，8 个 seed，95% t-CI；h = 组合 − only-dim）
+1. 面积：
+   - h6 = +13.5 [+7.4, +19.6]（8/8）
+   - h4 = +1.5 [−4.8, +7.8]（5/8）
+   - **h_shuf = −4.5 [−14.6, +5.5]（3/8）**
+   - **all6 − shufTB = +18.0 [+10.4, +25.7]（8/8）**
+2. final3：
+   - h6 = +25.0
+   - h_shuf = −9.6 [−25.1, +6.0]
+   - **all6 − shufTB = +34.5 [+21.2, +47.8]（8/8）**
+3. 剂量反证：
+   - 打乱版本的先验梯度中位数是 0.130，为 all6（0.143）的 91%、all4（0.095）的 1.36 倍。
+   - 但打乱版本相对 all4 是 −6.0 [−15.8, +3.7]（2/8），区间上界 +3.7 低于真几何带来的 +12.0。所以多出的先验梯度本身不带来增益。
+4. 干预确实生效：
+   - 窗口末，物品表示和打乱目标的 CKA 约为 0.99，和真目标只有 0.11 / 0.08（all6 是 0.996 / 0.998）。
+   - torus 和 box5 自己的 final3 降到 0.3 / 1.1。
+   - 其他概念不受影响：numbers 95.7、cities 95.7、countries 97.7（all6 分别是 96.8 / 95.9 / 98.1）。
+5. 差距主要在先验窗口关闭之后拉开。量纲格面积：
+   - 窗口内：all6 87.2，shufTB 79.5，only-dim 82.8，all4 83.0；
+   - 窗口后：all6 78.8，shufTB 53.1，only-dim 58.8，all4 61.3。
+
+**限定**（集中写一处）
+1. 剂量在各概念上不均：torus 是真版本的 98%，box5 只有 73%（逐 seed 0.50–0.98）。逐 seed 看，剂量比和 all6 − shufTB 的差距相关。但打乱臂内梯度越大，量纲格反而越低（r = −0.66），所以不支持剂量解释。
+2. 效应只能归到 torus 和 grid 两者合起来，分不开各自的贡献。
+3. 设备混用：打乱臂在 A100 / H100 / B200，对照臂多在 B200。只看设备一致的 s19–22，结论相同：all6 − shufTB = +13.5（4/4），h_shuf +4.0，接近 h4 的 +2.8。
+4. 「几何本身的增益」应该用 all6 − all4 = +12.0 [+3.8, +20.2]（7/8）。+18.0 是和一个错误几何比，里面可能含有错误几何带来的 −6.0（不显著）。
+5. 只覆盖 53M、lr 2e-3 和这一个窗口。
+
+**能写**
+- 「Giving the torus and grid priors shuffled targets of the same strength (same data, same six priors, 91% of the total prior gradient) removes all of the joint lift on dimensions: the shuffled version is no better than the dimensions prior alone (−4.5 points averaged over training, 95% CI −14.6 to +5.5, where a dose explanation predicts +13.5), while the true targets beat it by 18.0 points averaged over training (8 of 8 seeds, +10.4 to +25.7) and 34.5 at the end of training (8 of 8). The extra prior gradient brings nothing by itself: with 1.36 times the prior gradient of the run without the torus and grid priors, the shuffled version is not better than that run (−6.0, −15.8 to +3.7). The lift comes from the geometry of the torus and grid targets.」
+
+**不得写**
+1. 「打乱的先验有害」：h_shuf 和 shufTB − all4 的区间都含 0，负值主要来自设备不一致的 s16 / s23。
+2. 把 +18.0 写成「几何效应的大小」：应该用 +12.0（all6 − all4）。
+3. 「torus 先验单独就够」：两者分不开。
