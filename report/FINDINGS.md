@@ -6171,3 +6171,38 @@ F96 原条目的「不得写」照旧适用。
 这些 run 都不在 6e-4。边界值不变。
 
 **bpb 按 seed 核对**：1.07B s16 跑满 6 个 lr 后，窗口臂 1.0839 仍低于同 seed 最低的不加先验 run（1.0917，lr 1.2e-3）；1.92e-2 和 3.84e-2 两个 run 为 1.2016 / 1.2737。1.07B s17 / s18 目前只有高 lr 的不加先验 run 跑完，窗口臂在这两个 seed 也低于它们。所以「in each seed … every rate run in that seed」照旧成立。
+
+## [2026-11-25] F114 补记六（1.07B 三个 seed 齐了，SAMELR 同 lr 的 bpb 也出了：两条更强，一条更正）
+
+1. **1.07B 三个 seed（s16 / s17 / s18）的面积全部为正**，六个概念都是 3/3。按 seed 均值选的 N_m，all6 − none@N_m 为（括号内依次是 s16 / s17 / s18）：
+   - numbers +49.9（+50.9 / +48.2 / +50.7）
+   - dim +45.0（+24.2 / +49.1 / +61.6）
+   - box5 +49.2（+38.6 / +58.4 / +50.6）
+   - torus +17.4（+18.7 / +21.2 / +12.3）
+   - cities +2.5（+3.1 / +2.7 / +1.7）
+   - countries +2.9（+2.9 / +3.6 / +2.2）
+
+   加上补记二、四，**190M、505M、1.07B 三个尺寸的每个 seed，六个概念的训练平均准确率都高于不加先验的最好 lr**（3 × 3 × 6 = 54 个比较，全部为正）。
+   - 终值：numbers、dim、torus、box5 在 1.07B 也都是 3/3 更高（+27.3 / +46.5 / +4.7 / +51.0）；cities 和 countries 约为 0（1/3）。
+   - 限定：none@7.68e-2 还没跑完（BRACKET 批），所以 1.07B 的 dim 和 box5 的 N_m 仍在网格上沿，量级未定。
+   - 逐 seed 看，s17 / s18 上 dim 的 N_m 是 1.92e-2，在网格内部；均值落在上沿，是被 s16 的 none@3.84e-2（64.6）拉过去的。
+   - numbers、torus、cities、countries 的 N_m 都在网格内部。
+2. **分离**：
+   - 现在是 18 对 52，不加先验那边新增了 1.07B s17 / s18 的全部 lr，以及已完成的 none@6e-4。
+   - numbers ≥75.3 对 ≤32.3，dim ≥80.0 对 ≤64.6，torus ≥86.0 对 **≤76.5**（1.07B none@9.6e-3 s18），box5 ≥68.5 对 ≤49.1。
+   - 四个概念仍然完全分开。
+3. **同 lr 的 LM 代价（SAMELR，all6@6e-4 对 none@6e-4，最终 bpb）**：
+
+   | 尺寸 | s16 | s17 | s18 | 均值 |
+   |---|---|---|---|---|
+   | 190M | +0.0017 | +0.0008 | +0.0019 | +0.0015（3/3 先验更高，约 +0.13%） |
+   | 505M | +0.0049 | +0.0220 | — | +0.0134（2/2，约 +1.2%） |
+   | 1.07B | −0.0092 | +0.0022 | — | 两个 seed 方向不一 |
+
+   - **更正**：补记二·追加、补记四·追加、补记五·更正里的「窗口臂在每个 seed 内都低于同 seed 每个不加先验 lr」，在把 none@6e-4 算进去之后**不再成立**：190M 的 s16 / s17 / s18 和 505M 的 s16 / s17 都不成立。不加先验的 bpb 在 6e-4 时最低，这正是 F114 限定 4 说的 lr 混杂。
+   - 读法：同 lr 下，六先验在 190M 和 505M 有一个小的 LM 代价（0.1–2%），1.07B 未定。s19 和 505M / 1.07B 的 s18 跑完后再定。这和 F96 P2（单个数字先验在 505M，同 lr，LM 4/4 更高）方向一致。
+   - 「看不到 LM 代价」作废，改为写同 lr 的代价。
+
+**能写**
+- 「At every size from 190M to 1.07B and in every one of the three seeds, the six priors raise accuracy averaged over training on all six concepts above the model without priors at its best learning rate (54 of 54 comparisons). At 1.07B the mean gains are 49.9 on numbers, 17.4 on the torus, 2.5 on cities and 2.9 on countries; on dimensions and the grid, the best learning rate without priors is still the highest tried.」
+- 「At the same learning rate, the six priors cost a little language-modelling loss: +0.13% bits per byte at 190M (3 of 3 seeds) and +0.4% / +2.0% at 505M (2 seeds); at 1.07B the two seeds so far disagree (−0.8%, +0.2%).」
