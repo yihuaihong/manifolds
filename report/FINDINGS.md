@@ -6206,3 +6206,14 @@ F96 原条目的「不得写」照旧适用。
 **能写**
 - 「At every size from 190M to 1.07B and in every one of the three seeds, the six priors raise accuracy averaged over training on all six concepts above the model without priors at its best learning rate (54 of 54 comparisons). At 1.07B the mean gains are 49.9 on numbers, 17.4 on the torus, 2.5 on cities and 2.9 on countries; on dimensions and the grid, the best learning rate without priors is still the highest tried.」
 - 「At the same learning rate, the six priors cost a little language-modelling loss: +0.13% bits per byte at 190M (3 of 3 seeds) and +0.4% / +2.0% at 505M (2 seeds); at 1.07B the two seeds so far disagree (−0.8%, +0.2%).」
+
+**F114 补记六·追加（2026-11-25 23:00 ET）：52 个不加先验 run 的构成；1.07B 的联合增益**
+
+52 个 run 都是跑满 75 个 eval 的，构成如下（size_comp.py）：
+- **190M，21 个**：7 个 lr（6e-4、1.2e-3、2.4e-3、4.8e-3、9.6e-3、1.92e-2、3.84e-2），每个 lr 都有 s16–18。
+- **505M，15 个**：6e-4 有 s16 / s17；2.4e-3 只有 s16；4.8e-3、9.6e-3、1.92e-2、3.84e-2 各有 s16–18。
+- **1.07B，16 个**：6e-4 有 s16 / s17；1.2e-3、2.4e-3 只有 s16；4.8e-3、9.6e-3、1.92e-2、3.84e-2 各有 s16–18。
+
+和补记五的 40 个相比，多出 12 个：1.07B 的 s17 / s18 新增 5 个（s17 的 4.8e-3 / 9.6e-3 / 1.92e-2，s18 的 4.8e-3 / 9.6e-3），none@6e-4 新增 7 个。
+
+1.07B 的联合增益：only-dim 按设计只跑了 s16，没有三个 seed 的数，所以仍然写 −1.8（seed 16）。
