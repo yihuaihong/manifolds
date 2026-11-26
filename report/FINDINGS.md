@@ -6340,3 +6340,11 @@ all6@6e-4 和 none@6e-4 比，最终 bpb 的差（all6 − none）如下（seed 
 **能写**
 - 「At 1.07B the best learning rate without priors is inside the range tried for all six concepts (at 7.68e-2 the models without priors are worse on dimensions and the grid), so the 1.07B gains are final too: numbers 49.9, grid 49.2, dimensions 45.0, torus 17.4, countries 2.9, cities 2.5 points, each in 3 of 3 seeds.」
 - §4.4 里「runs without priors at a higher rate at 1.07B are under way」和附录 J 里 1.07B「the highest rate with all three seeds」那条限定都可以删。
+
+**F114 补记九·追加（2026-11-26 12:00 ET）：1.07B s17 在 7.68e-2 也跑完了，结论不变**
+
+- none@7.68e-2 s17：量纲格 31.4（3.84e-2 时 39.6），grid 19.8（26.6）。三个 seed 在 7.68e-2 上都低于 3.84e-2。
+- 7.68e-2 的 seed 均值：量纲格 22.7（30.8 / 31.4 / 5.8），对 3.84e-2 的 43.2；grid 16.2（22.8 / 19.8 / 6.1），对 34.8。
+- N_m 不变，1.07B 的六个增益与补记九相同。
+- 分离：63 个不加先验 run（1.07B 20 个），边界值不变。
+- s17 跑在 A100 上（主作业），CHECK_PY 只有预期内的 FAIL。BRACKET 批 8/8 完成。
