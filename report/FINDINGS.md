@@ -6348,3 +6348,22 @@ all6@6e-4 和 none@6e-4 比，最终 bpb 的差（all6 − none）如下（seed 
 - N_m 不变，1.07B 的六个增益与补记九相同。
 - 分离：63 个不加先验 run（1.07B 20 个），边界值不变。
 - s17 跑在 A100 上（主作业），CHECK_PY 只有预期内的 FAIL。BRACKET 批 8/8 完成。
+
+## [2026-11-26] F114 补记十（写作用：1.07B 和尺寸结论的强版本；数字全部来自补记六至九，没有新读数）
+
+用户 11-26：「在 writing 里我们该写强的结果都可以写强一下，该强调的都可以强调下，尤其是在这个更大模型下的结果，最后这个 1b 的」。下面每一句都只用已入库的数字。
+
+**强版本（能写）**
+1. 1.07B 主句：「At 1.07B, the largest model we train, the six priors raise accuracy averaged over training on all six concepts in every seed, by 49.9 points on numbers, 49.2 on the grid, 45.0 on dimensions and 17.4 on the torus, each against the model without priors at its best learning rate, with the learning-rate range closed on both sides.」（补记六、九）
+2. 不随尺寸变小：「The gains do not shrink with model size: from 190M to 1.07B they stay at 50–51 points on numbers (51.3, 51.4, 49.9), 43–48 on dimensions (48.1, 42.8, 45.0), 37–49 on the grid (42.9, 37.1, 49.2) and 17–20 on the torus (20.4, 18.2, 17.4).」（补记二、六、八、九；三个尺寸都是 3 seed，lr 区间都闭合）
+3. 完全分开：「Every one of the 21 models with the six priors, at every size up to 1.07B, is above every one of the 63 models without priors, at any learning rate and seed, on numbers, dimensions, torus and grid.」（补记八、九·追加）
+4. 1.07B 无代价：「At 1.07B this comes at no language-modelling cost: at the same learning rate the bits per byte are equal on average (0.0%).」（补记七；四个 seed 里三个略高、一个更低，限定写「on average」）
+5. 54/54：「In all 54 comparisons (3 sizes × 3 seeds × 6 concepts) the model with priors is higher.」（补记六）
+
+**适合放的位置**：摘要、引言要点、§4.4 的第一句，以及 Fig. 6 / 表的 caption。1.07B 要写在句首，不要放在括号里。
+
+**不得写**
+1. 「gains grow with size」：数据只支持「不变小」，torus 从 20.4 到 17.4 略降，在 seed 间范围内。
+2. 1.07B 的下游评测结论：F116 还没出。
+3. 城市 / 国家的终值更高：1.07B 上终值约为 0。
+4. 超出 1.07B 的外推，比如「works for large language models」。
