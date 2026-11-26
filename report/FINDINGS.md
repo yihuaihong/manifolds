@@ -6317,3 +6317,26 @@ all6@6e-4 和 none@6e-4 比，最终 bpb 的差（all6 − none）如下（seed 
 **能写**
 - 「At 190M the best learning rate without priors is inside the range tried for all six concepts (a higher rate, 7.68e-2, is worse), so the 190M gains are final: numbers 51.3, dimensions 48.1, grid 42.9, torus 20.4, cities 4.2, countries 3.4 points, each in 3 of 3 seeds.」
 - 分离那一句改为「21 runs with priors vs 61 without, finished so far」，边界值不变。
+
+## [2026-11-26] F114 补记九（1.07B 的 lr 也收口了：量纲格 +45.0、grid +49.2 是定稿量级）
+
+1.07B 上，量纲格和 grid 的不加先验最优 lr 都在网格内部：
+- 7.68e-2 已经跑完的两个 seed 在这两项上都低于 3.84e-2：
+  - 量纲格：s16 30.8（3.84e-2 时 64.6），s18 5.8（25.5）；
+  - grid：s16 22.8（45.4），s18 6.1（32.4）。
+- 第三个 seed（s17）要把 7.68e-2 的 seed 均值抬到 3.84e-2 之上，量纲格得 ≥93.0、grid 得 ≥75.5。62 个不加先验 run 里的最高值只有 64.6 和 49.1，所以 N_m 不会再变。
+
+因此 1.07B 的 seed 均值增益（N_m = 3.84e-2）就是定稿量级：
+- 量纲格 +45.0（+24.2 / +49.1 / +61.6，3/3），终值 +46.5（3/3）；
+- grid +49.2（+38.6 / +58.4 / +50.6，3/3），终值 +51.0（3/3）。
+
+加上补记六的 numbers +49.9、torus +17.4、cities +2.5、countries +2.9，三个尺寸、六个概念的增益现在都有闭合的 lr 区间。
+
+**设置**
+- none@7.68e-2 s16 在 B200 竞速副本上跑完。中途被抢占多次，每次从 checkpoint 续跑（2000 → 17500 步），共 75 个 eval，最后一步 18309。CHECK_PY 只有预期内的 FAIL。
+- s17 的主作业（A100）还在跑，跑完后再核对一次。按上面的算术，结论不会变。
+- 分离：62 个不加先验 run，边界值不变。
+
+**能写**
+- 「At 1.07B the best learning rate without priors is inside the range tried for all six concepts (at 7.68e-2 the models without priors are worse on dimensions and the grid), so the 1.07B gains are final too: numbers 49.9, grid 49.2, dimensions 45.0, torus 17.4, countries 2.9, cities 2.5 points, each in 3 of 3 seeds.」
+- §4.4 里「runs without priors at a higher rate at 1.07B are under way」和附录 J 里 1.07B「the highest rate with all three seeds」那条限定都可以删。
