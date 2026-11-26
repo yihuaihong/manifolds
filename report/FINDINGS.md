@@ -6160,3 +6160,14 @@ F96 原条目的「不得写」照旧适用。
 **作废**：论文 / 卡片里的「no model without priors exceeds 49.5% on dimensions」，以及分离句里的「≤49.5」「≤72.5」「36 runs」。
 
 **能写**：「every model with the six priors (18 runs) is above every model without priors finished so far (40 runs) on numbers, dimensions, torus and grid (numbers ≥75.3% vs ≤32.3%, dimensions ≥80.0% vs ≤64.6%, torus ≥86.0% vs ≤74.8%, grid ≥68.5% vs ≤49.1%)」。190M 的 dim 限定改为「…may be an overestimate; the direction holds by the separation」，不再写 49.5。
+
+**F114 补记五·更正（2026-11-25 20:10 ET）：40 个不加先验 run 的组成**
+
+补记五写「40 个不加先验 run 里包括已完成的 SAMELR none@6e-4」，这句是错的。size_levels.py 只计入跑满 75 个 eval 的 run，而到这时 none@6e-4 一个都没跑完（190M s16–s18 分别只到 38 / 34 / 20 个 eval）。40 个 run 实际按尺寸分为：
+- 190M：18 个（s16–s18 各 6 个 lr）
+- 505M：13 个（s16 5 个，s17 / s18 各 4 个）
+- 1.07B：9 个（s16 6 个 lr，加上 s17 none@3.84e-2、s18 none@1.92e-2 / 3.84e-2）
+
+这些 run 都不在 6e-4。边界值不变。
+
+**bpb 按 seed 核对**：1.07B s16 跑满 6 个 lr 后，窗口臂 1.0839 仍低于同 seed 最低的不加先验 run（1.0917，lr 1.2e-3）；1.92e-2 和 3.84e-2 两个 run 为 1.2016 / 1.2737。1.07B s17 / s18 目前只有高 lr 的不加先验 run 跑完，窗口臂在这两个 seed 也低于它们。所以「in each seed … every rate run in that seed」照旧成立。
