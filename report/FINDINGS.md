@@ -6294,3 +6294,26 @@ all6@6e-4 和 none@6e-4 比，最终 bpb 的差（all6 − none）如下（seed 
 - 「At the same learning rate, the six priors cost a little language-modelling loss at 190M and 505M (+0.3% and +1.4% bits per byte, 4 of 4 seeds each) and none on average at 1.07B (0.0%; higher in 3 of 4 seeds, lower in 1).」
 
 **下游评测**：作业已提交，190M / 505M / 1.07B 各一个（24710185–87），只在 A100 上跑。按排队估计周五早上才开始，很可能赶不上 9:30 的截止。
+
+## [2026-11-26] F114 补记八（190M 的 lr 收口了：量纲格 +48.1 不再是上沿估计；分离扩到 21 对 61）
+
+1. **190M 的不加先验 lr 区间在 7.68e-2 收口**：
+   - none@7.68e-2 s16–18 的量纲格面积为 39.9 / 42.7 / 20.7，均值 34.4，低于 3.84e-2 的 40.7（33.5 / 40.1 / 48.5）。
+   - N_m 仍是 3.84e-2，但现在在网格内部，所以 190M 量纲格的 +48.1（+58.8 / +45.5 / +39.9，3/3）是闭合区间上的读数，补记三、四里「上沿、可能高估」的限定作废。
+   - 190M 六个概念的 N_m 现在都在网格内部，所以 190M 的六个增益都是定稿量级：numbers +51.3、dim +48.1、box5 +42.9、torus +20.4、cities +4.2、countries +3.4，每个 3/3。
+   - 190M 的 grid 在 7.68e-2 时是 26.7 / 15.9 / 22.1，同样低于 N_m（1.92e-2）。
+2. **分离：21 个六先验 run 对 61 个不加先验 run**，边界值不变：
+   - 窗口臂 12 个（新增三个尺寸的 all6@6e-4 s19），开到底臂 9 个。
+   - 不加先验新增 9 个：none@6e-4 s18 / s19 共 5 个，none@7.68e-2 共 4 个（190M s16–18 和 1.07B s18）。
+   - 构成：190M 25 个（8 个 lr，6e-4 有 4 个 seed）；505M 17 个；1.07B 19 个。
+   - 边界：numbers ≥75.3 对 ≤32.3，dim ≥80.0 对 ≤64.6，torus ≥86.0 对 ≤76.5，box5 ≥68.5 对 ≤49.1。
+   - 54/54 不变：s19 只有 6e-4，没有不加先验的 lr 网格。
+3. **1.07B 中期读数（只有 s18，不入论文）**：
+   - none@7.68e-2 s18 在量纲格和 grid 上掉到 5.8 / 6.1（3.84e-2 时是 25.5 / 32.4）。
+   - 逐 seed 看，1.07B 的量纲格在 s17 / s18 上的 N_m 都在网格内部，对各自 N_m 的增益为 +47.9 / +46.8；grid 只有 s18 在内部，增益 +38.5。
+   - s16 / s17 的 7.68e-2 主作业还在排队，预计周四晚上跑完，届时再定 1.07B 这两项的 seed 均值量级。
+4. **设备**：190M 的三个和 1.07B s18 的 7.68e-2 run 都跑在 B200 上（竞速副本，用户已批准）；CHECK_PY 只有预期内的 FAIL。四个多余的主作业已取消（24653538 / 539 / 540 / 607）。
+
+**能写**
+- 「At 190M the best learning rate without priors is inside the range tried for all six concepts (a higher rate, 7.68e-2, is worse), so the 190M gains are final: numbers 51.3, dimensions 48.1, grid 42.9, torus 20.4, cities 4.2, countries 3.4 points, each in 3 of 3 seeds.」
+- 分离那一句改为「21 runs with priors vs 61 without, finished so far」，边界值不变。
