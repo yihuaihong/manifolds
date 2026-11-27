@@ -1,0 +1,57 @@
+{
+ "commit": "ef7b8854",
+ "trainer_sha12": "a398fccbfe93",
+ "runs": {
+  "190m/none-lr7.68e-2-s16": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "7.68e-2",
+   "seed": 16,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr7.68e-2-s16",
+   "out": "runs/pt6v2_size/190m/none-lr7.68e-2-s16",
+   "run_json": "runs/pt6v2_size/190m/none-lr7.68e-2-s16/pt6v2-none-lr7.68e-2/run_whole_none_seed16_pt6v2-none-lr7.68e-2.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr7.68e-2-s16/pt6v2-none-lr7.68e-2 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 7.68e-2 --seed 16 --tag _pt6v2-none-lr7.68e-2 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s16.sbatch",
+   "n_params": 190297344,
+   "job_id": "24653538",
+   "job_sha12": "089c3ebdc60a"
+  },
+  "190m/none-lr7.68e-2-s17": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "7.68e-2",
+   "seed": 17,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr7.68e-2-s17",
+   "out": "runs/pt6v2_size/190m/none-lr7.68e-2-s17",
+   "run_json": "runs/pt6v2_size/190m/none-lr7.68e-2-s17/pt6v2-none-lr7.68e-2/run_whole_none_seed17_pt6v2-none-lr7.68e-2.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr7.68e-2-s17/pt6v2-none-lr7.68e-2 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 7.68e-2 --seed 17 --tag _pt6v2-none-lr7.68e-2 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s17.sbatch",
+   "n_params": 190297344,
+   "job_id": "24653539",
+   "job_sha12": "b0f4d8a7cd9c"
+  },
+  "190m/none-lr7.68e-2-s18": {
+   "size": "190m",
+   "arm": "none",
+   "lr": "7.68e-2",
+   "seed": 18,
+   "slurm_name": "llmadd_pt6sz-190m-none-lr7.68e-2-s18",
+   "out": "runs/pt6v2_size/190m/none-lr7.68e-2-s18",
+   "run_json": "runs/pt6v2_size/190m/none-lr7.68e-2-s18/pt6v2-none-lr7.68e-2/run_whole_none_seed18_pt6v2-none-lr7.68e-2.json",
+   "args": "--data pretrain_data --tokenizer models/OLMo-2-1124-7B/stage1-step2000-tokens9B --tokenization whole --out runs/pt6v2_size/190m/none-lr7.68e-2-s18/pt6v2-none-lr7.68e-2 --target none --arith_lines 1 --domains numbers,dim,cities,countries,torus,box5 --extra_lines 2 --lr 7.68e-2 --seed 18 --tag _pt6v2-none-lr7.68e-2 --ckpt_every 500 --d_model 768 --n_layers 12 --n_heads 12 --d_ff 3072 --save_model",
+   "events": [],
+   "steps": 18310,
+   "window": null,
+   "base_job": "job_pt6v2-none-lr2e-3-s18.sbatch",
+   "n_params": 190297344,
+   "job_id": "24653540",
+   "job_sha12": "62a1c8b41cff"
+  }
+ }
+}

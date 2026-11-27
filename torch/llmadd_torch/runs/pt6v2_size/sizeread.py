@@ -28,6 +28,9 @@ REP 1B (2026-11-24): --rep then also reads 1.07B seeds 16, 17, 18 (JSON out["rep
 1.2e-3 / 2.4e-3, by design). N_m and the best none are picked on the seed means over the lrs every seed has (4.8e-3 .. 3.84e-2, as
 505M); cells with fewer seeds are marked '<n'; only-dim (seed 16 only by design) is left out of the unequal-n FLAG and compared
 with all6 on the seeds both have.
+BRACKET 7.68e-2 (2026-11-25): --rep adds none@7.68e-2 (seeds 16-18) to the 190M and 1.07B grids and to the lrs N_m / the best none
+are picked from on the seed means (the lrs every seed has: 190M 1.2e-3 .. 7.68e-2, 1.07B 4.8e-3 .. 7.68e-2). 505M, SAMELR, the
+default and --known53 outputs are unchanged.
 usage: sizeread.py [--json out.json] [--known53] [--rep]   (--known53: KNOWN-ANSWER SMOKE ONLY: reads the registered 53M seed-16 runs
 (all6 := all6@2e-3, all6full := V4 all6full@1e-3, only-dim@2e-3, none at the registered 6-lr grid) and compares final3 / bpb
 with runs/pt6v2/out_v8/v8read.json and area with each run's own metrics block)"""
@@ -190,6 +193,17 @@ REP_CFG["1b"] = {"grid": {16: NONE_B + REP1B_GRID[2:], 17: REP1B_GRID, 18: REP1B
                  "what": "none lrs common to all seeds", "arms": {16: ("all6", "all6full", "only-dim"), 17: ("all6", "all6full"),
                                                                18: ("all6", "all6full")}, "by_design": ("only-dim",)}
 assert NONE_B[2:] == REP1B_GRID[:2]
+# BRACKET 7.68e-2 (2026-11-25, exp-builder): none@7.68e-2 seeds 16, 17, 18 at 190M and 1.07B (the none optimum on dim / grid sat at
+# 3.84e-2, the old top). Appended to every seed's grid and to mean_lrs at both sizes, so N_m / the best none on the seed means
+# range over the lrs every seed has (190M 1.2e-3 .. 7.68e-2, 1.07B 4.8e-3 .. 7.68e-2) and 'open' now means 1.2e-3 / 4.8e-3 or 7.68e-2.
+# 505M unchanged. Until the runs exist the new cell is 'missing' and the edge column reads '?'; every number is unchanged
+# (bracket_checks/).
+BR = "7.68e-2"
+for _z in ("190m", "1b"):
+    REP_CFG[_z]["grid"] = {s: tuple(g) + (BR,) for s, g in REP_CFG[_z]["grid"].items()}
+    REP_CFG[_z]["mean_lrs"] = tuple(REP_CFG[_z]["mean_lrs"]) + (BR,)
+assert REP_CFG["190m"]["mean_lrs"] == REP190_GRID + (BR,) and REP_CFG["1b"]["mean_lrs"] == REP1B_GRID + (BR,)
+assert all(set(REP_CFG[z]["mean_lrs"]) <= set(g) for z in ("190m", "1b", "505m") for g in REP_CFG[z]["grid"].values())
 
 
 def rep_read(z="505m"):

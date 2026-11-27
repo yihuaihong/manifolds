@@ -41,7 +41,15 @@ the downstream pairs all6 vs none @6e-4, seeds 16-19 (n = 4, as F96). Recipe per
 c1b, the code_1b trainer). Seed 19 = the registered pt6v2 seed-19 job. Files: DRY_REF_samelr<k>.json, dry_samelr<k>/,
 SUBMITTED_samelr<k>.json (k = 190 / 505 / 1b). --collect also checks that each seed's dry rows equal that seed's rows in the
 REP reference of the size (seeds 16-18); seed 19 is new. Without --samelr every name, file and render is unchanged
-(samelr_checks/)."""
+(samelr_checks/).
+BRACKET 7.68e-2 (2026-11-25, exp-builder; standing authorisation: more lrs in the approved exploratory sweep, same setup; user
+"可以多用一些gpu"): --bracket --size 190m|1b selects none@7.68e-2 for seeds 16, 17, 18 (3 runs per size, 6 in all). Why: the
+no-prior optimum on dim (190M seed means; 1.07B s16 dim and grid) sits at 3.84e-2, the top of the tested grid, so the paper's
+gain size there depends on closing the bracket. Recipe per size = that size's REP renders (190M registered trainer; 1.07B via
+c1b, the code_1b trainer); only the lr changes; --save_model stays (build() adds it to every main and build_all asserts it).
+Files: DRY_REF_bracket<k>.json, dry_bracket<k>/, SUBMITTED_bracket<k>.json (k = 190 / 1b). --collect also checks that each
+seed's dry rows equal that seed's rows in the REP reference of the size. Without --bracket every name, file and render is
+unchanged (bracket_checks/)."""
 import hashlib
 import json
 import re
@@ -80,7 +88,13 @@ SL = [("none", "6e-4", False)]
 SAMELR_CFG = {z: dict(plan={16: SL, 17: SL, 18: SL, 19: [("all6", "6e-4", False)] + SL}, dry_ref=f"DRY_REF_samelr{k}.json",
                       dryd=f"dry_samelr{k}", mani=f"SUBMITTED_samelr{k}.json", dry_name=f"llmadd_pt6sz-samelr{k}-dry")
               for z, k in (("505m", "505"), ("190m", "190"), ("1b", "1b"))}
-C = dict(CFG[SIZE], **SAMELR_CFG[SIZE]) if SAMELR else CFG[SIZE]
+BRACKET = "--bracket" in sys.argv   # BRACKET (2026-11-25): none@7.68e-2 s16-18 at SIZE (190m / 1b); header / shape / trainer = CFG[SIZE]
+BRK = [("none", "7.68e-2", False)]
+BRACKET_CFG = {z: dict(plan={16: BRK, 17: BRK, 18: BRK}, dry_ref=f"DRY_REF_bracket{k}.json", dryd=f"dry_bracket{k}",
+                       mani=f"SUBMITTED_bracket{k}.json", dry_name=f"llmadd_pt6sz-bracket{k}-dry")
+               for z, k in (("190m", "190"), ("1b", "1b"))}
+assert not (SAMELR and BRACKET) and (not BRACKET or SIZE in BRACKET_CFG), "--bracket needs --size 190m or 1b and excludes --samelr"
+C = dict(CFG[SIZE], **SAMELR_CFG[SIZE]) if SAMELR else dict(CFG[SIZE], **BRACKET_CFG[SIZE]) if BRACKET else CFG[SIZE]
 assert (C["time"], C["part"]) == (M.SIZES[SIZE]["time"], M.SIZES[SIZE]["part"]) and \
        C["shape"] == tuple(str(M.SIZES[SIZE][k]) for k in ("d", "L", "H", "ff")) and C["npar"] == M.n_params(*(M.SIZES[SIZE][k] for k in ("d", "L", "ff")))
 PLAN = C["plan"]
@@ -257,7 +271,7 @@ def collect(jobs):
     ss = {s: {json.dumps(j["split_seeds"], sort_keys=True) for j in jobs if j["seed"] == s} for s in PLAN}
     if any(len(v) != 1 for v in ss.values()) or len(set().union(*ss.values())) != len(PLAN):
         bad.append(f"split seeds not one per seed / not distinct across seeds: {ss}")
-    if SAMELR:   # SAMELR: each seed's rows = that seed's rows in the REP reference of this size (seeds 16-18; seed 19 is new)
+    if SAMELR or BRACKET:   # SAMELR / BRACKET: each seed's rows = that seed's rows in the REP reference of this size (seeds 16-18; SAMELR's 19 is new)
         rr = json.loads((S / CFG[SIZE]["dry_ref"]).read_text())
         for s in PLAN:
             rs = {v["sha"] for k, v in rr.items() if k.endswith(f"-s{s}")}
