@@ -6367,3 +6367,50 @@ all6@6e-4 和 none@6e-4 比，最终 bpb 的差（all6 − none）如下（seed 
 2. 1.07B 的下游评测结论：F116 还没出。
 3. 城市 / 国家的终值更高：1.07B 上终值约为 0。
 4. 超出 1.07B 的外推，比如「works for large language models」。
+
+## [2026-11-26] F116 六先验的下游评测（SAMELR，同 lr，190M / 505M / 1.07B，各 4 个 seed；F96 规则，已过结果层审查）
+
+同 lr 下，六先验在任何尺寸上都没有让任何一个基准的均值分数变化超过 0.6 点：
+- 共 15 个「尺寸 × 基准」比较，均值差在 −0.45 到 +0.56 之间，没有一致的符号（7 正 8 负）。
+- 0 个变差；9 个在 1 点 margin 下不差于（190M 5/5，505M 3，1.07B 1）；另外 6 个的 95% CI 太宽，判不了。
+
+**设置**
+- 对比 all6@6e-4 和 none@6e-4，seed 16–19 配对，24 个模型。
+- 评测路径、t 值、1 点 margin 和判词都沿用 F96（runs/downstream/AUDIT.md，Amendment A4）。
+- 评测只在 A100 上跑，fp32、TF32 关。
+- 505M 和 1.07B 的评测作业改投到可抢占 A100。1.07B 被抢占几次，每个模型恰好打分一次（审查核对过）。
+- 读数：runs/pt6v2_size/downstream/samelr_readout.py（419b8b704b1a）→ readout_samelr.md / .json。臂的身份见 arm_identity_check.txt。
+- 审查记录：runs/pt6v2_size/tests/audit_samelr_down_result_20261126.md。数字全部独立复现，15/15 个判词一致。
+
+**结果**（all6 − none，准确率，单位：点；括号里是 95% t-CI；NI = 不差于，U = 无法判断）
+
+| 基准 | 190M | 505M | 1.07B |
+|---|---|---|---|
+| BLiMP | +0.14 [−0.61, +0.89] NI | +0.04 [−0.56, +0.63] NI | −0.31 [−1.88, +1.27] U |
+| LAMBADA | −0.27 [−0.76, +0.21] NI | −0.04 [−1.13, +1.05] U | −0.24 [−1.30, +0.82] U |
+| HellaSwag | −0.24 [−0.72, +0.24] NI | −0.16 [−0.83, +0.50] NI | +0.22 [−0.12, +0.56] NI（4/4 为正） |
+| ARC-Easy | +0.08 [−0.80, +0.97] NI | +0.07 [−1.43, +1.58] U | +0.56 [−2.25, +3.36] U |
+| PIQA | −0.27 [−0.95, +0.40] NI | +0.04 [−0.33, +0.41] NI | −0.45 [−2.01, +1.11] U |
+
+**描述性**（预登记为只报告）：LAMBADA 困惑度比值 all6 / none 的几何均值为：
+- 190M 1.03 [0.95, 1.11]
+- 505M 1.05 [0.94, 1.18]
+- 1.07B 1.08 [0.95, 1.22]
+
+CI 都含 1，但 12 个配对里有 10 个大于 1，和补记七同 lr bpb 的小代价方向一致。
+
+**和 F96 比**：单个数字先验（505M）是 0 变差 / 6 不差于 / 4 无法判断。六先验在三个尺寸上的结果与它同一形态。
+
+**限定**（集中写一处）
+1. 1.07B 上 4 个 U 的 CI 下界到 −1.9 至 −2.3：在 1 点的门槛下排除不了小幅下降。原因是 seed 间波动大，训练设备混用加大了配对噪声。
+2. 只覆盖训练 3 亿 token 的模型、zero-shot、lr 6e-4。HellaSwag 只比随机水平高 2–4 点。
+
+**能写**
+- 「At the same learning rate, the six priors change no benchmark's mean score by more than 0.6 points at any size: across the 15 size × benchmark comparisons (190M, 505M, 1.07B × five benchmarks, four paired seeds each), mean differences range from −0.45 to +0.56 points with no consistent sign (7 positive, 8 negative), none is worse, 9 are non-inferior at a 1-point margin (all 5 at 190M, 3 at 505M, 1 at 1.07B), and the other 6 have 95% confidence intervals too wide to decide.」
+- 附录或表里的一句：「LAMBADA perplexity is 3–8% higher with the six priors (geometric means 1.03, 1.05, 1.08; intervals include 1).」
+- 成本表「General ability」一行：「Six priors, same rate, 190M–1.07B: no benchmark changes by more than 0.6 points; 0 worse, 9 non-inferior, 6 undetermined of 15.」
+
+**不得写**
+1. 「no cost to general ability」或「general ability is unchanged」：1.07B 有 4 个 U，LAMBADA 困惑度偏高。
+2. 「the priors improve HellaSwag」：4/4 为正，但 CI 含 0。
+3. 把 U 写成「not worse」：可以写「none is worse」，因为没有一个判为 worse，但不能把 U 写成「不差于」。
