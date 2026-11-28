@@ -6414,3 +6414,40 @@ CI 都含 1，但 12 个配对里有 10 个大于 1，和补记七同 lr bpb 的
 1. 「no cost to general ability」或「general ability is unchanged」：1.07B 有 4 个 U，LAMBADA 困惑度偏高。
 2. 「the priors improve HellaSwag」：4/4 为正，但 CI 含 0。
 3. 把 U 写成「not worse」：可以写「none is worse」，因为没有一个判为 worse，但不能把 U 写成「不差于」。
+
+## [2026-11-27] F117 1.07B 的两项跟进（pt6v2-size-followup，探索档，已过结果层审查）：训练 lr 6e-4 在平台上；联合增益在 1.07B 初步出现
+
+用户 11-27 批准：「还有其他后续的实验 可以直接开始跑」。
+
+1. **六先验 run 的 lr（6e-4）在 1.07B 上处在平台上**（seed 16，单 seed）。
+   - lr 翻倍到 1.2e-3：每个概念的训练平均准确率变化都不超过 3.8 点（final3 最多 4.4），六个概念仍然全部高于调好 lr 的不加先验模型。
+   - lr 减半到 3e-4：grid 掉 21 点（84.0 → 62.9，低于 8 个 seed@6e-4 的最小值 70.7），bpb 从 1.084 升到 1.096，city 的面积、country 的 final3 也不再高于不加先验。
+   - 所以论文的限定「the learning rate was not tuned for the six」可以改写：一个 seed 的检查表明，再调 lr 也不会让增益明显变大。
+2. **dims 上的联合增益**（all6 − only-dim@6e-4）：
+   - 190M：+10.4 area / +10.6 final3，3/3；
+   - 505M：没有，−1.5 / −1.8；
+   - 1.07B：初步为正，final3 +5.9（3/3：+0.6 / +5.2 / +11.9），area +6.6（2/3：−1.8 / +6.3 / +15.4）。
+   - 1.07B 以前只有 s16 的 −1.8，看起来像「没有」，那是单 seed 噪声。
+
+**设置**
+- all6@3e-4 / 1.2e-3 s16，与已有的 all6@6e-4 s16 对比；none 在 7 个 lr 上取最优（N_m 都在网格内部）。
+- only-dim@6e-4 s17 / s18（新跑）加上已有的 s16。代码 code_1b，75 个 eval。
+- 读数用 sizeread.py --followup（69ff36a3592f），输出 sizeread_followup_1945.txt。主会话用审查员的独立加载器复算，一致。
+- 审查记录：runs/pt6v2_size/tests/audit_followup_result_20261127.md。数字全部复现，同 seed 的两臂只差 lr 或先验设置。
+
+**限定**
+1. lr 的检查只有一个 seed。dims 在 lr 减半时的 −7.1 在 seed 噪声以内（8 个 seed@6e-4 的 SD 9.5），可靠的是 grid 那一项。
+2. 1.07B 的联合增益 n = 3，t 只有 1.3–1.8。s16–18 的 all6 恰好偏高，改用 8 个 all6 seed 做不配对比较，只剩 +1.2 / −0.6。
+   - 已按常设授权补 only-dim s19 / s20（all6 这两个 seed 已有）。
+3. 那个旋钮是整个模型的 lr，没有单独的「先验 lr」，应写「the learning rate of the six-prior runs」。
+4. 3e-4 / 1.2e-3 在 B200 上，6e-4 在 H100 上。设备混用，只打标记。
+
+**能写**
+- 「At 1.07B the six-prior runs sit on a learning-rate plateau at 6e-4: doubling it moves no concept's training-averaged accuracy by more than 3.8 points and keeps the lead over the best-tuned no-prior run on all six concepts, while halving it costs 21 points on the grid (84.0 → 62.9) and raises bits per byte (1.084 → 1.096) (one seed).」
+- 「The six priors together beat the dimensions prior alone on dimensions at 190M (+10.4 averaged over training, +10.6 at the end, 3 of 3 seeds) and, preliminarily, at 1.07B (+5.9 at the end in 3 of 3 seeds, +6.6 averaged over training), but not at 505M (−1.5 and −1.8).」
+
+**不得写**
+1. 「prior learning rate」。
+2. 「6e-4 is optimal」：只查了两侧各一个点，而且只有一个 seed。
+3. 1.07B 联合增益写成确定结论。
+4. lr 减半时 dims 变差。
